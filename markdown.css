@@ -96,3 +96,25 @@ td {
 td:last-child {
     padding-right: 0;
 }
+
+/* schema-markdown-doc */
+p.smd-note {
+    margin-top: 1em;
+}
+p.smd-note ul {
+    list-style: none;
+    margin-top: 0.4em;
+    margin-left: 0.8em;
+}
+ul.smd-attr-list {
+    list-style: none;
+    margin-top: 0;
+    margin-left: 0;
+}
+ul.smd-attr-list li {
+    margin-top: 0.1em;
+    margin-left: 0;
+}
+ul.smd-attr-list li:first-child {
+    margin-top: 0em;
+}
