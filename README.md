@@ -2,7 +2,7 @@
 
 Welcome to the GitHub Pages site of Craig A. Hobbs. Here are some links to some of my projects.
 
-[Conway's Game of Life](https://craigahobbs.github.io/life/)
+[Conway's Game of Life](https://craigahobbs.github.io/life-app/)
 
 [The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
