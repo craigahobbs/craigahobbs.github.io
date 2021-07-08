@@ -6,4 +6,4 @@ Welcome to the GitHub Pages site of Craig A. Hobbs. Here are some links to some 
 
 [The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
-[Markdown Book](https://craigahobbs.github.io/markdown-book/)
+[Markdown Book](https://craigahobbs.github.io/markdown-book-app/)
