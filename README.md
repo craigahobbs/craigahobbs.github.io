@@ -10,11 +10,11 @@
 [python-build](https://github.com/craigahobbs/python-build#readme)
 
 
-### Application Templates
+### Project Templates
 
-[javascript-app-template](https://github.com/craigahobbs/javascript-app-template#readme)
+[javascript-template](https://github.com/craigahobbs/javascript-template#readme)
 
-[python-package-template](https://github.com/craigahobbs/python-package-template#readme)
+[python-template](https://github.com/craigahobbs/python-template#readme)
 
 
 ### Chisel
