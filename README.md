@@ -1,9 +1,7 @@
 # craigahobbs.github.io
 
-[Resume](https://craigahobbs.github.io/resume/#url=resume.md)
 
-
-### Build Tools / Development Experience
+### Build / Development Experience
 
 [javascript-build](https://github.com/craigahobbs/javascript-build#readme)
 
@@ -69,3 +67,5 @@
 [Conway's Game of Life](https://craigahobbs.github.io/life-app/)
 
 [The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
+
+[Resume](https://craigahobbs.github.io/resume/#url=resume.md)
