@@ -1,20 +1,6 @@
 # craigahobbs.github.io
 
 
-### Build / Development Experience
-
-[javascript-build](https://github.com/craigahobbs/javascript-build#readme)
-
-[python-build](https://github.com/craigahobbs/python-build#readme)
-
-
-### Project Templates
-
-[javascript-template](https://github.com/craigahobbs/javascript-template#readme)
-
-[python-template](https://github.com/craigahobbs/python-template#readme)
-
-
 ### Chisel
 
 [chisel](https://github.com/craigahobbs/chisel#readme)
@@ -31,6 +17,16 @@
 [schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
 
 
+### Element-model
+
+[element-model](https://github.com/craigahobbs/element-model#readme)
+
+
+### Markdown-model
+
+[markdown-model](https://github.com/craigahobbs/markdown-model#readme)
+
+
 ### Markdown-up
 
 [markdown-up-py](https://github.com/craigahobbs/markdown-up-py#readme)
@@ -43,14 +39,18 @@
 [Markdown Book](https://github.com/craigahobbs/markdown-book-app#readme)
 
 
-### Markdown-model
+### Build / Development Experience
 
-[markdown-model](https://github.com/craigahobbs/markdown-model#readme)
+[javascript-build](https://github.com/craigahobbs/javascript-build#readme)
+
+[python-build](https://github.com/craigahobbs/python-build#readme)
 
 
-### Element-model
+### Project Templates
 
-[element-model](https://github.com/craigahobbs/element-model#readme)
+[javascript-template](https://github.com/craigahobbs/javascript-template#readme)
+
+[python-template](https://github.com/craigahobbs/python-template#readme)
 
 
 ### Development Tools
@@ -70,4 +70,4 @@
 
 [Resume](https://craigahobbs.github.io/resume/#url=resume.md)
 
-[Ye Olde Fruit Fly Trap](https://craigahobbs.github.io/fruit-fly-trap/)
+[Ye Olde Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
