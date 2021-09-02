@@ -1,5 +1,7 @@
 # Harper's Schedule
 
+[First Floor Map](Ballard1.jpg) | [Second Floor Map](Ballard2.jpg)
+
 ### 1 - Health Education
 
 **Time:** 8:45am - 9:40am  
