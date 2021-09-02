@@ -1,14 +1,14 @@
 # craigahobbs.github.io
 
 
-### Chisel
+### chisel
 
 [chisel](https://github.com/craigahobbs/chisel#readme)
 
 [chisel-doc](https://github.com/craigahobbs/chisel-doc#readme)
 
 
-### Schema Markdown
+### schema-markdown
 
 [schema-markdown](https://github.com/craigahobbs/schema-markdown#readme)
 
@@ -17,17 +17,17 @@
 [schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
 
 
-### Element-model
+### element-model
 
 [element-model](https://github.com/craigahobbs/element-model#readme)
 
 
-### Markdown-model
+### markdown-model
 
 [markdown-model](https://github.com/craigahobbs/markdown-model#readme)
 
 
-### Markdown-up
+### markdown-up
 
 [markdown-up-py](https://github.com/craigahobbs/markdown-up-py#readme)
 
