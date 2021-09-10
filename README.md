@@ -66,6 +66,6 @@
 
 [Conway's Game of Life](https://craigahobbs.github.io/life-app/)
 
-[Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
+[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
 
 [The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
