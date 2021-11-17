@@ -70,4 +70,4 @@
 
 [The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
-[US Sunrise Dashboards](https://craigahobbs.github.io/sunrise/)
+[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
