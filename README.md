@@ -66,6 +66,8 @@
 
 [Conway's Game of Life](https://craigahobbs.github.io/life-app/)
 
+[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
+
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
 
 [The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
