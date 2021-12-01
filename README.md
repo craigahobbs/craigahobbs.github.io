@@ -19,6 +19,8 @@
 
 ### element-model
 
+[element-app](https://github.com/craigahobbs/element-app#readme)
+
 [element-model](https://github.com/craigahobbs/element-model#readme)
 
 
