@@ -12,7 +12,8 @@
     <body>
     </body>
     <script type="module">
-        import {MarkdownUp} from 'https://craigahobbs.github.io/markdown-up/markdown-up/index.js';
-        MarkdownUp.run(window);
+        import {MarkdownUp} from 'https://craigahobbs.github.io/markdown-up/lib/app.js';
+        const app = new MarkdownUp(window);
+        app.run();
     </script>
 </html>
