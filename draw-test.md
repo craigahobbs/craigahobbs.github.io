@@ -5,12 +5,12 @@ drawingWidth = 300
 drawingHeight = 300
 
 # Star sizes
-star1Size = 0.15 * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingHeight])
-star2Size = 0.1 * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingHeight])
+skinnyStarSize = 0.12 * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingHeight])
+chubbyStarSize = 0.08 * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingHeight])
 
 # Render a randomly-placed, randomly-sized "skinny star"
-function star1()
-    size = (1.25 - (0.5 * rand())) * [star1Size]
+function skinnyStar()
+    size = (1.25 - (0.5 * rand())) * [skinnyStarSize]
     minX = 0
     maxX = [drawingWidth] - [size]
     minY = 0
@@ -25,8 +25,8 @@ function star1()
 endfunction
 
 # Render a randomly-placed, randomly-sized "chubby star"
-function star2()
-    size = (1.25 - (0.5 * rand())) * [star2Size]
+function chubbyStar()
+    size = (1.25 - (0.5 * rand())) * [chubbyStarSize]
     minX = 0
     maxX = [drawingWidth] - [size]
     minY = 0
@@ -45,32 +45,31 @@ function star2()
     pathClose()
 endfunction
 
-# Render 5 skinny stars
-function star1_X()
-    star1()
-    star1()
-    star1()
+# Render several skinny stars
+function skinnyStars()
+    skinnyStar()
+    skinnyStar()
+    skinnyStar()
 endfunction
 
-# Render 5 chubby stars
-function star2_X()
-    star2()
-    star2()
-    star2()
-    star2()
-    star2()
+# Render several chubby stars
+function chubbyStars()
+    chubbyStar()
+    chubbyStar()
+    chubbyStar()
+    chubbyStar()
+    chubbyStar()
 endfunction
 
 # Draw a starscape
-star1_X()
-star1_X()
-star1_X()
-star1_X()
-star1_X()
-
-star2_X()
-star2_X()
-star2_X()
-star2_X()
-star2_X()
+skinnyStars()
+skinnyStars()
+skinnyStars()
+skinnyStars()
+skinnyStars()
+chubbyStars()
+chubbyStars()
+chubbyStars()
+chubbyStars()
+chubbyStars()
 ~~~
