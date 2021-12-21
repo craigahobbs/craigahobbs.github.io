@@ -16,7 +16,6 @@ function shapes(shapeFn, count, sizeRatio)
         x = [minX] + (rand() * ([maxX] - [minX]))
         y = [minY] + (rand() * ([maxY] - [minY]))
         shapeFn([x], [y], [size])
-
         ix = [ix] + 1
         jumpif ([ix] < [count]) loop
 endfunction
