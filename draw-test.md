@@ -46,16 +46,14 @@ function star2()
 endfunction
 
 # Render 5 skinny stars
-function star1_5()
-    star1()
-    star1()
+function star1_X()
     star1()
     star1()
     star1()
 endfunction
 
 # Render 5 chubby stars
-function star2_5()
+function star2_X()
     star2()
     star2()
     star2()
@@ -64,10 +62,15 @@ function star2_5()
 endfunction
 
 # Draw a starscape
-star1_5()
-star1_5()
-star1_5()
-star2_5()
-star2_5()
-star2_5()
+star1_X()
+star1_X()
+star1_X()
+star1_X()
+star1_X()
+
+star2_X()
+star2_X()
+star2_X()
+star2_X()
+star2_X()
 ~~~
