@@ -11,10 +11,10 @@ star2Size = 0.1 * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingH
 # Render a randomly-placed, randomly-sized "skinny star"
 function star1()
     size = (1.25 - (0.5 * rand())) * [star1Size]
-    minX = 0.5 * [size]
-    maxX = [drawingWidth] - (0.5 * [size])
-    minY = 0.5 * [size]
-    maxY = [drawingHeight] - (0.5 * [size])
+    minX = 0
+    maxX = [drawingWidth] - [size]
+    minY = 0
+    maxY = [drawingHeight] - [size]
     x = [minX] + (rand() * ([maxX] - [minX]))
     y = [minY] + (rand() * ([maxY] - [minY]))
 
@@ -27,10 +27,10 @@ endfunction
 # Render a randomly-placed, randomly-sized "chubby star"
 function star2()
     size = (1.25 - (0.5 * rand())) * [star2Size]
-    minX = 0.5 * [size]
-    maxX = [drawingWidth] - (0.5 * [size])
-    minY = 0.5 * [size]
-    maxY = [drawingHeight] - (0.5 * [size])
+    minX = 0
+    maxX = [drawingWidth] - [size]
+    minY = 0
+    maxY = [drawingHeight] - [size]
     x = [minX] + (rand() * ([maxX] - [minX]))
     y = [minY] + (rand() * ([maxY] - [minY]))
 
