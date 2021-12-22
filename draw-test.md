@@ -44,3 +44,4 @@ endfunction
 # Render the stars
 shapes([skinnyStar], 20, 0.10)
 shapes([chubbyStar], 35, 0.05)
+~~~
