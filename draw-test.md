@@ -42,5 +42,5 @@ function chubbyStar(x, y, size)
 endfunction
 
 # Render the stars
-shapes([skinnyStar], 20, 0.08)
-shapes([chubbyStar], 35, 0.03)
+shapes([skinnyStar], 20, 0.10)
+shapes([chubbyStar], 35, 0.05)
