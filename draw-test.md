@@ -45,7 +45,7 @@ function chubbyStar(x, y, size)
     pathClose()
 endfunction
 
-function colorSquare(x, y, size)
+function grayBall(x, y, size)
     fillRand = rand()
     fill = if(fillRand < 0.5, '#c0c0c0', '#e0e0e0')
     setStyle('black', 2, fill)
@@ -55,5 +55,5 @@ endfunction
 # Render the stars
 shapes(skinnyStar, 10, 0.10)
 shapes(chubbyStar, 30, 0.05)
-shapes(colorSquare, 15, 0.02)
+shapes(grayBall, 15, 0.02)
 ~~~
