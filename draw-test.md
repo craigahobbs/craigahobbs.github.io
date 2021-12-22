@@ -1,14 +1,14 @@
 # Drawing Test
 
 ~~~ drawing
-drawingWidth = if([size],[size],300)
-drawingHeight = if([size],[size],300)
+drawingWidth = if([size], [size], 400)
+drawingHeight = if([size], [size], 300)
 
 # Render a randomly-placed, randomly-sized shape
 function shapes(shapeFn, count, sizeRatio)
     ix = 0
     loop:
-        size = [sizeRatio] * (1 + (0.5 * rand())) * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingHeight])
+        size = [sizeRatio] * (1 + (2 * rand())) * if([drawingWidth] < [drawingHeight], [drawingWidth], [drawingHeight])
         minX = 0
         maxX = [drawingWidth] - [size]
         minY = 0
@@ -16,8 +16,8 @@ function shapes(shapeFn, count, sizeRatio)
         x = [minX] + (rand() * ([maxX] - [minX]))
         y = [minY] + (rand() * ([maxY] - [minY]))
         shapeFn([x], [y], [size])
-        ix = [ix] + 1
-        jumpif ([ix] < [count]) loop
+    ix = [ix] + 1
+    jumpif ([ix] < [count]) loop
 endfunction
 
 # Render a "skinny star"
@@ -42,6 +42,6 @@ function chubbyStar(x, y, size)
 endfunction
 
 # Render the stars
-shapes([skinnyStar], 20, 0.10)
-shapes([chubbyStar], 35, 0.05)
+shapes([skinnyStar], 10, 0.10)
+shapes([chubbyStar], 30, 0.05)
 ~~~
