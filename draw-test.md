@@ -22,26 +22,28 @@ endfunction
 
 # Render a "skinny star"
 function skinnyStar(x, y, size)
-    path('gray')
-    pathMoveTo(x + (0.5 * size), y)
-    pathLineTo(x + (0.5 * size), y + size)
-    pathMoveTo(x + (0.35 * size), y + (0.5 * size))
-    pathLineTo(x + (0.65 * size), y + (0.5 * size))
+    pathStroke('gray')
+    moveTo(x + (0.5 * size), y)
+    lineTo(x + (0.5 * size), y + size)
+    moveTo(x + (0.35 * size), y + (0.5 * size))
+    lineTo(x + (0.65 * size), y + (0.5 * size))
 endfunction
 
 # Render a "chubby star"
 function chubbyStar(x, y, size)
     fillRand = rand()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
-    path('black', 2, fill)
-    pathMoveTo(x, y)
-    pathLineTo(x + (0.5 * size), y + (0.33 * size))
-    pathLineTo(x + size, y)
-    pathLineTo(x + (0.67 * size), y + (0.5 * size))
-    pathLineTo(x + size, y + size)
-    pathLineTo(x + (0.5 * size), y + (0.67 * size))
-    pathLineTo(x, y + size)
-    pathLineTo(x + (0.33 * size), y + (0.5 * size))
+    pathFill(fill)
+    pathStroke('black')
+    pathStrokeWidth(2)
+    moveTo(x, y)
+    lineTo(x + (0.5 * size), y + (0.33 * size))
+    lineTo(x + size, y)
+    lineTo(x + (0.67 * size), y + (0.5 * size))
+    lineTo(x + size, y + size)
+    lineTo(x + (0.5 * size), y + (0.67 * size))
+    lineTo(x, y + size)
+    lineTo(x + (0.33 * size), y + (0.5 * size))
     pathClose()
 endfunction
 
