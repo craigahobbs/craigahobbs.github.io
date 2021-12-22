@@ -47,7 +47,7 @@ endfunction
 
 function colorSquare(x, y, size)
     fillRand = rand()
-    fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
+    fill = if(fillRand < 0.5, '#c0c0c0', '#e0e0e0')
     setStyle('black', 2, fill)
     rect(x, y, size, size, 3, 3)
 endfunction
@@ -55,5 +55,5 @@ endfunction
 # Render the stars
 shapes(skinnyStar, 10, 0.10)
 shapes(chubbyStar, 30, 0.05)
-shapes(colorSquare, 30, 0.02)
+shapes(colorSquare, 15, 0.02)
 ~~~
