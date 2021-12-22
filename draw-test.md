@@ -1,4 +1,4 @@
-# Drawing Test
+# Happy Holidays 2021
 
 ~~~ drawing
 drawingWidth = if(width, width, 600)
@@ -70,15 +70,15 @@ shapes(purpleBall, 15, 0.01)
 shapes(blueEllipse, 15, 0.015)
 
 # Measure the title box height
-titleText = 'Happy Holidays!'
+titleText = if(message,message,'Happy Holidays!')
 titleBoxWidth = 0.8 * drawingWidth
 titleTextWidth = 0.9 * titleBoxWidth
-titleTextHeight = textHeight(titleText, titleTextWidth)
+titleTextHeight = min(textHeight(titleText, titleTextWidth), 0.2 * drawingHeight)
 titleBoxHeight = 3 * titleTextHeight
 
 # Draw the title
 setStyle('black', 5, '#ff0000f0')
 rect((0.5 * drawingWidth) - (0.5 * titleBoxWidth), (0.5 * drawingHeight) - (0.5 * titleBoxHeight), titleBoxWidth, titleBoxHeight)
 setTextStyle(titleTextHeight, 'white')
-drawText('Happy Holidays!', 0.5 * drawingWidth, 0.5 * drawingHeight)
+drawText(titleText, 0.5 * drawingWidth, 0.5 * drawingHeight)
 ~~~
