@@ -22,7 +22,7 @@ endfunction
 
 # Render a "skinny star"
 function skinnyStar(x, y, size)
-    pathStroke('gray')
+    setStyle('gray')
     moveTo(x + (0.5 * size), y)
     lineTo(x + (0.5 * size), y + size)
     moveTo(x + (0.35 * size), y + (0.5 * size))
@@ -33,9 +33,7 @@ endfunction
 function chubbyStar(x, y, size)
     fillRand = rand()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
-    pathFill(fill)
-    pathStroke('black')
-    pathStrokeWidth(2)
+    setStyle('black', 2, fill)
     moveTo(x, y)
     lineTo(x + (0.5 * size), y + (0.33 * size))
     lineTo(x + size, y)
@@ -47,7 +45,15 @@ function chubbyStar(x, y, size)
     pathClose()
 endfunction
 
+function colorSquare(x, y, size)
+    fillRand = rand()
+    fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
+    setStyle('black', 2, fill)
+    rect(x, y, size, size, 3, 3)
+endfunction
+
 # Render the stars
 shapes(skinnyStar, 10, 0.10)
 shapes(chubbyStar, 30, 0.05)
+shapes(colorSquare, 30, 0.02)
 ~~~
