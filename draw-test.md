@@ -1,8 +1,8 @@
 # Drawing Test
 
 ~~~ drawing
-drawingWidth = 300
-drawingHeight = 300
+drawingWidth = if([size],[size],300)
+drawingHeight = if([size],[size],300)
 
 # Render a randomly-placed, randomly-sized shape
 function shapes(shapeFn, count, sizeRatio)
@@ -24,8 +24,8 @@ endfunction
 function skinnyStar(x, y, size)
     pathMoveTo([x] + (0.5 * [size]), [y])
     pathLineTo([x] + (0.5 * [size]), [y] + [size])
-    pathMoveTo([x] + (0.33 * [size]), [y] + (0.5 * [size]))
-    pathLineTo([x] + (0.67 * [size]), [y] + (0.5 * [size]))
+    pathMoveTo([x] + (0.35 * [size]), [y] + (0.5 * [size]))
+    pathLineTo([x] + (0.65 * [size]), [y] + (0.5 * [size]))
 endfunction
 
 # Render a "chubby star"
@@ -42,5 +42,5 @@ function chubbyStar(x, y, size)
 endfunction
 
 # Render the stars
-shapes([skinnyStar], 15, 0.12)
-shapes([chubbyStar], 20, 0.08)
+shapes([skinnyStar], 20, 0.08)
+shapes([chubbyStar], 35, 0.03)
