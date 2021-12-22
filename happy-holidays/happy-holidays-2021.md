@@ -1,5 +1,10 @@
 # Happy Holidays 2021
 
+[Small](#url=happy-holidays-2021.md&variables.width.number=400&variables.height.number=250) |
+[Medium](#url=happy-holidays-2021.md&variables.width.number=700&variables.height.number=350) |
+[Large](#url=happy-holidays-2021.md&variables.width.number=1000&variables.height.number=450) |
+[Custom Message](#url=happy-holidays-2021.md&variables.message.string=Hello!)
+
 ~~~ drawing
 drawingWidth = if(width, width, 600)
 drawingHeight = if(height, height, 300)
