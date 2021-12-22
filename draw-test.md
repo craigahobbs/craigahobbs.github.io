@@ -1,10 +1,10 @@
 # Drawing Test
 
 ~~~ drawing
-drawingWidth = if(width, width, 400)
+drawingWidth = if(width, width, 600)
 drawingHeight = if(height, height, 300)
 
-# Render a randomly-placed, randomly-sized shape
+# Render a number of randomly-placed, randomly-sized shapes
 function shapes(shapeFn, count, sizeRatio)
     ix = 0
     loop:
@@ -20,7 +20,6 @@ function shapes(shapeFn, count, sizeRatio)
     jumpif (ix < count) loop
 endfunction
 
-# Render a "skinny star"
 function skinnyStar(x, y, size)
     setStyle('gray')
     moveTo(x + (0.5 * size), y)
@@ -29,7 +28,6 @@ function skinnyStar(x, y, size)
     hlineTo(x + (0.65 * size))
 endfunction
 
-# Render a "chubby star"
 function chubbyStar(x, y, size)
     fillRand = rand()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
@@ -64,22 +62,23 @@ function blueEllipse(x, y, size)
     ellipse(x, y, size, 0.5 * size)
 endfunction
 
-# Render the stars
+# Draw the stars
 shapes(skinnyStar, 10, 0.10)
 shapes(chubbyStar, 30, 0.05)
 shapes(grayBall, 15, 0.02)
 shapes(purpleBall, 15, 0.01)
 shapes(blueEllipse, 15, 0.015)
 
+# Measure the title box height
 titleText = 'Happy Holidays!'
 titleBoxWidth = 0.8 * drawingWidth
 titleTextWidth = 0.9 * titleBoxWidth
 titleTextHeight = textHeight(titleText, titleTextWidth)
 titleBoxHeight = 3 * titleTextHeight
 
+# Draw the title
 setStyle('black', 5, '#ff0000f0')
 rect((0.5 * drawingWidth) - (0.5 * titleBoxWidth), (0.5 * drawingHeight) - (0.5 * titleBoxHeight), titleBoxWidth, titleBoxHeight)
-
 setTextStyle(titleTextHeight, 'white')
 drawText('Happy Holidays!', 0.5 * drawingWidth, 0.5 * drawingHeight)
 ~~~
