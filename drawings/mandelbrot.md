@@ -60,28 +60,29 @@ function mandelbrotColor(n)
 endfunction
 
 
-pixelWidth = 300
-pixelHeight = 200
-pixelSize = 2
+pixelWidth = 150
+pixelHeight = 100
+pixelSize = 4
 
 drawingWidth = pixelWidth * pixelSize
 drawingHeight = pixelHeight * pixelSize
 
-mandelbrot_x_min = -0.75
-mandelbrot_x_max = 2
-mandelbrot_y_max = 1
-mandelbrot_size = (mandelbrot_x_max - mandelbrot_x_min) / pixelWidth
-mandelbrot_y_min = mandelbrot_y_max - (pixelHeight * mandelbrot_size)
+mandelbrot_x = 0.5
+mandelbrot_y = 0
+mandelbrot_x_range = 2.6
+mandelbrot_y_range = (pixelHeight / pixelWidth) * mandelbrot_x_range
+mandelbrot_x_min = mandelbrot_x - (0.5 * mandelbrot_x_range)
+mandelbrot_y_min = mandelbrot_y - (0.5 * mandelbrot_y_range)
 
-mandelbrot_iterations = 50
+mandelbrot_iterations = 60
 
 
 x = 0
 loop_x:
     y = 0
     loop_y:
-        n = mandelbrotSet(mandelbrot_x_min + ((x / (pixelWidth - 1)) * (mandelbrot_x_max - mandelbrot_x_min)), \
-                          mandelbrot_y_max - ((y / (pixelHeight - 1)) * (mandelbrot_y_max - mandelbrot_y_min)), \
+        n = mandelbrotSet(mandelbrot_x_min + ((x / (pixelWidth - 1)) * mandelbrot_x_range), \
+                          mandelbrot_y_min + ((y / (pixelHeight - 1)) * mandelbrot_y_range), \
                           mandelbrot_iterations)
         setStyle('none', 1, mandelbrotColor(n))
         rect(x * pixelSize, y * pixelSize, pixelSize, pixelSize)
