@@ -75,7 +75,7 @@ shapes(purpleBall, 15, 0.01)
 shapes(blueEllipse, 15, 0.015)
 
 # Measure the title box height
-titleText = if(message,message,'Happy Holidays!')
+titleText = if(message,message, 'Happy Holidays!')
 titleBoxWidth = 0.8 * drawingWidth
 titleTextWidth = 0.9 * titleBoxWidth
 titleTextHeight = min(textHeight(titleText, titleTextWidth), 0.2 * drawingHeight)
