@@ -60,24 +60,20 @@ function mandelbrotColor(n)
 endfunction
 
 
-pixelWidth = 400
-pixelHeight = 270
-pixelSize = 1.5
+pixelWidth = 300
+pixelHeight = 200
+pixelSize = 2
 
 drawingWidth = pixelWidth * pixelSize
 drawingHeight = pixelHeight * pixelSize
 
-mandelbrot_x_min = -1
-mandelbrot_y_max = 1
+mandelbrot_x_min = -0.75
 mandelbrot_x_max = 2
-
-mandelbrot_x_min = 0.765
-mandelbrot_x_max = 0.775
-mandelbrot_y_max = -0.11
-
+mandelbrot_y_max = 1
 mandelbrot_size = (mandelbrot_x_max - mandelbrot_x_min) / pixelWidth
 mandelbrot_y_min = mandelbrot_y_max - (pixelHeight * mandelbrot_size)
-mandelbrot_iterations = 120
+
+mandelbrot_iterations = 50
 
 
 x = 0
