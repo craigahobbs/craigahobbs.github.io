@@ -1,30 +1,55 @@
 # Mandelbrot Set Explorer
 
 ~~~ markdown-script
-// Image size
-pixelWidth = if(vWidth, vWidth, 150)
-pixelHeight = if(vHeight, vHeight, 100)
-pixelSize = if(vSize, vSize, 4)
+// Main entry point
+function main()
+    // Image size
+    pixelWidth = if(vWidth, vWidth, 150)
+    pixelHeight = if(vHeight, vHeight, 100)
+    pixelSize = if(vSize, vSize, 4)
 
-// Compute the drawing size
-setDrawingWidth(pixelWidth * pixelSize)
-setDrawingHeight(pixelHeight * pixelSize)
+    // Maximum Mandelbrot set computation iterations
+    mandelbrotIterations = if(vIter, vIter, 60)
 
-// Maximum Mandelbrot set computation iterations
-mandelbrotIterations = if(vIter, vIter, 60)
+    // Mandelbrot point extents
+    mandelbrotX = if(vX, vX, 0.5)
+    mandelbrotY = if(vY, vY, 0)
+    mandelbrotXRange = if(vXR, vXR, 2.6)
 
-// Mandelbrot point extents
-mandelbrotX = if(vX, vX, 0.5)
-mandelbrotY = if(vY, vY, 0)
-mandelbrotXRange = if(vXR, vXR, 2.6)
+    // Mandelbrot color cycle
+    mandelbrotCycle = if(vCycle, vCycle, 0) % 4
 
-// Additional Mandelbrot extent variables
-mandelbrotYRange = (pixelHeight / pixelWidth) * mandelbrotXRange
-mandelbrotXMin = mandelbrotX - (0.5 * mandelbrotXRange)
-mandelbrotYMin = mandelbrotY - (0.5 * mandelbrotYRange)
+    // Menu
+    menuXYDelta = 0.1 * mandelbrotXRange
+    menuIterDelta = 10
+    menuWHDelta = 20
+    markdownPrint( \
+        menuLinkPair('X', menuLink('Left', vWidth, vHeight, vSize, vIter, mandelbrotX - menuXYDelta, vY, vXR, vCycle), \
+            menuLink('Right', vWidth, vHeight, vSize, vIter, mandelbrotX + menuXYDelta, vY, vXR, vCycle)) + \
+            ': ' + mandelbrotX + '  ', \
+        menuLinkPair('Y', menuLink('Up', vWidth, vHeight, vSize, vIter, vX, mandelbrotY + menuXYDelta, vXR, vCycle), \
+            menuLink('Down', vWidth, vHeight, vSize, vIter, vX, mandelbrotY - menuXYDelta, vXR, vCycle)) + \
+            ': ' + mandelbrotY + '  ', \
+        menuLinkPair('Zoom', menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange - menuXYDelta, vCycle), \
+            menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange + menuXYDelta, vCycle)) + \
+            ': ' + mandelbrotXRange + '  ', \
+        menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, mandelbrotIterations + menuIterDelta, vX, vY, vXR, vCycle), \
+            menuLink('Down', vWidth, vHeight, vSize, max(20, mandelbrotIterations - menuIterDelta), vX, vY, vXR, vCycle)) + \
+            ': ' + mandelbrotIterations, \
+        '', \
+        menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, mandelbrotCycle + 1) + ' |', \
+        '[Reset](' + hashURL('#var=') + ') | ', \
+        menuLinkPair('Width', menuLink('Up', pixelWidth + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
+            menuLink('Down', max(menuWHDelta, pixelWidth - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+        menuLinkPair('Height', menuLink('Up', vWidth, pixelHeight + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
+            menuLink('Down', vWidth, max(menuWHDelta, pixelHeight - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+        menuLinkPair('Size', menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle), \
+            menuLink('Down', vWidth, vHeight, max(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
+    )
 
-// Mandelbrot color cycle
-mandelbrotCycle = if(vCycle, vCycle, 0) % 4
+    // Draw the Mandelbrot set
+    mandelbrotSet(pixelWidth, pixelHeight, pixelSize, mandelbrotCycle, mandelbrotX, mandelbrotY, mandelbrotXRange, mandelbrotIterations)
+endfunction
 
 
 // Menu URL helper function
@@ -40,41 +65,43 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
     '[' + text + '](' + hashURL('#' + right(args, len(args) - 1)) + ')'
 endfunction
 
+
+// Menu link pair helper function
 function menuLinkPair(text, link1, link2)
     '**' + text + '** (' + link1 + ' | ' + link2 + ')'
 endfunction
 
-// Menu
-menuXYDelta = 0.1 * mandelbrotXRange
-menuIterDelta = 10
-menuWHDelta = 20
-markdownPrint( \
-    menuLinkPair('X', menuLink('Left', vWidth, vHeight, vSize, vIter, mandelbrotX - menuXYDelta, vY, vXR, vCycle), \
-        menuLink('Right', vWidth, vHeight, vSize, vIter, mandelbrotX + menuXYDelta, vY, vXR, vCycle)) + \
-        ': ' + mandelbrotX + '  ', \
-    menuLinkPair('Y', menuLink('Up', vWidth, vHeight, vSize, vIter, vX, mandelbrotY + menuXYDelta, vXR, vCycle), \
-        menuLink('Down', vWidth, vHeight, vSize, vIter, vX, mandelbrotY - menuXYDelta, vXR, vCycle)) + \
-        ': ' + mandelbrotY + '  ', \
-    menuLinkPair('Zoom', menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange - menuXYDelta, vCycle), \
-        menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange + menuXYDelta, vCycle)) + \
-        ': ' + mandelbrotXRange + '  ', \
-    menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, mandelbrotIterations + menuIterDelta, vX, vY, vXR, vCycle), \
-        menuLink('Down', vWidth, vHeight, vSize, max(20, mandelbrotIterations - menuIterDelta), vX, vY, vXR, vCycle)) + \
-        ': ' + mandelbrotIterations + '  ', \
-    '', \
-    menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, mandelbrotCycle + 1) + ' |', \
-    '[Reset](' + hashURL('#var=') + ') | ', \
-    menuLinkPair('Width', menuLink('Up', pixelWidth + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
-        menuLink('Down', max(menuWHDelta, pixelWidth - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
-    menuLinkPair('Height', menuLink('Up', vWidth, pixelHeight + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
-        menuLink('Down', vWidth, max(menuWHDelta, pixelHeight - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
-    menuLinkPair('Size', menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle), \
-        menuLink('Down', vWidth, vHeight, max(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
-)
+
+// Render the Mandelbrot set
+function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
+    // Set the drawing size
+    setDrawingWidth(width * pixelSize)
+    setDrawingHeight(height * pixelSize)
+
+    // Compute the set extents
+    yRange = (height / width) * xRange
+    xMin = x - (0.5 * xRange)
+    yMin = y - (0.5 * yRange)
+
+    // Draw each pixel in the set
+    x = 0
+    loopX:
+        y = 0
+        loopY:
+            n = mandelbrotValue(xMin + ((x / (width - 1)) * xRange), yMin + ((y / (height - 1)) * yRange), iter)
+            drawStyle('none', 0, mandelbrotColor(n + colorCycle))
+            drawRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
+
+            y = y + 1
+        jumpif (y < height) loopY
+
+        x = x + 1
+    jumpif (x < width) loopX
+endfunction
 
 
 // Compute the number of iterations to determine in-out of Mandelbrot set
-function mandelbrotSet(x, y, maxIterations)
+function mandelbrotValue(x, y, maxIterations)
     // c1 = complex(x, y)
     // c2 = complex(0, 0)
     c1r = x
@@ -105,7 +132,7 @@ endfunction
 
 // Compute a color from a Mandelbrot set value
 function mandelbrotColor(n)
-    colorIndex = (n + mandelbrotCycle) % 4
+    colorIndex = (n) % 4
     if(n == 0, 'black', \
         if(colorIndex == 0, '#17becf', \
         if(colorIndex == 1, '#2ca02c', \
@@ -113,20 +140,6 @@ function mandelbrotColor(n)
 endfunction
 
 
-// Compute the color of each pixel and render it
-x = 0
-loopX:
-    y = 0
-    loopY:
-        n = mandelbrotSet(mandelbrotXMin + ((x / (pixelWidth - 1)) * mandelbrotXRange), \
-                          mandelbrotYMin + ((y / (pixelHeight - 1)) * mandelbrotYRange), \
-                          mandelbrotIterations)
-        drawStyle('none', 0, mandelbrotColor(n))
-        drawRect(x * pixelSize, (pixelHeight - y - 1) * pixelSize, pixelSize, pixelSize)
-
-        y = y + 1
-        jumpif (y < pixelHeight) loopY
-
-    x = x + 1
-    jumpif (x < pixelWidth) loopX
+// Execute main
+main()
 ~~~
