@@ -40,49 +40,36 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
     '[' + text + '](' + hashURL('#' + right(args, len(args) - 1)) + ')'
 endfunction
 
+function menuLinkPair(text, link1, link2)
+    '**' + text + '** (' + link1 + ' | ' + link2 + ')'
+endfunction
+
 // Menu
 menuXYDelta = 0.1 * mandelbrotXRange
 menuIterDelta = 10
 menuWHDelta = 20
 markdownPrint( \
-    '**X** (' + \
-        menuLink('Left', vWidth, vHeight, vSize, vIter, mandelbrotX - menuXYDelta, vY, vXR, vCycle) + \
-        ' | ' + \
-        menuLink('Right', vWidth, vHeight, vSize, vIter, mandelbrotX + menuXYDelta, vY, vXR, vCycle) + \
-        '): ' + mandelbrotX + '  ', \
-    '**Y** (' + \
-        menuLink('Up', vWidth, vHeight, vSize, vIter, vX, mandelbrotY + menuXYDelta, vXR, vCycle) + \
-        ' | ' + \
-        menuLink('Down', vWidth, vHeight, vSize, vIter, vX, mandelbrotY - menuXYDelta, vXR, vCycle) + \
+    menuLinkPair('X', menuLink('Left', vWidth, vHeight, vSize, vIter, mandelbrotX - menuXYDelta, vY, vXR, vCycle), \
+        menuLink('Right', vWidth, vHeight, vSize, vIter, mandelbrotX + menuXYDelta, vY, vXR, vCycle)) + \
+        ': ' + mandelbrotX + '  ', \
+    menuLinkPair('Y', menuLink('Up', vWidth, vHeight, vSize, vIter, vX, mandelbrotY + menuXYDelta, vXR, vCycle), \
+        menuLink('Down', vWidth, vHeight, vSize, vIter, vX, mandelbrotY - menuXYDelta, vXR, vCycle)) + \
         ': ' + mandelbrotY + '  ', \
-    '**Zoom** (' + \
-        menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange - menuXYDelta, vCycle) + \
-        ' | ' + \
-        menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange + menuXYDelta, vCycle) + \
-        '): ' + mandelbrotXRange + '  ', \
-    '**Iter** (' + \
-        menuLink('Up', vWidth, vHeight, vSize, mandelbrotIterations + menuIterDelta, vX, vY, vXR, vCycle) + \
-        ' | ' + \
-        menuLink('Down', vWidth, vHeight, vSize, max(20, mandelbrotIterations - menuIterDelta), vX, vY, vXR, vCycle) + \
-        '): ' + mandelbrotIterations + '  ', \
+    menuLinkPair('Zoom', menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange - menuXYDelta, vCycle), \
+        menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange + menuXYDelta, vCycle)) + \
+        ': ' + mandelbrotXRange + '  ', \
+    menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, mandelbrotIterations + menuIterDelta, vX, vY, vXR, vCycle), \
+        menuLink('Down', vWidth, vHeight, vSize, max(20, mandelbrotIterations - menuIterDelta), vX, vY, vXR, vCycle)) + \
+        ': ' + mandelbrotIterations + '  ', \
     '', \
     menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, mandelbrotCycle + 1) + ' |', \
     '[Reset](' + hashURL('#var=') + ') | ', \
-    '**Width** (' + \
-        menuLink('Up', pixelWidth + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
-        ' | ' + \
-        menuLink('Down', max(menuWHDelta, pixelWidth - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
-        ' ) |', \
-    '**Height** (' + \
-        menuLink('Up', vWidth, pixelHeight + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
-        ' | ' + \
-        menuLink('Down', vWidth, max(menuWHDelta, pixelHeight - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle), \
-        ' ) |', \
-    '**Size** (' + \
-        menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle) + \
-        ' | ' + \
-        menuLink('Down', vWidth, vHeight, max(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle) + \
-        ' )' \
+    menuLinkPair('Width', menuLink('Up', pixelWidth + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
+        menuLink('Down', max(menuWHDelta, pixelWidth - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+    menuLinkPair('Height', menuLink('Up', vWidth, pixelHeight + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
+        menuLink('Down', vWidth, max(menuWHDelta, pixelHeight - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+    menuLinkPair('Size', menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle), \
+        menuLink('Down', vWidth, vHeight, max(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
 )
 
 
