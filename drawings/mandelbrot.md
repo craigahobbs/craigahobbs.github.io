@@ -89,7 +89,7 @@ function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
         y = 0
         loopY:
             n = mandelbrotValue(xMin + ((x / (width - 1)) * xRange), yMin + ((y / (height - 1)) * yRange), iter)
-            drawStyle('none', 0, mandelbrotColor(n + colorCycle))
+            drawStyle('none', 0, mandelbrotColor(if(n, n + colorCycle, 0)))
             drawRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
 
             y = y + 1
