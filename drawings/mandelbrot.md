@@ -4,51 +4,51 @@
 // Main entry point
 function main()
     // Image size
-    pixelWidth = if(vWidth, vWidth, 150)
-    pixelHeight = if(vHeight, vHeight, 100)
+    width = if(vWidth, vWidth, 150)
+    height = if(vHeight, vHeight, 100)
     pixelSize = if(vSize, vSize, 4)
 
     // Maximum Mandelbrot set computation iterations
-    mandelbrotIterations = if(vIter, vIter, 60)
+    iter = if(vIter, vIter, 60)
 
     // Mandelbrot point extents
-    mandelbrotX = if(vX, vX, 0.5)
-    mandelbrotY = if(vY, vY, 0)
-    mandelbrotXRange = if(vXR, vXR, 2.6)
+    x = if(vX, vX, 0.5)
+    y = if(vY, vY, 0)
+    xRange = if(vXR, vXR, 2.6)
 
     // Mandelbrot color cycle
-    mandelbrotCycle = if(vCycle, vCycle, 0) % 4
+    cycle = if(vCycle, vCycle, 0) % 4
 
     // Menu
-    menuXYDelta = 0.1 * mandelbrotXRange
+    menuXYDelta = 0.1 * xRange
     menuIterDelta = 10
     menuWHDelta = 20
     markdownPrint( \
-        menuLinkPair('X', menuLink('Left', vWidth, vHeight, vSize, vIter, mandelbrotX - menuXYDelta, vY, vXR, vCycle), \
-            menuLink('Right', vWidth, vHeight, vSize, vIter, mandelbrotX + menuXYDelta, vY, vXR, vCycle)) + \
-            ': ' + mandelbrotX + '  ', \
-        menuLinkPair('Y', menuLink('Up', vWidth, vHeight, vSize, vIter, vX, mandelbrotY + menuXYDelta, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, vSize, vIter, vX, mandelbrotY - menuXYDelta, vXR, vCycle)) + \
-            ': ' + mandelbrotY + '  ', \
-        menuLinkPair('Zoom', menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange - menuXYDelta, vCycle), \
-            menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, mandelbrotXRange + menuXYDelta, vCycle)) + \
-            ': ' + mandelbrotXRange + '  ', \
-        menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, mandelbrotIterations + menuIterDelta, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, vSize, max(20, mandelbrotIterations - menuIterDelta), vX, vY, vXR, vCycle)) + \
-            ': ' + mandelbrotIterations, \
+        menuLinkPair('X', menuLink('Left', vWidth, vHeight, vSize, vIter, x - menuXYDelta, vY, vXR, vCycle), \
+            menuLink('Right', vWidth, vHeight, vSize, vIter, x + menuXYDelta, vY, vXR, vCycle)) + \
+            ': ' + x + '  ', \
+        menuLinkPair('Y', menuLink('Up', vWidth, vHeight, vSize, vIter, vX, y + menuXYDelta, vXR, vCycle), \
+            menuLink('Down', vWidth, vHeight, vSize, vIter, vX, y - menuXYDelta, vXR, vCycle)) + \
+            ': ' + y + '  ', \
+        menuLinkPair('Zoom', menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, xRange - menuXYDelta, vCycle), \
+            menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, xRange + menuXYDelta, vCycle)) + \
+            ': ' + xRange + '  ', \
+        menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, iter + menuIterDelta, vX, vY, vXR, vCycle), \
+            menuLink('Down', vWidth, vHeight, vSize, max(20, iter - menuIterDelta), vX, vY, vXR, vCycle)) + \
+            ': ' + iter, \
         '', \
-        menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, mandelbrotCycle + 1) + ' |', \
+        menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, cycle + 1) + ' |', \
         '[Reset](' + hashURL('#var=') + ') | ', \
-        menuLinkPair('Width', menuLink('Up', pixelWidth + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', max(menuWHDelta, pixelWidth - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
-        menuLinkPair('Height', menuLink('Up', vWidth, pixelHeight + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, max(menuWHDelta, pixelHeight - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+        menuLinkPair('Width', menuLink('Up', width + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
+            menuLink('Down', max(menuWHDelta, width - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+        menuLinkPair('Height', menuLink('Up', vWidth, height + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
+            menuLink('Down', vWidth, max(menuWHDelta, height - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
         menuLinkPair('Size', menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle), \
             menuLink('Down', vWidth, vHeight, max(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
     )
 
     // Draw the Mandelbrot set
-    mandelbrotSet(pixelWidth, pixelHeight, pixelSize, mandelbrotCycle, mandelbrotX, mandelbrotY, mandelbrotXRange, mandelbrotIterations)
+    mandelbrotSet(width, height, pixelSize, cycle, x, y, xRange, iter)
 endfunction
 
 
