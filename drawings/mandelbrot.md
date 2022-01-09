@@ -89,7 +89,8 @@ function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
         y = 0
         loopY:
             n = mandelbrotValue(xMin + ((x / (width - 1)) * xRange), yMin + ((y / (height - 1)) * yRange), iter)
-            drawStyle('none', 0, mandelbrotColor(if(n, n + colorCycle, 0)))
+            color = if(n == 0, 'black', if((n % 4) == 0, '#17becf', if((n % 4) == 1, '#2ca02c', if((n % 4) == 2, '#98df8a', '#1f77b4'))))
+            drawStyle('none', 0, color)
             drawRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
 
             y = y + 1
@@ -127,16 +128,6 @@ function mandelbrotValue(x, y, maxIterations)
     n = 0
 
     loopDone:
-endfunction
-
-
-// Compute a color from a Mandelbrot set value
-function mandelbrotColor(n)
-    colorIndex = (n) % 4
-    if(n == 0, 'black', \
-        if(colorIndex == 0, '#17becf', \
-        if(colorIndex == 1, '#2ca02c', \
-        if(colorIndex == 2, '#98df8a', '#1f77b4'))))
 endfunction
 
 
