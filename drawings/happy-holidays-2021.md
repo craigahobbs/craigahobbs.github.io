@@ -1,15 +1,16 @@
+# Happy Holidays 2021
+
 ~~~ markdown-script
 // Print?
 jumpif (vPrint) skipMenu
 
 // Menu
 markdownPrint( \
-    '# Happy Holidays 2021', \
-    '', \
+    '[Reset](' + hashURL('#var=') + ') |', \
     '[Small](' + hashURL('#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + vMessage + "'", '')) + ') |', \
     '[Medium](' + hashURL('#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + vMessage + "'", '')) + ') |', \
     '[Large](' + hashURL('#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + vMessage + "'", '')) + ') |', \
-    '[Custom Message](' + hashURL("#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight)) + ') |', \
+    '[Custom Message](' + hashURL("#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '')) + ') |', \
     '[Print](' + hashURL("#var.vPrint=1" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
         if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '')) + ')' \
 )
