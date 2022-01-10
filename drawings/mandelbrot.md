@@ -62,13 +62,13 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
         if(y, '&var.vY=' + y, '') + \
         if(xr, '&var.vXR=' + xr, '') + \
         if(vc, '&var.vCycle=' + vc, '')
-    '[' + text + '](' + hashURL('#' + right(args, len(args) - 1)) + ')'
+    return '[' + text + '](' + hashURL('#' + right(args, len(args) - 1)) + ')'
 endfunction
 
 
 // Menu link pair helper function
 function menuLinkPair(text, link1, link2)
-    '**' + text + '** (' + link1 + ' | ' + link2 + ')'
+    return '**' + text + '** (' + link1 + ' | ' + link2 + ')'
 endfunction
 
 
@@ -126,9 +126,10 @@ function mandelbrotValue(x, y, maxIterations)
         jumpif (n <= maxIterations) loop
 
     // Hit max iterations - the point is in the Mandelbrot set
-    n = 0
+    return 0
 
     loopDone:
+    return n
 endfunction
 
 
