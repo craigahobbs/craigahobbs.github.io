@@ -62,7 +62,7 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
         if(y, '&var.vY=' + y, '') + \
         if(xr, '&var.vXR=' + xr, '') + \
         if(vc, '&var.vCycle=' + vc, '')
-    return '[' + text + '](' + hashURL('#' + right(args, len(args) - 1)) + ')'
+    return '[' + text + '](' + hashURL('#' + slice(args, 1)) + ')'
 endfunction
 
 
