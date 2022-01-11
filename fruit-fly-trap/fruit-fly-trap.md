@@ -220,11 +220,7 @@ function fruitFlyTrapDiagram(width, height)
 
     // Liquid
     drawStyle('none', 0, '#cc99ff80')
-    drawMove(glassLeft, glassBottom - liquidHeight)
-    drawVLine(glassBottom)
-    drawHLine(glassRight)
-    drawVLine(glassBottom - liquidHeight)
-    drawClose()
+    drawRect(glassLeft, glassBottom - liquidHeight, glassRight - glassLeft, liquidHeight)
 
     // Glass
     drawStyle('black', glassLineWidth)
