@@ -5,13 +5,18 @@
 // https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 function main()
+    // Application inputs
     isMetric = if(vMetric, vMetric, 0)
-    units = if(isMetric, 'cm', 'in')
-    delta = if(isMetric, 0.1, 0.125)
     height = if(vHeight, vHeight, if(isMetric, 11.5, 4.5))
     diameter = if(vDiameter, vDiameter, if(isMetric, 7.5, 3))
     bottom = if(vBottom, vBottom, if(isMetric, 2, 0.75))
     offset = if(vOffset, vOffset, if(isMetric, 2.5, 1))
+
+    // Computed values
+    units = if(isMetric, 'cm', 'in')
+    delta = if(isMetric, 0.1, 0.125)
+    flapLength = if(isMetric, 0.5, 0.2)
+    coneHeight = height - offset
 
     jumpif (vPrint > 0) skipInstructions
 
@@ -38,17 +43,25 @@ function main()
         '   trap cone, allowing enough room for the liquid and space for the fruit flies to get into the', \
         '   trap. Use the "Less" and "More" links below to enter the measurements.', \
         '', \
-        '    **Inside diameter (d)** (' + coneLink('Less', 0, diameter - delta) + ' | ' + \
-            coneLink('More', 0, diameter + delta) + '): ' + diameter + ' ' + units, \
+        '    **Inside diameter (d)** (' + \
+            if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), coneLink('Less', 0, diameter - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), coneLink('More', 0, diameter + delta), 'More') + \
+            '): ' + diameter + ' ' + units, \
         '', \
-        '    **Height (h)** (' + coneLink('Less', height - delta) + ' | ' + \
-            coneLink('More', height + delta) + '): ' + height + ' ' + units, \
+        '    **Height (h)** (' + \
+            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), coneLink('Less', height - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), coneLink('More', height + delta), 'More') + \
+            '): ' + height + ' ' + units, \
         '', \
-        '    **Bottom offset (o)** (' + coneLink('Less', 0, 0, 0, offset - delta) + ' | ' + \
-            coneLink('More', 0, 0, 0, offset + delta) + '): ' + offset + ' ' + units, \
+        '    **Bottom offset (o)** (' + \
+            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), coneLink('Less', 0, 0, 0, offset - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), coneLink('More', 0, 0, 0, offset + delta), 'More') + \
+            '): ' + offset + ' ' + units, \
         '', \
-        '    **Bottom diameter (b)** (' + coneLink('Less', 0, 0, bottom - delta) + ' | ' + \
-            coneLink('More', 0, 0, bottom + delta) + '): ' + bottom + ' ' + units, \
+        '    **Bottom diameter (b)** (' + \
+            if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), coneLink('Less', 0, 0, bottom - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), coneLink('More', 0, 0, bottom + delta), 'More') + \
+            '): ' + bottom + ' ' + units, \
         '', \
         '    Click here to [use ' + if(vMetric, 'imperial', 'metric') + ' units](' + if(vMetric, '#var=', '#var.vMetric=1') + ').', \
         '', \
@@ -84,8 +97,8 @@ function main()
     coneForm( \
         diameter * pixelsPerUnit, \
         bottom * pixelsPerUnit, \
-        (height - offset) * pixelsPerUnit, \
-        if(isMetric, 0.5, 0.2) * pixelsPerUnit, \
+        coneHeight * pixelsPerUnit, \
+        flapLength * pixelsPerUnit, \
         1, \
         if(offset > 0, if(isMetric, 1.25, 0.5), 0) * pixelsPerUnit \
     )
@@ -95,10 +108,10 @@ endfunction
 
 
 function coneLink(text, height, diameter, bottom, offset, print, anchor)
-    height = if(height, height, vHeight)
-    diameter = if(diameter, diameter, vDiameter)
-    bottom = if(bottom, bottom, vBottom)
-    offset = if(offset, offset, vOffset)
+    height = if(height > 0, height, vHeight)
+    diameter = if(diameter > 0, diameter, vDiameter)
+    bottom = if(bottom > 0, bottom, vBottom)
+    offset = if(offset > 0, offset, vOffset)
     args = if(print, '&var.vPrint=1', '') + \
         if(vMetric, '&var.vMetric=1', '') + \
         if(height, '&var.vHeight=' + round(height, 3), '') + \
@@ -107,6 +120,14 @@ function coneLink(text, height, diameter, bottom, offset, print, anchor)
         if(offset, '&var.vOffset=' + round(offset, 3), '')
     args = if(len(args), slice(args, 1), 'var=') + if(anchor, '&' + anchor, '')
     return '[' + text + '](#' + args + ')'
+endfunction
+
+
+function isValidConeForm(diameterTop, diameterBottom, height, flapLength)
+    formRadius = (height * diameterBottom) / (diameterTop - diameterBottom)
+    formTheta = pi() * (diameterBottom / formRadius)
+    flapTheta = formTheta + (flapLength / formRadius)
+    return (diameterBottom < (0.9 * diameterTop)) && (flapTheta < (0.9 * (2 * pi())))
 endfunction
 
 
