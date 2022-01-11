@@ -42,6 +42,10 @@
 
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
 
+[Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
+
+[Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
+
 [Solar Dashboard](https://craigahobbs.github.io/solar/)
 
 [Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
