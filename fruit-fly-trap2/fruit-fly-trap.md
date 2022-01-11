@@ -96,9 +96,9 @@ function coneLink(text, height, diameter, bottom, offset, print, anchor)
         if(height, '&var.vHeight=' + round(height, 3), '') + \
         if(diameter, '&var.vDiameter=' + round(diameter, 3), '') + \
         if(bottom, '&var.vBottom=' + round(bottom, 3), '') + \
-        if(offset, '&var.vOffset=' + round(offset, 3), '') + \
-        if(anchor, '&' + anchor, '')
-    return '[' + text + '](#' + slice(args, 1) + ')'
+        if(offset, '&var.vOffset=' + round(offset, 3), '')
+    args = if(len(args), slice(args, 1), 'var=') + if(anchor, '&' + anchor, '')
+    return '[' + text + '](#' + args + ')'
 endfunction
 
 
