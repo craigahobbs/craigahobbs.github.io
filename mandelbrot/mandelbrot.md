@@ -1,7 +1,9 @@
 # Mandelbrot Set Explorer
 
 ~~~ markdown-script
-// Main entry point
+// Licensed under the MIT License
+// https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
 function main()
     // Image size
     width = if(vWidth, vWidth, 150)
@@ -52,7 +54,6 @@ function main()
 endfunction
 
 
-// Menu URL helper function
 function menuLink(text, w, h, s, i, x, y, xr, vc)
     args = if(w, '&var.vWidth=' + w, '') + \
         if(h, '&var.vHeight=' + h, '') + \
@@ -66,13 +67,11 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
 endfunction
 
 
-// Menu link pair helper function
 function menuLinkPair(text, link1, link2)
     return '**' + text + '** (' + link1 + ' | ' + link2 + ')'
 endfunction
 
 
-// Render the Mandelbrot set
 function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
     // Set the drawing size
     setDrawingWidth(width * pixelSize)
@@ -102,7 +101,6 @@ function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
 endfunction
 
 
-// Compute the number of iterations to determine in-out of Mandelbrot set
 function mandelbrotValue(x, y, maxIterations)
     // c1 = complex(x, y)
     // c2 = complex(0, 0)

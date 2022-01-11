@@ -1,6 +1,9 @@
 # The Fruit Fly Trap Maker
 
 ~~~ markdown-script
+// Licensed under the MIT License
+// https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
 function main()
     isMetric = if(vMetric, vMetric, 0)
     units = if(isMetric, 'cm', 'in')
@@ -35,13 +38,17 @@ function main()
         '   trap cone, allowing enough room for the liquid and space for the fruit flies to get into the', \
         '   trap. Use the "Less" and "More" links below to enter the measurements.', \
         '', \
-        '    **Inside diameter (d)** (' + coneLink('Less', 0, diameter - delta) + ' | ' + coneLink('More', 0, diameter + delta) + '): ' + diameter + ' ' + units, \
+        '    **Inside diameter (d)** (' + coneLink('Less', 0, diameter - delta) + ' | ' + \
+            coneLink('More', 0, diameter + delta) + '): ' + diameter + ' ' + units, \
         '', \
-        '    **Height (h)** (' + coneLink('Less', height - delta) + ' | ' + coneLink('More', height + delta) + '): ' + height + ' ' + units, \
+        '    **Height (h)** (' + coneLink('Less', height - delta) + ' | ' + \
+            coneLink('More', height + delta) + '): ' + height + ' ' + units, \
         '', \
-        '    **Bottom offset (o)** (' + coneLink('Less', 0, 0, 0, offset - delta) + ' | ' + coneLink('More', 0, 0, 0, offset + delta) + '): ' + offset + ' ' + units, \
+        '    **Bottom offset (o)** (' + coneLink('Less', 0, 0, 0, offset - delta) + ' | ' + \
+            coneLink('More', 0, 0, 0, offset + delta) + '): ' + offset + ' ' + units, \
         '', \
-        '    **Bottom diameter (b)** (' + coneLink('Less', 0, 0, bottom - delta) + ' | ' + coneLink('More', 0, 0, bottom + delta) + '): ' + bottom + ' ' + units, \
+        '    **Bottom diameter (b)** (' + coneLink('Less', 0, 0, bottom - delta) + ' | ' + \
+            coneLink('More', 0, 0, bottom + delta) + '): ' + bottom + ' ' + units, \
         '', \
         '    Click here to [use ' + if(vMetric, 'imperial', 'metric') + ' units](' + if(vMetric, '#var=', '#var.vMetric=1') + ').', \
         '', \
@@ -63,8 +70,8 @@ function main()
         '6. Set the trap near where you have fruit flies.' \
     )
 
+    jump skipConeForm
     skipInstructions:
-    jumpif (vPrint <= 0) skipConeForm
 
     // Print close link
     markdownPrint('', coneLink('Close', 0, 0, 0, 0, 0, 'the-fruit-fly-trap-maker'))
@@ -82,6 +89,7 @@ function main()
         1, \
         if(offset > 0, if(isMetric, 1.25, 0.5), 0) * pixelsPerUnit \
     )
+
     skipConeForm:
 endfunction
 
@@ -122,33 +130,33 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     flapOuterY = formRadiusOuter * cos(flapTheta)
 
     jumpif (flapTheta > (0.5 * pi())) formMinMax1
-    formMinX = 0
-    formMinY = flapInnerY
-    formMaxX = flapOuterX
-    formMaxY = formRadiusOuter
-    jump formMinMaxDone
+        formMinX = 0
+        formMinY = flapInnerY
+        formMaxX = flapOuterX
+        formMaxY = formRadiusOuter
+        jump formMinMaxDone
 
     formMinMax1:
     jumpif (flapTheta > pi()) formMinMax2
-    formMinX = 0
-    formMinY = flapOuterY
-    formMaxX = formRadiusOuter
-    formMaxY = formRadiusOuter
-    jump formMinMaxDone
+        formMinX = 0
+        formMinY = flapOuterY
+        formMaxX = formRadiusOuter
+        formMaxY = formRadiusOuter
+        jump formMinMaxDone
 
     formMinMax2:
     jumpif (flapTheta > (1.5 * pi())) formMinMax3
-    formMinX = flapOuterX
-    formMinY = -formRadiusOuter
-    formMaxX = formRadiusOuter
-    formMaxY = formRadiusOuter
-    jump formMinMaxDone
+        formMinX = flapOuterX
+        formMinY = -formRadiusOuter
+        formMaxX = formRadiusOuter
+        formMaxY = formRadiusOuter
+        jump formMinMaxDone
 
     formMinMax3:
-    formMinX = -formRadiusOuter
-    formMinY = -formRadiusOuter
-    formMaxX = formRadiusOuter
-    formMaxY = formRadiusOuter
+        formMinX = -formRadiusOuter
+        formMinY = -formRadiusOuter
+        formMaxX = formRadiusOuter
+        formMaxY = formRadiusOuter
     formMinMaxDone:
 
     // Expand the form bounding box by one line width (to accomodate lines)
