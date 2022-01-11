@@ -38,7 +38,7 @@ function main()
             ': ' + iter, \
         '', \
         menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, cycle + 1) + ' |', \
-        '[Reset](' + hashURL('#var=') + ') | ', \
+        '[Reset](#var=) | ', \
         menuLinkPair('Width', menuLink('Up', width + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
             menuLink('Down', max(menuWHDelta, width - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
         menuLinkPair('Height', menuLink('Up', vWidth, height + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
@@ -62,7 +62,7 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
         if(y, '&var.vY=' + y, '') + \
         if(xr, '&var.vXR=' + xr, '') + \
         if(vc, '&var.vCycle=' + vc, '')
-    return '[' + text + '](' + hashURL('#' + slice(args, 1)) + ')'
+    return '[' + text + '](#' + slice(args, 1) + ')'
 endfunction
 
 

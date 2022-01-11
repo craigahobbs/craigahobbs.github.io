@@ -1,4 +1,4 @@
-# Happy Holidays 2021
+# Happy Holidays
 
 ~~~ markdown-script
 // Print?
@@ -6,13 +6,13 @@ jumpif (vPrint) skipMenu
 
 // Menu
 markdownPrint( \
-    '[Reset](' + hashURL('#var=') + ') |', \
-    '[Small](' + hashURL('#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + vMessage + "'", '')) + ') |', \
-    '[Medium](' + hashURL('#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + vMessage + "'", '')) + ') |', \
-    '[Large](' + hashURL('#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + vMessage + "'", '')) + ') |', \
-    '[Custom Message](' + hashURL("#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '')) + ') |', \
-    '[Print](' + hashURL("#var.vPrint=1" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
-        if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '')) + ')' \
+    '[Reset](#var=) |', \
+    '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + vMessage + "'", '') + ') |', \
+    '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + vMessage + "'", '') + ') |', \
+    '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + vMessage + "'", '') + ') |', \
+    "[Custom Message](#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + ') |', \
+    '[Print](#var.vPrint=1' + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
+        if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
 )
 
 skipMenu:
@@ -26,9 +26,9 @@ function shapes(shapeFn, count, sizeRatio)
     ix = 0
     loop:
         size = sizeRatio * (1 + (2 * rand())) * if(getDrawingWidth() < getDrawingHeight(), getDrawingWidth(), getDrawingHeight())
-        minX = 0
+        minX = size
         maxX = getDrawingWidth() - size
-        minY = 0
+        minY = size
         maxY = getDrawingHeight() - size
         x = minX + (rand() * (maxX - minX))
         y = minY + (rand() * (maxY - minY))
@@ -40,9 +40,9 @@ endfunction
 function skinnyStar(x, y, size)
     drawStyle('gray')
     drawMove(x + (0.5 * size), y)
-    drawVline(y + size)
+    drawVLine(y + size)
     drawMove(x + (0.35 * size), y + (0.5 * size))
-    drawHline(x + (0.65 * size))
+    drawHLine(x + (0.65 * size))
 endfunction
 
 function chubbyStar(x, y, size)
