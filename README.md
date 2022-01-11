@@ -36,9 +36,22 @@
 [markdown-up](https://github.com/craigahobbs/markdown-up#readme)
 
 
+#### markdown-up applications
+
+[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
+
+[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
+
+[Solar Dashboard](https://craigahobbs.github.io/solar/)
+
+[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
+
+
 ### Markdown Book
 
 [Markdown Book](https://github.com/craigahobbs/markdown-book-app#readme)
+
+[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
 
 ### Build / Development Experience
@@ -67,13 +80,3 @@
 ### Miscellaneous
 
 [Conway's Game of Life](https://craigahobbs.github.io/life-app/)
-
-[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
-
-[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
-
-[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
-
-[Solar Dashboard](https://craigahobbs.github.io/solar/)
-
-[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
