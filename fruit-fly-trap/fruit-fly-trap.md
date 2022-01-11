@@ -16,6 +16,7 @@ function main()
     units = if(isMetric, 'cm', 'in')
     delta = if(isMetric, 0.1, 0.125)
     flapLength = if(isMetric, 0.5, 0.2)
+    coneExtraLength = if(isMetric, 1.25, 0.5)
     coneHeight = height - offset
 
     jumpif (vPrint > 0) skipInstructions
@@ -94,14 +95,8 @@ function main()
     pointsPerCm = 28.3464567
     pointsPerInch = 72
     pixelsPerUnit = if(isMetric, pointsPerCm, pointsPerInch) * pixelsPerPoint
-    coneForm( \
-        diameter * pixelsPerUnit, \
-        bottom * pixelsPerUnit, \
-        coneHeight * pixelsPerUnit, \
-        flapLength * pixelsPerUnit, \
-        1, \
-        if(offset > 0, if(isMetric, 1.25, 0.5), 0) * pixelsPerUnit \
-    )
+    coneForm(diameter * pixelsPerUnit, bottom * pixelsPerUnit, coneHeight * pixelsPerUnit, \
+        flapLength * pixelsPerUnit, 1, coneExtraLength * pixelsPerUnit)
 
     skipConeForm:
 endfunction
