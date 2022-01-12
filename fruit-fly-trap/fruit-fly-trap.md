@@ -33,7 +33,7 @@ function main()
     )
 
     // Fruit-fly trap diagram
-    fruitFlyTrapDiagram(220, 200)
+    fruitFlyTrapDiagram()
 
     // Instructions
     markdownPrint( \
@@ -203,19 +203,22 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
 endfunction
 
 
-function fruitFlyTrapDiagram(width, height)
-    imageMargin = 12
+function fruitFlyTrapDiagram()
+    annotationTextSize = getTextHeight()
+    width = 16 * annotationTextSize
+    height = 14  * annotationTextSize
+
+    imageMargin = ceil(0.7 * annotationTextSize)
     lineWidth = 1
     glassLineWidth = 5 * lineWidth
-    annotationWidth = 20
+    annotationWidth = ceil(1.2 * annotationTextSize)
     annotationBarWidth = 0.5 * annotationWidth
     annotationTextHeight = 1.2 * annotationWidth
-    annotationTextSize = 0.7 * annotationWidth
     airHeight = annotationWidth
     liquidHeight = 1.5 * airHeight
 
     // Glass position
-    glassTop = 0.25 * height
+    glassTop = 0.2 * height
     glassLeft = imageMargin + annotationWidth + (0.5 * glassLineWidth)
     glassLeftRight = glassLeft + 0.5 * glassLineWidth
     glassBottom = (height - imageMargin) - (0.5 * glassLineWidth)
