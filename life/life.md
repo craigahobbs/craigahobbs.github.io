@@ -157,11 +157,11 @@ function lifeDecode(lifeStr, initRatio, borderRatio)
     parts = arraySplit(lifeStr, '-')
     width = value(arrayGet(parts, 0))
     height = value(arrayGet(parts, 1))
-    cellsStr = if(arrayGet(parts, 2),arrayGet(parts, 2),'')
+    cellsStr = arrayGet(parts, 2)
     life = lifeNew(width, height)
 
     // Init on empty cells string
-    jumpif (cellsStr != '') skipInit
+    jumpif (cellsStr) skipInit
     return lifeInit(life, initRatio, borderRatio)
     skipInit:
 
