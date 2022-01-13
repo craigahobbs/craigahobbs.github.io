@@ -78,7 +78,6 @@ function lifeInit(life, initRatio, borderRatio)
         jumpif (ix < width) xLoop
     iy = iy + 1
     jumpif (iy < height) yLoop
-
     return life
 endfunction
 
