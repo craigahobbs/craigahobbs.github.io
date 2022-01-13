@@ -197,7 +197,7 @@ function drawLife(life, size, gap, color, background)
     setDrawingWidth((width * (gap + size)) + gap)
     setDrawingHeight((height * (gap + size)) + gap)
 
-    drawStyle('black', 2, background)
+    drawStyle('none', 0, background)
     drawRect(0, 0, getDrawingWidth(), getDrawingHeight())
 
     drawStyle('none', 0, color)
