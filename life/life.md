@@ -19,16 +19,18 @@ function main()
         lifeInit(life, init, border)
     jump lifeInitDone
     lifeInitDecode:
-        life = lifeDecode(vLife, init, border)
+        life = lifeDecode(vLife)
     lifeInitDone:
 
-    next = lifeNext(life)
-
-    resetLife = arrayGet(life, 'width') + '-' + arrayGet(life, 'height')
+    // Menu
+    nextLife = lifeNext(life)
+    resetLife = lifeInit(lifeCopy(life), init, border)
     markdownPrint( \
-        "[Next](#var.vLife='" + lifeEncode(next) + "') |", \
-        "[Reset](#var.vLife='" + resetLife + if(resetLife == vLife, '-', '') + "')" \
+        "[Next](#var.vLife='" + lifeEncode(nextLife) + "') |", \
+        "[Reset](#var.vLife='" + lifeEncode(resetLife) + "')" \
     )
+
+    // Life board
     drawLife(life, size, gap, color, background)
 endfunction
 
@@ -153,17 +155,12 @@ function lifeEncode(life)
 endfunction
 
 
-function lifeDecode(lifeStr, initRatio, borderRatio)
+function lifeDecode(lifeStr)
     parts = arraySplit(lifeStr, '-')
     width = value(arrayGet(parts, 0))
     height = value(arrayGet(parts, 1))
     cellsStr = arrayGet(parts, 2)
     life = lifeNew(width, height)
-
-    // Init on empty cells string
-    jumpif (cellsStr) skipInit
-    return lifeInit(life, initRatio, borderRatio)
-    skipInit:
 
     // Decode the cell string
     cells = objectGet(life, 'cells')
