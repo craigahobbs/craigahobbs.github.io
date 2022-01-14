@@ -38,6 +38,8 @@
 
 #### markdown-up applications
 
+[Conway's Game of Life](https://craigahobbs.github.io/life/)
+
 [Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
 
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
@@ -79,8 +81,3 @@
 [template-specialize](https://github.com/craigahobbs/template-specialize#readme)
 
 [unittest-parallel](https://github.com/craigahobbs/unittest-parallel#readme)
-
-
-### Miscellaneous
-
-[Conway's Game of Life](https://craigahobbs.github.io/life-app/)
