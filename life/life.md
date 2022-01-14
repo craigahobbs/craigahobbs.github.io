@@ -6,6 +6,7 @@
 
 function main()
     // Application inputs
+    play = if(vPlay, vPlay, 0)
     size = if(vSize, vSize, 8)
     gap = if(vGap, vGap, 1)
     color = if(vColor, vColor, 'forestgreen')
@@ -26,12 +27,42 @@ function main()
     nextLife = lifeNext(life)
     resetLife = lifeInit(lifeCopy(life), init, border)
     markdownPrint( \
-        "[Next](#var.vLife='" + lifeEncode(nextLife) + "') |", \
-        "[Reset](#var.vLife='" + lifeEncode(resetLife) + "')" \
+        if(play, lifeLink('Pause', life, 0), lifeLink('Play', nextLife, 1)), \
+        if(play, '', lifeLink('Step', nextLife, 0), ''), \
+        if(play, '', '| ' + lifeLink('Random', resetLife, 0)) \
     )
 
     // Life board
     drawLife(life, size, gap, color, background)
+
+    // Play?
+    jumpif (!play) skipPlay
+    setNavigateTimeout(lifeURL(nextLife, 1), 200)
+    skipPlay:
+endfunction
+
+
+function lifeURL(life, play, size, gap, color, bkgnd, init, border)
+    size = if(size, size, vSize)
+    gap = if(gap, gap, vGap)
+    color = if(color, color, vColor)
+    bkgnd = if(bkgnd, bkgnd, vBackground)
+    init = if(init, init, vInit)
+    border = if(border, border, vBorder)
+    args = if(play, '&var.vPlay=1', '') + \
+        if(size, '&var.vSize=' + size, '') + \
+        if(gap, '&var.vGap=' + gap, '') + \
+        if(color, '&var.vColor=' + color, '') + \
+        if(bkgnd, '&var.vBackground=' + bkgnd, '') + \
+        if(init, '&var.vInit=' + init, '') + \
+        if(border, '&var.vBorder=' + border, '') + \
+        if(life, "&var.vLife='" + lifeEncode(life) + "'", '')
+    return '#' + slice(args, 1)
+endfunction
+
+
+function lifeLink(text, life, play, size, gap, color, bkgnd, init, border)
+    return '[' + text + '](' + lifeURL(life, play, size, gap, color, bkgnd, init, border) + ')'
 endfunction
 
 
@@ -70,10 +101,9 @@ function lifeInit(life, initRatio, borderRatio)
     yLoop:
         ix = 0
         xLoop:
-            jumpif ((ix < border) || (ix >= (width - border))) skipSet
-            jumpif ((iy < border) || (iy >= (height - border))) skipSet
-            lifeSet(life, ix, iy, rand() < initRatio)
-            skipSet:
+            alive = if((ix < border) || (ix >= (width - border)), 0, \
+                if((iy < border) || (iy >= (height - border)), 0, rand() < initRatio))
+            lifeSet(life, ix, iy, alive)
         ix = ix + 1
         jumpif (ix < width) xLoop
     iy = iy + 1
@@ -207,9 +237,9 @@ function drawLife(life, size, gap, color, background)
             jumpif (!lifeGet(life, ix, iy)) skipCell
             drawRect(gap + (ix * (gap + size)), gap + (iy * (gap + size)), size, size)
             skipCell:
-        ix = ix + 1
+            ix = ix + 1
         jumpif (ix < width) xLoop
-    iy = iy + 1
+        iy = iy + 1
     jumpif (iy < height) yLoop
 endfunction
 
