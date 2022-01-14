@@ -36,7 +36,7 @@
 [markdown-up](https://github.com/craigahobbs/markdown-up#readme)
 
 
-#### markdown-up applications
+#### markdown-up Applications
 
 [Conway's Game of Life](https://craigahobbs.github.io/life/)
 
