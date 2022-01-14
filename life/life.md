@@ -104,9 +104,9 @@ function lifeInit(life, initRatio, borderRatio)
             alive = if((ix < border) || (ix >= (width - border)), 0, \
                 if((iy < border) || (iy >= (height - border)), 0, rand() < initRatio))
             lifeSet(life, ix, iy, alive)
-        ix = ix + 1
+            ix = ix + 1
         jumpif (ix < width) xLoop
-    iy = iy + 1
+        iy = iy + 1
     jumpif (iy < height) yLoop
     return life
 endfunction
@@ -130,15 +130,13 @@ function lifeNext(life)
             lb = if(ix > 0 && iy < height - 1, lifeGet(life, ix - 1, iy + 1), 0)
             mb = if(iy < height - 1, lifeGet(life, ix, iy + 1), 0)
             rb = if(ix < width - 1 && iy < height - 1, lifeGet(life, ix + 1, iy + 1), 0)
-
             nc = lt + mt + rt + lm + rm + lb + mb + rb
             alive = if(mm, if(nc < 2, 0, if(nc > 3, 0, 1)), if(nc == 3, 1, 0))
-
             lifeSet(nextLife, ix, iy, alive)
 
-        ix = ix + 1
+            ix = ix + 1
         jumpif (ix < width) xLoop
-    iy = iy + 1
+        iy = iy + 1
     jumpif (iy < height) yLoop
 
     return nextLife
