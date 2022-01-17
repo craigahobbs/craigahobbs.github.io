@@ -36,23 +36,6 @@
 [markdown-up](https://github.com/craigahobbs/markdown-up#readme)
 
 
-#### markdown-up Applications
-
-[Conway's Game of Life](https://craigahobbs.github.io/life/)
-
-[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
-
-[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
-
-[Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
-
-[Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
-
-[Solar Dashboard](https://craigahobbs.github.io/solar/)
-
-[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
-
-
 ### Markdown Book
 
 [Markdown Book](https://github.com/craigahobbs/markdown-book-app#readme)
@@ -81,3 +64,20 @@
 [template-specialize](https://github.com/craigahobbs/template-specialize#readme)
 
 [unittest-parallel](https://github.com/craigahobbs/unittest-parallel#readme)
+
+
+#### markdown-up Applications
+
+[Conway's Game of Life](https://craigahobbs.github.io/life/)
+
+[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
+
+[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
+
+[Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
+
+[Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
+
+[Solar Dashboard](https://craigahobbs.github.io/solar/)
+
+[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
