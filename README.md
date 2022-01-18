@@ -65,7 +65,7 @@
 [unittest-parallel](https://github.com/craigahobbs/unittest-parallel#readme)
 
 
-#### markdown-up Applications
+### markdown-up Applications
 
 [Conway's Game of Life](https://craigahobbs.github.io/life/)
 
