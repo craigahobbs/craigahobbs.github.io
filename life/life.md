@@ -10,7 +10,7 @@ function main()
     defaultWidthHeight = 50
     minWidthHeight = 20
     minPeriod = 250
-    period = max(minPeriod, if(vPeriod, vPeriod, 2000))
+    period = max(minPeriod, if(vPeriod, vPeriod, 1000))
     minSize = 1
     size = max(minSize, if(vSize, vSize, 10))
     gap = if(vGap, vGap, 1)
