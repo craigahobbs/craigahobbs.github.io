@@ -11,15 +11,19 @@ function main()
     minWidthHeight = 20
     minPeriod = 250
     period = max(minPeriod, if(vPeriod, vPeriod, 1000))
+    defaultSize = 10
     minSize = 1
-    size = max(minSize, if(vSize, vSize, 10))
+    size = max(minSize, if(vSize, vSize, defaultSize))
     gap = if(vGap, vGap, 1)
     colors = arraySplit('green,white,fuchsia,gold,gray,greenyellow,indigo,lavender,lawngreen', ',')
-    colorIndex = max(1, 1 + (if(vColor, vColor - 1, 0) % len(colors)))
+    defaultColor = 1
+    colorIndex = max(1, 1 + ((if(vColor, vColor, defaultColor) - 1) % len(colors)))
     color = arrayGet(colors, colorIndex - 1)
-    backgroundIndex = max(1, 1 + (if(vBackground, vBackground - 1, 1) % len(colors)))
+    defaultBackground = 2
+    backgroundIndex = max(1, 1 + ((if(vBackground, vBackground, defaultBackground) - 1) % len(colors)))
     background = arrayGet(colors, backgroundIndex - 1)
-    border = if(vBorder, 1, 0)
+    defaultBorder = 0
+    border = if(vBorder, 1, defaultBorder)
     initRatio = if(vInitRatio, vInitRatio, 0.2)
     borderRatio = if(vBorderRatio, vBorderRatio, 0.1)
 
@@ -35,7 +39,7 @@ function main()
 
     // Menu
     nextLife = lifeNext(life)
-    resetLife = lifeInit(lifeCopy(life), initRatio, borderRatio)
+    randomLife = lifeInit(lifeCopy(life), initRatio, borderRatio)
     widthMoreLife = lifeNew(max(minWidthHeight, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio)
     widthLessLife = lifeNew(max(minWidthHeight, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio)
     heightMoreLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio)
@@ -47,11 +51,11 @@ function main()
     markdownPrint( \
         if(play, lifeLink('Pause', life, 0), lifeLink('Play', nextLife, 1)) + \
             if(play, '', ' | ' + lifeLink('Step', nextLife, 0)) + \
-            if(play, '', ' ' + lifeLink('Random', resetLife, 0)) + \
+            if(play, '', ' ' + lifeLink('Random', randomLife, 0)) + \
             if(play, '', ' | ' + lifeLink('Background', life, 0, 0, 0, 0, nextBackgroundIndex)) + \
             if(play, '', ' ' + lifeLink('Cell', life, 0, 0, 0, nextColorIndex)) + \
             if(play, '', ' ' + lifeLink('Border', life, 0, 0, 0, 0, 0, if(border, 1, 2))) + \
-            if(play, '', ' ' + lifeLink('Reset', life, 0, 0, 0, 1, 2, 1)) + \
+            if(play, '', ' [Reset](#var=)') + \
             if(play, ' | **Speed:** ' + lifeLink('More', life, 1, max(minPeriod, fixed(0.75 * period, 2))) + \
                 ' ' + lifeLink('Less', life, 1, fixed(1.25 * period, 2)), '') + \
             if(play, '', ' | **Width:** ' + lifeLink('More', widthMoreLife, 0) + ' ' + lifeLink('Less', widthLessLife, 0)) + \
