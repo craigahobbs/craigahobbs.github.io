@@ -221,8 +221,7 @@ function drawLife(life, size, gap, color, background)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
 
-    setDrawingWidth((width * (gap + size)) + gap)
-    setDrawingHeight((height * (gap + size)) + gap)
+    setDrawingSize((width * (gap + size)) + gap, (height * (gap + size)) + gap)
 
     drawStyle('none', 0, background)
     drawRect(0, 0, getDrawingWidth(), getDrawingHeight())

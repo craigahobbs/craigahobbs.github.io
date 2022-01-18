@@ -21,8 +21,7 @@ function main()
     skipMenu:
 
     // Set the drawing width/height
-    setDrawingWidth(if(vWidth, vWidth, 600))
-    setDrawingHeight(if(vHeight, vHeight, 300))
+    setDrawingSize(if(vWidth, vWidth, 600), if(vHeight, vHeight, 300))
 
     // Draw the stars
     shapes(skinnyStar, 10, 0.10)

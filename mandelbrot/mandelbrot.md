@@ -74,8 +74,7 @@ endfunction
 
 function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
     // Set the drawing size
-    setDrawingWidth(width * pixelSize)
-    setDrawingHeight(height * pixelSize)
+    setDrawingSize(width * pixelSize, height * pixelSize)
 
     // Compute the set extents
     yRange = (height / width) * xRange
