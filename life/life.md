@@ -41,9 +41,9 @@ function main()
     heightMoreLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio)
     heightLessLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio)
     nextColorIndex = 1 + (colorIndex % arrayLength(colors))
-    nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + ((nextColorIndex + 1) % arrayLength(colors)))
+    nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + (nextColorIndex % arrayLength(colors)))
     nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
-    nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + ((nextBackgroundIndex + 1) % arrayLength(colors)))
+    nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + (nextBackgroundIndex % arrayLength(colors)))
     markdownPrint( \
         if(play, lifeLink('Pause', life, 0), lifeLink('Play', nextLife, 1)) + \
             if(play, '', ' | ' + lifeLink('Step', nextLife, 0)) + \
