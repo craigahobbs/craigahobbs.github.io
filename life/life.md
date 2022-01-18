@@ -7,20 +7,25 @@
 function main()
     // Application inputs
     play = if(vPlay, vPlay, 0)
+    defaultWidthHeight = 50
     minWidthHeight = 20
     minPeriod = 250
     period = max(minPeriod, if(vPeriod, vPeriod, 2000))
     minSize = 1
-    size = max(minSize, if(vSize, vSize, 8))
+    size = max(minSize, if(vSize, vSize, 10))
     gap = if(vGap, vGap, 1)
-    color = if(vColor, vColor, 'forestgreen')
-    background = if(vBackground, vBackground, 'white')
+    colors = arraySplit('green,white,fuchsia,gold,gray,greenyellow,indigo,lavender,lawngreen', ',')
+    colorIndex = max(1, 1 + (if(vColor, vColor - 1, 0) % len(colors)))
+    color = arrayGet(colors, colorIndex - 1)
+    backgroundIndex = max(1, 1 + (if(vBackground, vBackground - 1, 1) % len(colors)))
+    background = arrayGet(colors, backgroundIndex - 1)
+    border = if(vBorder, 1, 0)
     initRatio = if(vInitRatio, vInitRatio, 0.2)
     borderRatio = if(vBorderRatio, vBorderRatio, 0.1)
 
     // Initialize or decode the life board
     jumpif (vLife) lifeInitDecode
-        life = lifeNew(50, 50, initRatio, borderRatio)
+        life = lifeNew(defaultWidthHeight, defaultWidthHeight, initRatio, borderRatio)
     jump lifeInitDone
     lifeInitDecode:
         life = lifeDecode(vLife)
@@ -35,10 +40,18 @@ function main()
     widthLessLife = lifeNew(max(minWidthHeight, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio)
     heightMoreLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio)
     heightLessLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio)
+    nextColorIndex = 1 + (colorIndex % arrayLength(colors))
+    nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + ((nextColorIndex + 1) % arrayLength(colors)))
+    nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
+    nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + ((nextBackgroundIndex + 1) % arrayLength(colors)))
     markdownPrint( \
         if(play, lifeLink('Pause', life, 0), lifeLink('Play', nextLife, 1)) + \
             if(play, '', ' | ' + lifeLink('Step', nextLife, 0)) + \
             if(play, '', ' ' + lifeLink('Random', resetLife, 0)) + \
+            if(play, '', ' | ' + lifeLink('Background', life, 0, 0, 0, 0, nextBackgroundIndex)) + \
+            if(play, '', ' ' + lifeLink('Cell', life, 0, 0, 0, nextColorIndex)) + \
+            if(play, '', ' ' + lifeLink('Border', life, 0, 0, 0, 0, 0, if(border, 1, 2))) + \
+            if(play, '', ' ' + lifeLink('Reset', life, 0, 0, 0, 1, 2, 1)) + \
             if(play, ' | **Speed:** ' + lifeLink('More', life, 1, max(minPeriod, fixed(0.75 * period, 2))) + \
                 ' ' + lifeLink('Less', life, 1, fixed(1.25 * period, 2)), '') + \
             if(play, '', ' | **Width:** ' + lifeLink('More', widthMoreLife, 0) + ' ' + lifeLink('Less', widthLessLife, 0)) + \
@@ -48,7 +61,7 @@ function main()
     )
 
     // Life board
-    drawLife(life, size, gap, color, background)
+    drawLife(life, size, gap, color, background, if(border, 2, 0))
 
     // Play?
     jumpif (!play) skipPlay
@@ -57,12 +70,13 @@ function main()
 endfunction
 
 
-function lifeURL(life, play, period, size, gap, color, bkgnd, initRatio, borderRatio)
+function lifeURL(life, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
     size = if(size, size, vSize)
     period = if(period, period, vPeriod)
     gap = if(gap, gap, vGap)
     color = if(color, color, vColor)
     bkgnd = if(bkgnd, bkgnd, vBackground)
+    border = if(border, if(border - 1, 1, 0), vBorder)
     initRatio = if(initRatio, initRatio, vInitRatio)
     borderRatio = if(borderRatio, borderRatio, vBorderRatio)
     args = if(play, '&var.vPlay=1', '') + \
@@ -71,6 +85,7 @@ function lifeURL(life, play, period, size, gap, color, bkgnd, initRatio, borderR
         if(gap, '&var.vGap=' + gap, '') + \
         if(color, '&var.vColor=' + color, '') + \
         if(bkgnd, '&var.vBackground=' + bkgnd, '') + \
+        if(border, '&var.vBorder=' + border, '') + \
         if(initRatio, '&var.vInitRatio=' + initRatio, '') + \
         if(borderRatio, '&var.vBorderRatio=' + borderRatio, '') + \
         if(life, "&var.vLife='" + lifeEncode(life) + "'", '')
@@ -78,8 +93,8 @@ function lifeURL(life, play, period, size, gap, color, bkgnd, initRatio, borderR
 endfunction
 
 
-function lifeLink(text, life, play, period, size, gap, color, bkgnd, initRatio, borderRatio)
-    return '[' + text + '](' + lifeURL(life, play, period, size, gap, color, bkgnd, initRatio, borderRatio) + ')'
+function lifeLink(text, life, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
+    return '[' + text + '](' + lifeURL(life, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio) + ')'
 endfunction
 
 
@@ -234,14 +249,14 @@ lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
 lifeEncodeChars = '0123456789' + lifeEncodeAlpha + upper(lifeEncodeAlpha)
 
 
-function drawLife(life, size, gap, color, background)
+function drawLife(life, size, gap, color, background, borderSize)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
 
-    setDrawingSize((width * (gap + size)) + gap, (height * (gap + size)) + gap)
+    setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
 
-    drawStyle('none', 0, background)
-    drawRect(0, 0, getDrawingWidth(), getDrawingHeight())
+    drawStyle(if(borderSize, 'black', 'none'), borderSize, background)
+    drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
 
     drawStyle('none', 0, color)
     iy = 0
