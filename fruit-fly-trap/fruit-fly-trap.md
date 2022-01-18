@@ -189,8 +189,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
 
     // Draw the cone form
     edge = 5 * lineWidth
-    setDrawingWidth((2 * edge) + (formMaxX - formMinX))
-    setDrawingHeight((2 * edge) + (formMaxY - formMinY))
+    setDrawingSize((2 * edge) + (formMaxX - formMinX), (2 * edge) + (formMaxY - formMinY))
     drawStyle('black', lineWidth, 'none', (3 * lineWidth) + ' ' + (3 * lineWidth))
     drawMove(edge - formMinX, edge)
     drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > pi(), 1, edge + (flapOuterX - formMinX), edge + (formMaxY - flapOuterY))
@@ -234,8 +233,7 @@ function fruitFlyTrapDiagram()
     coneTopRight = width - coneTopLeft
 
     // Draw the fruit fly trap diagram
-    setDrawingWidth(width)
-    setDrawingHeight(height)
+    setDrawingSize(width, height)
 
     // Liquid
     drawStyle('none', 0, '#cc99ff80')
