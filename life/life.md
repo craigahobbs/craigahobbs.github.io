@@ -53,13 +53,13 @@ function main()
     jumpif (!play) cycleDone
         lifeCycle = nextLife
         encodedCycle = encodedNext
-        ixCycle = 1
+        iCycle = 1
         cycleLoop:
             jumpif (encodedLife == encodedCycle) cycleDetected
-            jumpif (ixCycle >= maxCycle) cycleDone
+            jumpif (iCycle >= maxCycle) cycleDone
             lifeCycle = lifeNext(lifeCycle)
             encodedCycle = lifeEncode(lifeCycle)
-            ixCycle = ixCycle + 1
+            iCycle = iCycle + 1
         jump cycleLoop
     jump cycleDone
     cycleDetected:
@@ -75,7 +75,7 @@ function main()
         nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + (nextColorIndex % arrayLength(colors)))
         nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
         nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + (nextBackgroundIndex % arrayLength(colors)))
-        encodedRandom = lifeEncode(lifeInit(lifeCopy(life), initRatio, borderRatio))
+        encodedRandom = lifeEncode(lifeNew(lifeWidth, lifeHeight, initRatio, borderRatio))
         encodedWidthMore = lifeEncode(lifeNew(max(minWidth, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio))
         encodedWidthLess = lifeEncode(lifeNew(max(minWidth, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio))
         encodedHeightMore = lifeEncode(lifeNew(lifeWidth, max(minHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio))
@@ -153,13 +153,6 @@ function lifeNew(width, height, initRatio, borderRatio)
 endfunction
 
 
-function lifeCopy(life)
-    newLife = objectCopy(life)
-    objectSet(newLife, 'cells', arrayCopy(objectGet(life, 'cells')))
-    return newLife
-endfunction
-
-
 function lifeGet(life, x, y)
     return arrayGet(objectGet(life, 'cells'), (y * objectGet(life, 'width')) + x)
 endfunction
@@ -189,9 +182,9 @@ endfunction
 
 
 function lifeNext(life)
-    nextLife = lifeCopy(life)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
+    nextLife = lifeNew(width, height, 0, 0)
     iy = 0
     yLoop:
         ix = 0
