@@ -19,6 +19,7 @@ function main()
     minHeight = 20
     minPeriod = 100
     minSize = 1
+    maxCycle = 6
 
     // Cell and background colors
     colors = arraySplit('forestgreen,white,lightgray,greenyellow,gold,magenta,cornflowerblue', ',')
@@ -45,44 +46,75 @@ function main()
     lifeWidth = objectGet(life, 'width')
     lifeHeight = objectGet(life, 'height')
 
-    // Menu
+    // Is there a cycle?
     nextLife = lifeNext(life)
-    randomLife = lifeInit(lifeCopy(life), initRatio, borderRatio)
-    widthMoreLife = lifeNew(max(minWidth, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio)
-    widthLessLife = lifeNew(max(minWidth, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio)
-    heightMoreLife = lifeNew(lifeWidth, max(minHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio)
-    heightLessLife = lifeNew(lifeWidth, max(minHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio)
-    nextColorIndex = 1 + (colorIndex % arrayLength(colors))
-    nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + (nextColorIndex % arrayLength(colors)))
-    nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
-    nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + (nextBackgroundIndex % arrayLength(colors)))
-    markdownPrint( \
-        if(play, lifeLink('Pause', life, 0), lifeLink('Play', nextLife, 1)) + \
-            if(play, '', ' | ' + lifeLink('Step', nextLife, 0)) + \
-            if(play, '', ' ' + lifeLink('Random', randomLife, 0)) + \
-            if(play, '', ' | ' + lifeLink('Background', life, 0, 0, 0, 0, nextBackgroundIndex)) + \
-            if(play, '', ' ' + lifeLink('Cell', life, 0, 0, 0, nextColorIndex)) + \
-            if(play, '', ' ' + lifeLink('Border', life, 0, 0, 0, 0, 0, if(border, 1, 2))) + \
-            if(play, '', ' [Reset](#var=)') + \
-            if(play, ' | **Speed:** ' + lifeLink('More', life, 1, max(minPeriod, fixed(0.75 * period, 2))) + \
-                ' ' + lifeLink('Less', life, 1, fixed(1.25 * period, 2)), '') + \
-            if(play, '', ' | **Width:** ' + lifeLink('More', widthMoreLife, 0) + ' ' + lifeLink('Less', widthLessLife, 0)) + \
-            if(play, '', ' | **Height:** ' + lifeLink('More', heightMoreLife, 0) + ' ' + lifeLink('Less', heightLessLife, 0)) + \
-            if(play, '', ' | **Size:** ' + lifeLink('More', life, 0, 0, max(minSize, size + 1)) + \
-                ' ' + lifeLink('Less', life, 0, 0, max(minSize, size - 1))) \
-    )
+    encodedLife = lifeEncode(life)
+    encodedNext = lifeEncode(nextLife)
+    jumpif (!play) cycleDone
+        lifeCycle = nextLife
+        encodedCycle = encodedNext
+        ixCycle = 1
+        cycleLoop:
+            jumpif (encodedLife == encodedCycle) cycleDetected
+            jumpif (ixCycle >= maxCycle) cycleDone
+            lifeCycle = lifeNext(lifeCycle)
+            encodedCycle = lifeEncode(lifeCycle)
+            ixCycle = ixCycle + 1
+        jump cycleLoop
+    jump cycleDone
+    cycleDetected:
+        life = lifeInit(life, initRatio, borderRatio)
+        nextLife = lifeNext(life)
+        encodedLife = lifeEncode(life)
+        encodedNext = lifeEncode(nextLife)
+    cycleDone:
+
+    // Pause menu
+    jumpif (play) skipPauseMenu
+        nextColorIndex = 1 + (colorIndex % arrayLength(colors))
+        nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + (nextColorIndex % arrayLength(colors)))
+        nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
+        nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + (nextBackgroundIndex % arrayLength(colors)))
+        encodedRandom = lifeEncode(lifeInit(lifeCopy(life), initRatio, borderRatio))
+        encodedWidthMore = lifeEncode(lifeNew(max(minWidth, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio))
+        encodedWidthLess = lifeEncode(lifeNew(max(minWidth, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio))
+        encodedHeightMore = lifeEncode(lifeNew(lifeWidth, max(minHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio))
+        encodedHeightLess = lifeEncode(lifeNew(lifeWidth, max(minHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio))
+        markdownPrint( \
+            lifeLink('Play', encodedNext, 1), \
+            ' | ' + lifeLink('Step', encodedNext, 0), \
+            ' ' + lifeLink('Random', encodedRandom, 0), \
+            ' | ' + lifeLink('Background', encodedLife, 0, 0, 0, 0, nextBackgroundIndex), \
+            ' ' + lifeLink('Cell', encodedLife, 0, 0, 0, nextColorIndex), \
+            ' ' + lifeLink('Border', encodedLlife, 0, 0, 0, 0, 0, if(border, 1, 2)), \
+            ' [Reset](#var=)', \
+            ' | **Width:** ' + lifeLink('More', encodedWidthMore, 0) + ' ' + lifeLink('Less', encodedWidthLess, 0), \
+            ' | **Height:** ' + lifeLink('More', encodedHeightMore, 0) + ' ' + lifeLink('Less', encodedHeightLess, 0), \
+            ' | **Size:** ' + lifeLink('More', encodedLife, 0, 0, max(minSize, size + 1)) + \
+                ' ' + lifeLink('Less', encodedLife, 0, 0, max(minSize, size - 1)) \
+        )
+    skipPauseMenu:
+
+    // Play menu
+    jumpif (!play) skipPlayMenu
+        markdownPrint( \
+            lifeLink('Pause', encodedLife, 0), \
+            ' | **Speed:** ' + lifeLink('More', encodedNext, 1, max(minPeriod, fixed(0.75 * period, 2))) + \
+                ' ' + lifeLink('Less', encodedNext, 1, fixed(1.25 * period, 2)) \
+        )
+    skipPlayMenu:
 
     // Life board
     drawLife(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), if(border, 2, 0))
 
     // Play?
     jumpif (!play) skipPlay
-    setNavigateTimeout(lifeURL(nextLife, 1), period)
+    setNavigateTimeout(lifeURL(encodedNext, 1), period)
     skipPlay:
 endfunction
 
 
-function lifeURL(life, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
+function lifeURL(encodedLife, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
     size = if(size, size, vSize)
     period = if(period, period, vPeriod)
     gap = if(gap, gap, vGap)
@@ -100,13 +132,13 @@ function lifeURL(life, play, period, size, color, bkgnd, border, gap, initRatio,
         if(border, '&var.vBorder=' + border, '') + \
         if(initRatio, '&var.vInitRatio=' + initRatio, '') + \
         if(borderRatio, '&var.vBorderRatio=' + borderRatio, '') + \
-        if(life, "&var.vLife='" + lifeEncode(life) + "'", '')
+        if(encodedLife, "&var.vLife='" + encodedLife + "'", '')
     return '#' + slice(args, 1)
 endfunction
 
 
-function lifeLink(text, life, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
-    return '[' + text + '](' + lifeURL(life, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio) + ')'
+function lifeLink(text, encodedLife, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
+    return '[' + text + '](' + lifeURL(encodedLife, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio) + ')'
 endfunction
 
 
@@ -145,8 +177,7 @@ function lifeInit(life, initRatio, borderRatio)
     yLoop:
         ix = 0
         xLoop:
-            alive = if((ix < border) || (ix >= (width - border)), 0, \
-                if((iy < border) || (iy >= (height - border)), 0, rand() < initRatio))
+            alive = if((ix < border) || (ix >= (width - border)), 0, if((iy < border) || (iy >= (height - border)), 0, rand() < initRatio))
             lifeSet(life, ix, iy, alive)
             ix = ix + 1
         jumpif (ix < width) xLoop
@@ -160,24 +191,20 @@ function lifeNext(life)
     nextLife = lifeCopy(life)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
-
     iy = 0
     yLoop:
         ix = 0
         xLoop:
-            lt = if(ix > 0 && iy > 0, lifeGet(life, ix - 1, iy - 1), 0)
-            mt = if(iy > 0, lifeGet(life, ix, iy - 1), 0)
-            rt = if(ix < width - 1 && iy > 0, lifeGet(life, ix + 1, iy - 1), 0)
-            lm = if(ix > 0, lifeGet(life, ix - 1, iy), 0)
-            mm = lifeGet(life, ix, iy)
-            rm = if(ix < width - 1, lifeGet(life, ix + 1, iy), 0)
-            lb = if(ix > 0 && iy < height - 1, lifeGet(life, ix - 1, iy + 1), 0)
-            mb = if(iy < height - 1, lifeGet(life, ix, iy + 1), 0)
-            rb = if(ix < width - 1 && iy < height - 1, lifeGet(life, ix + 1, iy + 1), 0)
-            nc = lt + mt + rt + lm + rm + lb + mb + rb
-            alive = if(mm, if(nc < 2, 0, if(nc > 3, 0, 1)), if(nc == 3, 1, 0))
-            lifeSet(nextLife, ix, iy, alive)
-
+            cellAlive = lifeGet(life, ix, iy)
+            neighborCount = if(ix > 0 && iy > 0, lifeGet(life, ix - 1, iy - 1), 0) + \
+                if(iy > 0, lifeGet(life, ix, iy - 1), 0) + \
+                if(ix < width - 1 && iy > 0, lifeGet(life, ix + 1, iy - 1), 0) + \
+                if(ix > 0, lifeGet(life, ix - 1, iy), 0) + \
+                if(ix < width - 1, lifeGet(life, ix + 1, iy), 0) + \
+                if(ix > 0 && iy < height - 1, lifeGet(life, ix - 1, iy + 1), 0) + \
+                if(iy < height - 1, lifeGet(life, ix, iy + 1), 0) + \
+                if(ix < width - 1 && iy < height - 1, lifeGet(life, ix + 1, iy + 1), 0)
+            lifeSet(nextLife, ix, iy, if(cellAlive, if(neighborCount < 2, 0, if(neighborCount > 3, 0, 1)), if(neighborCount == 3, 1, 0)))
             ix = ix + 1
         jumpif (ix < width) xLoop
         iy = iy + 1
@@ -191,7 +218,7 @@ function lifeEncode(life)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
-    lifeStr = width + '-' + height + '-'
+    lifeChars = arrayNew()
 
     alive = 0
     count = 0
@@ -204,13 +231,13 @@ function lifeEncode(life)
         count = count + 1
         jumpif (count < maxCount) cellLoopNext
 
-        lifeStr = lifeStr + slice(lifeEncodeChars, count, count + 1)
+        arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
         alive = if(alive, 0, 1)
         count = 0
         jump cellLoopNext
 
         cellLoopAlive:
-        lifeStr = lifeStr + slice(lifeEncodeChars, count, count + 1)
+        arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
         alive = if(alive, 0, 1)
         count = 1
 
@@ -219,21 +246,22 @@ function lifeEncode(life)
     jumpif (ixCell < arrayLength(cells)) cellLoop
 
     jumpif (!count) skipLast
-    lifeStr = lifeStr + slice(lifeEncodeChars, count, count + 1)
+    arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
     skipLast:
 
-    return lifeStr
+    return width + '-' + height + '-' + arrayJoin(lifeChars, '')
 endfunction
 
 
 function lifeDecode(lifeStr)
+    // Split the encoded life string into width, height, and cell string
     parts = arraySplit(lifeStr, '-')
     width = value(arrayGet(parts, 0))
     height = value(arrayGet(parts, 1))
     cellsStr = arrayGet(parts, 2)
-    life = lifeNew(width, height)
 
     // Decode the cell string
+    life = lifeNew(width, height)
     cells = objectGet(life, 'cells')
     ixCell = 0
     ixChar = 0
@@ -265,11 +293,12 @@ function drawLife(life, size, gap, color, background, borderSize)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
 
+    // Draw the background
     setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
-
     drawStyle(if(borderSize, borderColor, 'none'), borderSize, background)
     drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
 
+    // Draw the cells
     drawStyle('none', 0, color)
     iy = 0
     yLoop:
