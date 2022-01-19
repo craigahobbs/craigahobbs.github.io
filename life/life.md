@@ -17,7 +17,7 @@ function main()
     // Limits
     minWidth = 20
     minHeight = 20
-    minPeriod = 100
+    minPeriod = 200
     minSize = 1
     maxCycle = 6
 
@@ -63,7 +63,7 @@ function main()
         jump cycleLoop
     jump cycleDone
     cycleDetected:
-        life = lifeInit(life, initRatio, borderRatio)
+        life = lifeNew(lifeWidth, lifeHeight, initRatio, borderRatio)
         nextLife = lifeNext(life)
         encodedLife = lifeEncode(life)
         encodedNext = lifeEncode(nextLife)
@@ -147,36 +147,26 @@ function lifeNew(width, height, initRatio, borderRatio)
     life = objectNew()
     objectSet(life, 'width', width)
     objectSet(life, 'height', height)
-    objectSet(life, 'cells', arrayNew(width * height))
-    lifeInit(life, initRatio, borderRatio)
-    return life
-endfunction
+    cells = arrayNew(width * height)
+    objectSet(life, 'cells', cells)
 
+    // Initialize the life
+    jumpif (!initRatio || !borderRatio) skipInit
+        border = ceil(borderRatio * min(width, height))
+        y = 0
+        yLoop:
+            x = 0
+            xLoop:
+                alive = if((x < border) || (x >= (width - border)), 0, \
+                    if((y < border) || (y >= (height - border)), 0, \
+                    if (rand() < initRatio, 1, 0)))
+                arraySet(cells, (y * width) + x, alive)
+                x = x + 1
+            jumpif (x < width) xLoop
+            y = y + 1
+        jumpif (y < height) yLoop
+    skipInit:
 
-function lifeGet(life, x, y)
-    return arrayGet(objectGet(life, 'cells'), (y * objectGet(life, 'width')) + x)
-endfunction
-
-
-function lifeSet(life, x, y, alive)
-    return arraySet(objectGet(life, 'cells'), (y * objectGet(life, 'width')) + x, if(alive, 1, 0))
-endfunction
-
-
-function lifeInit(life, initRatio, borderRatio)
-    width = objectGet(life, 'width')
-    height = objectGet(life, 'height')
-    border = ceil(borderRatio * min(width, height))
-    iy = 0
-    yLoop:
-        ix = 0
-        xLoop:
-            alive = if((ix < border) || (ix >= (width - border)), 0, if((iy < border) || (iy >= (height - border)), 0, rand() < initRatio))
-            lifeSet(life, ix, iy, alive)
-            ix = ix + 1
-        jumpif (ix < width) xLoop
-        iy = iy + 1
-    jumpif (iy < height) yLoop
     return life
 endfunction
 
@@ -184,25 +174,28 @@ endfunction
 function lifeNext(life)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
+    cells = objectGet(life, 'cells')
     nextLife = lifeNew(width, height, 0, 0)
-    iy = 0
+    nextCells = objectGet(nextLife, 'cells')
+    y = 0
     yLoop:
-        ix = 0
+        x = 0
         xLoop:
-            cellAlive = lifeGet(life, ix, iy)
-            neighborCount = if(ix > 0 && iy > 0, lifeGet(life, ix - 1, iy - 1), 0) + \
-                if(iy > 0, lifeGet(life, ix, iy - 1), 0) + \
-                if(ix < width - 1 && iy > 0, lifeGet(life, ix + 1, iy - 1), 0) + \
-                if(ix > 0, lifeGet(life, ix - 1, iy), 0) + \
-                if(ix < width - 1, lifeGet(life, ix + 1, iy), 0) + \
-                if(ix > 0 && iy < height - 1, lifeGet(life, ix - 1, iy + 1), 0) + \
-                if(iy < height - 1, lifeGet(life, ix, iy + 1), 0) + \
-                if(ix < width - 1 && iy < height - 1, lifeGet(life, ix + 1, iy + 1), 0)
-            lifeSet(nextLife, ix, iy, if(cellAlive, if(neighborCount < 2, 0, if(neighborCount > 3, 0, 1)), if(neighborCount == 3, 1, 0)))
-            ix = ix + 1
-        jumpif (ix < width) xLoop
-        iy = iy + 1
-    jumpif (iy < height) yLoop
+            alive = arrayGet(cells, (y * width) + x)
+            neighbor = if(x > 0 && y > 0, arrayGet(cells, ((y - 1) * width) + (x - 1)), 0) + \
+                if(y > 0, arrayGet(cells, ((y - 1) * width) + x), 0) + \
+                if(x < width - 1 && y > 0, arrayGet(cells, ((y - 1) * width) + (x + 1)), 0) + \
+                if(x > 0, arrayGet(cells, (y * width) + (x - 1)), 0) + \
+                if(x < width - 1, arrayGet(cells, (y * width) + (x + 1)), 0) + \
+                if(x > 0 && y < height - 1, arrayGet(cells, ((y + 1) * width) + (x - 1)), 0) + \
+                if(y < height - 1, arrayGet(cells, ((y + 1) * width) + x), 0) + \
+                if(x < width - 1 && y < height - 1, arrayGet(cells, ((y + 1) * width) + (x + 1)), 0)
+            nextAlive = if(alive, if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0))
+            arraySet(nextCells, (y * width) + x, nextAlive)
+            x = x + 1
+        jumpif (x < width) xLoop
+        y = y + 1
+    jumpif (y < height) yLoop
 
     return nextLife
 endfunction
@@ -217,9 +210,9 @@ function lifeEncode(life)
     alive = 0
     count = 0
     maxCount = len(lifeEncodeChars) - 1
-    ixCell = 0
+    iCell = 0
     cellLoop:
-        curAlive = arrayGet(cells, ixCell)
+        curAlive = arrayGet(cells, iCell)
         jumpif (curAlive != alive) cellLoopAlive
 
         count = count + 1
@@ -236,8 +229,8 @@ function lifeEncode(life)
         count = 1
 
         cellLoopNext:
-        ixCell = ixCell + 1
-    jumpif (ixCell < arrayLength(cells)) cellLoop
+        iCell = iCell + 1
+    jumpif (iCell < arrayLength(cells)) cellLoop
 
     jumpif (!count) skipLast
     arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
@@ -255,23 +248,23 @@ function lifeDecode(lifeStr)
     cellsStr = arrayGet(parts, 2)
 
     // Decode the cell string
-    life = lifeNew(width, height)
+    life = lifeNew(width, height, 0, 0)
     cells = objectGet(life, 'cells')
-    ixCell = 0
-    ixChar = 0
+    iCell = 0
+    iChar = 0
     charLoop:
-    jumpif (ixChar >= len(cellsStr)) charLoopDone
-        char = slice(cellsStr, ixChar, ixChar + 1)
+    jumpif (iChar >= len(cellsStr)) charLoopDone
+        char = slice(cellsStr, iChar, iChar + 1)
         count = indexOf(lifeEncodeChars, char)
         iCount = 0
         countLoop:
         jumpif (iCount >= count) countLoopDone
-            arraySet(cells, ixCell, ixChar % 2)
+            arraySet(cells, iCell, iChar % 2)
             iCount = iCount + 1
-            ixCell = ixCell + 1
+            iCell = iCell + 1
         jump countLoop
         countLoopDone:
-        ixChar = ixChar + 1
+        iChar = iChar + 1
     jump charLoop
     charLoopDone:
 
@@ -286,6 +279,7 @@ lifeEncodeChars = '0123456789' + lifeEncodeAlpha + upper(lifeEncodeAlpha)
 function drawLife(life, size, gap, color, background, borderColor, borderSize)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
+    cells = objectGet(life, 'cells')
 
     // Draw the background
     setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
@@ -294,23 +288,23 @@ function drawLife(life, size, gap, color, background, borderColor, borderSize)
 
     // Draw the cells
     drawStyle('none', 0, color)
-    iy = 0
+    y = 0
     yLoop:
-        ix = 0
+        x = 0
         xLoop:
-            jumpif (!lifeGet(life, ix, iy)) skipCell
-            x = (0.5 * borderSize) + gap + (ix * (size + gap))
-            y = (0.5 * borderSize) + gap + (iy * (size + gap))
-            drawMove(x, y)
-            drawHLine(x + size)
-            drawVLine(y + size)
-            drawHLine(x)
+            jumpif (!arrayGet(cells, (y * width) + x)) skipCell
+            px = (0.5 * borderSize) + gap + (x * (size + gap))
+            py = (0.5 * borderSize) + gap + (y * (size + gap))
+            drawMove(px, py)
+            drawHLine(px + size)
+            drawVLine(py + size)
+            drawHLine(px)
             drawClose()
             skipCell:
-            ix = ix + 1
-        jumpif (ix < width) xLoop
-        iy = iy + 1
-    jumpif (iy < height) yLoop
+            x = x + 1
+        jumpif (x < width) xLoop
+        y = y + 1
+    jumpif (y < height) yLoop
 endfunction
 
 
