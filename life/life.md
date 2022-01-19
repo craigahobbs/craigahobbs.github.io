@@ -5,31 +5,39 @@
 // https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 function main()
-    // Application inputs
-    play = if(vPlay, vPlay, 0)
-    defaultWidthHeight = 50
-    minWidthHeight = 20
-    minPeriod = 250
-    period = max(minPeriod, if(vPeriod, vPeriod, 1000))
+    // Defaults
+    defaultWidth = 50
+    defaultHeight = 50
+    defaultPeriod = 1000
     defaultSize = 10
+    defaultColorIndex = 1
+    defaultBackgroundIndex = 2
+    defaultBorder = 0
+
+    // Limits
+    minWidth = 20
+    minHeight = 20
+    minPeriod = 100
     minSize = 1
+
+    // Cell and background colors
+    colors = arraySplit('forestgreen,white,lightgray,greenyellow,gold,magenta,cornflowerblue', ',')
+    borderColor = 'black'
+
+    // Application variables
+    play = if(vPlay, vPlay, 0)
+    period = max(minPeriod, if(vPeriod, vPeriod, defaultPeriod))
     size = max(minSize, if(vSize, vSize, defaultSize))
     gap = if(vGap, vGap, 1)
-    colors = arraySplit('green,white,fuchsia,gold,gray,greenyellow,indigo,lavender,lawngreen', ',')
-    defaultColor = 1
-    colorIndex = max(1, 1 + ((if(vColor, vColor, defaultColor) - 1) % len(colors)))
-    color = arrayGet(colors, colorIndex - 1)
-    defaultBackground = 2
-    backgroundIndex = max(1, 1 + ((if(vBackground, vBackground, defaultBackground) - 1) % len(colors)))
-    background = arrayGet(colors, backgroundIndex - 1)
-    defaultBorder = 0
+    colorIndex = max(1, 1 + ((if(vColor, vColor, defaultColorIndex) - 1) % len(colors)))
+    backgroundIndex = max(1, 1 + ((if(vBackground, vBackground, defaultBackgroundIndex) - 1) % len(colors)))
     border = if(vBorder, 1, defaultBorder)
     initRatio = if(vInitRatio, vInitRatio, 0.2)
     borderRatio = if(vBorderRatio, vBorderRatio, 0.1)
 
     // Initialize or decode the life board
     jumpif (vLife) lifeInitDecode
-        life = lifeNew(defaultWidthHeight, defaultWidthHeight, initRatio, borderRatio)
+        life = lifeNew(defaultWidth, defaultHeight, initRatio, borderRatio)
     jump lifeInitDone
     lifeInitDecode:
         life = lifeDecode(vLife)
@@ -40,10 +48,10 @@ function main()
     // Menu
     nextLife = lifeNext(life)
     randomLife = lifeInit(lifeCopy(life), initRatio, borderRatio)
-    widthMoreLife = lifeNew(max(minWidthHeight, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio)
-    widthLessLife = lifeNew(max(minWidthHeight, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio)
-    heightMoreLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio)
-    heightLessLife = lifeNew(lifeWidth, max(minWidthHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio)
+    widthMoreLife = lifeNew(max(minWidth, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio)
+    widthLessLife = lifeNew(max(minWidth, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio)
+    heightMoreLife = lifeNew(lifeWidth, max(minHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio)
+    heightLessLife = lifeNew(lifeWidth, max(minHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio)
     nextColorIndex = 1 + (colorIndex % arrayLength(colors))
     nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + (nextColorIndex % arrayLength(colors)))
     nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
@@ -65,7 +73,7 @@ function main()
     )
 
     // Life board
-    drawLife(life, size, gap, color, background, if(border, 2, 0))
+    drawLife(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), if(border, 2, 0))
 
     // Play?
     jumpif (!play) skipPlay
@@ -259,7 +267,7 @@ function drawLife(life, size, gap, color, background, borderSize)
 
     setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
 
-    drawStyle(if(borderSize, 'black', 'none'), borderSize, background)
+    drawStyle(if(borderSize, borderColor, 'none'), borderSize, background)
     drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
 
     drawStyle('none', 0, color)
@@ -268,7 +276,13 @@ function drawLife(life, size, gap, color, background, borderSize)
         ix = 0
         xLoop:
             jumpif (!lifeGet(life, ix, iy)) skipCell
-            drawRect(gap + (ix * (gap + size)), gap + (iy * (gap + size)), size, size)
+            x = (0.5 * borderSize) + gap + (ix * (size + gap))
+            y = (0.5 * borderSize) + gap + (iy * (size + gap))
+            drawMove(x, y)
+            drawHLine(x + size)
+            drawVLine(y + size)
+            drawHLine(x)
+            drawClose()
             skipCell:
             ix = ix + 1
         jumpif (ix < width) xLoop
