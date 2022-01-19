@@ -12,7 +12,7 @@ function main()
     defaultSize = 10
     defaultColorIndex = 1
     defaultBackgroundIndex = 2
-    defaultBorder = 0
+    defaultBorder = 1
 
     // Limits
     minWidth = 20
@@ -32,7 +32,7 @@ function main()
     gap = if(vGap, vGap, 1)
     colorIndex = max(1, 1 + ((if(vColor, vColor, defaultColorIndex) - 1) % len(colors)))
     backgroundIndex = max(1, 1 + ((if(vBackground, vBackground, defaultBackgroundIndex) - 1) % len(colors)))
-    border = if(vBorder, 1, defaultBorder)
+    border = if(vBorder, vBorder, defaultBorder)
     initRatio = if(vInitRatio, vInitRatio, 0.2)
     borderRatio = if(vBorderRatio, vBorderRatio, 0.1)
 
@@ -86,7 +86,7 @@ function main()
             ' ' + lifeLink('Random', encodedRandom, 0), \
             ' | ' + lifeLink('Background', encodedLife, 0, 0, 0, 0, nextBackgroundIndex), \
             ' ' + lifeLink('Cell', encodedLife, 0, 0, 0, nextColorIndex), \
-            ' ' + lifeLink('Border', encodedLlife, 0, 0, 0, 0, 0, if(border, 1, 2)), \
+            ' ' + lifeLink('Border', encodedLife, 0, 0, 0, 0, 0, if(border == 2, 1, 2)), \
             ' [Reset](#var=)', \
             ' | **Width:** ' + lifeLink('More', encodedWidthMore, 0) + ' ' + lifeLink('Less', encodedWidthLess, 0), \
             ' | **Height:** ' + lifeLink('More', encodedHeightMore, 0) + ' ' + lifeLink('Less', encodedHeightLess, 0), \
@@ -105,7 +105,8 @@ function main()
     skipPlayMenu:
 
     // Life board
-    drawLife(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), if(border, 2, 0))
+    drawLife(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), \
+        if(border == 2, borderColor, 'black'), if(border == 2, 2, 0))
 
     // Play?
     jumpif (!play) skipPlay
@@ -120,7 +121,7 @@ function lifeURL(encodedLife, play, period, size, color, bkgnd, border, gap, ini
     gap = if(gap, gap, vGap)
     color = if(color, color, vColor)
     bkgnd = if(bkgnd, bkgnd, vBackground)
-    border = if(border, if(border - 1, 1, 0), vBorder)
+    border = if(border, border, vBorder)
     initRatio = if(initRatio, initRatio, vInitRatio)
     borderRatio = if(borderRatio, borderRatio, vBorderRatio)
     args = if(play, '&var.vPlay=1', '') + \
@@ -289,13 +290,13 @@ lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
 lifeEncodeChars = '0123456789' + lifeEncodeAlpha + upper(lifeEncodeAlpha)
 
 
-function drawLife(life, size, gap, color, background, borderSize)
+function drawLife(life, size, gap, color, background, borderColor, borderSize)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
 
     // Draw the background
     setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
-    drawStyle(if(borderSize, borderColor, 'none'), borderSize, background)
+    drawStyle(borderColor, borderSize, background)
     drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
 
     // Draw the cells
