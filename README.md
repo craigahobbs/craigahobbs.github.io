@@ -69,7 +69,7 @@
 
 [Conway's Game of Life](https://craigahobbs.github.io/life/)
 
-[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
+[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/#url=books.md)
 
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
 
@@ -77,6 +77,6 @@
 
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
 
-[Solar Dashboard](https://craigahobbs.github.io/solar/)
+[Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
 
-[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
+[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/#url=sunrise.md)
