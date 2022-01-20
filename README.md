@@ -10,7 +10,7 @@
 [schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
 
 
-### element-model
+### element-app
 
 [element-app](https://github.com/craigahobbs/element-app#readme)
 
