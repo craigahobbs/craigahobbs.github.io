@@ -105,8 +105,8 @@ function main()
     skipPlayMenu:
 
     // Life board
-    drawLife(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), \
-        if(border == 2, borderColor, 'black'), if(border == 2, 2, 0))
+    lifeDraw(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), \
+        if(border == 2, borderColor, 'black'), if(border == 2, 2, 0), !play)
 
     // Play?
     jumpif (!play) skipPlay
@@ -276,13 +276,22 @@ lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
 lifeEncodeChars = '0123456789' + lifeEncodeAlpha + upper(lifeEncodeAlpha)
 
 
-function drawLife(life, size, gap, color, background, borderColor, borderSize)
+function lifeDraw(life, size, gap, color, background, borderColor, borderSize, isEdit)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
 
-    // Draw the background
+    // Set the drawing size
     setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
+    jumpif (!isEdit) skipEdit
+        setGlobal('lifeOnClickLife', life)
+        setGlobal('lifeOnClickBorder', borderSize)
+        setGlobal('lifeOnClickGap', gap)
+        setGlobal('lifeOnClickSize', size)
+        drawOnClick(lifeOnClick)
+    skipEdit:
+
+    // Draw the background
     drawStyle(borderColor, borderSize, background)
     drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
 
@@ -305,6 +314,19 @@ function drawLife(life, size, gap, color, background, borderColor, borderSize)
         jumpif (x < width) xLoop
         y = y + 1
     jumpif (y < height) yLoop
+endfunction
+
+
+function lifeOnClick(px, py)
+    // Compute the cell index to toggle
+    x = max(0, floor((px - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
+    y = max(0, floor((py - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
+    iCell = (y * objectGet(lifeOnClickLife, 'width')) + x
+
+    // Toggle the cell
+    cells = objectGet(lifeOnClickLife, 'cells')
+    arraySet(cells, iCell, if(arrayGet(cells, iCell), 0, 1))
+    setNavigateTimeout(lifeURL(lifeEncode(lifeOnClickLife), 0), 0)
 endfunction
 
 
