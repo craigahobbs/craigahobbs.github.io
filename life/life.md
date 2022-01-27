@@ -156,10 +156,8 @@ function lifeNew(width, height, initRatio, borderRatio)
         yLoop:
             x = 0
             xLoop:
-                alive = if((x < border) || (x >= (width - border)), 0, \
-                    if((y < border) || (y >= (height - border)), 0, \
-                    if (rand() < initRatio, 1, 0)))
-                arraySet(cells, (y * width) + x, alive)
+                arraySet(cells, y * width + x, \
+                    if(x >= border && x < width - border && y >= border && y < height - border && rand() < initRatio, 1, 0))
                 x = x + 1
             jumpif (x < width) xLoop
             y = y + 1
@@ -182,17 +180,16 @@ function lifeNext(life)
     yLoop:
         x = 0
         xLoop:
-            alive = arrayGet(cells, (y * width) + x)
-            neighbor = if((x > 0) && (y > 0), arrayGet(cells, ((y - 1) * width) + (x - 1)), 0) + \
-                if(y > 0, arrayGet(cells, ((y - 1) * width) + x), 0) + \
-                if((x < (width - 1)) && (y > 0), arrayGet(cells, ((y - 1) * width) + (x + 1)), 0) + \
-                if(x > 0, arrayGet(cells, (y * width) + (x - 1)), 0) + \
-                if(x < (width - 1), arrayGet(cells, (y * width) + (x + 1)), 0) + \
-                if((x > 0) && (y < (height - 1)), arrayGet(cells, ((y + 1) * width) + (x - 1)), 0) + \
-                if(y < (height - 1), arrayGet(cells, ((y + 1) * width) + x), 0) + \
-                if((x < (width - 1)) && (y < (height - 1)), arrayGet(cells, ((y + 1) * width) + (x + 1)), 0)
-            nextAlive = if(alive, if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0))
-            arraySet(nextCells, (y * width) + x, nextAlive)
+            neighbor = if(x > 0 && y > 0, arrayGet(cells, (y - 1) * width + x - 1), 0) + \
+                if(y > 0, arrayGet(cells, (y - 1) * width + x), 0) + \
+                if(x < width - 1 && y > 0, arrayGet(cells, (y - 1) * width + x + 1), 0) + \
+                if(x > 0, arrayGet(cells, y * width + x - 1), 0) + \
+                if(x < width - 1, arrayGet(cells, y * width + x + 1), 0) + \
+                if(x > 0 && y < height - 1, arrayGet(cells, (y + 1) * width + x - 1), 0) + \
+                if(y < height - 1, arrayGet(cells, (y + 1) * width + x), 0) + \
+                if(x < width - 1 && y < height - 1, arrayGet(cells, (y + 1) * width + x + 1), 0)
+            arraySet(nextCells, y * width + x, \
+                if(arrayGet(cells, y * width + x), if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0)))
             x = x + 1
         jumpif (x < width) xLoop
         y = y + 1
@@ -283,7 +280,7 @@ function lifeDraw(life, size, gap, color, background, borderColor, borderSize, i
     cells = objectGet(life, 'cells')
 
     // Set the drawing size
-    setDrawingSize(((width * (gap + size)) + gap) + borderSize, ((height * (gap + size)) + gap) + borderSize)
+    setDrawingSize(width * (gap + size) + gap + borderSize, height * (gap + size) + gap + borderSize)
     jumpif (!isEdit) skipEdit
         setGlobal('lifeOnClickLife', life)
         setGlobal('lifeOnClickBorder', borderSize)
@@ -302,14 +299,14 @@ function lifeDraw(life, size, gap, color, background, borderColor, borderSize, i
     yLoop:
         x = 0
         xLoop:
-            jumpif (!arrayGet(cells, (y * width) + x)) skipCell
-            px = (0.5 * borderSize) + gap + (x * (size + gap))
-            py = (0.5 * borderSize) + gap + (y * (size + gap))
-            drawMove(px, py)
-            drawHLine(px + size)
-            drawVLine(py + size)
-            drawHLine(px)
-            drawClose()
+            jumpif (!arrayGet(cells, y * width + x)) skipCell
+                px = 0.5 * borderSize + gap + x * (size + gap)
+                py = 0.5 * borderSize + gap + y * (size + gap)
+                drawMove(px, py)
+                drawHLine(px + size)
+                drawVLine(py + size)
+                drawHLine(px)
+                drawClose()
             skipCell:
             x = x + 1
         jumpif (x < width) xLoop
@@ -322,12 +319,12 @@ function lifeOnClick(px, py)
     // Compute the cell index to toggle
     x = max(0, floor((px - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
     y = max(0, floor((py - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
-    iCell = (y * objectGet(lifeOnClickLife, 'width')) + x
+    iCell = y * objectGet(lifeOnClickLife, 'width') + x
 
     // Toggle the cell
     cells = objectGet(lifeOnClickLife, 'cells')
     arraySet(cells, iCell, if(arrayGet(cells, iCell), 0, 1))
-    setNavigateTimeout(lifeURL(lifeEncode(lifeOnClickLife), 0), 0)
+    setNavigateTimeout(lifeURL(lifeEncode(lifeOnClickLife), 0))
 endfunction
 
 
