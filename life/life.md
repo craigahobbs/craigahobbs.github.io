@@ -10,31 +10,33 @@ function main()
     defaultHeight = 50
     defaultPeriod = 1000
     defaultSize = 10
-    defaultColorIndex = 1
-    defaultBackgroundIndex = 2
-    defaultBorder = 1
+    defaultColorIndex = 0
+    defaultBackgroundIndex = 1
+    defaultBorder = 0
+    defaultDepth = 6
 
     // Limits
     minWidth = 20
     minHeight = 20
     minPeriod = 200
     minSize = 1
-    maxCycle = 6
+    minDepth = 0
 
     // Cell and background colors
     colors = arraySplit('forestgreen,white,lightgray,greenyellow,gold,magenta,cornflowerblue', ',')
     borderColor = 'black'
 
     // Application variables
-    play = if(vPlay, vPlay, 0)
-    period = max(minPeriod, if(vPeriod, vPeriod, defaultPeriod))
-    size = max(minSize, if(vSize, vSize, defaultSize))
-    gap = if(vGap, vGap, 1)
-    colorIndex = max(1, 1 + ((if(vColor, vColor, defaultColorIndex) - 1) % len(colors)))
-    backgroundIndex = max(1, 1 + ((if(vBackground, vBackground, defaultBackgroundIndex) - 1) % len(colors)))
-    border = if(vBorder, vBorder, defaultBorder)
-    initRatio = if(vInitRatio, vInitRatio, 0.2)
-    borderRatio = if(vBorderRatio, vBorderRatio, 0.1)
+    play = if(vPlay != null, vPlay, 0)
+    period = max(minPeriod, if(vPeriod != null, vPeriod, defaultPeriod))
+    size = max(minSize, if(vSize != null, vSize, defaultSize))
+    gap = if(vGap != null, vGap, 1)
+    depth = max(minDepth, if(vDepth != null, vDepth, defaultDepth))
+    colorIndex = if(vColor != null, vColor, defaultColorIndex) % len(colors)
+    backgroundIndex = if(vBackground != null, vBackground, defaultBackgroundIndex) % len(colors)
+    border = if(vBorder != null, vBorder, defaultBorder)
+    initRatio = if(vInitRatio != null, vInitRatio, 0.2)
+    borderRatio = if(vBorderRatio != null, vBorderRatio, 0.1)
 
     // Initialize or decode the life board
     jumpif (vLife) lifeInitDecode
@@ -56,7 +58,7 @@ function main()
         iCycle = 1
         cycleLoop:
             jumpif (encodedLife == encodedCycle) cycleDetected
-            jumpif (iCycle >= maxCycle) cycleDone
+            jumpif (iCycle >= depth) cycleDone
             lifeCycle = lifeNext(lifeCycle)
             encodedCycle = lifeEncode(lifeCycle)
             iCycle = iCycle + 1
@@ -71,10 +73,10 @@ function main()
 
     // Pause menu
     jumpif (play) skipPauseMenu
-        nextColorIndex = 1 + (colorIndex % arrayLength(colors))
-        nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, 1 + (nextColorIndex % arrayLength(colors)))
-        nextBackgroundIndex = 1 + (backgroundIndex % arrayLength(colors))
-        nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, 1 + (nextBackgroundIndex % arrayLength(colors)))
+        nextColorIndex = (colorIndex + 1) % arrayLength(colors)
+        nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, (nextColorIndex + 1) % arrayLength(colors))
+        nextBackgroundIndex = (backgroundIndex + 1) % arrayLength(colors)
+        nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, (nextBackgroundIndex + 1) % arrayLength(colors))
         encodedRandom = lifeEncode(lifeNew(lifeWidth, lifeHeight, initRatio, borderRatio))
         encodedWidthMore = lifeEncode(lifeNew(max(minWidth, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio))
         encodedWidthLess = lifeEncode(lifeNew(max(minWidth, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio))
@@ -84,14 +86,14 @@ function main()
             lifeLink('Play', encodedNext, 1), \
             ' | ' + lifeLink('Step', encodedNext, 0), \
             ' ' + lifeLink('Random', encodedRandom, 0), \
-            ' | ' + lifeLink('Background', encodedLife, 0, 0, 0, 0, nextBackgroundIndex), \
-            ' ' + lifeLink('Cell', encodedLife, 0, 0, 0, nextColorIndex), \
-            ' ' + lifeLink('Border', encodedLife, 0, 0, 0, 0, 0, if(border == 2, 1, 2)), \
+            ' | ' + lifeLink('Background', encodedLife, 0, null, null, null, nextBackgroundIndex), \
+            ' ' + lifeLink('Cell', encodedLife, 0, null, null, nextColorIndex), \
+            ' ' + lifeLink('Border', encodedLife, 0, null, null, null, null, if(border, 0, 1)), \
             ' [Reset](#var=)', \
             ' | **Width:** ' + lifeLink('More', encodedWidthMore, 0) + ' ' + lifeLink('Less', encodedWidthLess, 0), \
             ' | **Height:** ' + lifeLink('More', encodedHeightMore, 0) + ' ' + lifeLink('Less', encodedHeightLess, 0), \
-            ' | **Size:** ' + lifeLink('More', encodedLife, 0, 0, max(minSize, size + 1)) + \
-                ' ' + lifeLink('Less', encodedLife, 0, 0, max(minSize, size - 1)) \
+            ' | **Size:** ' + lifeLink('More', encodedLife, null, null, max(minSize, size + 1)) + \
+                ' ' + lifeLink('Less', encodedLife, null, null, max(minSize, size - 1)) \
         )
     skipPauseMenu:
 
@@ -105,8 +107,7 @@ function main()
     skipPlayMenu:
 
     // Life board
-    lifeDraw(life, size, gap, arrayGet(colors, colorIndex - 1), arrayGet(colors, backgroundIndex - 1), \
-        if(border == 2, borderColor, 'black'), if(border == 2, 2, 0), !play)
+    lifeDraw(life, size, gap, arrayGet(colors, colorIndex), arrayGet(colors, backgroundIndex), borderColor, if(border, 2, 0), !play)
 
     // Play?
     jumpif (!play) skipPlay
@@ -115,31 +116,29 @@ function main()
 endfunction
 
 
-function lifeURL(encodedLife, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
-    size = if(size, size, vSize)
-    period = if(period, period, vPeriod)
-    gap = if(gap, gap, vGap)
-    color = if(color, color, vColor)
-    bkgnd = if(bkgnd, bkgnd, vBackground)
-    border = if(border, border, vBorder)
-    initRatio = if(initRatio, initRatio, vInitRatio)
-    borderRatio = if(borderRatio, borderRatio, vBorderRatio)
+function lifeURL(encodedLife, play, period, size, color, bkgnd, border)
+    period = if(period != null, period, vPeriod)
+    size = if(size != null, size, vSize)
+    color = if(color != null, color, vColor)
+    bkgnd = if(bkgnd != null, bkgnd, vBackground)
+    border = if(border != null, border, vBorder)
     args = if(play, '&var.vPlay=1', '') + \
-        if(size, '&var.vSize=' + size, '') + \
-        if(period, '&var.vPeriod=' + period, '') + \
-        if(gap, '&var.vGap=' + gap, '') + \
-        if(color, '&var.vColor=' + color, '') + \
-        if(bkgnd, '&var.vBackground=' + bkgnd, '') + \
-        if(border, '&var.vBorder=' + border, '') + \
-        if(initRatio, '&var.vInitRatio=' + initRatio, '') + \
-        if(borderRatio, '&var.vBorderRatio=' + borderRatio, '') + \
-        if(encodedLife, "&var.vLife='" + encodedLife + "'", '')
+        if(period != null, '&var.vPeriod=' + period, '') + \
+        if(size != null, '&var.vSize=' + size, '') + \
+        if(color != null, '&var.vColor=' + color, '') + \
+        if(bkgnd != null, '&var.vBackground=' + bkgnd, '') + \
+        if(border != null, '&var.vBorder=' + border, '') + \
+        if(vGap != null, '&var.vGap=' + vGap, '') + \
+        if(vDepth != null, '&var.vDepth=' + vDepth, '') + \
+        if(vInitRatio != null, '&var.vInitRatio=' + vInitRatio, '') + \
+        if(vBorderRatio != null, '&var.vBorderRatio=' + vBorderRatio, '') + \
+        if(encodedLife != null, "&var.vLife='" + encodedLife + "'", '')
     return '#' + slice(args, 1)
 endfunction
 
 
-function lifeLink(text, encodedLife, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio)
-    return '[' + text + '](' + lifeURL(encodedLife, play, period, size, color, bkgnd, border, gap, initRatio, borderRatio) + ')'
+function lifeLink(text, encodedLife, play, period, size, color, bkgnd, border)
+    return '[' + text + '](' + lifeURL(encodedLife, play, period, size, color, bkgnd, border) + ')'
 endfunction
 
 
@@ -182,14 +181,14 @@ function lifeNext(life)
         x = 0
         xLoop:
             alive = arrayGet(cells, (y * width) + x)
-            neighbor = if(x > 0 && y > 0, arrayGet(cells, ((y - 1) * width) + (x - 1)), 0) + \
+            neighbor = if((x > 0) && (y > 0), arrayGet(cells, ((y - 1) * width) + (x - 1)), 0) + \
                 if(y > 0, arrayGet(cells, ((y - 1) * width) + x), 0) + \
-                if(x < width - 1 && y > 0, arrayGet(cells, ((y - 1) * width) + (x + 1)), 0) + \
+                if((x < (width - 1)) && (y > 0), arrayGet(cells, ((y - 1) * width) + (x + 1)), 0) + \
                 if(x > 0, arrayGet(cells, (y * width) + (x - 1)), 0) + \
-                if(x < width - 1, arrayGet(cells, (y * width) + (x + 1)), 0) + \
-                if(x > 0 && y < height - 1, arrayGet(cells, ((y + 1) * width) + (x - 1)), 0) + \
-                if(y < height - 1, arrayGet(cells, ((y + 1) * width) + x), 0) + \
-                if(x < width - 1 && y < height - 1, arrayGet(cells, ((y + 1) * width) + (x + 1)), 0)
+                if(x < (width - 1), arrayGet(cells, (y * width) + (x + 1)), 0) + \
+                if((x > 0) && (y < (height - 1)), arrayGet(cells, ((y + 1) * width) + (x - 1)), 0) + \
+                if(y < (height - 1), arrayGet(cells, ((y + 1) * width) + x), 0) + \
+                if((x < (width - 1)) && (y < (height - 1)), arrayGet(cells, ((y + 1) * width) + (x + 1)), 0)
             nextAlive = if(alive, if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0))
             arraySet(nextCells, (y * width) + x, nextAlive)
             x = x + 1
