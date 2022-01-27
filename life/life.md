@@ -111,8 +111,13 @@ function main()
 
     // Play?
     jumpif (!play) skipPlay
-    setNavigateTimeout(lifeURL(encodedNext, 1), period)
+        setNavigateTimeout(lifeURL(encodedNext, 1), period)
     skipPlay:
+endfunction
+
+
+function lifeLink(text, encodedLife, play, period, size, color, bkgnd, border)
+    return '[' + text + '](' + lifeURL(encodedLife, play, period, size, color, bkgnd, border) + ')'
 endfunction
 
 
@@ -134,11 +139,6 @@ function lifeURL(encodedLife, play, period, size, color, bkgnd, border)
         if(vBorderRatio != null, '&var.vBorderRatio=' + vBorderRatio, '') + \
         if(encodedLife != null, "&var.vLife='" + encodedLife + "'", '')
     return '#' + slice(args, 1)
-endfunction
-
-
-function lifeLink(text, encodedLife, play, period, size, color, bkgnd, border)
-    return '[' + text + '](' + lifeURL(encodedLife, play, period, size, color, bkgnd, border) + ')'
 endfunction
 
 
@@ -174,6 +174,8 @@ function lifeNext(life)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
+
+    // Compute the next life generation
     nextLife = lifeNew(width, height, 0, 0)
     nextCells = objectGet(nextLife, 'cells')
     y = 0
