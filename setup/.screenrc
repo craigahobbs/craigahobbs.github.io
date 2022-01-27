@@ -1,0 +1,3 @@
+startup_message off
+escape ^Oo
+hardstatus alwayslastline "%{b kw}%H | %{-b}%u %-Lw%{= rW}%50> %n%f %t %{-}%+Lw%<"
