@@ -57,8 +57,8 @@ function main()
         encodedCycle = encodedNext
         iCycle = 1
         cycleLoop:
+            jumpif (iCycle > depth) cycleDone
             jumpif (encodedLife == encodedCycle) cycleDetected
-            jumpif (iCycle >= depth) cycleDone
             lifeCycle = lifeNext(lifeCycle)
             encodedCycle = lifeEncode(lifeCycle)
             iCycle = iCycle + 1
