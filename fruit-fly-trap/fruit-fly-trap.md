@@ -44,9 +44,9 @@ function main()
         '   trap cone, allowing enough room for the liquid and space for the fruit flies to get into the', \
         '   trap. Use the "Less" and "More" links below to enter the measurements.', \
         '', \
-        '    **Inside diameter (d)** (' + \
-            if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), coneLink('Less', 0, diameter - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), coneLink('More', 0, diameter + delta), 'More') + \
+        '    **Top diameter (d)** (' + \
+            if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), coneLink('Less', null, diameter - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), coneLink('More', null, diameter + delta), 'More') + \
             '): ' + diameter + ' ' + units, \
         '', \
         '    **Height (h)** (' + \
@@ -55,13 +55,13 @@ function main()
             '): ' + height + ' ' + units, \
         '', \
         '    **Bottom offset (o)** (' + \
-            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), coneLink('Less', 0, 0, 0, offset - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), coneLink('More', 0, 0, 0, offset + delta), 'More') + \
+            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), coneLink('Less', null, null, null, offset - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), coneLink('More', null, null, null, offset + delta), 'More') + \
             '): ' + offset + ' ' + units, \
         '', \
         '    **Bottom diameter (b)** (' + \
-            if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), coneLink('Less', 0, 0, bottom - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), coneLink('More', 0, 0, bottom + delta), 'More') + \
+            if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), coneLink('Less', null, null, bottom - delta), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), coneLink('More', null, null, bottom + delta), 'More') + \
             '): ' + bottom + ' ' + units, \
         '', \
         '    Click here to [use ' + if(vMetric, 'imperial', 'metric') + ' units](' + if(vMetric, '#var=', '#var.vMetric=1') + ').', \
@@ -71,7 +71,7 @@ function main()
         '2. Print the cone form using the link below. Cut out the cone form carefully using scissors. Use', \
         "   your browser's back button to return to this page after printing.", \
         '', \
-        '   ' + coneLink('Print Cone Form', 0, 0, 0, 0, 1, 'the-fruit-fly-trap-maker'), \
+        '   ' + coneLink('Print Cone Form', null, null, null, null, 1, 'the-fruit-fly-trap-maker'), \
         '', \
         "3. Tape the cone together along the cone form's flap line.", \
         '', \
@@ -88,7 +88,7 @@ function main()
     skipInstructions:
 
     // Print close link
-    markdownPrint('', coneLink('Close', 0, 0, 0, 0, 0, 'the-fruit-fly-trap-maker'))
+    markdownPrint('', coneLink('Close', null, null, null, null, null, 'the-fruit-fly-trap-maker'))
 
     // Render the cone form
     pixelsPerPoint = 4 / 3
@@ -103,10 +103,10 @@ endfunction
 
 
 function coneLink(text, height, diameter, bottom, offset, print, anchor)
-    height = if(height > 0, height, vHeight)
-    diameter = if(diameter > 0, diameter, vDiameter)
-    bottom = if(bottom > 0, bottom, vBottom)
-    offset = if(offset > 0, offset, vOffset)
+    height = if(height != null, height, vHeight)
+    diameter = if(diameter != null, diameter, vDiameter)
+    bottom = if(bottom != null, bottom, vBottom)
+    offset = if(offset != null, offset, vOffset)
     args = if(print, '&var.vPrint=1', '') + \
         if(vMetric, '&var.vMetric=1', '') + \
         if(height, '&var.vHeight=' + round(height, 3), '') + \
@@ -128,12 +128,12 @@ endfunction
 
 function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, extraLength)
     // Compute the cone form's radii and theta
-    formRadius = (height * diameterBottom) / (diameterTop - diameterBottom)
+    formRadius = height * diameterBottom / (diameterTop - diameterBottom)
     formRadiusOuter = formRadius + height + extraLength
-    formTheta = pi() * (diameterBottom / formRadius)
+    formTheta = pi() * diameterBottom / formRadius
 
     // Compute the flap angle
-    flapTheta = formTheta + (flapLength / formRadius)
+    flapTheta = formTheta + flapLength / formRadius
 
     // Compute the SVG extents
     formMinX = 0
@@ -145,7 +145,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     flapOuterX = formRadiusOuter * sin(flapTheta)
     flapOuterY = formRadiusOuter * cos(flapTheta)
 
-    jumpif (flapTheta > (0.5 * pi())) formMinMax1
+    jumpif (flapTheta > 0.5 * pi()) formMinMax1
         formMinX = 0
         formMinY = flapInnerY
         formMaxX = flapOuterX
@@ -161,7 +161,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
         jump formMinMaxDone
 
     formMinMax2:
-    jumpif (flapTheta > (1.5 * pi())) formMinMax3
+    jumpif (flapTheta > 1.5 * pi()) formMinMax3
         formMinX = flapOuterX
         formMinY = -formRadiusOuter
         formMaxX = formRadiusOuter
@@ -189,16 +189,16 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
 
     // Draw the cone form
     edge = 5 * lineWidth
-    setDrawingSize((2 * edge) + (formMaxX - formMinX), (2 * edge) + (formMaxY - formMinY))
-    drawStyle('black', lineWidth, 'none', (3 * lineWidth) + ' ' + (3 * lineWidth))
+    setDrawingSize(2 * edge + formMaxX - formMinX, 2 * edge + formMaxY - formMinY)
+    drawStyle('black', lineWidth, 'none', 3 * lineWidth + ' ' + 3 * lineWidth)
     drawMove(edge - formMinX, edge)
-    drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > pi(), 1, edge + (flapOuterX - formMinX), edge + (formMaxY - flapOuterY))
-    drawLine(edge + (flapInnerX - formMinX), edge + (formMaxY - flapInnerY))
-    drawArc(formRadius, formRadius, 0, flapTheta > pi(), 0, edge - formMinX, edge + (formRadiusOuter - formRadius))
+    drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > pi(), 1, edge + flapOuterX - formMinX, edge + formMaxY - flapOuterY)
+    drawLine(edge + flapInnerX - formMinX, edge + formMaxY - flapInnerY)
+    drawArc(formRadius, formRadius, 0, flapTheta > pi(), 0, edge - formMinX, edge + formRadiusOuter - formRadius)
     drawClose()
     drawStyle('lightgray', lineWidth, 'none')
-    drawMove(edge + (guideInnerX - formMinX), edge + (formMaxY - guideInnerY))
-    drawLine(edge + (guideOuterX - formMinX), edge + (formMaxY - guideOuterY))
+    drawMove(edge + guideInnerX - formMinX, edge + formMaxY - guideInnerY)
+    drawLine(edge + guideOuterX - formMinX, edge + formMaxY - guideOuterY)
 endfunction
 
 
@@ -218,18 +218,18 @@ function fruitFlyTrapDiagram()
 
     // Glass position
     glassTop = 0.2 * height
-    glassLeft = imageMargin + annotationWidth + (0.5 * glassLineWidth)
+    glassLeft = imageMargin + annotationWidth + 0.5 * glassLineWidth
     glassLeftRight = glassLeft + 0.5 * glassLineWidth
-    glassBottom = (height - imageMargin) - (0.5 * glassLineWidth)
+    glassBottom = height - imageMargin - 0.5 * glassLineWidth
     glassRight = width - glassLeft
-    glassRightLeft = glassRight - (0.5 * glassLineWidth)
+    glassRightLeft = glassRight - 0.5 * glassLineWidth
 
     // Cone position
-    coneBottom = (((height - imageMargin) - glassLineWidth) - liquidHeight) - airHeight
-    coneBottomLeft = (0.5 * width) - annotationWidth
+    coneBottom = height - imageMargin - glassLineWidth - liquidHeight - airHeight
+    coneBottomLeft = 0.5 * width - annotationWidth
     coneBottomRight = width - coneBottomLeft
     coneTop = imageMargin
-    coneTopLeft = ((coneBottomLeft * (glassTop - coneTop)) + (glassLeftRight * (coneTop - coneBottom))) / (glassTop - coneBottom)
+    coneTopLeft = (coneBottomLeft * (glassTop - coneTop) + glassLeftRight * (coneTop - coneBottom)) / (glassTop - coneBottom)
     coneTopRight = width - coneTopLeft
 
     // Draw the fruit fly trap diagram
@@ -255,26 +255,26 @@ function fruitFlyTrapDiagram()
     drawClose()
 
     // Annotations
-    verticalAnnotation('h', imageMargin + (0.5 * annotationBarWidth), glassTop, glassBottom, \
+    verticalAnnotation('h', imageMargin + 0.5 * annotationBarWidth, glassTop, glassBottom, \
         annotationBarWidth, annotationTextHeight, annotationTextSize)
-    verticalAnnotation('o', (width - imageMargin) - (0.5 * annotationBarWidth), coneBottom, glassBottom, \
+    verticalAnnotation('o', width - imageMargin - 0.5 * annotationBarWidth, coneBottom, glassBottom, \
         annotationBarWidth, annotationTextHeight, annotationTextSize)
-    horizontalAnnotation('d', (glassTop - annotationWidth) + (0.5 * annotationBarWidth), glassLeftRight, glassRightLeft, \
+    horizontalAnnotation('d', glassTop - annotationWidth + 0.5 * annotationBarWidth, glassLeftRight, glassRightLeft, \
         annotationBarWidth, annotationTextHeight, annotationTextSize)
-    horizontalAnnotation('b', (coneBottom - annotationWidth) + (0.5 * annotationBarWidth), coneBottomLeft, coneBottomRight, \
+    horizontalAnnotation('b', coneBottom - annotationWidth + 0.5 * annotationBarWidth, coneBottomLeft, coneBottomRight, \
         annotationBarWidth, annotationTextHeight, annotationTextSize)
 endfunction
 
 
 function verticalAnnotation(text, xcoord, top, bottom, annotationBarWidth, annotationTextHeight, annotationTextSize)
-    drawMove(xcoord - (0.5 * annotationBarWidth), top)
-    drawHLine(xcoord + (0.5 * annotationBarWidth))
+    drawMove(xcoord - 0.5 * annotationBarWidth, top)
+    drawHLine(xcoord + 0.5 * annotationBarWidth)
     drawMove(xcoord, top)
-    drawVLine((0.5 * (top + bottom)) - (0.5 * annotationTextHeight))
+    drawVLine(0.5 * (top + bottom) - 0.5 * annotationTextHeight)
     drawMove(xcoord, bottom)
-    drawVLine((0.5 * (top + bottom)) + (0.5 * annotationTextHeight))
-    drawMove(xcoord - (0.5 * annotationBarWidth), bottom)
-    drawHLine(xcoord + (0.5 * annotationBarWidth))
+    drawVLine(0.5 * (top + bottom) + 0.5 * annotationTextHeight)
+    drawMove(xcoord - 0.5 * annotationBarWidth, bottom)
+    drawHLine(xcoord + 0.5 * annotationBarWidth)
     drawTextStyle(annotationTextSize)
     drawText(text, xcoord, 0.5 * (top + bottom))
 endfunction
@@ -282,14 +282,14 @@ endfunction
 
 function horizontalAnnotation(text, ycoord, left, right, annotationBarWidth, annotationTextHeight, annotationTextSize)
     drawStyle('black', lineWidth)
-    drawMove(left, ycoord - (0.5 * annotationBarWidth))
+    drawMove(left, ycoord - 0.5 * annotationBarWidth)
     drawVLine(ycoord + 0.5 * annotationBarWidth)
     drawMove(left, ycoord)
-    drawHLine((0.5 * (left + right)) - (0.5 * annotationTextHeight))
+    drawHLine(0.5 * (left + right) - 0.5 * annotationTextHeight)
     drawMove(right, ycoord)
-    drawHLine((0.5 * (left + right)) + (0.5 * annotationTextHeight))
-    drawMove(right, ycoord - (0.5 * annotationBarWidth))
-    drawVLine(ycoord + (0.5 * annotationBarWidth))
+    drawHLine(0.5 * (left + right) + 0.5 * annotationTextHeight)
+    drawMove(right, ycoord - 0.5 * annotationBarWidth)
+    drawVLine(ycoord + 0.5 * annotationBarWidth)
     drawTextStyle(annotationTextSize)
     drawText(text, 0.5 * (left + right), ycoord)
 endfunction
