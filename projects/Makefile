@@ -106,6 +106,7 @@ $(call PYTHON_PROJECT, template-specialize, 'git@github.com:craigahobbs/template
 $(call PYTHON_PROJECT, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git')
 
 # Javascript projects
+$(call OTHER_PROJECT,      calc-script, 'git@github.com:craigahobbs/calc-script.git')
 $(call JAVASCRIPT_PROJECT, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git')
 $(call JAVASCRIPT_PROJECT, element-app, 'git@github.com:craigahobbs/element-app.git')
 $(call JAVASCRIPT_PROJECT, element-model, 'git@github.com:craigahobbs/element-model.git')
