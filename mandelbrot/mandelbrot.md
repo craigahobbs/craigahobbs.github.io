@@ -50,7 +50,8 @@ function main()
     )
 
     // Draw the Mandelbrot set
-    mandelbrotSet(width, height, pixelSize, cycle, x, y, xRange, iter)
+    colors = arraySplit('#17becf,#2ca02c,#98df8a,#1f77b4', ',')
+    mandelbrotSet(width, height, pixelSize, colors, cycle, x, y, xRange, iter)
 endfunction
 
 
@@ -72,7 +73,7 @@ function menuLinkPair(text, link1, link2)
 endfunction
 
 
-function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
+function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRange, iter)
     // Set the drawing size
     setDrawingSize(width * pixelSize, height * pixelSize)
 
@@ -87,18 +88,8 @@ function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
         y = 0
         loopY:
             n = mandelbrotValue(xMin + (x / (width - 1)) * xRange, yMin + (y / (height - 1)) * yRange, iter)
-            nCycle = if(n == 0, 0, n + colorCycle)
-            color = if(nCycle == 0, 'black', if(nCycle % 4 == 0, '#17becf', if(nCycle % 4 == 1, '#2ca02c', if(nCycle % 4 == 2, '#98df8a', '#1f77b4'))))
-
-            px = x * pixelSize
-            py = (height - y - 1) * pixelSize
-            drawStyle('none', 0, color)
-            drawMove(px, py)
-            drawHLine(px + pixelSize)
-            drawVLine(py + pixelSize)
-            drawHLine(px)
-            drawClose()
-
+            drawStyle('none', 0, if(n == 0, 'black', arrayGet(colors, (n + colorCycle) % len(colors))))
+            drawRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
             y = y + 1
         jumpif (y < height) loopY
 
