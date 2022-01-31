@@ -56,13 +56,13 @@ endfunction
 
 function menuLink(text, w, h, s, i, x, y, xr, vc)
     args = if(w, '&var.vWidth=' + w, '') + \
-        if(h, '&var.vHeight=' + h, '') + \
-        if(s, '&var.vSize=' + s, '') + \
-        if(i, '&var.vIter=' + i, '') + \
-        if(x, '&var.vX=' + x, '') + \
-        if(y, '&var.vY=' + y, '') + \
-        if(xr, '&var.vXR=' + xr, '') + \
-        if(vc, '&var.vCycle=' + vc, '')
+        if(h != null, '&var.vHeight=' + h, '') + \
+        if(s != null, '&var.vSize=' + s, '') + \
+        if(i != null, '&var.vIter=' + i, '') + \
+        if(x != null, '&var.vX=' + x, '') + \
+        if(y != null, '&var.vY=' + y, '') + \
+        if(xr != null, '&var.vXR=' + xr, '') + \
+        if(vc != null, '&var.vCycle=' + vc, '')
     return '[' + text + '](#' + slice(args, 1) + ')'
 endfunction
 
@@ -78,19 +78,26 @@ function mandelbrotSet(width, height, pixelSize, colorCycle, x, y, xRange, iter)
 
     // Compute the set extents
     yRange = (height / width) * xRange
-    xMin = x - (0.5 * xRange)
-    yMin = y - (0.5 * yRange)
+    xMin = x - 0.5 * xRange
+    yMin = y - 0.5 * yRange
 
     // Draw each pixel in the set
     x = 0
     loopX:
         y = 0
         loopY:
-            n = mandelbrotValue(xMin + ((x / (width - 1)) * xRange), yMin + ((y / (height - 1)) * yRange), iter)
+            n = mandelbrotValue(xMin + (x / (width - 1)) * xRange, yMin + (y / (height - 1)) * yRange, iter)
             nCycle = if(n == 0, 0, n + colorCycle)
-            color = if(nCycle == 0, 'black', if((nCycle % 4) == 0, '#17becf', if((nCycle % 4) == 1, '#2ca02c', if((nCycle % 4) == 2, '#98df8a', '#1f77b4'))))
+            color = if(nCycle == 0, 'black', if(nCycle % 4 == 0, '#17becf', if(nCycle % 4 == 1, '#2ca02c', if(nCycle % 4 == 2, '#98df8a', '#1f77b4'))))
+
+            px = x * pixelSize
+            py = (height - y - 1) * pixelSize
             drawStyle('none', 0, color)
-            drawRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
+            drawMove(px, py)
+            drawHLine(px + pixelSize)
+            drawVLine(py + pixelSize)
+            drawHLine(px)
+            drawClose()
 
             y = y + 1
         jumpif (y < height) loopY
@@ -112,11 +119,11 @@ function mandelbrotValue(x, y, maxIterations)
     n = 1
     loop:
         // Done?
-        jumpif (sqrt((c2r * c2r) + (c2i * c2i)) > 2) loopDone
+        jumpif (sqrt(c2r * c2r + c2i * c2i) > 2) loopDone
 
         // c2 = c2 * c2 + c1
-        c2rNew = (c2r * c2r) - (c2i * c2i) + c1r
-        c2i = (2 * c2r * c2i) + c1i
+        c2rNew = c2r * c2r - c2i * c2i + c1r
+        c2i = 2 * c2r * c2i + c1i
         c2r = c2rNew
 
         n = n + 1
