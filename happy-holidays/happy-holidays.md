@@ -39,7 +39,7 @@ function main()
 
     // Draw the title
     drawStyle('black', 5, '#ff0000f0')
-    drawRect((0.5 * getDrawingWidth()) - (0.5 * titleBoxWidth), (0.5 * getDrawingHeight()) - (0.5 * titleBoxHeight), titleBoxWidth, titleBoxHeight)
+    drawRect(0.5 * getDrawingWidth() - 0.5 * titleBoxWidth, 0.5 * getDrawingHeight() - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
     drawText(titleText, 0.5 * getDrawingWidth(), 0.5 * getDrawingHeight())
 endfunction
@@ -48,13 +48,13 @@ endfunction
 function shapes(shapeFn, count, sizeRatio)
     ix = 0
     loop:
-        size = sizeRatio * (1 + (2 * rand())) * if(getDrawingWidth() < getDrawingHeight(), getDrawingWidth(), getDrawingHeight())
+        size = sizeRatio * (1 + 2 * rand()) * if(getDrawingWidth() < getDrawingHeight(), getDrawingWidth(), getDrawingHeight())
         minX = size
         maxX = getDrawingWidth() - size
         minY = size
         maxY = getDrawingHeight() - size
-        x = minX + (rand() * (maxX - minX))
-        y = minY + (rand() * (maxY - minY))
+        x = minX + rand() * (maxX - minX)
+        y = minY + rand() * (maxY - minY)
         shapeFn(x, y, size)
     ix = ix + 1
     jumpif (ix < count) loop
@@ -63,10 +63,10 @@ endfunction
 
 function skinnyStar(x, y, size)
     drawStyle('gray')
-    drawMove(x + (0.5 * size), y)
+    drawMove(x + 0.5 * size, y)
     drawVLine(y + size)
-    drawMove(x + (0.35 * size), y + (0.5 * size))
-    drawHLine(x + (0.65 * size))
+    drawMove(x + 0.35 * size, y + 0.5 * size)
+    drawHLine(x + 0.65 * size)
 endfunction
 
 
@@ -75,13 +75,13 @@ function chubbyStar(x, y, size)
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
     drawStyle('black', 2, fill)
     drawMove(x, y)
-    drawLine(x + (0.5 * size), y + (0.33 * size))
+    drawLine(x + 0.5 * size, y + 0.33 * size)
     drawLine(x + size, y)
-    drawLine(x + (0.67 * size), y + (0.5 * size))
+    drawLine(x + 0.67 * size, y + 0.5 * size)
     drawLine(x + size, y + size)
-    drawLine(x + (0.5 * size), y + (0.67 * size))
+    drawLine(x + 0.5 * size, y + 0.67 * size)
     drawLine(x, y + size)
-    drawLine(x + (0.33 * size), y + (0.5 * size))
+    drawLine(x + 0.33 * size, y + 0.5 * size)
     drawClose()
 endfunction
 
