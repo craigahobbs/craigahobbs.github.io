@@ -36,6 +36,8 @@
 
 [markdown-charts](https://github.com/craigahobbs/markdown-charts#readme)
 
+[calc-script](https://github.com/craigahobbs/calc-script#readme)
+
 
 ### Markdown Book
 
