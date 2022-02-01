@@ -5,19 +5,17 @@
 // https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 function main()
-    jumpif (vPrint) skipMenu
-
     // Menu
-    markdownPrint( \
-        '[Reset](#var=) |', \
-        '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-        '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-        '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-        "[Custom Message](#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + ') |', \
-        '[Print](#var.vPrint=1' + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
-            if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
-    )
-
+    jumpif (vPrint) skipMenu
+        markdownPrint( \
+            '[Reset](#var=) |', \
+            '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
+            '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
+            '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
+            "[Custom Message](#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + ') |', \
+            '[Print](#var.vPrint=1' + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
+                if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
+        )
     skipMenu:
 
     // Set the drawing width/height

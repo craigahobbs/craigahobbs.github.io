@@ -39,12 +39,7 @@ function main()
     borderRatio = if(vBorderRatio != null, vBorderRatio, 0.1)
 
     // Initialize or decode the life board
-    jumpif (vLife) lifeInitDecode
-        life = lifeNew(defaultWidth, defaultHeight, initRatio, borderRatio)
-    jump lifeInitDone
-    lifeInitDecode:
-        life = lifeDecode(vLife)
-    lifeInitDone:
+    life = if(vLife, lifeDecode(vLife), lifeNew(defaultWidth, defaultHeight, initRatio, borderRatio))
     lifeWidth = objectGet(life, 'width')
     lifeHeight = objectGet(life, 'height')
 
@@ -110,9 +105,7 @@ function main()
     lifeDraw(life, size, gap, arrayGet(colors, colorIndex), arrayGet(colors, backgroundIndex), borderColor, if(border, 2, 0), !play)
 
     // Play?
-    jumpif (!play) skipPlay
-        setNavigateTimeout(lifeURL(encodedNext, 1), period)
-    skipPlay:
+    if(play, setNavigateTimeout(lifeURL(encodedNext, 1), period))
 endfunction
 
 
@@ -230,9 +223,7 @@ function lifeEncode(life)
         iCell = iCell + 1
     jumpif (iCell < arrayLength(cells)) cellLoop
 
-    jumpif (!count) skipLast
-    arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
-    skipLast:
+    if(count, arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1)))
 
     return width + '-' + height + '-' + arrayJoin(lifeChars, '')
 endfunction
