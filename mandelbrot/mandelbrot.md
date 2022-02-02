@@ -14,7 +14,7 @@ function main()
     iter = if(vIter, vIter, 60)
 
     // Mandelbrot point extents
-    x = if(vX, vX, 0.5)
+    x = if(vX, vX, -0.5)
     y = if(vY, vY, 0)
     xRange = if(vXR, vXR, 2.6)
 
@@ -113,7 +113,7 @@ function mandelbrotValue(x, y, maxIterations)
         jumpif (sqrt(c2r * c2r + c2i * c2i) > 2) loopDone
 
         // c2 = c2 * c2 + c1
-        c2rNew = c2r * c2r - c2i * c2i - c1r
+        c2rNew = c2r * c2r - c2i * c2i + c1r
         c2i = 2 * c2r * c2i + c1i
         c2r = c2rNew
 
