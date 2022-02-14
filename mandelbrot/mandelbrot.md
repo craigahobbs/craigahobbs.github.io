@@ -50,7 +50,7 @@ function main()
     )
 
     // Draw the Mandelbrot set
-    colors = arraySplit('#17becf,#2ca02c,#98df8a,#1f77b4', ',')
+    colors = arrayNewArgs('#17becf', '#2ca02c', '#98df8a', '#1f77b4')
     mandelbrotSet(width, height, pixelSize, colors, cycle, x, y, xRange, iter)
 endfunction
 

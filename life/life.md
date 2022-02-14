@@ -23,7 +23,7 @@ function main()
     minDepth = 0
 
     // Cell and background colors
-    colors = arraySplit('forestgreen,white,lightgray,greenyellow,gold,magenta,cornflowerblue', ',')
+    colors = arrayNewArgs('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
     borderColor = 'black'
 
     // Application variables
@@ -231,7 +231,7 @@ endfunction
 
 function lifeDecode(lifeStr)
     // Split the encoded life string into width, height, and cell string
-    parts = arraySplit(lifeStr, '-')
+    parts = split(lifeStr, '-')
     width = value(arrayGet(parts, 0))
     height = value(arrayGet(parts, 1))
     cellsStr = arrayGet(parts, 2)
