@@ -23,7 +23,7 @@ function main()
     minDepth = 0
 
     // Cell and background colors
-    colors = arrayNewArgs('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
+    colors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
     borderColor = 'black'
 
     // Application variables
@@ -139,7 +139,7 @@ function lifeNew(width, height, initRatio, borderRatio)
     life = objectNew()
     objectSet(life, 'width', width)
     objectSet(life, 'height', height)
-    cells = arrayNew(width * height)
+    cells = arrayNewSize(width * height)
     objectSet(life, 'cells', cells)
 
     // Initialize the life
