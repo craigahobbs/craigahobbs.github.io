@@ -23,7 +23,7 @@ _$(strip $(3))-$(strip $(1)):
 endef
 
 
-# Project rules function - args are (project_name, type, git_repository)
+# Project rules function - args are (project_name, type, git_repository, alpha)
 define PROJECT_RULE
 $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
 	if [ ! -d $$$$HOME/src/$(strip $(1)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(1)); fi
@@ -42,10 +42,10 @@ ifeq '$(strip $(2))' 'makefile'
 	$(MAKE) -C $$$$HOME/src/$(strip $(1)) commit
 endif
 ifeq '$(strip $(2))' 'python'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) commit
+	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) $(if $(strip $(4)), lint doc test, commit)
 endif
 ifeq '$(strip $(2))' 'javascript'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) commit
+	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) $(if $(strip $(4)), lint doc test, commit)
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
@@ -84,10 +84,10 @@ endef
 
 
 # Project helper functions - args are (project_name, git_repository)
-MAKEFILE_PROJECT = $(eval $(call PROJECT_RULE, $(1), makefile, $(2)))
-PYTHON_PROJECT = $(eval $(call PROJECT_RULE, $(1), python, $(2)))
-JAVASCRIPT_PROJECT = $(eval $(call PROJECT_RULE, $(1), javascript, $(2)))
-OTHER_PROJECT = $(eval $(call PROJECT_RULE, $(1), other, $(2)))
+MAKEFILE_PROJECT = $(eval $(call PROJECT_RULE, $(1), makefile, $(2), $(3)))
+PYTHON_PROJECT = $(eval $(call PROJECT_RULE, $(1), python, $(2), $(3)))
+JAVASCRIPT_PROJECT = $(eval $(call PROJECT_RULE, $(1), javascript, $(2), $(3)))
+OTHER_PROJECT = $(eval $(call PROJECT_RULE, $(1), other, $(2), $(3)))
 
 
 # Makefile projects
@@ -106,12 +106,12 @@ $(call PYTHON_PROJECT, template-specialize, 'git@github.com:craigahobbs/template
 $(call PYTHON_PROJECT, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git')
 
 # Javascript projects
-$(call OTHER_PROJECT,      calc-script, 'git@github.com:craigahobbs/calc-script.git')
+$(call JAVASCRIPT_PROJECT, calc-script, 'git@github.com:craigahobbs/calc-script.git', 1)
 $(call JAVASCRIPT_PROJECT, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git')
 $(call JAVASCRIPT_PROJECT, element-app, 'git@github.com:craigahobbs/element-app.git')
 $(call JAVASCRIPT_PROJECT, element-model, 'git@github.com:craigahobbs/element-model.git')
 $(call JAVASCRIPT_PROJECT, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git')
-$(call OTHER_PROJECT,      markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git')
+$(call JAVASCRIPT_PROJECT, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git', 1)
 $(call JAVASCRIPT_PROJECT, markdown-model, 'git@github.com:craigahobbs/markdown-model.git')
 $(call JAVASCRIPT_PROJECT, markdown-up, 'git@github.com:craigahobbs/markdown-up.git')
 $(call JAVASCRIPT_PROJECT, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git')
