@@ -106,12 +106,12 @@ $(call PYTHON_PROJECT, template-specialize, 'git@github.com:craigahobbs/template
 $(call PYTHON_PROJECT, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git')
 
 # Javascript projects
-$(call OTHER_PROJECT,      calc-script, 'git@github.com:craigahobbs/calc-script.git')
+$(call JAVASCRIPT_PROJECT, calc-script, 'git@github.com:craigahobbs/calc-script.git')
 $(call JAVASCRIPT_PROJECT, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git')
 $(call JAVASCRIPT_PROJECT, element-app, 'git@github.com:craigahobbs/element-app.git')
 $(call JAVASCRIPT_PROJECT, element-model, 'git@github.com:craigahobbs/element-model.git')
 $(call JAVASCRIPT_PROJECT, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git')
-$(call OTHER_PROJECT,      markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git')
+$(call JAVASCRIPT_PROJECT, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git')
 $(call JAVASCRIPT_PROJECT, markdown-model, 'git@github.com:craigahobbs/markdown-model.git')
 $(call JAVASCRIPT_PROJECT, markdown-up, 'git@github.com:craigahobbs/markdown-up.git')
 $(call JAVASCRIPT_PROJECT, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git')
