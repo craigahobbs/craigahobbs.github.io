@@ -68,12 +68,11 @@ function main()
         '', \
         '    At any time, you can [reset the cone measurements](' + if(vMetric, '#var.vMetric=1', '#var=') + ').', \
         '', \
-        '2. Print the cone form using the link below. Cut out the cone form carefully using scissors. Use', \
-        "   your browser's back button to return to this page after printing.", \
+        '2. Print the cone form using the link below.', \
         '', \
         '   ' + coneLink('Print Cone Form', null, null, null, null, 1, 'the-fruit-fly-trap-maker'), \
         '', \
-        "3. Tape the cone together along the cone form's flap line.", \
+        "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
         '', \
         '4. Pour a small amount of fruit-fly-attracting liquid (e.g., apple cider vinegar) into the glass. Be', \
         '   sure the liquid level is at least ' + if(vMetric, '1/2 cm.', '1/4 in.') + ' below the cone-bottom.', \
