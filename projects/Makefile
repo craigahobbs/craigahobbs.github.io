@@ -5,7 +5,7 @@
 MAKEJ ?= -j
 
 
-.PHONY: clean commit help pull superclean
+.PHONY: clean commit help pull superclean report
 help:
 	@echo 'usage: make [clean|commit|gh-pages|gh-pages-check|pull|superclean]'
 	@echo '            TYPE=[python|javascript|makefile|other]'
@@ -80,6 +80,12 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
 ifneq '$(strip $(2))' 'other'
 	$(MAKE) -C $$$$HOME/src/$(strip $(1)) superclean
 endif
+
+report: _report-$(strip $(1))
+
+.PHONY: _report-$(strip $(1))
+_report-$(strip $(1)):
+	@echo '$(strip $(1)) ($(strip $(2)))'
 endef
 
 
