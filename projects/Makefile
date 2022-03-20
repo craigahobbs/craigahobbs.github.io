@@ -81,11 +81,10 @@ ifneq '$(strip $(2))' 'other'
 	$(MAKE) -C $$$$HOME/src/$(strip $(1)) superclean
 endif
 
-report: _report-$(strip $(1))
-
-.PHONY: _report-$(strip $(1))
-_report-$(strip $(1)):
+$(call PROJECT_RULE_HEADER, $(1), $(2), report)
+ifneq '$(strip $(2))' 'other'
 	@echo '$(strip $(1)) ($(strip $(2)))'
+endif
 endef
 
 
