@@ -82,9 +82,7 @@ ifneq '$(strip $(2))' 'other'
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), report)
-ifneq '$(strip $(2))' 'other'
 	@echo '$(strip $(1)) ($(strip $(2)))'
-endif
 endef
 
 
