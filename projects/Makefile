@@ -16,7 +16,7 @@ define PROJECT_RULE_HEADER
 .PHONY: _$(strip $(3))-$(strip $(1))
 ifeq '$(TYPE)' ''
 $(strip $(3)): _$(strip $(3))-$(strip $(1))
-else ifeq '$(TYPE)' '$(strip $(2))'
+else ifeq '$(findstring $(strip $(2)),$(TYPE))' '$(strip $(2))'
 $(strip $(3)): _$(strip $(3))-$(strip $(1))
 endif
 _$(strip $(3))-$(strip $(1)):
