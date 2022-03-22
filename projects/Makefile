@@ -15,72 +15,72 @@ help_:
 	@echo '========'
 
 
-# Project rule header function - args are (project_name, type, rule)
+# Project rule header function - args are (project_type, project_name, rule)
 define PROJECT_RULE_HEADER
-.PHONY: _$(strip $(3))-$(strip $(1))
+.PHONY: _$(strip $(3))-$(strip $(2))
 ifeq '$(TYPE)' ''
-$(strip $(3)): _$(strip $(3))-$(strip $(1))
-else ifeq '$(findstring $(strip $(2)),$(TYPE))' '$(strip $(2))'
-$(strip $(3)): _$(strip $(3))-$(strip $(1))
+$(strip $(3)): _$(strip $(3))-$(strip $(2))
+else ifeq '$(findstring $(strip $(1)),$(TYPE))' '$(strip $(1))'
+$(strip $(3)): _$(strip $(3))-$(strip $(2))
 endif
-_$(strip $(3))-$(strip $(1)):
+_$(strip $(3))-$(strip $(2)):
 endef
 
 
-# Project rules function - args are (project_name, type, git_repository)
+# Project rules function - args are (project_type, project_name, git_repository)
 define PROJECT_RULE
 $(call PROJECT_RULE_HEADER, $(1), $(2), help)
-	@echo '$(strip $(1)) ($(strip $(2)))'
+	@echo '$(strip $(2)) ($(strip $(1)))'
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
-	if [ ! -d $$$$HOME/src/$(strip $(1)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(1)); fi
-	FAIL=$$$$(cd $$$$HOME/src/$(strip $(1)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+	if [ ! -d $$$$HOME/src/$(strip $(2)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(2)); fi
+	FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 	if [ "$$$$FAIL" != "" ]; then \
-		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(1)); \
+		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
 		exit 1; \
 	fi
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(1)) clean
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
 endif
-	cd $$$$HOME/src/$(strip $(1)) && git pull
+	cd $$$$HOME/src/$(strip $(2)) && git pull
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), clean)
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(1)) clean
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(1)) superclean
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) superclean
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
-ifeq '$(strip $(2))' 'makefile'
-	$(MAKE) -C $$$$HOME/src/$(strip $(1)) commit
+ifeq '$(strip $(1))' 'makefile'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) commit
 endif
-ifneq '$(strip $(2))' 'makefile'
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) commit
+ifneq '$(strip $(1))' 'makefile'
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(2)) commit
 endif
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
-ifneq '$(strip $(2))' 'makefile'
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) gh-pages
+ifneq '$(strip $(1))' 'makefile'
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(2)) gh-pages
 endif
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages-check)
-ifneq '$(strip $(2))' 'makefile'
-ifneq '$(strip $(2))' 'other'
-	@if [ -d $$$$HOME/src/$(strip $(1)).gh-pages ]; then \
-		FAIL=$$$$(cd $$$$HOME/src/$(strip $(1)).gh-pages && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+ifneq '$(strip $(1))' 'makefile'
+ifneq '$(strip $(1))' 'other'
+	@if [ -d $$$$HOME/src/$(strip $(2)).gh-pages ]; then \
+		FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)).gh-pages && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 		if [ "$$$$FAIL" != "" ]; then \
-			echo Error: Non-clean git status in $$$$HOME/src/$(strip $(1)).gh-pages; \
+			echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)).gh-pages; \
 			exit 1; \
 		else \
-			rm -rf $$$$HOME/src/$(strip $(1)).gh-pages; \
+			rm -rf $$$$HOME/src/$(strip $(2)).gh-pages; \
 		fi; \
 	fi
 endif
@@ -88,43 +88,36 @@ endif
 endef
 
 
-# Project helper functions - args are (project_name, git_repository)
-JAVASCRIPT_PROJECT = $(eval $(call PROJECT_RULE, $(1), javascript, $(2)))
-PYTHON_PROJECT = $(eval $(call PROJECT_RULE, $(1), python, $(2)))
-MAKEFILE_PROJECT = $(eval $(call PROJECT_RULE, $(1), makefile, $(2)))
-OTHER_PROJECT = $(eval $(call PROJECT_RULE, $(1), other, $(2)))
-
-
 # Javascript projects
-$(call JAVASCRIPT_PROJECT, calc-script, 'git@github.com:craigahobbs/calc-script.git')
-$(call JAVASCRIPT_PROJECT, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git')
-$(call JAVASCRIPT_PROJECT, element-app, 'git@github.com:craigahobbs/element-app.git')
-$(call JAVASCRIPT_PROJECT, element-model, 'git@github.com:craigahobbs/element-model.git')
-$(call JAVASCRIPT_PROJECT, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git')
-$(call JAVASCRIPT_PROJECT, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git')
-$(call JAVASCRIPT_PROJECT, markdown-model, 'git@github.com:craigahobbs/markdown-model.git')
-$(call JAVASCRIPT_PROJECT, markdown-up, 'git@github.com:craigahobbs/markdown-up.git')
-$(call JAVASCRIPT_PROJECT, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git')
-$(call JAVASCRIPT_PROJECT, schema-markdown-js, 'git@github.com:craigahobbs/schema-markdown-js.git')
+$(eval $(call PROJECT_RULE, javascript, calc-script, 'git@github.com:craigahobbs/calc-script.git'))
+$(eval $(call PROJECT_RULE, javascript, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git'))
+$(eval $(call PROJECT_RULE, javascript, element-app, 'git@github.com:craigahobbs/element-app.git'))
+$(eval $(call PROJECT_RULE, javascript, element-model, 'git@github.com:craigahobbs/element-model.git'))
+$(eval $(call PROJECT_RULE, javascript, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git'))
+$(eval $(call PROJECT_RULE, javascript, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git'))
+$(eval $(call PROJECT_RULE, javascript, markdown-model, 'git@github.com:craigahobbs/markdown-model.git'))
+$(eval $(call PROJECT_RULE, javascript, markdown-up, 'git@github.com:craigahobbs/markdown-up.git'))
+$(eval $(call PROJECT_RULE, javascript, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git'))
+$(eval $(call PROJECT_RULE, javascript, schema-markdown-js, 'git@github.com:craigahobbs/schema-markdown-js.git'))
 
 # Python projects
-$(call PYTHON_PROJECT, chisel, 'git@github.com:craigahobbs/chisel.git')
-$(call PYTHON_PROJECT, markdown-up-py, 'git@github.com:craigahobbs/markdown-up-py.git')
-$(call PYTHON_PROJECT, schema-markdown, 'git@github.com:craigahobbs/schema-markdown.git')
-$(call PYTHON_PROJECT, simple-git-changelog, 'git@github.com:craigahobbs/simple-git-changelog.git')
-$(call PYTHON_PROJECT, template-specialize, 'git@github.com:craigahobbs/template-specialize.git')
-$(call PYTHON_PROJECT, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git')
+$(eval $(call PROJECT_RULE, python, chisel, 'git@github.com:craigahobbs/chisel.git'))
+$(eval $(call PROJECT_RULE, python, markdown-up-py, 'git@github.com:craigahobbs/markdown-up-py.git'))
+$(eval $(call PROJECT_RULE, python, schema-markdown, 'git@github.com:craigahobbs/schema-markdown.git'))
+$(eval $(call PROJECT_RULE, python, simple-git-changelog, 'git@github.com:craigahobbs/simple-git-changelog.git'))
+$(eval $(call PROJECT_RULE, python, template-specialize, 'git@github.com:craigahobbs/template-specialize.git'))
+$(eval $(call PROJECT_RULE, python, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git'))
 
 # Makefile projects
-$(call MAKEFILE_PROJECT, javascript-build, 'git@github.com:craigahobbs/javascript-build.git')
-$(call MAKEFILE_PROJECT, javascript-template, 'git@github.com:craigahobbs/javascript-template.git')
-$(call MAKEFILE_PROJECT, python-build, 'git@github.com:craigahobbs/python-build.git')
-$(call MAKEFILE_PROJECT, python-template, 'git@github.com:craigahobbs/python-template.git')
-$(call MAKEFILE_PROJECT, sunrise, 'git@github.com:craigahobbs/sunrise.git')
+$(eval $(call PROJECT_RULE, makefile, javascript-build, 'git@github.com:craigahobbs/javascript-build.git'))
+$(eval $(call PROJECT_RULE, makefile, javascript-template, 'git@github.com:craigahobbs/javascript-template.git'))
+$(eval $(call PROJECT_RULE, makefile, python-build, 'git@github.com:craigahobbs/python-build.git'))
+$(eval $(call PROJECT_RULE, makefile, python-template, 'git@github.com:craigahobbs/python-template.git'))
+$(eval $(call PROJECT_RULE, makefile, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
 
 # Other projects
-$(call OTHER_PROJECT, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git')
-$(call OTHER_PROJECT, day-hikes, 'git@github.com:craigahobbs/day-hikes.git')
-$(call OTHER_PROJECT, hobbs-family-cookbook, 'git@github.com:craigahobbs/hobbs-family-cookbook.git')
-$(call OTHER_PROJECT, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git')
-$(call OTHER_PROJECT, solar, 'git@github.com:craigahobbs/solar.git')
+$(eval $(call PROJECT_RULE, other, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git'))
+$(eval $(call PROJECT_RULE, other, day-hikes, 'git@github.com:craigahobbs/day-hikes.git'))
+$(eval $(call PROJECT_RULE, other, hobbs-family-cookbook, 'git@github.com:craigahobbs/hobbs-family-cookbook.git'))
+$(eval $(call PROJECT_RULE, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
+$(eval $(call PROJECT_RULE, other, solar, 'git@github.com:craigahobbs/solar.git'))
