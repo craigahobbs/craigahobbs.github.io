@@ -18,9 +18,7 @@ help_:
 # Project rule header function - args are (project_type, project_name, rule)
 define PROJECT_RULE_HEADER
 .PHONY: _$(strip $(3))-$(strip $(2))
-ifeq '$(TYPE)' ''
-$(strip $(3)): _$(strip $(3))-$(strip $(2))
-else ifeq '$(findstring $(strip $(1)),$(TYPE))' '$(strip $(1))'
+ifneq '$(findstring $(strip $(1)),$(if $(TYPE),$(TYPE),$(1)))' ''
 $(strip $(3)): _$(strip $(3))-$(strip $(2))
 endif
 _$(strip $(3))-$(strip $(2)):
