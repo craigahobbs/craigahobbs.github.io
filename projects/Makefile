@@ -44,6 +44,16 @@ ifneq '$(strip $(2))' 'other'
 endif
 	cd $$$$HOME/src/$(strip $(1)) && git pull
 
+$(call PROJECT_RULE_HEADER, $(1), $(2), clean)
+ifneq '$(strip $(2))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(1)) clean
+endif
+
+$(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
+ifneq '$(strip $(2))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(1)) superclean
+endif
+
 $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
 ifeq '$(strip $(2))' 'makefile'
 	$(MAKE) -C $$$$HOME/src/$(strip $(1)) commit
@@ -74,16 +84,6 @@ ifneq '$(strip $(2))' 'other'
 		fi; \
 	fi
 endif
-endif
-
-$(call PROJECT_RULE_HEADER, $(1), $(2), clean)
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(1)) clean
-endif
-
-$(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
-ifneq '$(strip $(2))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(1)) superclean
 endif
 endef
 
