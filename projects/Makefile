@@ -28,7 +28,7 @@ endef
 
 
 # Project rules function - args are (project_type, project_name, git_repository)
-define PROJECT_RULE
+define PROJECT_RULES
 $(call PROJECT_RULE_HEADER, $(1), $(2), help)
 	@echo '$(strip $(2)) ($(strip $(1)))'
 
@@ -89,35 +89,35 @@ endef
 
 
 # Javascript projects
-$(eval $(call PROJECT_RULE, javascript, calc-script, 'git@github.com:craigahobbs/calc-script.git'))
-$(eval $(call PROJECT_RULE, javascript, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git'))
-$(eval $(call PROJECT_RULE, javascript, element-app, 'git@github.com:craigahobbs/element-app.git'))
-$(eval $(call PROJECT_RULE, javascript, element-model, 'git@github.com:craigahobbs/element-model.git'))
-$(eval $(call PROJECT_RULE, javascript, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git'))
-$(eval $(call PROJECT_RULE, javascript, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git'))
-$(eval $(call PROJECT_RULE, javascript, markdown-model, 'git@github.com:craigahobbs/markdown-model.git'))
-$(eval $(call PROJECT_RULE, javascript, markdown-up, 'git@github.com:craigahobbs/markdown-up.git'))
-$(eval $(call PROJECT_RULE, javascript, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git'))
-$(eval $(call PROJECT_RULE, javascript, schema-markdown-js, 'git@github.com:craigahobbs/schema-markdown-js.git'))
+$(eval $(call PROJECT_RULES, javascript, calc-script, 'git@github.com:craigahobbs/calc-script.git'))
+$(eval $(call PROJECT_RULES, javascript, chisel-doc, 'git@github.com:craigahobbs/chisel-doc.git'))
+$(eval $(call PROJECT_RULES, javascript, element-app, 'git@github.com:craigahobbs/element-app.git'))
+$(eval $(call PROJECT_RULES, javascript, element-model, 'git@github.com:craigahobbs/element-model.git'))
+$(eval $(call PROJECT_RULES, javascript, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git'))
+$(eval $(call PROJECT_RULES, javascript, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git'))
+$(eval $(call PROJECT_RULES, javascript, markdown-model, 'git@github.com:craigahobbs/markdown-model.git'))
+$(eval $(call PROJECT_RULES, javascript, markdown-up, 'git@github.com:craigahobbs/markdown-up.git'))
+$(eval $(call PROJECT_RULES, javascript, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git'))
+$(eval $(call PROJECT_RULES, javascript, schema-markdown-js, 'git@github.com:craigahobbs/schema-markdown-js.git'))
 
 # Python projects
-$(eval $(call PROJECT_RULE, python, chisel, 'git@github.com:craigahobbs/chisel.git'))
-$(eval $(call PROJECT_RULE, python, markdown-up-py, 'git@github.com:craigahobbs/markdown-up-py.git'))
-$(eval $(call PROJECT_RULE, python, schema-markdown, 'git@github.com:craigahobbs/schema-markdown.git'))
-$(eval $(call PROJECT_RULE, python, simple-git-changelog, 'git@github.com:craigahobbs/simple-git-changelog.git'))
-$(eval $(call PROJECT_RULE, python, template-specialize, 'git@github.com:craigahobbs/template-specialize.git'))
-$(eval $(call PROJECT_RULE, python, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git'))
+$(eval $(call PROJECT_RULES, python, chisel, 'git@github.com:craigahobbs/chisel.git'))
+$(eval $(call PROJECT_RULES, python, markdown-up-py, 'git@github.com:craigahobbs/markdown-up-py.git'))
+$(eval $(call PROJECT_RULES, python, schema-markdown, 'git@github.com:craigahobbs/schema-markdown.git'))
+$(eval $(call PROJECT_RULES, python, simple-git-changelog, 'git@github.com:craigahobbs/simple-git-changelog.git'))
+$(eval $(call PROJECT_RULES, python, template-specialize, 'git@github.com:craigahobbs/template-specialize.git'))
+$(eval $(call PROJECT_RULES, python, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git'))
 
 # Makefile projects
-$(eval $(call PROJECT_RULE, makefile, javascript-build, 'git@github.com:craigahobbs/javascript-build.git'))
-$(eval $(call PROJECT_RULE, makefile, javascript-template, 'git@github.com:craigahobbs/javascript-template.git'))
-$(eval $(call PROJECT_RULE, makefile, python-build, 'git@github.com:craigahobbs/python-build.git'))
-$(eval $(call PROJECT_RULE, makefile, python-template, 'git@github.com:craigahobbs/python-template.git'))
-$(eval $(call PROJECT_RULE, makefile, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
+$(eval $(call PROJECT_RULES, makefile, javascript-build, 'git@github.com:craigahobbs/javascript-build.git'))
+$(eval $(call PROJECT_RULES, makefile, javascript-template, 'git@github.com:craigahobbs/javascript-template.git'))
+$(eval $(call PROJECT_RULES, makefile, python-build, 'git@github.com:craigahobbs/python-build.git'))
+$(eval $(call PROJECT_RULES, makefile, python-template, 'git@github.com:craigahobbs/python-template.git'))
+$(eval $(call PROJECT_RULES, makefile, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
 
 # Other projects
-$(eval $(call PROJECT_RULE, other, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git'))
-$(eval $(call PROJECT_RULE, other, day-hikes, 'git@github.com:craigahobbs/day-hikes.git'))
-$(eval $(call PROJECT_RULE, other, hobbs-family-cookbook, 'git@github.com:craigahobbs/hobbs-family-cookbook.git'))
-$(eval $(call PROJECT_RULE, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
-$(eval $(call PROJECT_RULE, other, solar, 'git@github.com:craigahobbs/solar.git'))
+$(eval $(call PROJECT_RULES, other, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git'))
+$(eval $(call PROJECT_RULES, other, day-hikes, 'git@github.com:craigahobbs/day-hikes.git'))
+$(eval $(call PROJECT_RULES, other, hobbs-family-cookbook, 'git@github.com:craigahobbs/hobbs-family-cookbook.git'))
+$(eval $(call PROJECT_RULES, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
+$(eval $(call PROJECT_RULES, other, solar, 'git@github.com:craigahobbs/solar.git'))
