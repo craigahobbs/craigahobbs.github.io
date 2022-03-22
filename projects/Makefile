@@ -29,6 +29,9 @@ endef
 
 # Project rules function - args are (project_name, type, git_repository)
 define PROJECT_RULE
+$(call PROJECT_RULE_HEADER, $(1), $(2), help)
+	@echo '$(strip $(1)) ($(strip $(2)))'
+
 $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
 	if [ ! -d $$$$HOME/src/$(strip $(1)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(1)); fi
 	FAIL=$$$$(cd $$$$HOME/src/$(strip $(1)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
@@ -45,19 +48,17 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
 ifeq '$(strip $(2))' 'makefile'
 	$(MAKE) -C $$$$HOME/src/$(strip $(1)) commit
 endif
-ifeq '$(strip $(2))' 'python'
+ifneq '$(strip $(2))' 'makefile'
+ifneq '$(strip $(2))' 'other'
 	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) commit
 endif
-ifeq '$(strip $(2))' 'javascript'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) commit
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
-ifeq '$(strip $(2))' 'python'
+ifneq '$(strip $(2))' 'makefile'
+ifneq '$(strip $(2))' 'other'
 	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) gh-pages
 endif
-ifeq '$(strip $(2))' 'javascript'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(1)) gh-pages
 endif
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages-check)
@@ -84,9 +85,6 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
 ifneq '$(strip $(2))' 'other'
 	$(MAKE) -C $$$$HOME/src/$(strip $(1)) superclean
 endif
-
-$(call PROJECT_RULE_HEADER, $(1), $(2), help)
-	@echo '$(strip $(1)) ($(strip $(2)))'
 endef
 
 
