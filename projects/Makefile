@@ -5,14 +5,10 @@
 MAKEJ ?= -j
 
 
-.PHONY: clean commit help help_ pull superclean
-help: help_
-help_:
-	@echo 'usage: make [clean|commit|gh-pages|gh-pages-check|pull|superclean]'
+.PHONY: clean commit help pull report superclean
+help:
+	@echo 'usage: make [clean|commit|gh-pages|gh-pages-check|pull|report|superclean]'
 	@echo '            TYPE=[python|javascript|makefile|other]'
-	@echo
-	@echo 'Projects'
-	@echo '========'
 
 
 # Project rule header function - args are (project_type, project_name, rule)
@@ -27,7 +23,7 @@ endef
 
 # Project rules function - args are (project_type, project_name, git_repository)
 define PROJECT_RULES
-$(call PROJECT_RULE_HEADER, $(1), $(2), help)
+$(call PROJECT_RULE_HEADER, $(1), $(2), report)
 	@echo '$(strip $(2)) ($(strip $(1)))'
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
