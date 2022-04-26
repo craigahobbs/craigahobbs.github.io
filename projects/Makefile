@@ -33,6 +33,9 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
 		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
 		exit 1; \
 	fi
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
+endif
 	cd $$$$HOME/src/$(strip $(2)) && git pull
 
 $(call PROJECT_RULE_HEADER, $(1), $(2), clean)
