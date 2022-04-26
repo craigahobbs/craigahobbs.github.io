@@ -2,7 +2,6 @@
 if [ -x /opt/homebrew/bin/brew ]; then
     export PATH="/opt/homebrew/bin:$PATH"
     export PATH="/opt/homebrew/sbin:$PATH"
-    export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 fi
 
 # Personal path
