@@ -1,36 +1,66 @@
 ~~~ markdown-script
-# The TESPO JSON data schema
+# The TESPO data API schema
 tespoDataTypes = schemaParse( \
-    '# The TESPO data struct', \
+    '# The Tesla Energy Self-Powered Optimizer (TESPO) data API response', \
     'struct TespoData', \
     '', \
-    '    # Most recent by-minute solar power generation in kWh', \
-    '    float[len > 0] solar', \
+    '    # The current average solar power generation, in kWh', \
+    '    float(>= 0) solarPower', \
     '', \
-    '    # Most recent by-minute home power consumption in kWh', \
-    '    float[len > 0] home' \
+    '    # The current average home power usage, in kWh', \
+    '    float(>= 0) homeUsage', \
+    '', \
+    '    # The home battery power percentage', \
+    '    float(>= 0, <= 100) homeBattery', \
+    '', \
+    '    # The connected battery-powered electric vehicles', \
+    '    Vehicle[] vehicles', \
+    '', \
+    '# A battery-powered electric vehicle', \
+    'struct Vehicle', \
+    '', \
+    '    # The vehicle ID', \
+    '    string(len > 0) id', \
+    '', \
+    "    # The vehicle's friendly name", \
+    '    string(len > 0) name', \
+    '', \
+    "    # The vehicle's battery power percentage", \
+    '    float(>= 0, <= 100) battery', \
+    '', \
+    '    # If true, the car is charging', \
+    '    bool charging', \
+    '', \
+    '    # The charging rate, in amps', \
+    '    int(> 0) chargingRate', \
+    '', \
+    '    # The charging limit, as a percentage', \
+    '    float(>= 0, <= 100) chargingLimit' \
 )
 
 
 # Main entry point
-function main()
+async function main()
     # Data schema documentation?
-    jumpif (!vData) main
-    markdownPrint('[Home](#var=)', '')
-    schemaPrint(tespoDataTypes, 'TespoData')
-    return
+    jumpif (!vData) noDataDoc
+        markdownPrint('[Home](#var=)', '')
+        schemaPrint(tespoDataTypes, 'TespoData')
+        return
+    noDataDoc:
+
+    # Fetch the data API
+    await data = schemaValidate(tespoDataTypes, 'TespoData', fetch('data'))
 
     # Main display
-    main:
     markdownPrint( \
         '# T.E.S.P.O. (Tesla Energy Self-Powered Optimizer)', \
         '', \
-        'Coming soon!', \
+        '**Current Solar Power:**  ' + objectGet(data, 'solarPower'), \
         '', \
         '[Data Schema Documentation](#var.vData=1)' \
     )
 endfunction
 
 
-main()
+await main()
 ~~~

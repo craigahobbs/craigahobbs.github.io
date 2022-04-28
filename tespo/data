@@ -1,0 +1,15 @@
+{
+    "solarPower": 9.9,
+    "homeUsage": 0.4,
+    "homeBattery": 85,
+    "vehicles": [
+        {
+            "id": "ID-MODELY",
+            "name": "Model Y",
+            "battery": 80,
+            "charging": false,
+            "chargingRate": 32,
+            "chargingLimit": 90
+        }
+    ]
+}
