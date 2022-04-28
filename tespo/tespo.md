@@ -1,5 +1,5 @@
 ~~~ markdown-script
-// The TESPO JSON data schema
+# The TESPO JSON data schema
 tespoDataTypes = schemaParse( \
     '# The TESPO data struct', \
     'struct TespoData', \
@@ -12,14 +12,15 @@ tespoDataTypes = schemaParse( \
 )
 
 
-// Main entry point
+# Main entry point
 function main()
-    // Data schema documentation?
+    # Data schema documentation?
     jumpif (!vData) main
+    markdownPrint('[Home](#var=)', '')
     schemaPrint(tespoDataTypes, 'TespoData')
-    return null
+    return
 
-    // Main display
+    # Main display
     main:
     markdownPrint( \
         '# T.E.S.P.O. (Tesla Energy Self-Powered Optimizer)', \

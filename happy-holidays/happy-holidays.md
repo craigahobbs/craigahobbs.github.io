@@ -1,11 +1,11 @@
 # Happy Holidays
 
 ~~~ markdown-script
-// Licensed under the MIT License
-// https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 function main()
-    // Menu
+    # Menu
     jumpif (vPrint) skipMenu
         markdownPrint( \
             '[Reset](#var=) |', \
@@ -18,24 +18,24 @@ function main()
         )
     skipMenu:
 
-    // Set the drawing width/height
+    # Set the drawing width/height
     setDrawingSize(if(vWidth, vWidth, 600), if(vHeight, vHeight, 300))
 
-    // Draw the stars
+    # Draw the stars
     shapes(skinnyStar, 10, 0.10)
     shapes(chubbyStar, 30, 0.05)
     shapes(grayBall, 15, 0.02)
     shapes(purpleBall, 15, 0.01)
     shapes(blueEllipse, 15, 0.015)
 
-    // Measure the title box height
+    # Measure the title box height
     titleText = if(vMessage, vMessage, 'Happy Holidays!')
     titleBoxWidth = 0.8 * getDrawingWidth()
     titleTextWidth = 0.9 * titleBoxWidth
     titleTextHeight = min(getTextHeight(titleText, titleTextWidth), 0.2 * getDrawingHeight())
     titleBoxHeight = 3 * titleTextHeight
 
-    // Draw the title
+    # Draw the title
     drawStyle('black', 5, '#ff0000f0')
     drawRect(0.5 * getDrawingWidth() - 0.5 * titleBoxWidth, 0.5 * getDrawingHeight() - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
@@ -106,6 +106,6 @@ function blueEllipse(x, y, size)
 endfunction
 
 
-// Execute the main entry point
+# Execute the main entry point
 main()
 ~~~

@@ -1,18 +1,18 @@
 # The Fruit Fly Trap Maker
 
 ~~~ markdown-script
-// Licensed under the MIT License
-// https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 function main()
-    // Application inputs
+    # Application inputs
     isMetric = if(vMetric, vMetric, 0)
     height = if(vHeight, vHeight, if(isMetric, 11.5, 4.5))
     diameter = if(vDiameter, vDiameter, if(isMetric, 7.5, 3))
     bottom = if(vBottom, vBottom, if(isMetric, 2, 0.75))
     offset = if(vOffset, vOffset, if(isMetric, 2.5, 1))
 
-    // Computed values
+    # Computed values
     units = if(isMetric, 'cm', 'in')
     delta = if(isMetric, 0.1, 0.125)
     flapLength = if(isMetric, 0.5, 0.2)
@@ -21,7 +21,7 @@ function main()
 
     jumpif (vPrint > 0) skipInstructions
 
-    // Introduction
+    # Introduction
     markdownPrint( \
         '**The Fruit Fly Trap Maker** rids your home of annoying fruit flies using only a drinking glass,', \
         'your computer printer, and a small amount of apple cider vinegar (or similar).', \
@@ -32,10 +32,10 @@ function main()
         'liquid.' \
     )
 
-    // Fruit-fly trap diagram
+    # Fruit-fly trap diagram
     fruitFlyTrapDiagram()
 
-    // Instructions
+    # Instructions
     markdownPrint( \
         '## Instructions', \
         '', \
@@ -86,10 +86,10 @@ function main()
     jump skipConeForm
     skipInstructions:
 
-    // Print close link
+    # Print close link
     markdownPrint('', coneLink('Close', null, null, null, null, null, 'the-fruit-fly-trap-maker'))
 
-    // Render the cone form
+    # Render the cone form
     pixelsPerPoint = 4 / 3
     pointsPerCm = 28.3464567
     pointsPerInch = 72
@@ -126,15 +126,15 @@ endfunction
 
 
 function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, extraLength)
-    // Compute the cone form's radii and theta
+    # Compute the cone form's radii and theta
     formRadius = height * diameterBottom / (diameterTop - diameterBottom)
     formRadiusOuter = formRadius + height + extraLength
     formTheta = pi() * diameterBottom / formRadius
 
-    // Compute the flap angle
+    # Compute the flap angle
     flapTheta = formTheta + flapLength / formRadius
 
-    // Compute the SVG extents
+    # Compute the SVG extents
     formMinX = 0
     formMaxX = 0
     formMinY = 0
@@ -174,19 +174,19 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
         formMaxY = formRadiusOuter
     formMinMaxDone:
 
-    // Expand the form bounding box by one line width (to accomodate lines)
+    # Expand the form bounding box by one line width (to accomodate lines)
     formMinX = formMinX - lineWidth
     formMinY = formMinY - lineWidth
     formMaxX = formMaxX + lineWidth
     formMaxY = formMaxY + lineWidth
 
-    // Compute the cone form guide line
+    # Compute the cone form guide line
     guideInnerX = formRadius * sin(formTheta)
     guideInnerY = formRadius * cos(formTheta)
     guideOuterX = formRadiusOuter * sin(formTheta)
     guideOuterY = formRadiusOuter * cos(formTheta)
 
-    // Draw the cone form
+    # Draw the cone form
     edge = 5 * lineWidth
     setDrawingSize(2 * edge + formMaxX - formMinX, 2 * edge + formMaxY - formMinY)
     drawStyle('black', lineWidth, 'none', 3 * lineWidth + ' ' + 3 * lineWidth)
@@ -215,7 +215,7 @@ function fruitFlyTrapDiagram()
     airHeight = annotationWidth
     liquidHeight = 1.5 * airHeight
 
-    // Glass position
+    # Glass position
     glassTop = 0.2 * height
     glassLeft = imageMargin + annotationWidth + 0.5 * glassLineWidth
     glassLeftRight = glassLeft + 0.5 * glassLineWidth
@@ -223,7 +223,7 @@ function fruitFlyTrapDiagram()
     glassRight = width - glassLeft
     glassRightLeft = glassRight - 0.5 * glassLineWidth
 
-    // Cone position
+    # Cone position
     coneBottom = height - imageMargin - glassLineWidth - liquidHeight - airHeight
     coneBottomLeft = 0.5 * width - annotationWidth
     coneBottomRight = width - coneBottomLeft
@@ -231,21 +231,21 @@ function fruitFlyTrapDiagram()
     coneTopLeft = (coneBottomLeft * (glassTop - coneTop) + glassLeftRight * (coneTop - coneBottom)) / (glassTop - coneBottom)
     coneTopRight = width - coneTopLeft
 
-    // Draw the fruit fly trap diagram
+    # Draw the fruit fly trap diagram
     setDrawingSize(width, height)
 
-    // Liquid
+    # Liquid
     drawStyle('none', 0, '#cc99ff80')
     drawRect(glassLeft, glassBottom - liquidHeight, glassRight - glassLeft, liquidHeight)
 
-    // Glass
+    # Glass
     drawStyle('black', glassLineWidth)
     drawMove(glassLeft, glassTop)
     drawVLine(glassBottom)
     drawHLine(glassRight)
     drawVLine(glassTop)
 
-    // Cone
+    # Cone
     drawStyle('black', lineWidth, 'white')
     drawMove(coneTopLeft, coneTop)
     drawLine(coneBottomLeft, coneBottom)
@@ -253,7 +253,7 @@ function fruitFlyTrapDiagram()
     drawLine(coneTopRight, coneTop)
     drawClose()
 
-    // Annotations
+    # Annotations
     verticalAnnotation('h', imageMargin + 0.5 * annotationBarWidth, glassTop, glassBottom, \
         annotationBarWidth, annotationTextHeight, annotationTextSize)
     verticalAnnotation('o', width - imageMargin - 0.5 * annotationBarWidth, coneBottom, glassBottom, \
@@ -294,6 +294,6 @@ function horizontalAnnotation(text, ycoord, left, right, annotationBarWidth, ann
 endfunction
 
 
-// Execute the main entry point
+# Execute the main entry point
 main()
 ~~~

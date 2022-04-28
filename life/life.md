@@ -1,11 +1,11 @@
 # Conway's Game of Life
 
 ~~~ markdown-script
-// Licensed under the MIT License
-// https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 function main()
-    // Defaults
+    # Defaults
     defaultWidth = 50
     defaultHeight = 50
     defaultPeriod = 1000
@@ -15,18 +15,18 @@ function main()
     defaultBorder = 0
     defaultDepth = 6
 
-    // Limits
+    # Limits
     minWidth = 20
     minHeight = 20
     minPeriod = 200
     minSize = 1
     minDepth = 0
 
-    // Cell and background colors
+    # Cell and background colors
     colors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
     borderColor = 'black'
 
-    // Application variables
+    # Application variables
     play = if(vPlay != null, vPlay, 0)
     period = max(minPeriod, if(vPeriod != null, vPeriod, defaultPeriod))
     size = max(minSize, if(vSize != null, vSize, defaultSize))
@@ -38,12 +38,12 @@ function main()
     initRatio = if(vInitRatio != null, vInitRatio, 0.2)
     borderRatio = if(vBorderRatio != null, vBorderRatio, 0.1)
 
-    // Initialize or decode the life board
+    # Initialize or decode the life board
     life = if(vLife, lifeDecode(vLife), lifeNew(defaultWidth, defaultHeight, initRatio, borderRatio))
     lifeWidth = objectGet(life, 'width')
     lifeHeight = objectGet(life, 'height')
 
-    // Is there a cycle?
+    # Is there a cycle?
     nextLife = lifeNext(life)
     encodedLife = lifeEncode(life)
     encodedNext = lifeEncode(nextLife)
@@ -66,7 +66,7 @@ function main()
         encodedNext = lifeEncode(nextLife)
     cycleDone:
 
-    // Pause menu
+    # Pause menu
     jumpif (play) skipPauseMenu
         nextColorIndex = (colorIndex + 1) % arrayLength(colors)
         nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, (nextColorIndex + 1) % arrayLength(colors))
@@ -92,7 +92,7 @@ function main()
         )
     skipPauseMenu:
 
-    // Play menu
+    # Play menu
     jumpif (!play) skipPlayMenu
         markdownPrint( \
             lifeLink('Pause', encodedLife, 0), \
@@ -101,10 +101,10 @@ function main()
         )
     skipPlayMenu:
 
-    // Life board
+    # Life board
     lifeDraw(life, size, gap, arrayGet(colors, colorIndex), arrayGet(colors, backgroundIndex), borderColor, if(border, 2, 0), !play)
 
-    // Play?
+    # Play?
     if(play, setNavigateTimeout(lifeURL(encodedNext, 1), period))
 endfunction
 
@@ -142,7 +142,7 @@ function lifeNew(width, height, initRatio, borderRatio)
     cells = arrayNewSize(width * height)
     objectSet(life, 'cells', cells)
 
-    // Initialize the life
+    # Initialize the life
     jumpif (!initRatio || !borderRatio) skipInit
         border = ceil(borderRatio * min(width, height))
         y = 0
@@ -166,7 +166,7 @@ function lifeNext(life)
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
 
-    // Compute the next life generation
+    # Compute the next life generation
     nextLife = lifeNew(width, height, 0, 0)
     nextCells = objectGet(nextLife, 'cells')
     y = 0
@@ -230,13 +230,13 @@ endfunction
 
 
 function lifeDecode(lifeStr)
-    // Split the encoded life string into width, height, and cell string
+    # Split the encoded life string into width, height, and cell string
     parts = split(lifeStr, '-')
     width = value(arrayGet(parts, 0))
     height = value(arrayGet(parts, 1))
     cellsStr = arrayGet(parts, 2)
 
-    // Decode the cell string
+    # Decode the cell string
     life = lifeNew(width, height, 0, 0)
     cells = objectGet(life, 'cells')
     iCell = 0
@@ -270,7 +270,7 @@ function lifeDraw(life, size, gap, color, background, borderColor, borderSize, i
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
 
-    // Set the drawing size
+    # Set the drawing size
     setDrawingSize(width * (gap + size) + gap + borderSize, height * (gap + size) + gap + borderSize)
     jumpif (!isEdit) skipEdit
         setGlobal('lifeOnClickLife', life)
@@ -280,11 +280,11 @@ function lifeDraw(life, size, gap, color, background, borderColor, borderSize, i
         drawOnClick(lifeOnClick)
     skipEdit:
 
-    // Draw the background
+    # Draw the background
     drawStyle(borderColor, borderSize, background)
     drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
 
-    // Draw the cells
+    # Draw the cells
     drawStyle('none', 0, color)
     y = 0
     yLoop:
@@ -307,18 +307,18 @@ endfunction
 
 
 function lifeOnClick(px, py)
-    // Compute the cell index to toggle
+    # Compute the cell index to toggle
     x = max(0, floor((px - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
     y = max(0, floor((py - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
     iCell = y * objectGet(lifeOnClickLife, 'width') + x
 
-    // Toggle the cell
+    # Toggle the cell
     cells = objectGet(lifeOnClickLife, 'cells')
     arraySet(cells, iCell, if(arrayGet(cells, iCell), 0, 1))
     setNavigateTimeout(lifeURL(lifeEncode(lifeOnClickLife), 0))
 endfunction
 
 
-// Execute the main entry point
+# Execute the main entry point
 main()
 ~~~
