@@ -170,7 +170,12 @@ function tespo(data)
     availableSolar = solarPower - homePower
     ixVehicle = 0
     availableSolarLoop:
-        availableSolar = availableSolar + vehicleChargingPower(arrayGet(vehicles, ixVehicle))
+        vehicle = arrayGet(vehicles, ixVehicle)
+        chargingRate = objectGet(vehicle, 'chargingRate')
+        chargingRates = objectGet(vehicle, 'chargingRates')
+        chargingPowers = objectGet(vehicle, 'chargingPowers')
+        chargingPower = if(arrayGet(vehicle, 'charging'), arrayGet(chargingPowers, arrayNearest(chargingRates, chargingRate)), 0)
+        availableSolar = availableSolar + chargingPower
         ixVehicle = ixVehicle + 1
     jumpif (ixVehicle < vehiclesLenght) availableSolarLoop
 
@@ -237,20 +242,6 @@ function arrayNearest(array, value)
 
     found:
     return ixValue
-endfunction
-
-
-function vehicleChargingPower(vehicle)
-    # Not charging?
-    jumpif (objectGet(vehicle, 'charging')) isCharging
-    return 0
-
-    # Find nearest charging power
-    isCharging:
-    chargingRate = objectGet(vehicle, 'chargingRate')
-    chargingRates = objectGet(vehicle, 'chargingRates')
-    chargingPowers = objectGet(vehicle, 'chargingPowers')
-    return arrayGet(chargingPowers, arrayNearest(chargingRates, chargingRate))
 endfunction
 
 
