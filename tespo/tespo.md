@@ -1,6 +1,6 @@
 ~~~ markdown-script
-# The TESPO data API schema
-tespoDataTypes = schemaParse( \
+# TESPO schemas
+tespoTypes = schemaParse( \
     '# The Tesla Energy Self-Powered Optimizer (TESPO) data API response', \
     'struct TespoData', \
     '', \
@@ -35,30 +35,102 @@ tespoDataTypes = schemaParse( \
     '    int(> 0) chargingRate', \
     '', \
     '    # The charging limit, as a percentage', \
+    '    float(>= 0, <= 100) chargingLimit', \
+    '', \
+    '# The TESPO algorithm response', \
+    'struct TespoResponse', \
+    '', \
+    '    # The TESPO actions', \
+    '    TespoAction[] actions', \
+    '', \
+    '# A TESPO algorithm response action', \
+    'union TespoAction', \
+    '', \
+    '    # Turn vehichle charging on or off', \
+    '    VehicleCharging vehicleCharging', \
+    '', \
+    "# Set a vehicle's charging on or off", \
+    'struct VehicleCharging', \
+    '', \
+    '    # The vehicle ID', \
+    '    string(len > 0) id', \
+    '', \
+    '    # If true, the car is charging', \
+    '    bool charging', \
+    '', \
+    '    # The charging rate, in amps', \
+    '    int(> 0) chargingRate', \
+    '', \
+    '    # The charging limit, as a percentage', \
     '    float(>= 0, <= 100) chargingLimit' \
+)
+
+
+# Data scenarios
+scenarios = objectNew( \
+    'HomeCharged', 'data/homeCharged.json', \
+    'HomeUncharged', 'data/homeUncharged.json' \
 )
 
 
 # Main entry point
 async function main()
     # Data schema documentation?
-    jumpif (!vData) noDataDoc
+    jumpif (!vDocData) noDataDoc
         markdownPrint('[Home](#var=)', '')
-        schemaPrint(tespoDataTypes, 'TespoData')
+        schemaPrint(tespoTypes, 'TespoData')
         return
     noDataDoc:
 
+    # Response schema documentation?
+    jumpif (!vDocResponse) noResponseDoc
+        markdownPrint('[Home](#var=)', '')
+        schemaPrint(tespoTypes, 'TespoResponse')
+        return
+    noResponseDoc:
+
+    # Determine the scenario data URL
+    scenario = getGlobal('vScenario')
+    scenario = if(scenario != null, scenario, 'HomeCharged')
+    dataURL = objectGet(scenarios, scenario)
+    dataURL = if(dataURL != null, dataURL, objectGet('HomeCharged'))
+
     # Fetch the data API
-    await data = schemaValidate(tespoDataTypes, 'TespoData', fetch('data'))
+    await dataResponse = schemaValidate(tespoTypes, 'TespoData', fetch(dataURL))
+
+    # Compute the TESPO response
+    tespoResponse = tespo(dataResponse)
 
     # Main display
     markdownPrint( \
         '# T.E.S.P.O. (Tesla Energy Self-Powered Optimizer)', \
         '', \
-        '**Current Solar Power:**  ' + objectGet(data, 'solarPower'), \
+        '**Scenario:** ' + scenario, \
         '', \
-        '[Data Schema Documentation](#var.vData=1)' \
+        '### Data Response', \
+        '', \
+        '~~~', \
+        jsonStringify(dataResponse, 4), \
+        '~~~', \
+        '', \
+        '### TESPO Response', \
+        '', \
+        '~~~', \
+        jsonStringify(tespoResponse, 4), \
+        '~~~', \
+        '', \
+        '## Schema Documentation', \
+        '', \
+        '[Data Schema Documentation](#var.vDocData=1)', \
+        '', \
+        '[Response Schema Documentation](#var.vDocResponse=1)' \
     )
+endfunction
+
+
+# The TESPO algorithm
+function tespo()
+    return objectNew('actions', arrayNew())
 endfunction
 
 
