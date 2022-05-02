@@ -131,16 +131,16 @@ async function main()
         '', \
         '**Scenario:** ' + scenarioName, \
         '', \
+        '## TESPO Response', \
+        '', \
+        '~~~', \
+        jsonStringify(tespoResponse, 4), \
+        '~~~', \
+        '', \
         '### Data Response', \
         '', \
         '~~~', \
         jsonStringify(dataResponse, 4), \
-        '~~~', \
-        '', \
-        '### TESPO Response', \
-        '', \
-        '~~~', \
-        jsonStringify(tespoResponse, 4), \
         '~~~', \
         '', \
         '## Schema Documentation', \
