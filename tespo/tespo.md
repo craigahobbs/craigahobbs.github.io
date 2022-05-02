@@ -1,8 +1,8 @@
 ~~~ markdown-script
 # TESPO schemas
 tespoTypes = schemaParse( \
-    '# The Tesla Energy Self-Powered Optimizer (TESPO) data API response', \
-    'struct TespoData', \
+    '# The Tesla Energy Self-Powered Optimizer (TESPO) service input', \
+    'struct TespoInput', \
     '', \
     '    # The current average solar power generation, in kWh', \
     '    float(>= 0) solarPower', \
@@ -45,14 +45,14 @@ tespoTypes = schemaParse( \
     '    float(>= 0, <= 100)[len > 0] chargingPowers', \
     '', \
     '', \
-    '# The TESPO algorithm response', \
-    'struct TespoResponse', \
+    '# The Tesla Energy Self-Powered Optimizer (TESPO) service output', \
+    'struct TespoOutput', \
     '', \
     '    # The TESPO actions', \
     '    TespoAction[] actions', \
     '', \
     '', \
-    '# A TESPO algorithm response action', \
+    '# A TESPO action', \
     'union TespoAction', \
     '', \
     '    # Turn vehichle charging on or off', \
@@ -76,7 +76,7 @@ tespoTypes = schemaParse( \
 )
 
 
-# Data scenarios
+# Input scenarios
 scenarios = objectNew( \
     'HomeCharged', 'data/homeCharged.json', \
     'HomeUncharged', 'data/homeUncharged.json' \
@@ -86,24 +86,24 @@ scenarioNames = objectKeys(scenarios)
 
 # Main entry point
 async function main()
-    # Data schema documentation?
-    jumpif (!vDocData) noDataDoc
+    # Input schema documentation?
+    jumpif (!vDocInput) noInputDoc
         markdownPrint('[Home](#var=)', '')
-        schemaPrint(tespoTypes, 'TespoData')
+        schemaPrint(tespoTypes, 'TespoInput')
         return
-    noDataDoc:
+    noInputDoc:
 
-    # Response schema documentation?
-    jumpif (!vDocResponse) noResponseDoc
+    # Output schema documentation?
+    jumpif (!vDocOutput) noOutputDoc
         markdownPrint('[Home](#var=)', '')
-        schemaPrint(tespoTypes, 'TespoResponse')
+        schemaPrint(tespoTypes, 'TespoOutput')
         return
-    noResponseDoc:
+    noOutputDoc:
 
-    # Determine the scenario data URL
+    # Determine the scenario input URL
     scenarioName = if(vScenario != null, vScenario, 'HomeCharged')
-    dataURL = objectGet(scenarios, scenarioName)
-    dataURL = if(dataURL != null, dataURL, objectGet('HomeCharged'))
+    inputURL = objectGet(scenarios, scenarioName)
+    inputURL = if(inputURL != null, inputURL, objectGet(scenarios, 'HomeCharged'))
 
     # Create the scenario links markdown
     scenarioLinks = ''
@@ -117,11 +117,11 @@ async function main()
         ixScenario = ixScenario + 1
     jumpif (ixScenario < ixScenarioMax) scenarioLinksLoop
 
-    # Fetch the data API
-    await dataResponse = schemaValidate(tespoTypes, 'TespoData', fetch(dataURL))
+    # Fetch the TESPO input
+    await input = schemaValidate(tespoTypes, 'TespoInput', fetch(inputURL))
 
-    # Compute the TESPO response
-    tespoResponse = schemaValidate(tespoTypes, 'TespoResponse', tespo(dataResponse))
+    # Compute the TESPO output
+    output = schemaValidate(tespoTypes, 'TespoOutput', tespo(input))
 
     # Main display
     markdownPrint( \
@@ -131,23 +131,23 @@ async function main()
         '', \
         '**Scenario:** ' + scenarioName, \
         '', \
-        '## TESPO Response', \
+        '## TESPO Output', \
         '', \
         '~~~', \
-        jsonStringify(tespoResponse, 4), \
+        jsonStringify(output, 4), \
         '~~~', \
         '', \
-        '### Input Data', \
+        '### Input', \
         '', \
         '~~~', \
-        jsonStringify(dataResponse, 4), \
+        jsonStringify(input, 4), \
         '~~~', \
         '', \
         '## Schema Documentation', \
         '', \
-        '[Data Schema Documentation](#var.vDocData=1)', \
+        '[Input Schema Documentation](#var.vDocInput=1)', \
         '', \
-        '[Response Schema Documentation](#var.vDocResponse=1)' \
+        '[Output Schema Documentation](#var.vDocOutput=1)' \
     )
 endfunction
 
@@ -159,11 +159,11 @@ maxChargingLimit = 90
 
 
 # The TESPO algorithm
-function tespo(data)
-    solarPower = objectGet(data, 'solarPower')
-    homePower = objectGet(data, 'homePower')
-    homeBattery = objectGet(data, 'homeBattery')
-    vehicles = objectGet(data, 'vehicles')
+function tespo(input)
+    solarPower = objectGet(input, 'solarPower')
+    homePower = objectGet(input, 'homePower')
+    homeBattery = objectGet(input, 'homeBattery')
+    vehicles = objectGet(input, 'vehicles')
     vehiclesLength = arrayLength(vehicles)
 
     # Compute the available solar power (remove current vehicle charging power)
@@ -181,7 +181,7 @@ function tespo(data)
 
     # Add the charging action for each vehicle
     actions = arrayNew()
-    response = objectNew('actions', actions)
+    output = objectNew('actions', actions)
     ixVehicle = 0
     vehicleLoop:
         vehicle = arrayGet(vehicles, ixVehicle)
@@ -224,7 +224,7 @@ function tespo(data)
         )))
         ixVehicle = ixVehicle + 1
     jumpif (ixVehicle < vehiclesLength) vehicleLoop
-    return response
+    return output
 endfunction
 
 
