@@ -71,6 +71,7 @@ scenarios = objectNew( \
     'HomeCharged', 'data/homeCharged.json', \
     'HomeUncharged', 'data/homeUncharged.json' \
 )
+scenarioNames = objectKeys(scenarios)
 
 
 # Main entry point
@@ -101,9 +102,23 @@ async function main()
     # Compute the TESPO response
     tespoResponse = tespo(dataResponse)
 
+    # Create the scenario links markdown
+    scenarioLinks = ''
+    ixScenario = 0
+    ixScenarioMax = arrayLength(scenarioNames)
+    scenarioLinksLoop:
+        scenarioName = arrayGet(scenarioNames, ixScenario)
+        scenarioURL = objectGet(scenarios, scenarioName)
+        scenarioLinks = scenarioLinks + if(ixScenario != 0, ' | ', '') + \
+            if(scenarioName == scenario,scenarioName, '[' + scenarioName + "](#var.vScenario='" + scenarioName + "')")
+        ixScenario = ixScenario + 1
+    jumpif (ixScenario < ixScenarioMax) scenarioLinksLoop
+
     # Main display
     markdownPrint( \
         '# T.E.S.P.O. (Tesla Energy Self-Powered Optimizer)', \
+        '', \
+        scenarioLinks, \
         '', \
         '**Scenario:** ' + scenario, \
         '', \
