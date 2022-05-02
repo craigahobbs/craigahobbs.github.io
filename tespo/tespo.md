@@ -91,28 +91,27 @@ async function main()
     noResponseDoc:
 
     # Determine the scenario data URL
-    scenario = getGlobal('vScenario')
-    scenario = if(scenario != null, scenario, 'HomeCharged')
-    dataURL = objectGet(scenarios, scenario)
+    scenarioName = if(vScenario != null, vScenario, 'HomeCharged')
+    dataURL = objectGet(scenarios, scenarioName)
     dataURL = if(dataURL != null, dataURL, objectGet('HomeCharged'))
-
-    # Fetch the data API
-    await dataResponse = schemaValidate(tespoTypes, 'TespoData', fetch(dataURL))
-
-    # Compute the TESPO response
-    tespoResponse = tespo(dataResponse)
 
     # Create the scenario links markdown
     scenarioLinks = ''
     ixScenario = 0
     ixScenarioMax = arrayLength(scenarioNames)
     scenarioLinksLoop:
-        scenarioName = arrayGet(scenarioNames, ixScenario)
-        scenarioURL = objectGet(scenarios, scenarioName)
+        scenarioLinkName = arrayGet(scenarioNames, ixScenario)
+        scenarioLinkURL = objectGet(scenarios, scenarioLinkName)
         scenarioLinks = scenarioLinks + if(ixScenario != 0, ' | ', '') + \
-            if(scenarioName == scenario,scenarioName, '[' + scenarioName + "](#var.vScenario='" + scenarioName + "')")
+            if(scenarioLinkName == scenarioName, scenarioLinkName, '[' + scenarioLinkName + "](#var.vScenario='" + scenarioLinkName + "')")
         ixScenario = ixScenario + 1
     jumpif (ixScenario < ixScenarioMax) scenarioLinksLoop
+
+    # Fetch the data API
+    await dataResponse = schemaValidate(tespoTypes, 'TespoData', fetch(dataURL))
+
+    # Compute the TESPO response
+    tespoResponse = schemaValidate(tespoTypes, 'TespoResponse', tespo(dataResponse))
 
     # Main display
     markdownPrint( \
@@ -120,7 +119,7 @@ async function main()
         '', \
         scenarioLinks, \
         '', \
-        '**Scenario:** ' + scenario, \
+        '**Scenario:** ' + scenarioName, \
         '', \
         '### Data Response', \
         '', \
@@ -144,8 +143,25 @@ endfunction
 
 
 # The TESPO algorithm
-function tespo()
-    return objectNew('actions', arrayNew())
+function tespo(data)
+    vehicles = objectGet(data, 'vehicles')
+    vehiclesLen = arrayLength(vehicles)
+
+    allOff:
+        actions = arrayNew()
+        ixVehicle = 0
+        allOffVehicleLoop:
+            vehicle = arrayGet(vehicles, ixVehicle)
+            action = objectNew('vehicleCharging', objectNew( \
+                'id', objectGet(vehicle, 'id'), \
+                'charging', false, \
+                'chargingRate', 32, \
+                'chargingLimit', 50 \
+            ))
+            arrayPush(actions, action)
+            ixVehicle = ixVehicle + 1
+        jumpif (ixVehicle < vehiclesLen) allOffVehicleLoop
+        return objectNew('actions', actions)
 endfunction
 
 
