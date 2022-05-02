@@ -9,7 +9,9 @@
             "battery": 80,
             "charging": false,
             "chargingRate": 32,
-            "chargingLimit": 90
+            "chargingLimit": 90,
+            "chargingRates": [8, 16, 24, 32],
+            "chargingPowers": [2, 4, 6, 8]
         }
     ]
 }

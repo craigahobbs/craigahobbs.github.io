@@ -16,6 +16,7 @@ tespoTypes = schemaParse( \
     '    # The connected battery-powered electric vehicles', \
     '    Vehicle[] vehicles', \
     '', \
+    '', \
     '# A battery-powered electric vehicle', \
     'struct Vehicle', \
     '', \
@@ -37,17 +38,26 @@ tespoTypes = schemaParse( \
     '    # The charging limit, as a percentage', \
     '    float(>= 0, <= 100) chargingLimit', \
     '', \
+    '    # The available charging rates, in amps', \
+    '    int(> 0)[len > 0] chargingRates', \
+    '', \
+    '    # The available charging power (corresponding to the "chargingRates"), in kWh', \
+    '    float(>= 0, <= 100)[len > 0] chargingPowers', \
+    '', \
+    '', \
     '# The TESPO algorithm response', \
     'struct TespoResponse', \
     '', \
     '    # The TESPO actions', \
     '    TespoAction[] actions', \
     '', \
+    '', \
     '# A TESPO algorithm response action', \
     'union TespoAction', \
     '', \
     '    # Turn vehichle charging on or off', \
     '    VehicleCharging vehicleCharging', \
+    '', \
     '', \
     "# Set a vehicle's charging on or off", \
     'struct VehicleCharging', \
@@ -142,26 +152,34 @@ async function main()
 endfunction
 
 
+# TESPO constants
+MIN_CHARGING_LIMIT = 50
+MAX_CHARGING_LIMIT = 90
+
+
 # The TESPO algorithm
 function tespo(data)
     vehicles = objectGet(data, 'vehicles')
     vehiclesLen = arrayLength(vehicles)
+    actions = arrayNew()
+    response = objectNew('actions', actions)
 
     allOff:
-        actions = arrayNew()
         ixVehicle = 0
         allOffVehicleLoop:
             vehicle = arrayGet(vehicles, ixVehicle)
+            chargingRates = objectGet(vehicle, 'chargingRates')
+            maxChargingRate = arrayGet(chargingRates, arrayLength(chargingRates) - 1)
             action = objectNew('vehicleCharging', objectNew( \
                 'id', objectGet(vehicle, 'id'), \
                 'charging', false, \
-                'chargingRate', 32, \
-                'chargingLimit', 50 \
+                'chargingRate', maxChargingRate, \
+                'chargingLimit', MIN_CHARGING_LIMIT \
             ))
             arrayPush(actions, action)
             ixVehicle = ixVehicle + 1
         jumpif (ixVehicle < vehiclesLen) allOffVehicleLoop
-        return objectNew('actions', actions)
+        return response
 endfunction
 
 
