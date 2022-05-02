@@ -8,7 +8,7 @@ tespoTypes = schemaParse( \
     '    float(>= 0) solarPower', \
     '', \
     '    # The current average home power usage, in kWh', \
-    '    float(>= 0) homeUsage', \
+    '    float(>= 0) homePower', \
     '', \
     '    # The home battery power percentage', \
     '    float(>= 0, <= 100) homeBattery', \
@@ -153,33 +153,104 @@ endfunction
 
 
 # TESPO constants
-MIN_CHARGING_LIMIT = 50
-MAX_CHARGING_LIMIT = 90
+spillLimit = 90
+minChargingLimit = 50
+maxChargingLimit = 90
 
 
 # The TESPO algorithm
 function tespo(data)
+    solarPower = objectGet(data, 'solarPower')
+    homePower = objectGet(data, 'homePower')
+    homeBattery = objectGet(data, 'homeBattery')
     vehicles = objectGet(data, 'vehicles')
-    vehiclesLen = arrayLength(vehicles)
+    vehiclesLength = arrayLength(vehicles)
+
+    # Compute the available solar power (remove current vehicle charging power)
+    availableSolar = solarPower - homePower
+    ixVehicle = 0
+    availableSolarLoop:
+        availableSolar = availableSolar + vehicleChargingPower(arrayGet(vehicles, ixVehicle))
+        ixVehicle = ixVehicle + 1
+    jumpif (ixVehicle < vehiclesLenght) availableSolarLoop
+
+    # Add the charging action for each vehicle
     actions = arrayNew()
     response = objectNew('actions', actions)
+    ixVehicle = 0
+    vehicleLoop:
+        vehicle = arrayGet(vehicles, ixVehicle)
+        battery = objectGet(vehicle, 'battery')
+        chargingRates = objectGet(vehicle, 'chargingRates')
+        chargingPowers = objectGet(vehicle, 'chargingPowers')
 
-    allOff:
-        ixVehicle = 0
-        allOffVehicleLoop:
-            vehicle = arrayGet(vehicles, ixVehicle)
-            chargingRates = objectGet(vehicle, 'chargingRates')
-            maxChargingRate = arrayGet(chargingRates, arrayLength(chargingRates) - 1)
-            action = objectNew('vehicleCharging', objectNew( \
-                'id', objectGet(vehicle, 'id'), \
-                'charging', false, \
-                'chargingRate', maxChargingRate, \
-                'chargingLimit', MIN_CHARGING_LIMIT \
-            ))
-            arrayPush(actions, action)
-            ixVehicle = ixVehicle + 1
-        jumpif (ixVehicle < vehiclesLen) allOffVehicleLoop
-        return response
+        # Set vehicle charging off
+        actionCharging = false
+        actionChargingRate = arrayGet(chargingRates, arrayLength(chargingRates) - 1)
+        actionChargingLimit = minChargingLimit
+
+        # Home battery not yet fully charged?
+        jumpif (homeBattery < spillLimit) vehicleDone
+
+        # Vehicle fully charged?
+        jumpif (battery >= maxChargingLimit) vehicleDone
+
+        # Enough solar power to charge the vehicle?
+        jumpif (arrayGet(chargingPowers, 0) >= availableSolar) vehicleDone
+
+        # Compute the vehicle charging power
+        ixChargingPower = arrayNearest(chargingPowers, availableSolar)
+        chargingPower = arrayGet(chargingPowers, ixChargingPower)
+
+        # Reduce the available solar power
+        availableSolar = availableSolar - chargingPower
+
+        # Charge the vehicle
+        actionCharging = true
+        actionChargingRate = arrayGet(chargingRates, ixChargingPower)
+        actionChargingLimit = maxChargingLimit
+
+        vehicleDone:
+        arrayPush(actions, objectNew('vehicleCharging', objectNew( \
+            'id', objectGet(vehicle, 'id'), \
+            'charging', actionCharging, \
+            'chargingRate', actionChargingRate, \
+            'chargingLimit', actionChargingLimit \
+        )))
+        ixVehicle = ixVehicle + 1
+    jumpif (ixVehicle < vehiclesLength) vehicleLoop
+    return response
+endfunction
+
+
+function arrayNearest(array, value)
+    arrayLen = arrayLength(array)
+    ixValue = 0
+    arrayLoop:
+        arrayValue = arrayGet(array, ixValue)
+        jumpif (arrayValue == value) found
+        jumpif (arrayValue > value) foundNear
+        ixValue = ixValue + 1
+    jumpif (ixValue < arrayLen) arrayLoop
+    foundNear:
+    return ixValue - 1
+
+    found:
+    return ixValue
+endfunction
+
+
+function vehicleChargingPower(vehicle)
+    # Not charging?
+    jumpif (objectGet(vehicle, 'charging')) isCharging
+    return 0
+
+    # Find nearest charging power
+    isCharging:
+    chargingRate = objectGet(vehicle, 'chargingRate')
+    chargingRates = objectGet(vehicle, 'chargingRates')
+    chargingPowers = objectGet(vehicle, 'chargingPowers')
+    return arrayGet(chargingPowers, arrayNearest(chargingRates, chargingRate))
 endfunction
 
 

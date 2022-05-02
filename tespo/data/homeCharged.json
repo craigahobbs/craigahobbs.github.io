@@ -1,13 +1,13 @@
 {
-    "solarPower": 9.9,
-    "homeUsage": 0.4,
+    "solarPower": 7.2,
+    "homePower": 8.4,
     "homeBattery": 90,
     "vehicles": [
         {
             "id": "ID-MODELY",
             "name": "Model Y",
             "battery": 80,
-            "charging": false,
+            "charging": true,
             "chargingRate": 32,
             "chargingLimit": 90,
             "chargingRates": [8, 16, 24, 32],
