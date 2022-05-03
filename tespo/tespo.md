@@ -41,7 +41,9 @@ async function main()
 
     # Main display
     markdownPrint( \
-        '# T.E.S.P.O. (Tesla Energy Self-Powered Optimizer)', \
+        '[Home](#url=README.md)', \
+        '', \
+        '# TESPO Simulator', \
         '', \
         scenarioLinks, \
         '', \
