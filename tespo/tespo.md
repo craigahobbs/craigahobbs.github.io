@@ -131,7 +131,7 @@ async function main()
         '', \
         '**Scenario:** ' + scenarioName, \
         '', \
-        '## TESPO Output', \
+        '### Output', \
         '', \
         '~~~', \
         jsonStringify(output, 4), \
