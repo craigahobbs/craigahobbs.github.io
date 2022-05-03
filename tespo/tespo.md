@@ -23,9 +23,6 @@ tespoTypes = schemaParse( \
     '    # The vehicle ID', \
     '    string(len > 0) id', \
     '', \
-    "    # The vehicle's friendly name", \
-    '    string(len > 0) name', \
-    '', \
     "    # The vehicle's battery power percentage", \
     '    float(>= 0, <= 100) battery', \
     '', \
@@ -83,9 +80,10 @@ scenarios = objectNew( \
     'HomeCharged-LowSolar', 'data/homeCharged-lowSolar.json', \
     'HomeCharged-MedSolar', 'data/homeCharged-medSolar.json', \
     'HomeCharged-ZeroSolar', 'data/homeCharged-zeroSolar.json', \
-    'HomeUncharged', 'data/homeUncharged.json' \
+    'NoneCharged', 'data/noneCharged.json' \
 )
 scenarioNames = objectKeys(scenarios)
+defaultScenarioName = 'AllCharged'
 
 
 # Main entry point
@@ -105,9 +103,9 @@ async function main()
     noOutputDoc:
 
     # Determine the scenario input URL
-    scenarioName = if(vScenario != null, vScenario, 'HomeCharged')
+    scenarioName = if(vScenario != null, vScenario, defaultScenarioName)
     inputURL = objectGet(scenarios, scenarioName)
-    inputURL = if(inputURL != null, inputURL, objectGet(scenarios, 'HomeCharged'))
+    inputURL = if(inputURL != null, inputURL, objectGet(scenarios, defaultScenarioName))
 
     # Create the scenario links markdown
     scenarioLinks = ''

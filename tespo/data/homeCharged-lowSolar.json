@@ -5,7 +5,6 @@
     "vehicles": [
         {
             "id": "ID-MODELY",
-            "name": "Model Y",
             "battery": 80,
             "charging": true,
             "chargingRate": 32,
