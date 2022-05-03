@@ -78,7 +78,11 @@ tespoTypes = schemaParse( \
 
 # Input scenarios
 scenarios = objectNew( \
+    'AllCharged', 'data/allCharged.json', \
     'HomeCharged', 'data/homeCharged.json', \
+    'HomeCharged-LowSolar', 'data/homeCharged-lowSolar.json', \
+    'HomeCharged-MedSolar', 'data/homeCharged-medSolar.json', \
+    'HomeCharged-ZeroSolar', 'data/homeCharged-zeroSolar.json', \
     'HomeUncharged', 'data/homeUncharged.json' \
 )
 scenarioNames = objectKeys(scenarios)
@@ -133,21 +137,19 @@ async function main()
         '', \
         '### Output', \
         '', \
+        '[Output Schema Documentation](#var.vDocOutput=1)', \
+        '', \
         '~~~', \
         jsonStringify(output, 4), \
         '~~~', \
         '', \
         '### Input', \
         '', \
-        '~~~', \
-        jsonStringify(input, 4), \
-        '~~~', \
-        '', \
-        '## Schema Documentation', \
-        '', \
         '[Input Schema Documentation](#var.vDocInput=1)', \
         '', \
-        '[Output Schema Documentation](#var.vDocOutput=1)' \
+        '~~~', \
+        jsonStringify(input, 4), \
+        '~~~' \
     )
 endfunction
 
