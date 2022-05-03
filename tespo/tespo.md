@@ -1,5 +1,7 @@
 ~~~ markdown-script
-# Main entry point
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
 async function main()
     # Input schema documentation?
     jumpif (!vDocInput) noInputDoc
@@ -64,7 +66,7 @@ async function main()
 endfunction
 
 
-# Input scenarios
+# Input scenario name to URL map
 scenarios = objectNew( \
     'AllCharged', 'data/allCharged.json', \
     'HomeCharged', 'data/homeCharged.json', \
@@ -244,5 +246,6 @@ tespoTypes = schemaParse( \
 )
 
 
+# Execute the main entry point
 await main()
 ~~~
