@@ -1,17 +1,4 @@
 ~~~ markdown-script
-# Input scenarios
-scenarios = objectNew( \
-    'AllCharged', 'data/allCharged.json', \
-    'HomeCharged', 'data/homeCharged.json', \
-    'HomeCharged-LowSolar', 'data/homeCharged-lowSolar.json', \
-    'HomeCharged-MedSolar', 'data/homeCharged-medSolar.json', \
-    'HomeCharged-ZeroSolar', 'data/homeCharged-zeroSolar.json', \
-    'NoneCharged', 'data/noneCharged.json' \
-)
-scenarioNames = objectKeys(scenarios)
-defaultScenarioName = 'AllCharged'
-
-
 # Main entry point
 async function main()
     # Input schema documentation?
@@ -45,7 +32,6 @@ async function main()
     ixScenarioMax = arrayLength(scenarioNames)
     scenarioLinksLoop:
         scenarioLinkName = arrayGet(scenarioNames, ixScenario)
-        scenarioLinkURL = objectGet(scenarios, scenarioLinkName)
         scenarioLinks = scenarioLinks + if(ixScenario != 0, ' | ', '') + \
             if(scenarioLinkName == scenarioName, scenarioLinkName, '[' + scenarioLinkName + "](#var.vScenario='" + scenarioLinkName + "')")
         ixScenario = ixScenario + 1
@@ -76,6 +62,19 @@ async function main()
         '~~~' \
     )
 endfunction
+
+
+# Input scenarios
+scenarios = objectNew( \
+    'AllCharged', 'data/allCharged.json', \
+    'HomeCharged', 'data/homeCharged.json', \
+    'HomeCharged-LowSolar', 'data/homeCharged-lowSolar.json', \
+    'HomeCharged-MedSolar', 'data/homeCharged-medSolar.json', \
+    'HomeCharged-ZeroSolar', 'data/homeCharged-zeroSolar.json', \
+    'NoneCharged', 'data/noneCharged.json' \
+)
+scenarioNames = objectKeys(scenarios)
+defaultScenarioName = 'AllCharged'
 
 
 # TESPO constants
