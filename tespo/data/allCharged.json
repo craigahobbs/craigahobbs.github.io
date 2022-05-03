@@ -1,6 +1,6 @@
 {
     "solarPower": 8.2,
-    "homePower": 8.4,
+    "homePower": 1.4,
     "homeBattery": 90,
     "vehicles": [
         {
