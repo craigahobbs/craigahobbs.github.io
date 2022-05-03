@@ -1,78 +1,4 @@
 ~~~ markdown-script
-# TESPO schemas
-tespoTypes = schemaParse( \
-    '# The Tesla Energy Self-Powered Optimizer (TESPO) service input', \
-    'struct TespoInput', \
-    '', \
-    '    # The current average solar power generation, in kWh', \
-    '    float(>= 0) solarPower', \
-    '', \
-    '    # The current average home power usage, in kWh', \
-    '    float(>= 0) homePower', \
-    '', \
-    '    # The home battery power percentage', \
-    '    float(>= 0, <= 100) homeBattery', \
-    '', \
-    '    # The connected battery-powered electric vehicles', \
-    '    Vehicle[] vehicles', \
-    '', \
-    '', \
-    '# A battery-powered electric vehicle', \
-    'struct Vehicle', \
-    '', \
-    '    # The vehicle ID', \
-    '    string(len > 0) id', \
-    '', \
-    "    # The vehicle's battery power percentage", \
-    '    float(>= 0, <= 100) battery', \
-    '', \
-    '    # If true, the car is charging', \
-    '    bool charging', \
-    '', \
-    '    # The charging rate, in amps', \
-    '    int(> 0) chargingRate', \
-    '', \
-    '    # The charging limit, as a percentage', \
-    '    float(>= 0, <= 100) chargingLimit', \
-    '', \
-    '    # The available charging rates, in amps', \
-    '    int(> 0)[len > 0] chargingRates', \
-    '', \
-    '    # The available charging power (corresponding to the "chargingRates"), in kWh', \
-    '    float(>= 0, <= 100)[len > 0] chargingPowers', \
-    '', \
-    '', \
-    '# The Tesla Energy Self-Powered Optimizer (TESPO) service output', \
-    'struct TespoOutput', \
-    '', \
-    '    # The TESPO actions', \
-    '    TespoAction[] actions', \
-    '', \
-    '', \
-    '# A TESPO action', \
-    'union TespoAction', \
-    '', \
-    '    # Turn vehichle charging on or off', \
-    '    VehicleCharging vehicleCharging', \
-    '', \
-    '', \
-    "# Set a vehicle's charging on or off", \
-    'struct VehicleCharging', \
-    '', \
-    '    # The vehicle ID', \
-    '    string(len > 0) id', \
-    '', \
-    '    # If true, the car is charging', \
-    '    bool charging', \
-    '', \
-    '    # The charging rate, in amps', \
-    '    int(> 0) chargingRate', \
-    '', \
-    '    # The charging limit, as a percentage', \
-    '    float(>= 0, <= 100) chargingLimit' \
-)
-
-
 # Input scenarios
 scenarios = objectNew( \
     'AllCharged', 'data/allCharged.json', \
@@ -107,6 +33,12 @@ async function main()
     inputURL = objectGet(scenarios, scenarioName)
     inputURL = if(inputURL != null, inputURL, objectGet(scenarios, defaultScenarioName))
 
+    # Fetch the TESPO input
+    await input = schemaValidate(tespoTypes, 'TespoInput', fetch(inputURL))
+
+    # Compute the TESPO output
+    output = schemaValidate(tespoTypes, 'TespoOutput', tespo(input))
+
     # Create the scenario links markdown
     scenarioLinks = ''
     ixScenario = 0
@@ -118,12 +50,6 @@ async function main()
             if(scenarioLinkName == scenarioName, scenarioLinkName, '[' + scenarioLinkName + "](#var.vScenario='" + scenarioLinkName + "')")
         ixScenario = ixScenario + 1
     jumpif (ixScenario < ixScenarioMax) scenarioLinksLoop
-
-    # Fetch the TESPO input
-    await input = schemaValidate(tespoTypes, 'TespoInput', fetch(inputURL))
-
-    # Compute the TESPO output
-    output = schemaValidate(tespoTypes, 'TespoOutput', tespo(input))
 
     # Main display
     markdownPrint( \
@@ -243,6 +169,80 @@ function arrayNearest(array, value)
     found:
     return ixValue
 endfunction
+
+
+# TESPO schemas
+tespoTypes = schemaParse( \
+    '# The Tesla Energy Self-Powered Optimizer (TESPO) service input', \
+    'struct TespoInput', \
+    '', \
+    '    # The current average solar power generation, in kWh', \
+    '    float(>= 0) solarPower', \
+    '', \
+    '    # The current average home power usage, in kWh', \
+    '    float(>= 0) homePower', \
+    '', \
+    '    # The home battery power percentage', \
+    '    float(>= 0, <= 100) homeBattery', \
+    '', \
+    '    # The connected battery-powered electric vehicles', \
+    '    Vehicle[] vehicles', \
+    '', \
+    '', \
+    '# A battery-powered electric vehicle', \
+    'struct Vehicle', \
+    '', \
+    '    # The vehicle ID', \
+    '    string(len > 0) id', \
+    '', \
+    "    # The vehicle's battery power percentage", \
+    '    float(>= 0, <= 100) battery', \
+    '', \
+    '    # If true, the car is charging', \
+    '    bool charging', \
+    '', \
+    '    # The charging rate, in amps', \
+    '    int(> 0) chargingRate', \
+    '', \
+    '    # The charging limit, as a percentage', \
+    '    float(>= 0, <= 100) chargingLimit', \
+    '', \
+    '    # The available charging rates, in amps', \
+    '    int(> 0)[len > 0] chargingRates', \
+    '', \
+    '    # The available charging power (corresponding to the "chargingRates"), in kWh', \
+    '    float(>= 0, <= 100)[len > 0] chargingPowers', \
+    '', \
+    '', \
+    '# The Tesla Energy Self-Powered Optimizer (TESPO) service output', \
+    'struct TespoOutput', \
+    '', \
+    '    # The TESPO actions', \
+    '    TespoAction[] actions', \
+    '', \
+    '', \
+    '# A TESPO action', \
+    'union TespoAction', \
+    '', \
+    '    # Turn vehichle charging on or off', \
+    '    VehicleCharging vehicleCharging', \
+    '', \
+    '', \
+    "# Set a vehicle's charging on or off", \
+    'struct VehicleCharging', \
+    '', \
+    '    # The vehicle ID', \
+    '    string(len > 0) id', \
+    '', \
+    '    # If true, the car is charging', \
+    '    bool charging', \
+    '', \
+    '    # The charging rate, in amps', \
+    '    int(> 0) chargingRate', \
+    '', \
+    '    # The charging limit, as a percentage', \
+    '    float(>= 0, <= 100) chargingLimit' \
+)
 
 
 await main()
