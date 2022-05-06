@@ -88,7 +88,6 @@ $(eval $(call PROJECT_RULES, javascript, chisel-doc, 'git@github.com:craigahobbs
 $(eval $(call PROJECT_RULES, javascript, element-app, 'git@github.com:craigahobbs/element-app.git'))
 $(eval $(call PROJECT_RULES, javascript, element-model, 'git@github.com:craigahobbs/element-model.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-book-app, 'git@github.com:craigahobbs/markdown-book.git'))
-$(eval $(call PROJECT_RULES, javascript, markdown-charts, 'git@github.com:craigahobbs/markdown-charts.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-model, 'git@github.com:craigahobbs/markdown-model.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-up, 'git@github.com:craigahobbs/markdown-up.git'))
 $(eval $(call PROJECT_RULES, javascript, schema-markdown-doc, 'git@github.com:craigahobbs/schema-markdown-doc.git'))
