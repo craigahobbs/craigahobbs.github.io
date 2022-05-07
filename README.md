@@ -9,8 +9,6 @@
 
 [schema-markdown-js](https://github.com/craigahobbs/schema-markdown-js#readme)
 
-[schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
-
 
 ### element-app
 
@@ -23,8 +21,6 @@
 
 [chisel](https://github.com/craigahobbs/chisel#readme)
 
-[chisel-doc](https://github.com/craigahobbs/chisel-doc#readme)
-
 
 ### markdown-up
 
@@ -34,16 +30,7 @@
 
 [markdown-model](https://github.com/craigahobbs/markdown-model#readme)
 
-[markdown-charts](https://github.com/craigahobbs/markdown-charts#readme)
-
 [calc-script](https://github.com/craigahobbs/calc-script#readme)
-
-
-### Markdown Book
-
-[Markdown Book](https://github.com/craigahobbs/markdown-book-app#readme)
-
-[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
 
 ### Build / Development Experience
@@ -78,6 +65,8 @@
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
 
 [Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
+
+[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
 
