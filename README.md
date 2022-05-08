@@ -9,6 +9,8 @@
 
 [schema-markdown-js](https://github.com/craigahobbs/schema-markdown-js#readme)
 
+[schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
+
 
 ### element-app
 
