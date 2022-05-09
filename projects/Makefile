@@ -67,8 +67,7 @@ ifneq '$(strip $(1))' 'other'
 	@if [ -d $$$$HOME/src/$(strip $(2)).gh-pages ]; then \
 		FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)).gh-pages && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 		if [ "$$$$FAIL" != "" ]; then \
-			echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)).gh-pages; \
-			exit 1; \
+			echo '$(strip $(2))'; \
 		else \
 			rm -rf $$$$HOME/src/$(strip $(2)).gh-pages; \
 		fi; \
