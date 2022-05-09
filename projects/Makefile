@@ -5,9 +5,9 @@
 MAKEJ ?= -j
 
 
-.PHONY: clean commit help pull report superclean
+.PHONY: changed clean commit help pull report superclean
 help:
-	@echo 'usage: make [clean|commit|gh-pages|gh-pages-check|pull|report|superclean]'
+	@echo 'usage: make [changed|clean|commit|gh-pages|gh-pages-check|pull|report|superclean]'
 	@echo '            TYPE=[python|javascript|makefile|other]'
 
 
@@ -23,31 +23,23 @@ endef
 
 # Project rules function - args are (project_type, project_name, git_repository)
 define PROJECT_RULES
-$(call PROJECT_RULE_HEADER, $(1), $(2), report)
-	@echo '$(strip $(2)) ($(strip $(1)))'
 
-$(call PROJECT_RULE_HEADER, $(1), $(2), pull)
-	if [ ! -d $$$$HOME/src/$(strip $(2)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(2)); fi
-	FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+# changed
+$(call PROJECT_RULE_HEADER, $(1), $(2), changed)
+	@FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 	if [ "$$$$FAIL" != "" ]; then \
-		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
-		exit 1; \
+		echo '$(strip $(2))'; \
 	fi
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
-endif
-	cd $$$$HOME/src/$(strip $(2)) && git pull
 
+
+# clean
 $(call PROJECT_RULE_HEADER, $(1), $(2), clean)
 ifneq '$(strip $(1))' 'other'
 	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
 endif
 
-$(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) superclean
-endif
 
+# commit
 $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
 ifeq '$(strip $(1))' 'makefile'
 	$(MAKE) -C $$$$HOME/src/$(strip $(2)) commit
@@ -58,6 +50,8 @@ ifneq '$(strip $(1))' 'other'
 endif
 endif
 
+
+# gh-pages
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
 ifneq '$(strip $(1))' 'makefile'
 ifneq '$(strip $(1))' 'other'
@@ -65,6 +59,8 @@ ifneq '$(strip $(1))' 'other'
 endif
 endif
 
+
+# gh-pages-check
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages-check)
 ifneq '$(strip $(1))' 'makefile'
 ifneq '$(strip $(1))' 'other'
@@ -79,7 +75,34 @@ ifneq '$(strip $(1))' 'other'
 	fi
 endif
 endif
-endef
+
+
+# pull
+$(call PROJECT_RULE_HEADER, $(1), $(2), pull)
+	if [ ! -d $$$$HOME/src/$(strip $(2)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(2)); fi
+	@FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+	if [ "$$$$FAIL" != "" ]; then \
+		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
+		exit 1; \
+	fi
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
+endif
+	cd $$$$HOME/src/$(strip $(2)) && git pull
+
+
+# report
+$(call PROJECT_RULE_HEADER, $(1), $(2), report)
+	@echo '$(strip $(2)) ($(strip $(1)))'
+
+
+# superclean
+$(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
+ifneq '$(strip $(1))' 'other'
+	$(MAKE) -C $$$$HOME/src/$(strip $(2)) superclean
+endif
+
+endef # PROJECT_RULES
 
 
 # Javascript projects
