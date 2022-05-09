@@ -35,6 +35,13 @@
 [calc-script](https://github.com/craigahobbs/calc-script#readme)
 
 
+### Markdown Book
+
+[Markdown Book](https://github.com/craigahobbs/markdown-book-app#readme)
+
+[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
+
+
 ### Build / Development Experience
 
 [javascript-build](https://github.com/craigahobbs/javascript-build#readme)
@@ -68,10 +75,10 @@
 
 [Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
 
-[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
-
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
 
 [Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
 
 [Sunrise Dashboard](https://craigahobbs.github.io/sunrise/#url=sunrise.md)
+
+[Tesla Energy Self-Powered Optimizer](https://craigahobbs.github.io/tespo/)
