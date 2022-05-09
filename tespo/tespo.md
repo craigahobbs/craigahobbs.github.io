@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+
 async function main()
     # Input schema documentation?
     jumpif (!vDocInput) noInputDoc
@@ -41,8 +42,6 @@ async function main()
 
     # Main display
     markdownPrint( \
-        '[Home](#url=README.md)', \
-        '', \
         '# TESPO Simulator', \
         '', \
         scenarioLinks, \
@@ -63,47 +62,33 @@ async function main()
         '', \
         '~~~', \
         jsonStringify(input, 4), \
-        '~~~', \
-        '', \
-        '## Information Placard' \
+        '~~~' \
     )
-
-    # Example information placard
-    spillage = objectGet(output, 'spillage')
-    statusSize = 100
-    borderSize = 5
-    setDrawingSize(statusSize, statusSize)
-    drawStyle('black', borderSize, if(spillage != 0, 'lawngreen', 'red'))
-    drawRect(0.5 * borderSize, 0.5 * borderSize, statusSize - borderSize, statusSize - borderSize)
-    statusText = if(spillage != 0, \
-        'There is currently surplus solar power (' + spillage + ' kW). Please use power freely.', \
-        'Batteries are charging or discharging. Please use power wisely.')
-    markdownPrint('**Status:**', statusText)
 endfunction
 
 
 # Input scenario name to URL map
 scenarios = objectNew( \
-    'AllCharged', 'data/allCharged.json', \
-    'HomeCharged', 'data/homeCharged.json', \
-    'HomeCharged-LowSolar', 'data/homeCharged-lowSolar.json', \
-    'HomeCharged-MedSolar', 'data/homeCharged-medSolar.json', \
-    'HomeCharged-ZeroSolar', 'data/homeCharged-zeroSolar.json', \
-    'NoneCharged', 'data/noneCharged.json' \
+    'AllCharged', 'input/allCharged.json', \
+    'HomeCharged', 'input/homeCharged.json', \
+    'HomeCharged-LowSolar', 'input/homeCharged-lowSolar.json', \
+    'HomeCharged-MedSolar', 'input/homeCharged-medSolar.json', \
+    'HomeCharged-ZeroSolar', 'input/homeCharged-zeroSolar.json', \
+    'NoneCharged', 'input/noneCharged.json' \
 )
 scenarioNames = objectKeys(scenarios)
 defaultScenarioName = 'AllCharged'
 
 
-# The TESPO "spill limit", the percentage at which the home battery is considered full.
-spillLimit = 90
+# The percentage at which the home battery is considered full
+homeLimit = 90
 
 # The minimum/maximum charging limits for vehicles
 minChargingLimit = 50
 maxChargingLimit = 90
 
-# The minimum solar power, in kWh, that is considered solar spillage
-minSolarSpillage = 2
+# The minimum solar power, in kWh, that is considered excess solar power
+minSolarExcess = 1
 
 
 # The TESPO algorithm
@@ -112,23 +97,20 @@ function tespo(input)
     homePower = objectGet(input, 'homePower')
     homeBattery = objectGet(input, 'homeBattery')
     vehicles = objectGet(input, 'vehicles')
-    vehiclesLength = arrayLength(vehicles)
 
     # Compute the available solar power (remove current vehicle charging power)
     availableSolar = solarPower - homePower
     ixVehicle = 0
     availableSolarLoop:
         vehicle = arrayGet(vehicles, ixVehicle)
-        chargingRate = objectGet(vehicle, 'chargingRate')
-        chargingRates = objectGet(vehicle, 'chargingRates')
-        chargingPowers = objectGet(vehicle, 'chargingPowers')
-        chargingPower = if(arrayGet(vehicle, 'charging'), arrayGet(chargingPowers, arrayNearest(chargingRates, chargingRate)), 0)
-        availableSolar = availableSolar + chargingPower
+        # P = V * I
+        chargingPower = objectGet(vehicle, 'chargingRate') * arrayGet(vehicle, 'chargingVoltage') / 1000
+        availableSolar = availableSolar + if(arrayGet(vehicle, 'charging'), chargingPower, 0)
         ixVehicle = ixVehicle + 1
     jumpif (ixVehicle < vehiclesLenght) availableSolarLoop
 
     # Is the home battery charged?
-    isHomeBatteryCharged = homeBattery >= spillLimit
+    isHomeBatteryCharged = homeBattery >= homeLimit
     allBatteriesCharged = isHomeBatteryCharged
 
     # Add the charging action for each vehicle
@@ -139,7 +121,6 @@ function tespo(input)
         vehicle = arrayGet(vehicles, ixVehicle)
         battery = objectGet(vehicle, 'battery')
         chargingRates = objectGet(vehicle, 'chargingRates')
-        chargingPowers = objectGet(vehicle, 'chargingPowers')
 
         # Set vehicle charging off
         actionCharging = false
@@ -155,19 +136,25 @@ function tespo(input)
         jumpif (isVehicleCharged) vehicleDone
 
         # Enough solar power to charge the vehicle?
-        jumpif (arrayGet(chargingPowers, 0) >= availableSolar) vehicleDone
-
-        # Compute the vehicle charging power
-        ixChargingPower = arrayNearest(chargingPowers, availableSolar)
-        chargingPower = arrayGet(chargingPowers, ixChargingPower)
-
-        # Reduce the available solar power
-        availableSolar = availableSolar - chargingPower
+        # I = P / V
+        availableSolarRate = (availableSolar * 1000) / objectGet(vehicle, 'chargingVoltage')
+        bestChargingRate = 0
+        ixChargingRate = 0
+        chargingRateLoop:
+            chargingRateTest = arrayGet(chargingRates, ixChargingRate)
+            bestChargingRate = if(chargingRateTest <= availableSolarRate, max(bestChargingRate, chargingRateTest), bestChargingRate)
+            ixChargingRate = ixChargingRate + 1
+        jumpif (ixChargingRate < arrayLength(chargingRates)) chargingRateLoop
+        jumpif (bestChargingRate == 0) vehicleDone
 
         # Charge the vehicle
         actionCharging = true
-        actionChargingRate = arrayGet(chargingRates, ixChargingPower)
+        actionChargingRate = bestChargingRate
         actionChargingLimit = maxChargingLimit
+
+        # Reduce the available solar power
+        chargingPower = actionChargingRate * chargingVoltage / 1000
+        availableSolar = availableSolar - chargingPower
 
         vehicleDone:
         arrayPush(chargings, objectNew( \
@@ -177,30 +164,13 @@ function tespo(input)
             'chargingLimit', actionChargingLimit \
         ))
         ixVehicle = ixVehicle + 1
-    jumpif (ixVehicle < vehiclesLength) vehicleLoop
+    jumpif (ixVehicle < arrayLength(vehicles)) vehicleLoop
 
-    # Set the solar spillage
-    spillage = if(allBatteriesCharged && availableSolar > minSolarSpillage, round(availableSolar, 3), 0)
-    objectSet(output, 'spillage', spillage)
+    # Set the excess solar power
+    solarExcess = if(allBatteriesCharged && availableSolar > minSolarExcess, round(availableSolar, 3), 0)
+    objectSet(output, 'solarExcess', solarExcess)
 
     return output
-endfunction
-
-
-function arrayNearest(array, value)
-    arrayLen = arrayLength(array)
-    ixValue = 0
-    arrayLoop:
-        arrayValue = arrayGet(array, ixValue)
-        jumpif (arrayValue == value) found
-        jumpif (arrayValue > value) foundNear
-        ixValue = ixValue + 1
-    jumpif (ixValue < arrayLen) arrayLoop
-    foundNear:
-    return ixValue - 1
-
-    found:
-    return ixValue
 endfunction
 
 
@@ -243,8 +213,8 @@ tespoTypes = schemaParse( \
     '    # The available charging rates, in amps', \
     '    int(> 0)[len > 0] chargingRates', \
     '', \
-    '    # The available charging power (corresponding to the "chargingRates"), in kWh', \
-    '    float(>= 0, <= 100)[len > 0] chargingPowers', \
+    '    # The charging voltage, in volts', \
+    '    int(> 0) chargingVoltage', \
     '', \
     '', \
     '# The Tesla Energy Self-Powered Optimizer (TESPO) service output', \
@@ -253,8 +223,8 @@ tespoTypes = schemaParse( \
     '    # The vehicle-charging actions', \
     '    VehicleCharging[] chargings', \
     '', \
-    '    # The solar spillage, in kWh. If greater than zero, there is currently solar spillage.', \
-    '    float(>= 0) spillage', \
+    '    # The excess solar power, in kWh. If greater than zero, there is currently excess solar power.', \
+    '    float(>= 0) solarExcess', \
     '', \
     '', \
     "# Set a vehicle's charging on or off", \

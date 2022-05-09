@@ -1,6 +1,6 @@
 {
-    "solarPower": 9.9,
-    "homePower": 8.4,
+    "solarPower": 3.8,
+    "homePower": 9.4,
     "homeBattery": 90,
     "vehicles": [
         {
@@ -10,7 +10,7 @@
             "chargingRate": 32,
             "chargingLimit": 90,
             "chargingRates": [8, 16, 24, 32],
-            "chargingPowers": [2, 4, 6, 8]
+            "chargingVoltage": 240
         }
     ]
 }
