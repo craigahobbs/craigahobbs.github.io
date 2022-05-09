@@ -9,7 +9,8 @@
             "charging": true,
             "chargingRate": 32,
             "chargingLimit": 90,
-            "chargingRates": [8, 16, 24, 32],
+            "minChargingRate": 5,
+            "maxChargingRate": 32,
             "chargingVoltage": 240
         }
     ]

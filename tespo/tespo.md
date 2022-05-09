@@ -114,17 +114,18 @@ function tespo(input)
     allBatteriesCharged = isHomeBatteryCharged
 
     # Add the charging action for each vehicle
-    chargings = arrayNew()
-    output = objectNew('chargings', chargings)
+    vehicleChargings = arrayNew()
+    output = objectNew('vehicles', vehicleChargings)
     ixVehicle = 0
     vehicleLoop:
         vehicle = arrayGet(vehicles, ixVehicle)
         battery = objectGet(vehicle, 'battery')
-        chargingRates = objectGet(vehicle, 'chargingRates')
+        minChargingRate = objectGet(vehicle, 'minChargingRate')
+        maxChargingRate = objectGet(vehicle, 'maxChargingRate')
 
         # Set vehicle charging off
         actionCharging = false
-        actionChargingRate = arrayGet(chargingRates, arrayLength(chargingRates) - 1)
+        actionChargingRate = maxChargingRate
         actionChargingLimit = minChargingLimit
 
         # Home battery not yet fully charged?
@@ -139,12 +140,11 @@ function tespo(input)
         # I = P / V
         availableSolarRate = (availableSolar * 1000) / objectGet(vehicle, 'chargingVoltage')
         bestChargingRate = 0
-        ixChargingRate = 0
+        chargingRateTest = minChargingRate
         chargingRateLoop:
-            chargingRateTest = arrayGet(chargingRates, ixChargingRate)
             bestChargingRate = if(chargingRateTest <= availableSolarRate, max(bestChargingRate, chargingRateTest), bestChargingRate)
-            ixChargingRate = ixChargingRate + 1
-        jumpif (ixChargingRate < arrayLength(chargingRates)) chargingRateLoop
+            chargingRateTest = chargingRateTest + 1
+        jumpif (chargingRateTest <= maxChargingRate) chargingRateLoop
         jumpif (bestChargingRate == 0) vehicleDone
 
         # Charge the vehicle
@@ -157,7 +157,7 @@ function tespo(input)
         availableSolar = availableSolar - chargingPower
 
         vehicleDone:
-        arrayPush(chargings, objectNew( \
+        arrayPush(vehicleChargings, objectNew( \
             'id', objectGet(vehicle, 'id'), \
             'charging', actionCharging, \
             'chargingRate', actionChargingRate, \
@@ -210,8 +210,11 @@ tespoTypes = schemaParse( \
     '    # The charging limit, as a percentage', \
     '    float(>= 0, <= 100) chargingLimit', \
     '', \
-    '    # The available charging rates, in amps', \
-    '    int(> 0)[len > 0] chargingRates', \
+    '    # The minimum charging rate, in amps', \
+    '    int(> 0) minChargingRate', \
+    '', \
+    '    # The maximum charging rate, in amps', \
+    '    int(> 0) maxChargingRate', \
     '', \
     '    # The charging voltage, in volts', \
     '    int(> 0) chargingVoltage', \
@@ -221,7 +224,7 @@ tespoTypes = schemaParse( \
     'struct TespoOutput', \
     '', \
     '    # The vehicle-charging actions', \
-    '    VehicleCharging[] chargings', \
+    '    VehicleCharging[] vehicles', \
     '', \
     '    # The excess solar power, in kWh. If greater than zero, there is currently excess solar power.', \
     '    float(>= 0) solarExcess', \
