@@ -42,7 +42,7 @@ async function main()
 
     # Main display
     markdownPrint( \
-        '# TESPO Simulator', \
+        '# Tesla Energy Self-Powered Optimizer', \
         '', \
         scenarioLinks, \
         '', \
