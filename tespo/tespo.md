@@ -24,7 +24,7 @@ async function main()
     inputURL = if(inputURL != null, inputURL, objectGet(scenarios, defaultScenarioName))
 
     # Fetch the TESPO input
-    await input = schemaValidate(tespoTypes, 'TespoInput', fetch(inputURL))
+    input = schemaValidate(tespoTypes, 'TespoInput', fetch(inputURL))
 
     # Compute the TESPO output
     output = schemaValidate(tespoTypes, 'TespoOutput', tespo(input))
@@ -248,5 +248,5 @@ tespoTypes = schemaParse( \
 
 
 # Execute the main entry point
-await main()
+main()
 ~~~
