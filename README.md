@@ -67,6 +67,8 @@
 
 ### markdown-up Applications
 
+[Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
+
 [Conway's Game of Life](https://craigahobbs.github.io/life/)
 
 [Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/#url=books.md)
@@ -76,6 +78,8 @@
 [Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
 
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
+
+[Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/app/)
 
 [Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
 
