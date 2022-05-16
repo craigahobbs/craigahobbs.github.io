@@ -35,13 +35,6 @@
 [calc-script](https://github.com/craigahobbs/calc-script#readme)
 
 
-### Markdown Book
-
-[Markdown Book](https://github.com/craigahobbs/markdown-book-app#readme)
-
-[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
-
-
 ### Build / Development Experience
 
 [javascript-build](https://github.com/craigahobbs/javascript-build#readme)
@@ -74,6 +67,8 @@
 [Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/#url=books.md)
 
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
+
+[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
 
 [Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
 
