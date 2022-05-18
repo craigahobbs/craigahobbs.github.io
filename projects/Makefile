@@ -26,9 +26,13 @@ define PROJECT_RULES
 
 # changed
 $(call PROJECT_RULE_HEADER, $(1), $(2), changed)
-	@FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
-	if [ "$$$$FAIL" != "" ]; then \
-		echo '$(strip $(2))'; \
+	@if [ -d $$$$HOME/src/$(strip $(2)) ]; then \
+		FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+		if [ "$$$$FAIL" != "" ]; then \
+			echo '$(strip $(2))'; \
+		fi; \
+	else \
+		echo '$(strip $(2)) (missing)'; \
 	fi
 
 
