@@ -3,7 +3,13 @@
 [GitHub](https://github.com/craigahobbs)
 
 
-### schema-markdown
+## Libraries
+
+[calc-script](https://github.com/craigahobbs/calc-script#readme)
+
+[element-model](https://github.com/craigahobbs/element-model#readme)
+
+[markdown-model](https://github.com/craigahobbs/markdown-model#readme)
 
 [schema-markdown](https://github.com/craigahobbs/schema-markdown#readme)
 
@@ -12,27 +18,41 @@
 [schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
 
 
-### element-app
-
-[element-app](https://github.com/craigahobbs/element-app#readme)
-
-[element-model](https://github.com/craigahobbs/element-model#readme)
-
-
-### chisel
+## Applications
 
 [chisel](https://github.com/craigahobbs/chisel#readme)
-
-
-### markdown-up
 
 [markdown-up](https://github.com/craigahobbs/markdown-up#readme)
 
 [markdown-up-py](https://github.com/craigahobbs/markdown-up-py#readme)
 
-[markdown-model](https://github.com/craigahobbs/markdown-model#readme)
 
-[calc-script](https://github.com/craigahobbs/calc-script#readme)
+## markdown-up Applications
+
+[Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
+
+[Conway's Game of Life](https://craigahobbs.github.io/life/)
+
+[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/#url=books.md)
+
+[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
+
+[Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
+
+[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
+
+[Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
+
+[Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/app/)
+
+[Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
+
+[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/#url=sunrise.md)
+
+[Tesla Energy Self-Powered Optimizer](https://craigahobbs.github.io/tespo/)
+
+
+## Development
 
 
 ### Build / Development Experience
@@ -56,28 +76,3 @@
 [template-specialize](https://github.com/craigahobbs/template-specialize#readme)
 
 [unittest-parallel](https://github.com/craigahobbs/unittest-parallel#readme)
-
-
-### markdown-up Applications
-
-[Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
-
-[Conway's Game of Life](https://craigahobbs.github.io/life/)
-
-[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/#url=books.md)
-
-[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
-
-[Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
-
-[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
-
-[Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
-
-[Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/app/)
-
-[Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
-
-[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/#url=sunrise.md)
-
-[Tesla Energy Self-Powered Optimizer](https://craigahobbs.github.io/tespo/)
