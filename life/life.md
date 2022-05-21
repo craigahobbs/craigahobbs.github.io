@@ -106,7 +106,12 @@ function main()
     lifeDraw(life, size, gap, arrayGet(colors, colorIndex), arrayGet(colors, backgroundIndex), borderColor, if(border, 2, 0), !play)
 
     # Play?
-    if(play, setNavigateTimeout(lifeURL(encodedNext, 1), period))
+    if(play, setWindowTimeout(timeoutNavigate, period, lifeURL(encodedNext, 1)))
+endfunction
+
+
+function timeoutNavigate(url)
+    setWindowLocation(url)
 endfunction
 
 
@@ -316,7 +321,7 @@ function lifeOnClick(px, py)
     # Toggle the cell
     cells = objectGet(lifeOnClickLife, 'cells')
     arraySet(cells, iCell, if(arrayGet(cells, iCell), 0, 1))
-    setNavigateTimeout(lifeURL(lifeEncode(lifeOnClickLife), 0))
+    setWindowLocation(lifeURL(lifeEncode(lifeOnClickLife), 0))
 endfunction
 
 
