@@ -43,7 +43,7 @@
 
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
 
-[Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/app/)
+[Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/doc/)
 
 [Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
 
