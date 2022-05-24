@@ -16,6 +16,14 @@
   (package-install `js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
+;; mds-mode
+(unless (package-installed-p 'mds-mode)
+  (let ((mds-mode-file (make-temp-file "mds-mode")))
+    (url-copy-file "https://craigahobbs.github.io/markdown-up/extra/mds-mode.el" mds-mode-file t)
+    (package-install-file mds-mode-file)
+    (delete-file mds-mode-file)))
+(add-to-list 'auto-mode-alist '("\\.mds?\\'" . mds-mode))
+
 ;; smd-mode
 (unless (package-installed-p 'smd-mode)
   (let ((smd-mode-file (make-temp-file "smd-mode")))
@@ -58,7 +66,7 @@
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(make-backup-files nil)
- '(package-selected-packages '(smd-mode js2-mode))
+ '(package-selected-packages '(mds-mode smd-mode js2-mode))
  '(scroll-conservatively 10000)
  '(sentence-end-double-space nil)
  '(sgml-basic-offset 4)
