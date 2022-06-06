@@ -6,7 +6,7 @@
         {
             "id": "ID-MODELY",
             "battery": 90,
-            "charging": false,
+            "chargingEnabled": false,
             "chargingRate": 32,
             "chargingLimit": 50,
             "minChargingRate": 5,

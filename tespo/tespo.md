@@ -105,7 +105,7 @@ function tespo(input)
         vehicle = arrayGet(vehicles, ixVehicle)
         # P = V * I
         chargingPower = objectGet(vehicle, 'chargingRate') * arrayGet(vehicle, 'chargingVoltage') / 1000
-        availableSolar = availableSolar + if(arrayGet(vehicle, 'charging'), chargingPower, 0)
+        availableSolar = availableSolar + if(arrayGet(vehicle, 'chargingEnabled'), chargingPower, 0)
         ixVehicle = ixVehicle + 1
     jumpif (ixVehicle < vehiclesLenght) availableSolarLoop
 
@@ -159,7 +159,7 @@ function tespo(input)
         vehicleDone:
         arrayPush(vehicleChargings, objectNew( \
             'id', objectGet(vehicle, 'id'), \
-            'charging', actionCharging, \
+            'chargingEnabled', actionCharging, \
             'chargingRate', actionChargingRate, \
             'chargingLimit', actionChargingLimit \
         ))
@@ -167,8 +167,9 @@ function tespo(input)
     jumpif (ixVehicle < arrayLength(vehicles)) vehicleLoop
 
     # Set the excess solar power
-    solarExcess = if(allBatteriesCharged && availableSolar > minSolarExcess, round(availableSolar, 3), 0)
-    objectSet(output, 'solarExcess', solarExcess)
+    excessSolar = if(allBatteriesCharged && availableSolar > minSolarExcess, availableSolar, 0)
+    objectSet(output, 'availableSolar', round(max(availableSolar, 0), 3))
+    objectSet(output, 'excessSolar', round(excessSolar, 3))
 
     return output
 endfunction
@@ -201,8 +202,8 @@ tespoTypes = schemaParse( \
     "    # The vehicle's battery power percentage", \
     '    float(>= 0, <= 100) battery', \
     '', \
-    '    # If true, the car is charging', \
-    '    bool charging', \
+    '    # If true, car charging is enabled', \
+    '    bool chargingEnabled', \
     '', \
     '    # The charging rate, in amps', \
     '    int(> 0) chargingRate', \
@@ -226,8 +227,11 @@ tespoTypes = schemaParse( \
     '    # The vehicle-charging actions', \
     '    VehicleCharging[] vehicles', \
     '', \
-    '    # The excess solar power, in kWh. If greater than zero, there is currently excess solar power.', \
-    '    float(>= 0) solarExcess', \
+    '    # The available solar power, in kWh', \
+    '    float(>= 0) availableSolar', \
+    '', \
+    '    # The excess solar power, in kWh', \
+    '    float(>= 0) excessSolar', \
     '', \
     '', \
     "# Set a vehicle's charging on or off", \
@@ -236,8 +240,8 @@ tespoTypes = schemaParse( \
     '    # The vehicle ID', \
     '    string(len > 0) id', \
     '', \
-    '    # If true, the car is charging', \
-    '    bool charging', \
+    '    # If true, car charging is enabled', \
+    '    bool chargingEnabled', \
     '', \
     '    # The charging rate, in amps', \
     '    int(> 0) chargingRate', \
