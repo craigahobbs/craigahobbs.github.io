@@ -168,7 +168,7 @@ function tespo(input)
 
     # Set the excess solar power
     excessSolar = if(allBatteriesCharged && availableSolar > minSolarExcess, availableSolar, 0)
-    objectSet(output, 'availableSolar', round(max(availableSolar, 0), 3))
+    objectSet(output, 'availableSolar', if(isHomeBatteryCharged, round(max(availableSolar, 0), 3), 0))
     objectSet(output, 'excessSolar', round(excessSolar, 3))
 
     return output
