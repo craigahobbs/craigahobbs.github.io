@@ -1,147 +1,333 @@
-# Conway's Game of Life
-
 ~~~ markdown-script
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
+# Defaults
+defaultBackground = 1
+defaultBorderRatio = 0.1
+defaultBorderSize = 5
+defaultColor = 0
+defaultDepth = 6
+defaultGap = 1
+defaultHeight = 50
+defaultInitRatio = 0.2
+defaultPeriod = 1000
+defaultSize = 10
+defaultWidth = 50
+
+# Limits
+minimumGap = 1
+minimumPeriod = 100
+minimumSize = 1
+minimumWidthHeight = 10
+
+# Life cell and background colors
+lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
+lifeBorderColor = 'black'
+
+
 function main()
-    # Defaults
-    defaultWidth = 50
-    defaultHeight = 50
-    defaultPeriod = 1000
-    defaultSize = 10
-    defaultColorIndex = 0
-    defaultBackgroundIndex = 1
-    defaultBorder = 0
-    defaultDepth = 6
+    # Title
+    title = "Conway's Game of Life"
+    setDocumentTitle(title)
+    markdownPrint("# " + title, '')
 
-    # Limits
-    minWidth = 20
-    minHeight = 20
-    minPeriod = 200
-    minSize = 1
-    minDepth = 0
+    # Load life
+    life = lifeLoad()
 
-    # Cell and background colors
-    colors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
-    borderColor = 'black'
-
-    # Application variables
-    play = if(vPlay != null, vPlay, 0)
-    period = max(minPeriod, if(vPeriod != null, vPeriod, defaultPeriod))
-    size = max(minSize, if(vSize != null, vSize, defaultSize))
-    gap = if(vGap != null, vGap, 1)
-    depth = max(minDepth, if(vDepth != null, vDepth, defaultDepth))
-    colorIndex = if(vColor != null, vColor, defaultColorIndex) % len(colors)
-    backgroundIndex = if(vBackground != null, vBackground, defaultBackgroundIndex) % len(colors)
-    border = if(vBorder != null, vBorder, defaultBorder)
-    initRatio = if(vInitRatio != null, vInitRatio, 0.2)
-    borderRatio = if(vBorderRatio != null, vBorderRatio, 0.1)
-
-    # Initialize or decode the life board
-    life = if(vLife, lifeDecode(vLife), lifeNew(defaultWidth, defaultHeight, initRatio, borderRatio))
-    lifeWidth = objectGet(life, 'width')
-    lifeHeight = objectGet(life, 'height')
-
-    # Is there a cycle?
-    nextLife = lifeNext(life)
-    encodedLife = lifeEncode(life)
-    encodedNext = lifeEncode(nextLife)
-    jumpif (!play) cycleDone
-        lifeCycle = nextLife
-        encodedCycle = encodedNext
-        iCycle = 1
-        cycleLoop:
-            jumpif (iCycle > depth) cycleDone
-            jumpif (encodedLife == encodedCycle) cycleDetected
-            lifeCycle = lifeNext(lifeCycle)
-            encodedCycle = lifeEncode(lifeCycle)
-            iCycle = iCycle + 1
-        jump cycleLoop
-    jump cycleDone
-    cycleDetected:
-        life = lifeNew(lifeWidth, lifeHeight, initRatio, borderRatio)
-        nextLife = lifeNext(life)
-        encodedLife = lifeEncode(life)
-        encodedNext = lifeEncode(nextLife)
-    cycleDone:
+    # Application arguments
+    argsRaw = lifeArgs(true)
+    args = lifeArgs()
+    background = objectGet(args, 'background')
+    border = objectGet(args, 'border')
+    borderRaw = objectGet(argsRaw, 'border')
+    color = objectGet(args, 'color')
+    gap = objectGet(args, 'gap')
+    period = objectGet(args, 'period')
+    play = objectGet(args, 'play')
+    size = objectGet(args, 'size')
 
     # Pause menu
-    jumpif (play) skipPauseMenu
-        nextColorIndex = (colorIndex + 1) % arrayLength(colors)
-        nextColorIndex = if(nextColorIndex != backgroundIndex, nextColorIndex, (nextColorIndex + 1) % arrayLength(colors))
-        nextBackgroundIndex = (backgroundIndex + 1) % arrayLength(colors)
-        nextBackgroundIndex = if(nextBackgroundIndex != colorIndex, nextBackgroundIndex, (nextBackgroundIndex + 1) % arrayLength(colors))
-        encodedRandom = lifeEncode(lifeNew(lifeWidth, lifeHeight, initRatio, borderRatio))
-        encodedWidthMore = lifeEncode(lifeNew(max(minWidth, ceil(1.1 * lifeWidth)), lifeHeight, initRatio, borderRatio))
-        encodedWidthLess = lifeEncode(lifeNew(max(minWidth, ceil(0.9 * lifeWidth)), lifeHeight, initRatio, borderRatio))
-        encodedHeightMore = lifeEncode(lifeNew(lifeWidth, max(minHeight, ceil(1.1 * lifeHeight)), initRatio, borderRatio))
-        encodedHeightLess = lifeEncode(lifeNew(lifeWidth, max(minHeight, ceil(0.9 * lifeHeight)), initRatio, borderRatio))
-        markdownPrint( \
-            lifeLink('Play', encodedNext, 1), \
-            ' | ' + lifeLink('Step', encodedNext, 0), \
-            ' ' + lifeLink('Random', encodedRandom, 0), \
-            ' | ' + lifeLink('Background', encodedLife, 0, null, null, null, nextBackgroundIndex), \
-            ' ' + lifeLink('Cell', encodedLife, 0, null, null, nextColorIndex), \
-            ' ' + lifeLink('Border', encodedLife, 0, null, null, null, null, if(border, 0, 1)), \
-            ' [Reset](#var=)', \
-            ' | **Width:** ' + lifeLink('More', encodedWidthMore, 0) + ' ' + lifeLink('Less', encodedWidthLess, 0), \
-            ' | **Height:** ' + lifeLink('More', encodedHeightMore, 0) + ' ' + lifeLink('Less', encodedHeightLess, 0), \
-            ' | **Size:** ' + lifeLink('More', encodedLife, null, null, max(minSize, size + 1)) + \
-                ' ' + lifeLink('Less', encodedLife, null, null, max(minSize, size - 1)) \
-        )
-    skipPauseMenu:
+    jumpif (play) menuPlay
+        nextColor = (color + 1) % arrayLength(lifeColors)
+        nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
+        nextBackground = (background + 1) % arrayLength(lifeColors)
+        nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
+        linkSeparator = objectNew('text', ' ')
+        linkSection = objectNew('text', ' | ')
+        elementModelRender(objectNew('html', 'p', 'elem', arrayNew( \
+            lifeLinkElements('Play', lifeURL(argsRaw, 1)), \
+            linkSection, \
+            lifeButtonElements('Step', lifeOnClickStep), \
+            linkSeparator, \
+            lifeButtonElements('Random', lifeOnClickRandom), \
+            linkSection, \
+            lifeLinkElements('Background', lifeURL(argsRaw, 0, null, null, null, nextBackground)), \
+            linkSeparator, \
+            lifeLinkElements('Cell', lifeURL(argsRaw, 0, null, null, nextColor)), \
+            linkSeparator, \
+            lifeLinkElements('Border', lifeURL(argsRaw, 0, null, null, null, null, if(borderRaw != null, 0, defaultBorderSize))), \
+            linkSeparator, \
+            lifeButtonElements('Reset', lifeOnClickReset), \
+            arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Width: '))), \
+            lifeButtonElements('More', lifeOnClickWidthMore), \
+            linkSeparator, \
+            lifeButtonElements('Less', lifeOnClickWidthLess), \
+            arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Height: '))), \
+            lifeButtonElements('More', lifeOnClickHeightMore), \
+            linkSeparator, \
+            lifeButtonElements('Less', lifeOnClickHeightLess), \
+            arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Size: '))), \
+            lifeLinkElements('More', lifeURL(argsRaw, 0, null, max(minimumSize, size + 1))), \
+            linkSeparator, \
+            lifeLinkElements('Less', lifeURL(argsRaw, 0, null, max(minimumSize, size - 1))) \
+        )))
+        jump menuDone
 
     # Play menu
-    jumpif (!play) skipPlayMenu
+    menuPlay:
         markdownPrint( \
-            lifeLink('Pause', encodedLife, 0), \
-            ' | **Speed:** ' + lifeLink('More', encodedNext, 1, max(minPeriod, fixed(0.75 * period, 2))) + \
-                ' ' + lifeLink('Less', encodedNext, 1, fixed(1.25 * period, 2)) \
+            lifeLink('Pause', lifeURL(argsRaw, 0)), \
+            ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, max(minimumPeriod, fixed(0.75 * period, 2)))) + \
+                ' ' + lifeLink('Less', lifeURL(argsRaw, 1, fixed(1.25 * period, 2))) \
         )
-    skipPlayMenu:
+    menuDone:
 
     # Life board
-    lifeDraw(life, size, gap, arrayGet(colors, colorIndex), arrayGet(colors, backgroundIndex), borderColor, if(border, 2, 0), !play)
+    lifeDraw(life, size, gap, arrayGet(lifeColors, color), arrayGet(lifeColors, background), lifeBorderColor, border, !play)
 
     # Play?
-    if(play, setWindowTimeout(timeoutNavigate, period, lifeURL(encodedNext, 1)))
+    if(play, setWindowTimeout(lifeOnTimeout, period))
 endfunction
 
 
-function timeoutNavigate(url)
-    setWindowLocation(url)
+function lifeArgs(raw)
+    return objectNew( \
+        'background', if(vBackground != null, vBackground % len(lifeColors), if(!raw, defaultBackground)), \
+        'border', if(vBorder != null, max(minBorder, vBorder), if(!raw, 0)), \
+        'borderRatio', if(vBorderRatio != null, max(0, min(1, vBorderRatio)), if(!raw, defaultBorderRatio)), \
+        'color', if(vColor != null, vColor % len(lifeColors), if(!raw, defaultColor)), \
+        'depth', if(vDepth != null, vDepth, if(!raw, defaultDepth)), \
+        'gap', if(vGap != null, max(minimumGap, vGap), if(!raw, defaultGap)), \
+        'initRatio', if(vInitRatio != null, max(0, min(1, vInitRatio)), if(!raw, defaultInitRatio)), \
+        'period', if(vPeriod != null, max(minimumPeriod, vPeriod), if(!raw, defaultPeriod)), \
+        'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
+        'size', if(vSize != null, max(minimumSize, vSize), if(!raw, defaultSize)) \
+    )
 endfunction
 
 
-function lifeLink(text, encodedLife, play, period, size, color, bkgnd, border)
-    return '[' + text + '](' + lifeURL(encodedLife, play, period, size, color, bkgnd, border) + ')'
-endfunction
+function lifeURL(argsRaw, play, period, size, color, background, border)
+    # URL args
+    period = if(period != null, period, objectGet(argsRaw, 'period'))
+    size = if(size != null, size, objectGet(argsRaw, 'size'))
+    color = if(color != null, color, objectGet(argsRaw, 'color'))
+    background = if(background != null, background, objectGet(argsRaw, 'background'))
+    border = if(border != null, if(border, border, null), objectGet(argsRaw, 'border'))
+    gap = objectGet(argsRaw, 'gap')
+    depth = objectGet(argsRaw, 'depth')
+    initRatio = objectGet(argsRaw, 'initRatio')
+    borderRatio = objectGet(argsRaw, 'borderRatio')
 
-
-function lifeURL(encodedLife, play, period, size, color, bkgnd, border)
-    period = if(period != null, period, vPeriod)
-    size = if(size != null, size, vSize)
-    color = if(color != null, color, vColor)
-    bkgnd = if(bkgnd != null, bkgnd, vBackground)
-    border = if(border != null, border, vBorder)
-    args = if(play, '&var.vPlay=1', '') + \
+    # Return the URL
+    urlArgs = if(play, '&var.vPlay=1', '') + \
         if(period != null, '&var.vPeriod=' + period, '') + \
         if(size != null, '&var.vSize=' + size, '') + \
         if(color != null, '&var.vColor=' + color, '') + \
-        if(bkgnd != null, '&var.vBackground=' + bkgnd, '') + \
+        if(background != null, '&var.vBackground=' + background, '') + \
         if(border != null, '&var.vBorder=' + border, '') + \
-        if(vGap != null, '&var.vGap=' + vGap, '') + \
-        if(vDepth != null, '&var.vDepth=' + vDepth, '') + \
-        if(vInitRatio != null, '&var.vInitRatio=' + vInitRatio, '') + \
-        if(vBorderRatio != null, '&var.vBorderRatio=' + vBorderRatio, '') + \
-        if(encodedLife != null, "&var.vLife='" + encodedLife + "'", '')
-    return '#' + slice(args, 1)
+        if(gap != null, '&var.vGap=' + gap, '') + \
+        if(depth != null, '&var.vDepth=' + depth, '') + \
+        if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
+        if(borderRatio != null, '&var.vBorderRatio=' + borderRatio, '')
+    return if(len(urlArgs) > 0, '#' + slice(urlArgs, 1), '#var=')
 endfunction
 
 
-function lifeNew(width, height, initRatio, borderRatio)
+function lifeLink(text, url)
+    return '[' + text + '](' + url + ')'
+endfunction
+
+
+function lifeLinkElements(text, url)
+    return objectNew( \
+        'html', 'a', \
+        'attr', objectNew('href', documentURL(url)), \
+        'elem', objectNew('text', text) \
+    )
+endfunction
+
+
+function lifeButtonElements(text, onclick)
+    return objectNew( \
+        'html', 'a', \
+        'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+        'elem', objectNew('text', text), \
+        'callback', objectNew('click', onclick) \
+    )
+endfunction
+
+
+function lifeDraw(life, size, gap, color, background, lifeBorderColor, borderSize, isEdit)
+    width = objectGet(life, 'width')
+    height = objectGet(life, 'height')
+    cells = objectGet(life, 'cells')
+
+    # Set the drawing size
+    setDrawingSize(width * (gap + size) + gap + 2 * borderSize, height * (gap + size) + gap + 2 * borderSize)
+    if(isEdit, drawOnClick(lifeOnClickCell))
+
+    # Draw the background
+    jumpif (border == 0) noBorder
+        drawStyle(lifeBorderColor, borderSize, background)
+        drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
+    noBorder:
+
+    # Draw the cells
+    drawStyle('none', 0, color)
+    y = 0
+    yLoop:
+        x = 0
+        xLoop:
+            jumpif (!arrayGet(cells, y * width + x)) skipCell
+                px = borderSize + gap + x * (size + gap)
+                py = borderSize + gap + y * (size + gap)
+                drawMove(px, py)
+                drawHLine(px + size)
+                drawVLine(py + size)
+                drawHLine(px)
+                drawClose()
+            skipCell:
+            x = x + 1
+        jumpif (x < width) xLoop
+        y = y + 1
+    jumpif (y < height) yLoop
+endfunction
+
+
+function lifeOnTimeout()
+    args = lifeArgs()
+    depth = objectGet(args, 'depth')
+
+    # Compute the next life state
+    life = lifeLoad()
+    nextLife = lifeNext(life)
+
+    # Is there a cycle?
+    lifeJSON = jsonStringify(life)
+    lifeCycle = nextLife
+    iCycle = 0
+    cycleLoop:
+        jumpif (lifeJSON != jsonStringify(lifeCycle)) cycleNone
+            nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
+            jump cycleDone
+        cycleNone:
+        lifeCycle = lifeNext(lifeCycle)
+        iCycle = iCycle + 1
+    jumpif (iCycle < depth) cycleLoop
+    cycleDone:
+
+    # Update the life state and re-render
+    lifeSave(nextLife)
+    documentReset()
+    main()
+endfunction
+
+
+function lifeOnClickStep()
+    lifeSave(lifeNext(lifeLoad()))
+    documentReset()
+    main()
+endfunction
+
+
+function lifeOnClickRandom()
+    life = lifeLoad()
+    lifeSave(lifeNew(objectGet(life, 'width'), objectGet(life, 'height')))
+    documentReset()
+    main()
+endfunction
+
+
+function lifeOnClickReset()
+    lifeSave(lifeNew())
+    documentReset()
+    main()
+    setWindowLocation('#var=')
+endfunction
+
+
+function lifeOnClickWidthLess()
+    lifeUpdateWidthHeight(0.9, 1)
+endfunction
+
+
+function lifeOnClickWidthMore()
+    lifeUpdateWidthHeight(1.1, 1)
+endfunction
+
+
+function lifeOnClickHeightLess()
+    lifeUpdateWidthHeight(1, 0.9)
+endfunction
+
+
+function lifeOnClickHeightMore()
+    lifeUpdateWidthHeight(1, 1.1)
+endfunction
+
+
+function lifeUpdateWidthHeight(widthRatio, heightRatio)
+    life = lifeLoad()
+    width = max(minimumWidthHeight, ceil(widthRatio * objectGet(life, 'width')))
+    height = max(minimumWidthHeight, ceil(heightRatio * objectGet(life, 'height')))
+    lifeSave(lifeNew(width, height))
+    documentReset()
+    main()
+endfunction
+
+
+function lifeOnClickCell(px, py)
+    args = lifeArgs()
+    size = objectGet(args, 'size')
+    gap = objectGet(args, 'gap')
+    border = objectGet(args, 'border')
+
+    # Compute the cell index to toggle
+    life = lifeLoad()
+    x = max(0, min(objectGet(life, 'width') - 1, floor((px - border) / (size + gap))))
+    y = max(0, min(objectGet(life, 'height') - 1, floor((py - border) / (size + gap))))
+    iCell = y * objectGet(life, 'width') + x
+
+    # Toggle the cell
+    cells = objectGet(life, 'cells')
+    arraySet(cells, iCell, if(arrayGet(cells, iCell), 0, 1))
+
+    # Update the life state and re-render
+    lifeSave(life)
+    documentReset()
+    main()
+endfunction
+
+
+# Life session state object schema
+lifeTypes = schemaParse( \
+    'struct Life', \
+    '    int(>= ' + minimumWidthHeight + ') width', \
+    '    int(>= ' + minimumWidthHeight + ') height', \
+    '    int(>= 0, <= 1)[len > 0] cells' \
+)
+
+
+function lifeNew(width, height)
+    width = if(width != null, width, defaultWidth)
+    height = if(height != null, height, defaultHeight)
+    args = lifeArgs()
+    initRatio = objectGet(args, 'initRatio')
+    borderRatio = objectGet(args, 'borderRatio')
+
+    # Create the blank life object
     life = objectNew()
     objectSet(life, 'width', width)
     objectSet(life, 'height', height)
@@ -149,7 +335,7 @@ function lifeNew(width, height, initRatio, borderRatio)
     objectSet(life, 'cells', cells)
 
     # Initialize the life
-    jumpif (!initRatio || !borderRatio) skipInit
+    jumpif (initRatio == 0) skipInit
         border = ceil(borderRatio * min(width, height))
         y = 0
         yLoop:
@@ -167,14 +353,32 @@ function lifeNew(width, height, initRatio, borderRatio)
 endfunction
 
 
+function lifeLoad()
+    life = sessionStorageGet('life')
+    life = if(life != null, jsonParse(life))
+    life = if(life != null, schemaValidate(lifeTypes, 'Life', life))
+    life = if(life != null && objectGet(life, 'width') * objectGet(life, 'height') == arrayLength(objectGet(life, 'cells')), life)
+    jumpif (life != null) done
+        life = lifeNew()
+        lifeSave(life)
+    done:
+    return life
+endfunction
+
+
+function lifeSave(life)
+    sessionStorageSet('life', jsonStringify(life))
+endfunction
+
+
 function lifeNext(life)
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
 
     # Compute the next life generation
-    nextLife = lifeNew(width, height, 0, 0)
-    nextCells = objectGet(nextLife, 'cells')
+    lifeNext = lifeNew(width, height, 0)
+    nextCells = objectGet(lifeNext, 'cells')
     y = 0
     yLoop:
         x = 0
@@ -194,7 +398,7 @@ function lifeNext(life)
         y = y + 1
     jumpif (y < height) yLoop
 
-    return nextLife
+    return lifeNext
 endfunction
 
 
@@ -243,7 +447,7 @@ function lifeDecode(lifeStr)
     cellsStr = arrayGet(parts, 2)
 
     # Decode the cell string
-    life = lifeNew(width, height, 0, 0)
+    life = lifeNew(width, height, 0)
     cells = objectGet(life, 'cells')
     iCell = 0
     iChar = 0
@@ -269,60 +473,6 @@ endfunction
 
 lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
 lifeEncodeChars = '0123456789' + lifeEncodeAlpha + upper(lifeEncodeAlpha)
-
-
-function lifeDraw(life, size, gap, color, background, borderColor, borderSize, isEdit)
-    width = objectGet(life, 'width')
-    height = objectGet(life, 'height')
-    cells = objectGet(life, 'cells')
-
-    # Set the drawing size
-    setDrawingSize(width * (gap + size) + gap + borderSize, height * (gap + size) + gap + borderSize)
-    jumpif (!isEdit) skipEdit
-        setGlobal('lifeOnClickLife', life)
-        setGlobal('lifeOnClickBorder', borderSize)
-        setGlobal('lifeOnClickGap', gap)
-        setGlobal('lifeOnClickSize', size)
-        drawOnClick(lifeOnClick)
-    skipEdit:
-
-    # Draw the background
-    drawStyle(borderColor, borderSize, background)
-    drawRect(0.5 * borderSize, 0.5 * borderSize, getDrawingWidth() - borderSize, getDrawingHeight() - borderSize)
-
-    # Draw the cells
-    drawStyle('none', 0, color)
-    y = 0
-    yLoop:
-        x = 0
-        xLoop:
-            jumpif (!arrayGet(cells, y * width + x)) skipCell
-                px = 0.5 * borderSize + gap + x * (size + gap)
-                py = 0.5 * borderSize + gap + y * (size + gap)
-                drawMove(px, py)
-                drawHLine(px + size)
-                drawVLine(py + size)
-                drawHLine(px)
-                drawClose()
-            skipCell:
-            x = x + 1
-        jumpif (x < width) xLoop
-        y = y + 1
-    jumpif (y < height) yLoop
-endfunction
-
-
-function lifeOnClick(px, py)
-    # Compute the cell index to toggle
-    x = max(0, floor((px - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
-    y = max(0, floor((py - lifeOnClickBorder) / (lifeOnClickSize + lifeOnClickGap)))
-    iCell = y * objectGet(lifeOnClickLife, 'width') + x
-
-    # Toggle the cell
-    cells = objectGet(lifeOnClickLife, 'cells')
-    arraySet(cells, iCell, if(arrayGet(cells, iCell), 0, 1))
-    setWindowLocation(lifeURL(lifeEncode(lifeOnClickLife), 0))
-endfunction
 
 
 # Execute the main entry point
