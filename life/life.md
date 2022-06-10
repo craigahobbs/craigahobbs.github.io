@@ -28,14 +28,6 @@ lifeBorderColor = 'black'
 
 
 function main()
-    # Title
-    title = "Conway's Game of Life"
-    setDocumentTitle(title)
-    markdownPrint("# " + title, '')
-
-    # Load life
-    life = lifeLoad()
-
     # Application arguments
     argsRaw = lifeArgs(true)
     args = lifeArgs()
@@ -44,9 +36,26 @@ function main()
     borderRaw = objectGet(argsRaw, 'border')
     color = objectGet(args, 'color')
     gap = objectGet(args, 'gap')
+    load = objectGet(args, 'load')
     period = objectGet(args, 'period')
     play = objectGet(args, 'play')
+    save = objectGet(argsRaw, 'save')
     size = objectGet(args, 'size')
+
+    # Title
+    title = "Conway's Game of Life"
+    setDocumentTitle(title)
+    markdownPrint("# " + title, '')
+
+    # Load?
+    jumpif (load == null) noLoad
+        lifeSave(lifeDecode(load))
+        setWindowLocation(lifeURL(argsRaw))
+        return
+    noLoad:
+
+    # Load the life state
+    life = lifeLoad()
 
     # Pause menu
     jumpif (play) menuPlay
@@ -62,6 +71,8 @@ function main()
             lifeButtonElements('Step', lifeOnClickStep), \
             linkSeparator, \
             lifeButtonElements('Random', lifeOnClickRandom), \
+            linkSeparator, \
+            lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, null, if(save != null, null, 1))), \
             linkSection, \
             lifeLinkElements('Background', lifeURL(argsRaw, 0, null, null, null, nextBackground)), \
             linkSeparator, \
@@ -83,6 +94,10 @@ function main()
             linkSeparator, \
             lifeLinkElements('Less', lifeURL(argsRaw, 0, null, max(minimumSize, size - 1))) \
         )))
+        if(save, markdownPrint( \
+            '**Save:** ', \
+            lifeLink('Load', lifeURL(argsRaw, 0, null, null, null, null, null, null, lifeEncode(life))) \
+        ))
         jump menuDone
 
     # Play menu
@@ -111,15 +126,18 @@ function lifeArgs(raw)
         'depth', if(vDepth != null, vDepth, if(!raw, defaultDepth)), \
         'gap', if(vGap != null, max(minimumGap, vGap), if(!raw, defaultGap)), \
         'initRatio', if(vInitRatio != null, max(0, min(1, vInitRatio)), if(!raw, defaultInitRatio)), \
+        'load', vLoad, \
         'period', if(vPeriod != null, max(minimumPeriod, vPeriod), if(!raw, defaultPeriod)), \
         'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
+        'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)), \
         'size', if(vSize != null, max(minimumSize, vSize), if(!raw, defaultSize)) \
     )
 endfunction
 
 
-function lifeURL(argsRaw, play, period, size, color, background, border)
+function lifeURL(argsRaw, play, period, size, color, background, border, save, load)
     # URL args
+    play = if(play != null, play, objectGet(argsRaw, 'play'))
     period = if(period != null, period, objectGet(argsRaw, 'period'))
     size = if(size != null, size, objectGet(argsRaw, 'size'))
     color = if(color != null, color, objectGet(argsRaw, 'color'))
@@ -131,16 +149,19 @@ function lifeURL(argsRaw, play, period, size, color, background, border)
     borderRatio = objectGet(argsRaw, 'borderRatio')
 
     # Return the URL
-    urlArgs = if(play, '&var.vPlay=1', '') + \
-        if(period != null, '&var.vPeriod=' + period, '') + \
-        if(size != null, '&var.vSize=' + size, '') + \
-        if(color != null, '&var.vColor=' + color, '') + \
+    urlArgs = \
         if(background != null, '&var.vBackground=' + background, '') + \
         if(border != null, '&var.vBorder=' + border, '') + \
-        if(gap != null, '&var.vGap=' + gap, '') + \
+        if(borderRatio != null, '&var.vBorderRatio=' + borderRatio, '') + \
+        if(color != null, '&var.vColor=' + color, '') + \
         if(depth != null, '&var.vDepth=' + depth, '') + \
+        if(gap != null, '&var.vGap=' + gap, '') + \
         if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
-        if(borderRatio != null, '&var.vBorderRatio=' + borderRatio, '')
+        if(load != null, "&var.vLoad='" + load + "'", '') + \
+        if(period != null, '&var.vPeriod=' + period, '') + \
+        if(play, '&var.vPlay=1', '') + \
+        if(save, '&var.vSave=1', '') + \
+        if(size != null, '&var.vSize=' + size, '')
     return if(len(urlArgs) > 0, '#' + slice(urlArgs, 1), '#var=')
 endfunction
 
@@ -320,12 +341,9 @@ lifeTypes = schemaParse( \
 )
 
 
-function lifeNew(width, height)
+function lifeNew(width, height, noInit)
     width = if(width != null, width, defaultWidth)
     height = if(height != null, height, defaultHeight)
-    args = lifeArgs()
-    initRatio = objectGet(args, 'initRatio')
-    borderRatio = objectGet(args, 'borderRatio')
 
     # Create the blank life object
     life = objectNew()
@@ -335,7 +353,11 @@ function lifeNew(width, height)
     objectSet(life, 'cells', cells)
 
     # Initialize the life
-    jumpif (initRatio == 0) skipInit
+    jumpif (noInit) skipInit
+        args = lifeArgs()
+        initRatio = objectGet(args, 'initRatio')
+        jumpif (initRatio == 0) skipInit
+        borderRatio = objectGet(args, 'borderRatio')
         border = ceil(borderRatio * min(width, height))
         y = 0
         yLoop:
@@ -377,7 +399,7 @@ function lifeNext(life)
     cells = objectGet(life, 'cells')
 
     # Compute the next life generation
-    lifeNext = lifeNew(width, height, 0)
+    lifeNext = lifeNew(width, height, true)
     nextCells = objectGet(lifeNext, 'cells')
     y = 0
     yLoop:
@@ -447,7 +469,7 @@ function lifeDecode(lifeStr)
     cellsStr = arrayGet(parts, 2)
 
     # Decode the cell string
-    life = lifeNew(width, height, 0)
+    life = lifeNew(width, height, true)
     cells = objectGet(life, 'cells')
     iCell = 0
     iChar = 0
