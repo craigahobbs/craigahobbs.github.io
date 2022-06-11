@@ -39,7 +39,7 @@ function main()
     load = objectGet(args, 'load')
     period = objectGet(args, 'period')
     play = objectGet(args, 'play')
-    save = objectGet(argsRaw, 'save')
+    save = objectGet(args, 'save')
     size = objectGet(args, 'size')
 
     # Title
@@ -80,7 +80,7 @@ function main()
             linkSeparator, \
             lifeButtonElements('Random', lifeOnClickRandom), \
             linkSeparator, \
-            lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, null, if(save != null, null, 1))), \
+            lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, null, 1)), \
             linkSection, \
             lifeLinkElements('Background', lifeURL(argsRaw, 0, null, null, null, nextBackground)), \
             linkSeparator, \
