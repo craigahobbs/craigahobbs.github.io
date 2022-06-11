@@ -57,8 +57,16 @@ function main()
     # Load the life state
     life = lifeLoad()
 
+    # Save menu
+    jumpif (!save) menuSaveEnd
+        markdownPrint( \
+            '**Save:** ', \
+            lifeLink('Load', lifeURL(argsRaw, 0, null, null, null, null, null, null, lifeEncode(life))) \
+        )
+    menuSaveEnd:
+
     # Pause menu
-    jumpif (play) menuPlay
+    jumpif (save || play) menuPauseEnd
         nextColor = (color + 1) % arrayLength(lifeColors)
         nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
         nextBackground = (background + 1) % arrayLength(lifeColors)
@@ -94,26 +102,22 @@ function main()
             linkSeparator, \
             lifeLinkElements('Less', lifeURL(argsRaw, 0, null, max(minimumSize, size - 1))) \
         )))
-        if(save, markdownPrint( \
-            '**Save:** ', \
-            lifeLink('Load', lifeURL(argsRaw, 0, null, null, null, null, null, null, lifeEncode(life))) \
-        ))
-        jump menuDone
+    menuPauseEnd:
 
     # Play menu
-    menuPlay:
+    jumpif (save || !play) menuPlayEnd
         markdownPrint( \
             lifeLink('Pause', lifeURL(argsRaw, 0)), \
             ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, max(minimumPeriod, fixed(0.75 * period, 2)))) + \
                 ' ' + lifeLink('Less', lifeURL(argsRaw, 1, fixed(1.25 * period, 2))) \
         )
-    menuDone:
+    menuPlayEnd:
 
     # Life board
     lifeDraw(life, size, gap, arrayGet(lifeColors, color), arrayGet(lifeColors, background), lifeBorderColor, border, !play)
 
     # Play?
-    if(play, setWindowTimeout(lifeOnTimeout, period))
+    if(!save && play, setWindowTimeout(lifeOnTimeout, period))
 endfunction
 
 
