@@ -1,5 +1,3 @@
-# The Fruit Fly Trap Maker
-
 ~~~ markdown-script
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
@@ -20,10 +18,16 @@ function main()
     coneExtraLength = if(isMetric, 1.25, 0.5)
     coneHeight = height - offset
 
+    # Set the title
+    title = 'The Fruit Fly Trap Maker'
+    setDocumentTitle(title)
+
     jumpif (vPrint > 0) skipInstructions
 
     # Introduction
     markdownPrint( \
+        '# ' + title, \
+        '', \
         '**The Fruit Fly Trap Maker** rids your home of annoying fruit flies using only a drinking glass,', \
         'your computer printer, and a small amount of apple cider vinegar (or similar).', \
         '', \
@@ -71,7 +75,7 @@ function main()
         '', \
         '2. Print the cone form using the link below.', \
         '', \
-        '   ' + coneLink('Print Cone Form', null, null, null, null, 1, 'the-fruit-fly-trap-maker'), \
+        '   ' + coneLink('Print Cone Form', null, null, null, null, 1), \
         '', \
         "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
         '', \
