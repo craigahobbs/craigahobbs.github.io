@@ -123,10 +123,10 @@ endfunction
 
 function lifeArgs(raw)
     return objectNew( \
-        'background', if(vBackground != null, vBackground % len(lifeColors), if(!raw, defaultBackground)), \
+        'background', if(vBackground != null, vBackground % arrayLength(lifeColors), if(!raw, defaultBackground)), \
         'border', if(vBorder != null, max(minBorder, vBorder), if(!raw, 0)), \
         'borderRatio', if(vBorderRatio != null, max(0, min(1, vBorderRatio)), if(!raw, defaultBorderRatio)), \
-        'color', if(vColor != null, vColor % len(lifeColors), if(!raw, defaultColor)), \
+        'color', if(vColor != null, vColor % arrayLength(lifeColors), if(!raw, defaultColor)), \
         'depth', if(vDepth != null, vDepth, if(!raw, defaultDepth)), \
         'gap', if(vGap != null, max(minimumGap, vGap), if(!raw, defaultGap)), \
         'initRatio', if(vInitRatio != null, max(0, min(1, vInitRatio)), if(!raw, defaultInitRatio)), \
