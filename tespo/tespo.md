@@ -104,8 +104,8 @@ function tespo(input)
     availableSolarLoop:
         vehicle = arrayGet(vehicles, ixVehicle)
         # P = V * I
-        chargingPower = objectGet(vehicle, 'chargingRate') * arrayGet(vehicle, 'chargingVoltage') / 1000
-        availableSolar = availableSolar + if(arrayGet(vehicle, 'chargingEnabled'), chargingPower, 0)
+        chargingPower = objectGet(vehicle, 'chargingRate') * objectGet(vehicle, 'chargingVoltage') / 1000
+        availableSolar = availableSolar + if(objectGet(vehicle, 'chargingEnabled'), chargingPower, 0)
         ixVehicle = ixVehicle + 1
     jumpif (ixVehicle < vehiclesLenght) availableSolarLoop
 

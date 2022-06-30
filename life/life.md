@@ -468,8 +468,8 @@ endfunction
 function lifeDecode(lifeStr)
     # Split the encoded life string into width, height, and cell string
     parts = split(lifeStr, '-')
-    width = value(arrayGet(parts, 0))
-    height = value(arrayGet(parts, 1))
+    width = parseInt(arrayGet(parts, 0))
+    height = parseInt(arrayGet(parts, 1))
     cellsStr = arrayGet(parts, 2)
 
     # Decode the cell string
