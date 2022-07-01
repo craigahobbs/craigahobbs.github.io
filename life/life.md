@@ -108,8 +108,8 @@ function main()
     jumpif (save || !play) menuPlayEnd
         markdownPrint( \
             lifeLink('Pause', lifeURL(argsRaw, 0)), \
-            ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, mathMax(minimumPeriod, numberFixed(0.75 * period, 2)))) + \
-                ' ' + lifeLink('Less', lifeURL(argsRaw, 1, numberFixed(1.25 * period, 2))) \
+            ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, mathMax(minimumPeriod, numberToFixed(0.75 * period, 2)))) + \
+                ' ' + lifeLink('Less', lifeURL(argsRaw, 1, numberToFixed(1.25 * period, 2))) \
         )
     menuPlayEnd:
 
