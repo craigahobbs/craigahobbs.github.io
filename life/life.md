@@ -98,9 +98,9 @@ function main()
             linkSeparator, \
             lifeButtonElements('Less', lifeOnClickHeightLess), \
             arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Size: '))), \
-            lifeLinkElements('More', lifeURL(argsRaw, 0, null, max(minimumSize, size + 1))), \
+            lifeLinkElements('More', lifeURL(argsRaw, 0, null, mathMax(minimumSize, size + 1))), \
             linkSeparator, \
-            lifeLinkElements('Less', lifeURL(argsRaw, 0, null, max(minimumSize, size - 1))) \
+            lifeLinkElements('Less', lifeURL(argsRaw, 0, null, mathMax(minimumSize, size - 1))) \
         )))
     menuPauseEnd:
 
@@ -108,8 +108,8 @@ function main()
     jumpif (save || !play) menuPlayEnd
         markdownPrint( \
             lifeLink('Pause', lifeURL(argsRaw, 0)), \
-            ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, max(minimumPeriod, fixed(0.75 * period, 2)))) + \
-                ' ' + lifeLink('Less', lifeURL(argsRaw, 1, fixed(1.25 * period, 2))) \
+            ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, mathMax(minimumPeriod, numberFixed(0.75 * period, 2)))) + \
+                ' ' + lifeLink('Less', lifeURL(argsRaw, 1, numberFixed(1.25 * period, 2))) \
         )
     menuPlayEnd:
 
@@ -124,17 +124,17 @@ endfunction
 function lifeArgs(raw)
     return objectNew( \
         'background', if(vBackground != null, vBackground % arrayLength(lifeColors), if(!raw, defaultBackground)), \
-        'border', if(vBorder != null, max(minBorder, vBorder), if(!raw, 0)), \
-        'borderRatio', if(vBorderRatio != null, max(0, min(1, vBorderRatio)), if(!raw, defaultBorderRatio)), \
+        'border', if(vBorder != null, mathMax(minBorder, vBorder), if(!raw, 0)), \
+        'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), if(!raw, defaultBorderRatio)), \
         'color', if(vColor != null, vColor % arrayLength(lifeColors), if(!raw, defaultColor)), \
         'depth', if(vDepth != null, vDepth, if(!raw, defaultDepth)), \
-        'gap', if(vGap != null, max(minimumGap, vGap), if(!raw, defaultGap)), \
-        'initRatio', if(vInitRatio != null, max(0, min(1, vInitRatio)), if(!raw, defaultInitRatio)), \
+        'gap', if(vGap != null, mathMax(minimumGap, vGap), if(!raw, defaultGap)), \
+        'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), if(!raw, defaultInitRatio)), \
         'load', vLoad, \
-        'period', if(vPeriod != null, max(minimumPeriod, vPeriod), if(!raw, defaultPeriod)), \
+        'period', if(vPeriod != null, mathMax(minimumPeriod, vPeriod), if(!raw, defaultPeriod)), \
         'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
         'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)), \
-        'size', if(vSize != null, max(minimumSize, vSize), if(!raw, defaultSize)) \
+        'size', if(vSize != null, mathMax(minimumSize, vSize), if(!raw, defaultSize)) \
     )
 endfunction
 
@@ -166,7 +166,7 @@ function lifeURL(argsRaw, play, period, size, color, background, border, save, l
         if(play, '&var.vPlay=1', '') + \
         if(save, '&var.vSave=1', '') + \
         if(size != null, '&var.vSize=' + size, '')
-    return if(len(urlArgs) > 0, '#' + slice(urlArgs, 1), '#var=')
+    return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
 endfunction
 
 
@@ -305,8 +305,8 @@ endfunction
 
 function lifeUpdateWidthHeight(widthRatio, heightRatio)
     life = lifeLoad()
-    width = max(minimumWidthHeight, ceil(widthRatio * objectGet(life, 'width')))
-    height = max(minimumWidthHeight, ceil(heightRatio * objectGet(life, 'height')))
+    width = mathMax(minimumWidthHeight, mathCeil(widthRatio * objectGet(life, 'width')))
+    height = mathMax(minimumWidthHeight, mathCeil(heightRatio * objectGet(life, 'height')))
     lifeSave(lifeNew(width, height))
     documentReset()
     main()
@@ -321,8 +321,8 @@ function lifeOnClickCell(px, py)
 
     # Compute the cell index to toggle
     life = lifeLoad()
-    x = max(0, min(objectGet(life, 'width') - 1, floor((px - border) / (size + gap))))
-    y = max(0, min(objectGet(life, 'height') - 1, floor((py - border) / (size + gap))))
+    x = mathMax(0, mathMin(objectGet(life, 'width') - 1, mathFloor((px - border) / (size + gap))))
+    y = mathMax(0, mathMin(objectGet(life, 'height') - 1, mathFloor((py - border) / (size + gap))))
     iCell = y * objectGet(life, 'width') + x
 
     # Toggle the cell
@@ -362,13 +362,13 @@ function lifeNew(width, height, noInit)
         initRatio = objectGet(args, 'initRatio')
         jumpif (initRatio == 0) skipInit
         borderRatio = objectGet(args, 'borderRatio')
-        border = ceil(borderRatio * min(width, height))
+        border = mathCeil(borderRatio * mathMin(width, height))
         y = 0
         yLoop:
             x = 0
             xLoop:
                 arraySet(cells, y * width + x, \
-                    if(x >= border && x < width - border && y >= border && y < height - border && rand() < initRatio, 1, 0))
+                    if(x >= border && x < width - border && y >= border && y < height - border && mathRandom() < initRatio, 1, 0))
                 x = x + 1
             jumpif (x < width) xLoop
             y = y + 1
@@ -436,7 +436,7 @@ function lifeEncode(life)
 
     alive = 0
     count = 0
-    maxCount = len(lifeEncodeChars) - 1
+    maxCount = stringLength(lifeEncodeChars) - 1
     iCell = 0
     cellLoop:
         curAlive = arrayGet(cells, iCell)
@@ -445,13 +445,13 @@ function lifeEncode(life)
         count = count + 1
         jumpif (count < maxCount) cellLoopNext
 
-        arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
+        arrayPush(lifeChars, stringSlice(lifeEncodeChars, count, count + 1))
         alive = if(alive, 0, 1)
         count = 0
         jump cellLoopNext
 
         cellLoopAlive:
-        arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1))
+        arrayPush(lifeChars, stringSlice(lifeEncodeChars, count, count + 1))
         alive = if(alive, 0, 1)
         count = 1
 
@@ -459,7 +459,7 @@ function lifeEncode(life)
         iCell = iCell + 1
     jumpif (iCell < arrayLength(cells)) cellLoop
 
-    if(count, arrayPush(lifeChars, slice(lifeEncodeChars, count, count + 1)))
+    if(count, arrayPush(lifeChars, stringSlice(lifeEncodeChars, count, count + 1)))
 
     return width + '-' + height + '-' + arrayJoin(lifeChars, '')
 endfunction
@@ -467,9 +467,9 @@ endfunction
 
 function lifeDecode(lifeStr)
     # Split the encoded life string into width, height, and cell string
-    parts = split(lifeStr, '-')
-    width = parseInt(arrayGet(parts, 0))
-    height = parseInt(arrayGet(parts, 1))
+    parts = stringSplit(lifeStr, '-')
+    width = numberParseInt(arrayGet(parts, 0))
+    height = numberParseInt(arrayGet(parts, 1))
     cellsStr = arrayGet(parts, 2)
 
     # Decode the cell string
@@ -478,9 +478,9 @@ function lifeDecode(lifeStr)
     iCell = 0
     iChar = 0
     charLoop:
-    jumpif (iChar >= len(cellsStr)) charLoopDone
-        char = slice(cellsStr, iChar, iChar + 1)
-        count = indexOf(lifeEncodeChars, char)
+    jumpif (iChar >= stringLength(cellsStr)) charLoopDone
+        char = stringSlice(cellsStr, iChar, iChar + 1)
+        count = stringIndexOf(lifeEncodeChars, char)
         iCount = 0
         countLoop:
         jumpif (iCount >= count) countLoopDone
@@ -498,7 +498,7 @@ endfunction
 
 
 lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
-lifeEncodeChars = '0123456789' + lifeEncodeAlpha + upper(lifeEncodeAlpha)
+lifeEncodeChars = '0123456789' + lifeEncodeAlpha + stringUpper(lifeEncodeAlpha)
 
 
 # Execute the main entry point

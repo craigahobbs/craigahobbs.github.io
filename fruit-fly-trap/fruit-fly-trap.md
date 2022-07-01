@@ -113,20 +113,20 @@ function coneLink(text, height, diameter, bottom, offset, print, anchor)
     offset = if(offset != null, offset, vOffset)
     args = if(print, '&var.vPrint=1', '') + \
         if(vMetric, '&var.vMetric=1', '') + \
-        if(height, '&var.vHeight=' + round(height, 3), '') + \
-        if(diameter, '&var.vDiameter=' + round(diameter, 3), '') + \
-        if(bottom, '&var.vBottom=' + round(bottom, 3), '') + \
-        if(offset, '&var.vOffset=' + round(offset, 3), '')
-    args = if(len(args), slice(args, 1), 'var=') + if(anchor, '&' + anchor, '')
+        if(height, '&var.vHeight=' + mathRound(height, 3), '') + \
+        if(diameter, '&var.vDiameter=' + mathRound(diameter, 3), '') + \
+        if(bottom, '&var.vBottom=' + mathRound(bottom, 3), '') + \
+        if(offset, '&var.vOffset=' + mathRound(offset, 3), '')
+    args = if(stringLength(args), stringSlice(args, 1), 'var=') + if(anchor, '&' + anchor, '')
     return '[' + text + '](#' + args + ')'
 endfunction
 
 
 function isValidConeForm(diameterTop, diameterBottom, height, flapLength)
     formRadius = (height * diameterBottom) / (diameterTop - diameterBottom)
-    formTheta = pi() * (diameterBottom / formRadius)
+    formTheta = mathPi() * (diameterBottom / formRadius)
     flapTheta = formTheta + (flapLength / formRadius)
-    return (diameterBottom < (0.9 * diameterTop)) && (flapTheta < (0.9 * (2 * pi())))
+    return (diameterBottom < (0.9 * diameterTop)) && (flapTheta < (0.9 * (2 * mathPi())))
 endfunction
 
 
@@ -134,7 +134,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     # Compute the cone form's radii and theta
     formRadius = height * diameterBottom / (diameterTop - diameterBottom)
     formRadiusOuter = formRadius + height + extraLength
-    formTheta = pi() * diameterBottom / formRadius
+    formTheta = mathPi() * diameterBottom / formRadius
 
     # Compute the flap angle
     flapTheta = formTheta + flapLength / formRadius
@@ -144,12 +144,12 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     formMaxX = 0
     formMinY = 0
     formMaxY = 0
-    flapInnerX = formRadius * sin(flapTheta)
-    flapInnerY = formRadius * cos(flapTheta)
-    flapOuterX = formRadiusOuter * sin(flapTheta)
-    flapOuterY = formRadiusOuter * cos(flapTheta)
+    flapInnerX = formRadius * mathSin(flapTheta)
+    flapInnerY = formRadius * mathCos(flapTheta)
+    flapOuterX = formRadiusOuter * mathSin(flapTheta)
+    flapOuterY = formRadiusOuter * mathCos(flapTheta)
 
-    jumpif (flapTheta > 0.5 * pi()) formMinMax1
+    jumpif (flapTheta > 0.5 * mathPi()) formMinMax1
         formMinX = 0
         formMinY = flapInnerY
         formMaxX = flapOuterX
@@ -157,7 +157,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
         jump formMinMaxDone
 
     formMinMax1:
-    jumpif (flapTheta > pi()) formMinMax2
+    jumpif (flapTheta > mathPi()) formMinMax2
         formMinX = 0
         formMinY = flapOuterY
         formMaxX = formRadiusOuter
@@ -165,7 +165,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
         jump formMinMaxDone
 
     formMinMax2:
-    jumpif (flapTheta > 1.5 * pi()) formMinMax3
+    jumpif (flapTheta > 1.5 * mathPi()) formMinMax3
         formMinX = flapOuterX
         formMinY = -formRadiusOuter
         formMaxX = formRadiusOuter
@@ -186,19 +186,19 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     formMaxY = formMaxY + lineWidth
 
     # Compute the cone form guide line
-    guideInnerX = formRadius * sin(formTheta)
-    guideInnerY = formRadius * cos(formTheta)
-    guideOuterX = formRadiusOuter * sin(formTheta)
-    guideOuterY = formRadiusOuter * cos(formTheta)
+    guideInnerX = formRadius * mathSin(formTheta)
+    guideInnerY = formRadius * mathCos(formTheta)
+    guideOuterX = formRadiusOuter * mathSin(formTheta)
+    guideOuterY = formRadiusOuter * mathCos(formTheta)
 
     # Draw the cone form
     edge = 5 * lineWidth
     setDrawingSize(2 * edge + formMaxX - formMinX, 2 * edge + formMaxY - formMinY)
     drawStyle('black', lineWidth, 'none', 3 * lineWidth + ' ' + 3 * lineWidth)
     drawMove(edge - formMinX, edge)
-    drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > pi(), 1, edge + flapOuterX - formMinX, edge + formMaxY - flapOuterY)
+    drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > mathPi(), 1, edge + flapOuterX - formMinX, edge + formMaxY - flapOuterY)
     drawLine(edge + flapInnerX - formMinX, edge + formMaxY - flapInnerY)
-    drawArc(formRadius, formRadius, 0, flapTheta > pi(), 0, edge - formMinX, edge + formRadiusOuter - formRadius)
+    drawArc(formRadius, formRadius, 0, flapTheta > mathPi(), 0, edge - formMinX, edge + formRadiusOuter - formRadius)
     drawClose()
     drawStyle('lightgray', lineWidth, 'none')
     drawMove(edge + guideInnerX - formMinX, edge + formMaxY - guideInnerY)
@@ -211,10 +211,10 @@ function fruitFlyTrapDiagram()
     width = 16 * annotationTextSize
     height = 14  * annotationTextSize
 
-    imageMargin = ceil(0.7 * annotationTextSize)
+    imageMargin = mathCeil(0.7 * annotationTextSize)
     lineWidth = 1
     glassLineWidth = 5 * lineWidth
-    annotationWidth = ceil(1.2 * annotationTextSize)
+    annotationWidth = mathCeil(1.2 * annotationTextSize)
     annotationBarWidth = 0.5 * annotationWidth
     annotationTextHeight = 1.2 * annotationWidth
     airHeight = annotationWidth

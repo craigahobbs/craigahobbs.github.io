@@ -10,12 +10,12 @@ function main()
     jumpif (vPrint) skipMenu
         markdownPrint( \
             '[Reset](#var=) |', \
-            '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-            '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-            '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
+            '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + stringEncodeURL(vMessage) + "'", '') + ') |', \
+            '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + stringEncodeURL(vMessage) + "'", '') + ') |', \
+            '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + stringEncodeURL(vMessage) + "'", '') + ') |', \
             "[Custom Message](#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + ') |', \
             '[Print](#var.vPrint=1' + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
-                if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
+                if(vMessage, "&var.vMessage='" + stringEncodeURL(vMessage) + "'", '') + ')' \
         )
     skipMenu:
 
@@ -33,7 +33,7 @@ function main()
     titleText = if(vMessage, vMessage, 'Happy Holidays!')
     titleBoxWidth = 0.8 * getDrawingWidth()
     titleTextWidth = 0.9 * titleBoxWidth
-    titleTextHeight = min(getTextHeight(titleText, titleTextWidth), 0.2 * getDrawingHeight())
+    titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * getDrawingHeight())
     titleBoxHeight = 3 * titleTextHeight
 
     # Draw the title
@@ -47,13 +47,13 @@ endfunction
 function shapes(shapeFn, count, sizeRatio)
     ix = 0
     loop:
-        size = sizeRatio * (1 + 2 * rand()) * if(getDrawingWidth() < getDrawingHeight(), getDrawingWidth(), getDrawingHeight())
+        size = sizeRatio * (1 + 2 * mathRandom()) * if(getDrawingWidth() < getDrawingHeight(), getDrawingWidth(), getDrawingHeight())
         minX = size
         maxX = getDrawingWidth() - size
         minY = size
         maxY = getDrawingHeight() - size
-        x = minX + rand() * (maxX - minX)
-        y = minY + rand() * (maxY - minY)
+        x = minX + mathRandom() * (maxX - minX)
+        y = minY + mathRandom() * (maxY - minY)
         shapeFn(x, y, size)
     ix = ix + 1
     jumpif (ix < count) loop
@@ -70,7 +70,7 @@ endfunction
 
 
 function chubbyStar(x, y, size)
-    fillRand = rand()
+    fillRand = mathRandom()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
     drawStyle('black', 2, fill)
     drawMove(x, y)
@@ -86,7 +86,7 @@ endfunction
 
 
 function grayBall(x, y, size)
-    fillRand = rand()
+    fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c0c0c0', '#e0e0e0')
     drawStyle('black', 2, fill)
     drawRect(x, y, size, size, 3, 3)
@@ -94,7 +94,7 @@ endfunction
 
 
 function purpleBall(x, y, size)
-    fillRand = rand()
+    fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c000c0', '#e000e0')
     drawStyle('black', 2, fill)
     drawCircle(x, y, size)

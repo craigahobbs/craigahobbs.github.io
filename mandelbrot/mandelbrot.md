@@ -37,17 +37,17 @@ function main()
             menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, xRange + menuXYDelta, vCycle)) + \
             ': ' + xRange + '  ', \
         menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, iter + menuIterDelta, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, vSize, max(20, iter - menuIterDelta), vX, vY, vXR, vCycle)) + \
+            menuLink('Down', vWidth, vHeight, vSize, mathMax(20, iter - menuIterDelta), vX, vY, vXR, vCycle)) + \
             ': ' + iter, \
         '', \
         menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, cycle + 1) + ' |', \
         '[Reset](#var=) | ', \
         menuLinkPair('Width', menuLink('Up', width + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', max(menuWHDelta, width - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+            menuLink('Down', mathMax(menuWHDelta, width - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
         menuLinkPair('Height', menuLink('Up', vWidth, height + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, max(menuWHDelta, height - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
+            menuLink('Down', vWidth, mathMax(menuWHDelta, height - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
         menuLinkPair('Size', menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, max(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
+            menuLink('Down', vWidth, vHeight, mathMax(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
     )
 
     # Draw the Mandelbrot set
@@ -65,7 +65,7 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
         if(y != null, '&var.vY=' + y, '') + \
         if(xr != null, '&var.vXR=' + xr, '') + \
         if(vc != null, '&var.vCycle=' + vc, '')
-    return '[' + text + '](#' + slice(args, 1) + ')'
+    return '[' + text + '](#' + stringSlice(args, 1) + ')'
 endfunction
 
 
@@ -111,7 +111,7 @@ function mandelbrotValue(x, y, maxIterations)
     n = 1
     loop:
         # Done?
-        jumpif (sqrt(c2r * c2r + c2i * c2i) > 2) loopDone
+        jumpif (mathSqrt(c2r * c2r + c2i * c2i) > 2) loopDone
 
         # c2 = c2 * c2 + c1
         c2rNew = c2r * c2r - c2i * c2i + c1r

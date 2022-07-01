@@ -142,7 +142,7 @@ function tespo(input)
         bestChargingRate = 0
         chargingRateTest = minChargingRate
         chargingRateLoop:
-            bestChargingRate = if(chargingRateTest <= availableSolarRate, max(bestChargingRate, chargingRateTest), bestChargingRate)
+            bestChargingRate = if(chargingRateTest <= availableSolarRate, mathMax(bestChargingRate, chargingRateTest), bestChargingRate)
             chargingRateTest = chargingRateTest + 1
         jumpif (chargingRateTest <= maxChargingRate) chargingRateLoop
         jumpif (bestChargingRate == 0) vehicleDone
@@ -168,8 +168,8 @@ function tespo(input)
 
     # Set the excess solar power
     excessSolar = if(allBatteriesCharged && availableSolar > minSolarExcess, availableSolar, 0)
-    objectSet(output, 'availableSolar', if(isHomeBatteryCharged, round(max(availableSolar, 0), 3), 0))
-    objectSet(output, 'excessSolar', round(excessSolar, 3))
+    objectSet(output, 'availableSolar', if(isHomeBatteryCharged, mathRound(mathMax(availableSolar, 0), 3), 0))
+    objectSet(output, 'excessSolar', mathRound(excessSolar, 3))
 
     return output
 endfunction
