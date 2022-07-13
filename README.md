@@ -29,7 +29,7 @@
 
 ## markdown-up Applications
 
-[calc-script Library Documentation Viewer](https://craigahobbs.github.io/calc-script/library/)
+[CalcSript Library Documentation Viewer](https://craigahobbs.github.io/calc-script/library/)
 
 [Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
 
