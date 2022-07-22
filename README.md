@@ -29,7 +29,7 @@
 
 [markdown-up-py](https://github.com/craigahobbs/markdown-up-py#readme)
 
-[MarkdownUp Applications](https://craigahobbs.github.io/markdown-up/#url=MarkdownUpApplications.md)
+[MarkdownUp Applications](https://craigahobbs.github.io/#url=MarkdownUpApplications.md)
 
 
 ## Development
