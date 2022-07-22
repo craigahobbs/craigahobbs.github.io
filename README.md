@@ -3,7 +3,7 @@
 [GitHub](https://github.com/craigahobbs)
 
 
-## Libraries
+## JavaScript Packages
 
 [calc-script](https://github.com/craigahobbs/calc-script#readme)
 
@@ -11,16 +11,19 @@
 
 [markdown-model](https://github.com/craigahobbs/markdown-model#readme)
 
-[schema-markdown](https://github.com/craigahobbs/schema-markdown#readme)
-
 [schema-markdown-js](https://github.com/craigahobbs/schema-markdown-js#readme)
 
 [schema-markdown-doc](https://github.com/craigahobbs/schema-markdown-doc#readme)
 
 
-## Applications
+## Python Packages
 
 [chisel](https://github.com/craigahobbs/chisel#readme)
+
+[schema-markdown](https://github.com/craigahobbs/schema-markdown#readme)
+
+
+## Applications
 
 [markdown-up](https://github.com/craigahobbs/markdown-up#readme)
 
