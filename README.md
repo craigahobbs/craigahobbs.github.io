@@ -25,9 +25,7 @@
 
 ## Applications
 
-[markdown-up](https://github.com/craigahobbs/markdown-up#readme)
-
-[markdown-up-py](https://github.com/craigahobbs/markdown-up-py#readme)
+[MarkdownUp](https://github.com/craigahobbs/markdown-up#readme)
 
 [MarkdownUp Applications](https://craigahobbs.github.io/#url=MarkdownUpApplications.md)
 
