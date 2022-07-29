@@ -32,9 +32,8 @@ function main()
         'your computer printer, and a small amount of apple cider vinegar (or similar).', \
         '', \
         'The trap is made by placing a custom-fitted cone (based on your measurements) into a drinking glass', \
-        'containing a small amount of fruit-fly-attracting liquid (e.g., apple cider vinegar), as pictured', \
-        'below. The fruit flies fly in through the cone opening and become trapped between the cone and the', \
-        'liquid.' \
+        'containing a small amount of apple cider vinegar (see below). The fruit flies fly in through the', \
+        'cone opening and become trapped between the cone and the liquid.' \
     )
 
     # Fruit-fly trap diagram
@@ -44,10 +43,10 @@ function main()
     markdownPrint( \
         '## Instructions', \
         '', \
-        "1. Measure the drinking glass's top-inside diameter, height, and cone-bottom offset (see diagram", \
-        '   above). The cone-bottom offset is the distance from the bottom of the glass to the bottom of the', \
-        '   trap cone, allowing enough room for the liquid and space for the fruit flies to get into the', \
-        '   trap. Use the "Less" and "More" links below to enter the measurements.', \
+        '[Reset](' + if(vMetric, '#var.vMetric=1', '#var=') + ')', \
+        '| [' + if(vMetric, 'Imperial', 'Metric') + '](' + if(vMetric, '#var=', '#var.vMetric=1') + ')', \
+        '', \
+        '1. Take the following measurements from a drinking glass (see diagram above).', \
         '', \
         '    **Top diameter (d)** (' + \
             if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), coneLink('Less', null, diameter - delta), 'Less') + ' | ' + \
@@ -68,10 +67,6 @@ function main()
             if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), coneLink('Less', null, null, bottom - delta), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), coneLink('More', null, null, bottom + delta), 'More') + \
             '): ' + bottom + ' ' + units, \
-        '', \
-        '    Click here to [use ' + if(vMetric, 'imperial', 'metric') + ' units](' + if(vMetric, '#var=', '#var.vMetric=1') + ').', \
-        '', \
-        '    At any time, you can [reset the cone measurements](' + if(vMetric, '#var.vMetric=1', '#var=') + ').', \
         '', \
         '2. Print the cone form using the link below.', \
         '', \
