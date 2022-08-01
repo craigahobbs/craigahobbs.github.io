@@ -3,6 +3,13 @@
 [GitHub](https://github.com/craigahobbs)
 
 
+## Applications
+
+[MarkdownUp](https://github.com/craigahobbs/markdown-up#readme)
+
+[MarkdownUp Applications](https://craigahobbs.github.io/#url=MarkdownUpApplications.md)
+
+
 ## JavaScript Packages
 
 [calc-script](https://github.com/craigahobbs/calc-script#readme)
@@ -21,13 +28,6 @@
 [chisel](https://github.com/craigahobbs/chisel#readme)
 
 [schema-markdown](https://github.com/craigahobbs/schema-markdown#readme)
-
-
-## Applications
-
-[MarkdownUp](https://github.com/craigahobbs/markdown-up#readme)
-
-[MarkdownUp Applications](https://craigahobbs.github.io/#url=MarkdownUpApplications.md)
 
 
 ## Development
