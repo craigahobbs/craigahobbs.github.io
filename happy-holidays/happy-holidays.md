@@ -10,12 +10,12 @@ function main()
     jumpif (vPrint) skipMenu
         markdownPrint( \
             '[Reset](#var=) |', \
-            '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + markdownEscapeURLComponent(vMessage) + "'", '') + ') |', \
-            '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + markdownEscapeURLComponent(vMessage) + "'", '') + ') |', \
-            '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + markdownEscapeURLComponent(vMessage) + "'", '') + ') |', \
+            '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
+            '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
+            '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
             "[Custom Message](#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + ') |', \
             '[Print](#var.vPrint=1' + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
-                if(vMessage, "&var.vMessage='" + markdownEscapeURLComponent(vMessage) + "'", '') + ')' \
+                if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
         )
     skipMenu:
 
