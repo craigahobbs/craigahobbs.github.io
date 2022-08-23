@@ -16,21 +16,21 @@
   (package-install `js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
-;; mds-mode
-(unless (package-installed-p 'mds-mode)
-  (let ((mds-mode-file (make-temp-file "mds-mode")))
-    (url-copy-file "https://craigahobbs.github.io/markdown-up/extra/mds-mode.el" mds-mode-file t)
-    (package-install-file mds-mode-file)
-    (delete-file mds-mode-file)))
-(add-to-list 'auto-mode-alist '("\\.mds?\\'" . mds-mode))
+;; calc-script-mode
+(unless (package-installed-p 'calc-script-mode)
+  (let ((mode-file (make-temp-file "calc-script-mode")))
+    (url-copy-file "https://craigahobbs.github.io/calc-script/language/calc-script-mode.el" mode-file t)
+    (package-install-file mode-file)
+    (delete-file mode-file)))
+(add-to-list 'auto-mode-alist '("\\.mds?\\'" . calc-script-mode))
 
-;; smd-mode
-(unless (package-installed-p 'smd-mode)
-  (let ((smd-mode-file (make-temp-file "smd-mode")))
-    (url-copy-file "https://raw.githubusercontent.com/craigahobbs/schema-markdown/main/extra/smd-mode.el" smd-mode-file t)
-    (package-install-file smd-mode-file)
-    (delete-file smd-mode-file)))
-(add-to-list 'auto-mode-alist '("\\.smd?\\'" . smd-mode))
+;; schema-markdown-mode
+(unless (package-installed-p 'schema-markdown-mode)
+  (let ((mode-file (make-temp-file "schema-markdown-mode")))
+    (url-copy-file "https://craigahobbs.github.io/schema-markdown-js/language/schema-markdown-mode.el" mode-file t)
+    (package-install-file mode-file)
+    (delete-file mode-file)))
+(add-to-list 'auto-mode-alist '("\\.smd?\\'" . schema-markdown-mode))
 
 ;; Activate Savehist mode
 (savehist-mode 1)
@@ -66,7 +66,7 @@
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(make-backup-files nil)
- '(package-selected-packages '(mds-mode smd-mode js2-mode))
+ '(package-selected-packages '(js2-mode))
  '(scroll-conservatively 10000)
  '(sentence-end-double-space nil)
  '(sgml-basic-offset 4)
