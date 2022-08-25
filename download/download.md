@@ -30,7 +30,7 @@ async function main()
     markdownPrint('# ' + title)
     setDocumentTitle(title)
 
-    if(vName != null, downloadDashboard(vName))
+    if(vName != null, downloadDashboard(vName), markdownPrint('', 'No package selected'))
 endfunction
 
 
