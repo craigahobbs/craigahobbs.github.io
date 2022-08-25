@@ -3,17 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-packages = arrayNew( \
-    'chisel', \
-    'markdown-up', \
-    'schema-markdown', \
-    'simple-git-changelog', \
-    'template-specialize', \
-    'unittest-parallel' \
-)
-
-
-async function main()
+async function main(packages)
     # Package menu
     markdownPrint('**Packages:**')
     ixPackage = 0
@@ -122,5 +112,12 @@ async function downloadDashboard(packageName)
 endfunction
 
 
-main()
+main(arrayNew( \
+    'chisel', \
+    'markdown-up', \
+    'schema-markdown', \
+    'simple-git-changelog', \
+    'template-specialize', \
+    'unittest-parallel' \
+))
 ~~~
