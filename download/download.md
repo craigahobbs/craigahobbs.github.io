@@ -9,18 +9,38 @@ async function main(packages)
     ixPackage = 0
     packageLoop:
         packageName = arrayGet(packages, ixPackage)
-        packageURL = "#var.vName='" + packageName + "'" + if(vWindow == null, '', '&var.vWindow=' + vWindow)
         if(ixPackage != 0, markdownPrint('**|**'))
-        markdownPrint(if(vName == packageName, packageName, '[' + packageName + '](' + packageURL + ')'))
+        markdownPrint(if(vName == packageName, packageName, '[' + packageName + '](' + downloadLink(packageName) + ')'))
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(packages)) packageLoop
 
+    # Window menu
+    markdownPrint('', '**Window:**')
+    windows = arrayNew(7, 15, 21, 31, 45)
+    ixWindow = 0
+    windowLoop:
+        window = arrayGet(windows, ixWindow)
+        if(ixWindow != 0, markdownPrint('**|**'))
+        markdownPrint(if(vWindow == window, window + ' days', '[' + window + ' days](' + downloadLink(null, window) + ')'))
+        ixWindow = ixWindow + 1
+    jumpif (ixWindow < arrayLength(windows)) windowLoop
+
     # Set the document title
     title = 'PyPI Download Stats' + if(vName != null, ' - ' + vName, '')
-    markdownPrint('# ' + title)
+    markdownPrint('', '# ' + title)
     setDocumentTitle(title)
 
     if(vName != null, downloadDashboard(vName), markdownPrint('', 'No package selected'))
+endfunction
+
+
+function downloadLink(name, window)
+    name = if(name != null, name, vName)
+    window = if(window != null, window, vWindow)
+    parts = arrayNew()
+    if(name != null, arrayPush(parts, "var.vName='" + name + "'"))
+    if(window != null, arrayPush(parts, 'var.vWindow=' + window))
+    return if(arrayLength(parts) == 0, '#var=', '#' + arrayJoin(parts, '&'))
 endfunction
 
 
