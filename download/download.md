@@ -49,6 +49,7 @@ async function downloadDashboard(packageName)
     chartHeight = 250
 
     # Load and validate the package "overall" data
+    # dataURL = 'https://pypistats.org/api/packages/' + packageName + '/overall'
     dataURL = 'data/' + packageName + '.json'
     data = dataValidate(objectGet(fetch(dataURL), 'data'))
 
