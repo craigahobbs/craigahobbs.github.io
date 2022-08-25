@@ -11,7 +11,7 @@ async function main(packages)
         packageName = arrayGet(packages, ixPackage)
         packageURL = "#var.vName='" + packageName + "'" + if(vWindow == null, '', '&var.vWindow=' + vWindow)
         if(ixPackage != 0, markdownPrint('**|**'))
-        markdownPrint('[' + packageName + '](' + packageURL + ')')
+        markdownPrint(if(vName == packageName, packageName, '[' + packageName + '](' + packageURL + ')'))
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(packages)) packageLoop
 
