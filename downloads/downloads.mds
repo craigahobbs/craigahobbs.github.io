@@ -142,15 +142,11 @@ endfunction
 
 
 async function downloadsJavascriptPackageData(packageName)
-    # Compute the date range
-    today = datetimeToday()
-    month = datetimeMonth(today)
-    day = datetimeDay(today)
-    today = stringNew(datetimeYear(now)) + if(month > 9, '-', '-0') + stringNew(month) + if(day > 9, '-', '-0') + stringNew(day)
-    yearAgo = stringNew(datetimeYear(now) - 1) + if(month > 9, '-', '-0') + stringNew(month) + if(day > 9, '-', '-0') + stringNew(day)
-
     # Fetch the raw package downloads data
-    #dataURL = 'https://npm-stat.com/api/download-counts?package=' + package + '&from=' + yearAgo + '&until=' + today
+    #today = datetimeToday()
+    #yearAgo = datetimeNew(datetimeYear(today) - 1, datetimeMonth(today), datetimeDay(today))
+    #dataURL = 'https://npm-stat.com/api/download-counts?package=' + package + \
+    #    '&from=' + datetimeISOFormat(yearAgo, true) + '&until=' + datetimeISOFormat(today, true)
     dataURL = 'data/javascript-' + packageName + '.json'
     dataRaw = objectGet(fetch(dataURL), packageName)
 
