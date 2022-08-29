@@ -1,57 +1,65 @@
-~~~ markdown-script
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-async function main(packages)
-    # Package menu
-    markdownPrint('**Packages:**')
+async function downloadsMain(javascriptPackages, pythonPackages)
+    # Menu
+    downloadsPackageMenu(javascriptPackages, 'JavaScript')
+    downloadsPackageMenu(pythonPackages, 'Python')
+    downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
+
+    # Document title
+    title = if(vType != null, vType, '') + ' Package Downloads' + if(vName != null, ' - ' + vName, '')
+    markdownPrint('', '# ' + title)
+    setDocumentTitle(title)
+
+    # Package dashboard
+    if(vName != null, downloadsDashboard(vName, vType), markdownPrint('', 'No package selected'))
+endfunction
+
+
+function downloadsPackageMenu(packages, type)
+    markdownPrint('', '**' + type + ':**')
     ixPackage = 0
     packageLoop:
         packageName = arrayGet(packages, ixPackage)
         if(ixPackage != 0, markdownPrint('**|**'))
-        markdownPrint(if(vName == packageName, packageName, '[' + packageName + '](' + downloadLink(packageName) + ')'))
+        markdownPrint(if(vName == packageName && vType == type, packageName, '[' + packageName + '](' + downloadsLink(packageName, type) + ')'))
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(packages)) packageLoop
+endfunction
 
-    # Window menu
+
+function downloadsWindowMenu(windows)
     markdownPrint('', '**Window:**')
-    windows = arrayNew(7, 15, 21, 31, 45)
     ixWindow = 0
     windowLoop:
         window = arrayGet(windows, ixWindow)
         if(ixWindow != 0, markdownPrint('**|**'))
-        markdownPrint(if(vWindow == window, window + ' days', '[' + window + ' days](' + downloadLink(null, window) + ')'))
+        markdownPrint(if(vWindow == window, window + ' days', '[' + window + ' days](' + downloadsLink(null, null, window) + ')'))
         ixWindow = ixWindow + 1
     jumpif (ixWindow < arrayLength(windows)) windowLoop
-
-    # Set the document title
-    title = 'PyPI Download Stats' + if(vName != null, ' - ' + vName, '')
-    markdownPrint('', '# ' + title)
-    setDocumentTitle(title)
-
-    if(vName != null, downloadDashboard(vName), markdownPrint('', 'No package selected'))
 endfunction
 
 
-function downloadLink(name, window)
+function downloadsLink(name, type, window)
     name = if(name != null, name, vName)
+    type = if(type != null, type, vType)
     window = if(window != null, window, vWindow)
     parts = arrayNew()
     if(name != null, arrayPush(parts, "var.vName='" + name + "'"))
+    if(type != null, arrayPush(parts, "var.vType='" + type + "'"))
     if(window != null, arrayPush(parts, 'var.vWindow=' + window))
     return if(arrayLength(parts) == 0, '#var=', '#' + arrayJoin(parts, '&'))
 endfunction
 
 
-async function downloadDashboard(packageName)
+async function downloadsDashboard(packageName, type)
     chartWidth = 1000
     chartHeight = 250
 
-    # Load and validate the package "overall" data
-    # dataURL = 'https://pypistats.org/api/packages/' + packageName + '/overall'
-    dataURL = 'data/' + packageName + '.json'
-    data = dataValidate(objectGet(fetch(dataURL), 'data'))
+    # Load and validate the package data
+    data = if(type == 'Python', downloadsPythonPackageData(packageName), downloadsJavascriptPackageData(packageName))
 
     # Compute the with-mirrors three-week daily running average
     windowSize = if(vWindow != null, vWindow, 21)
@@ -133,12 +141,46 @@ async function downloadDashboard(packageName)
 endfunction
 
 
-main(arrayNew( \
-    'chisel', \
-    'markdown-up', \
-    'schema-markdown', \
-    'simple-git-changelog', \
-    'template-specialize', \
-    'unittest-parallel' \
-))
-~~~
+async function downloadsJavascriptPackageData(packageName)
+    # Compute the date range
+    today = datetimeToday()
+    month = datetimeMonth(today)
+    day = datetimeDay(today)
+    today = stringNew(datetimeYear(now)) + if(month > 9, '-', '-0') + stringNew(month) + if(day > 9, '-', '-0') + stringNew(day)
+    yearAgo = stringNew(datetimeYear(now) - 1) + if(month > 9, '-', '-0') + stringNew(month) + if(day > 9, '-', '-0') + stringNew(day)
+
+    # Fetch the raw package downloads data
+    #dataURL = 'https://npm-stat.com/api/download-counts?package=' + package + '&from=' + yearAgo + '&until=' + today
+    dataURL = 'data/javascript-' + packageName + '.json'
+    dataRaw = objectGet(fetch(dataURL), packageName)
+
+    # Reshape the data
+    data = arrayNew()
+    jumpif (arrayLength(dataRaw) == 0) dataDone
+    dates = objectKeys(dataRaw)
+    ixDate = 0
+    dateLoop:
+        date = arrayGet(dates, ixDate)
+        arrayPush(data, objectNew( \
+            'date', date, \
+            'downloads', objectGet(dataRaw, date), \
+            'category', 'with_mirrors' \
+        ))
+        ixDate = ixDate + 1
+    jumpif (ixDate < arrayLength(dates)) dateLoop
+    dataDone:
+
+    # Validate the data
+    return dataValidate(data)
+endfunction
+
+
+async function downloadsPythonPackageData(packageName)
+    # Fetch the raw package downloads data
+    # dataURL = 'https://pypistats.org/api/packages/' + packageName + '/overall'
+    dataURL = 'data/python-' + packageName + '.json'
+    data = objectGet(fetch(dataURL), 'data')
+
+    # Validate the data
+    return dataValidate(data)
+endfunction
