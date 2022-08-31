@@ -19,13 +19,13 @@ async function downloadsMain(javascriptPackages, pythonPackages)
 endfunction
 
 
-function downloadsPackageMenu(packages, type)
-    markdownPrint('', '**' + type + ':**')
+function downloadsPackageMenu(packages, packageType)
+    markdownPrint('', '**' + packageType + ':**')
     ixPackage = 0
     packageLoop:
         packageName = arrayGet(packages, ixPackage)
         if(ixPackage != 0, markdownPrint('**|**'))
-        markdownPrint(if(vName == packageName && vType == type, packageName, '[' + packageName + '](' + downloadsLink(packageName, type) + ')'))
+        markdownPrint(if(vName == packageName && vType == packageType, packageName, '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')'))
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(packages)) packageLoop
 endfunction
@@ -96,12 +96,12 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
 endfunction
 
 
-async function downloadsDashboard(packageName, type)
+async function downloadsDashboard(packageName, packageType)
     chartWidth = 1000
     chartHeight = 250
 
     # Load and validate the package data
-    data = if(type == 'Python', downloadsPythonPackageData(packageName), downloadsJavascriptPackageData(packageName))
+    data = if(packageType == 'Python', downloadsPythonPackageData(packageName), downloadsJavascriptPackageData(packageName))
 
     # Compute the with-mirrors three-week daily running average
     windowSize = if(vWindow != null, vWindow, 21)
