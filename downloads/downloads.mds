@@ -56,39 +56,64 @@ endfunction
 
 
 async function downloadsRankings(javascriptPackages, pythonPackages)
-    # Fetch each packages stats and compute the most-recent month's downloads
-    packageData = arrayNew()
+    # Compute the list of package raw data URLs
+    dataURLs = arrayNew()
+    dataInfo = arrayNew()
     packageLists = arrayNew(javascriptPackages, pythonPackages)
     packageTypes = arrayNew('Javascript', 'Python')
     ixPackageList = 0
     packageListLoop:
         packageList = arrayGet(packageLists, ixPackageList)
         packageType = arrayGet(packageTypes, ixPackageList)
-
         ixPackage = 0
         packageLoop:
             packageName = arrayGet(packageList, ixPackage)
             isDuplicate = arrayIndexOf(if(packageType == 'Python', javascriptPackages, pythonPackages), packageName) != -1
 
-            # Load and validate the package data
-            data = if(packageType == 'Python', downloadsPythonPackageData(packageName), downloadsJavascriptPackageData(packageName))
-            data = dataFilter(data, 'category == "with_mirrors"')
-
-            # Compute the most recent month's downloads
-            dataCalculatedField(data, 'year', 'year(date)')
-            dataCalculatedField(data, 'month', 'month(date)')
-            dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('year', 'month'))
-            dataSort(dataMonth, arrayNew(arrayNew('year', true), arrayNew('month', true)))
-            arrayPush(packageData, objectNew( \
-                'Package', packageName + if(isDuplicate, ' (' + packageType + ')', ''), \
-                'Downloads', objectGet(arrayGet(dataMonth, 0), 'downloads') \
+            # Add the package URL, etc.
+            arrayPush(dataURLs, \
+                if(packageType == 'Python', downloadsPythonDataURL(packageName), downloadsJavascriptDataURL(packageName)))
+            arrayPush(dataInfo, objectNew( \
+                'packageName', packageName, \
+                'packageType', packageType, \
+                'displayName', packageName + if(isDuplicate, ' (' + packageType + ')', '') \
             ))
 
             ixPackage = ixPackage + 1
-       jumpif (ixPackage < arrayLength(packageList)) packageLoop
-
+        jumpif (ixPackage < arrayLength(packageList)) packageLoop
         ixPackageList = ixPackageList + 1
     jumpif (ixPackageList < arrayLength(packageLists)) packageListLoop
+
+    # Fetch the package raw data and validate
+    dataRaw = fetch(dataURLs)
+    packageData = arrayNew()
+    ixPackage = 0
+    dataLoop:
+        packageName = objectGet(arrayGet(dataInfo, ixPackage), 'packageName')
+        packageType = objectGet(arrayGet(dataInfo, ixPackage), 'packageType')
+        displayName = objectGet(arrayGet(dataInfo, ixPackage), 'displayName')
+
+        # Validate the data
+        data = if(packageType == 'Python', \
+            downloadsPythonDataValidate(arrayGet(dataRaw, ixPackage), packageName), \
+            downloadsJavascriptDataValidate(arrayGet(dataRaw, ixPackage), packageName) \
+        )
+
+        # Filter to only "with_mirrors"
+        data = dataFilter(data, 'category == "with_mirrors"')
+
+        # Compute the most recent month's downloads
+        dataCalculatedField(data, 'year', 'year(date)')
+        dataCalculatedField(data, 'month', 'month(date)')
+        dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('year', 'month'))
+        dataSort(dataMonth, arrayNew(arrayNew('year', true), arrayNew('month', true)))
+        arrayPush(packageData, objectNew( \
+            'Package', displayName, \
+            'Downloads', objectGet(arrayGet(dataMonth, 0), 'downloads') \
+        ))
+
+        ixPackage = ixPackage + 1
+    jumpif (ixPackage < arrayLength(dataURLs)) dataLoop
 
     # Render the rankings chart
     dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
@@ -101,7 +126,10 @@ async function downloadsDashboard(packageName, packageType)
     chartHeight = 250
 
     # Load and validate the package data
-    data = if(packageType == 'Python', downloadsPythonPackageData(packageName), downloadsJavascriptPackageData(packageName))
+    data = if(packageType == 'Python', \
+        downloadsPythonDataValidate(fetch(downloadsPythonDataURL(packageName)), packageName), \
+        downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)), packageName) \
+    )
 
     # Compute the with-mirrors three-week daily running average
     windowSize = if(vWindow != null, vWindow, 21)
@@ -169,31 +197,33 @@ async function downloadsDashboard(packageName, packageType)
     # Render the monthly table by most recent
     dataSort(dataMonth, arrayNew(arrayNew('month', true), arrayNew('category')))
     dataTable(dataMonth, objectNew( \
-        'categoryFields', arrayNew('month', 'category'), \
+        'categories', arrayNew('month', 'category'), \
         'datetime', 'month' \
     ))
 endfunction
 
 
-async function downloadsJavascriptPackageData(packageName)
-    # Fetch the raw package downloads data
+function downloadsJavascriptDataURL(packageName)
     #today = datetimeToday()
     #yearAgo = datetimeNew(datetimeYear(today) - 1, datetimeMonth(today), datetimeDay(today))
-    #dataURL = 'https://npm-stat.com/api/download-counts?package=' + package + \
+    #return 'https://npm-stat.com/api/download-counts?package=' + package + \
     #    '&from=' + datetimeISOFormat(yearAgo, true) + '&until=' + datetimeISOFormat(today, true)
-    dataURL = 'data/javascript-' + packageName + '.json'
-    dataRaw = objectGet(fetch(dataURL), packageName)
+    return 'data/javascript-' + packageName + '.json'
+endfunction
 
+
+function downloadsJavascriptDataValidate(dataRaw, packageName)
     # Reshape the data
     data = arrayNew()
-    jumpif (arrayLength(dataRaw) == 0) dataDone
-    dates = objectKeys(dataRaw)
+    downloadDates = objectGet(dataRaw, packageName)
+    jumpif (arrayLength(downloadDates) == 0) dataDone
+    dates = objectKeys(downloadDates)
     ixDate = 0
     dateLoop:
         date = arrayGet(dates, ixDate)
         arrayPush(data, objectNew( \
             'date', date, \
-            'downloads', objectGet(dataRaw, date), \
+            'downloads', objectGet(downloadDates, date), \
             'category', 'with_mirrors' \
         ))
         ixDate = ixDate + 1
@@ -205,12 +235,12 @@ async function downloadsJavascriptPackageData(packageName)
 endfunction
 
 
-async function downloadsPythonPackageData(packageName)
-    # Fetch the raw package downloads data
-    # dataURL = 'https://pypistats.org/api/packages/' + packageName + '/overall'
-    dataURL = 'data/python-' + packageName + '.json'
-    data = objectGet(fetch(dataURL), 'data')
+function downloadsPythonDataURL(packageName)
+    #return 'https://pypistats.org/api/packages/' + packageName + '/overall'
+    return 'data/python-' + packageName + '.json'
+endfunction
 
-    # Validate the data
-    return dataValidate(data)
+
+function downloadsPythonDataValidate(dataRaw)
+    return dataValidate(objectGet(dataRaw, 'data'))
 endfunction
