@@ -90,7 +90,7 @@ async function downloadsDashboard(packageName, type)
         'x', 'date', \
         'y', arrayNew('downloads'), \
         'ytick', objectNew('start', 0), \
-        'datetime', 'Day', \
+        'datetime', 'day', \
         'precision', 0 \
     ))
 
@@ -103,21 +103,13 @@ async function downloadsDashboard(packageName, type)
         'y', arrayNew('downloads'), \
         'color', 'category', \
         'ytick', objectNew('start', 0), \
-        'datetime', 'Day', \
+        'datetime', 'day', \
         'precision', 0 \
     ))
 
     # Aggregate by month
     dataCalculatedField(data, 'month', 'dateFn(year(date), month(date), 1)', objectNew('dateFn', datetimeNew))
-    dataMonth = dataAggregate(data, objectNew( \
-        'categories', arrayNew('month', 'category'), \
-        'measures', arrayNew( \
-            objectNew( \
-                'field', 'downloads', \
-                'function', 'Sum' \
-            ) \
-        ) \
-    ))
+    dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('month', 'category'))
 
     # Render the monthly line chart
     dataLineChart(dataMonth, objectNew( \
@@ -128,7 +120,7 @@ async function downloadsDashboard(packageName, type)
         'y', arrayNew('downloads'), \
         'color', 'category', \
         'ytick', objectNew('start', 0), \
-        'datetime', 'Month', \
+        'datetime', 'month', \
         'precision', 0 \
     ))
 
