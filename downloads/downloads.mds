@@ -4,6 +4,7 @@
 
 async function downloadsMain(javascriptPackages, pythonPackages)
     # Menu
+    markdownPrint('[Home](#var=)')
     downloadsPackageMenu(javascriptPackages, 'JavaScript')
     downloadsPackageMenu(pythonPackages, 'Python')
     downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
@@ -14,7 +15,7 @@ async function downloadsMain(javascriptPackages, pythonPackages)
     setDocumentTitle(title)
 
     # Package dashboard
-    if(vName != null, downloadsDashboard(vName, vType), markdownPrint('', 'No package selected'))
+    if(vName != null, downloadsDashboard(vName, vType), downloadsRankings(javascriptPackages, pythonPackages))
 endfunction
 
 
@@ -51,6 +52,47 @@ function downloadsLink(name, type, window)
     if(type != null, arrayPush(parts, "var.vType='" + type + "'"))
     if(window != null, arrayPush(parts, 'var.vWindow=' + window))
     return if(arrayLength(parts) == 0, '#var=', '#' + arrayJoin(parts, '&'))
+endfunction
+
+
+async function downloadsRankings(javascriptPackages, pythonPackages)
+    # Fetch each packages stats and compute the most-recent month's downloads
+    packageData = arrayNew()
+    packageLists = arrayNew(javascriptPackages, pythonPackages)
+    packageTypes = arrayNew('Javascript', 'Python')
+    ixPackageList = 0
+    packageListLoop:
+        packageList = arrayGet(packageLists, ixPackageList)
+        packageType = arrayGet(packageTypes, ixPackageList)
+
+        ixPackage = 0
+        packageLoop:
+            packageName = arrayGet(packageList, ixPackage)
+            isDuplicate = arrayIndexOf(if(packageType == 'Python', javascriptPackages, pythonPackages), packageName) != -1
+
+            # Load and validate the package data
+            data = if(packageType == 'Python', downloadsPythonPackageData(packageName), downloadsJavascriptPackageData(packageName))
+            data = dataFilter(data, 'category == "with_mirrors"')
+
+            # Compute the most recent month's downloads
+            dataCalculatedField(data, 'year', 'year(date)')
+            dataCalculatedField(data, 'month', 'month(date)')
+            dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('year', 'month'))
+            dataSort(dataMonth, arrayNew(arrayNew('year', true), arrayNew('month', true)))
+            arrayPush(packageData, objectNew( \
+                'Package', packageName + if(isDuplicate, ' (' + packageType + ')', ''), \
+                'Downloads', objectGet(arrayGet(dataMonth, 0), 'downloads') \
+            ))
+
+            ixPackage = ixPackage + 1
+       jumpif (ixPackage < arrayLength(packageList)) packageLoop
+
+        ixPackageList = ixPackageList + 1
+    jumpif (ixPackageList < arrayLength(packageLists)) packageListLoop
+
+    # Render the rankings chart
+    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
+    dataTable(packageData)
 endfunction
 
 
