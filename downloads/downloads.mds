@@ -104,14 +104,14 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         # Filter to only "with_mirrors"
         data = dataFilter(data, 'category == "with_mirrors"')
 
-        # Compute the most recent month's downloads
+        # Compute the maximum monthly downloads
         dataCalculatedField(data, 'year', 'year(date)')
         dataCalculatedField(data, 'month', 'month(date)')
         dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('year', 'month'))
-        dataSort(dataMonth, arrayNew(arrayNew('year', true), arrayNew('month', true)))
+        dataMonthMax = dataAggregate(dataMonth, 'downloads', 'max')
         arrayPush(packageData, objectNew( \
             'Package', '[' + displayName + '](' + packageURL + ')', \
-            'Downloads', objectGet(arrayGet(dataMonth, 0), 'downloads') \
+            'Downloads', objectGet(arrayGet(dataMonthMax, 0), 'downloads') \
         ))
 
         ixPackage = ixPackage + 1
