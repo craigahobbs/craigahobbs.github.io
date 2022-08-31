@@ -4,7 +4,7 @@
 
 async function downloadsMain(javascriptPackages, pythonPackages)
     # Menu
-    markdownPrint('[Home](#var=)')
+    markdownPrint('[Home](#var=)', '')
     downloadsPackageMenu(javascriptPackages, 'JavaScript')
     downloadsPackageMenu(pythonPackages, 'Python')
     if(vName, downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45)))
@@ -20,19 +20,23 @@ endfunction
 
 
 function downloadsPackageMenu(packages, packageType)
-    markdownPrint('', '**' + packageType + ':**')
+    markdownPrint('**' + packageType + ':**')
     ixPackage = 0
     packageLoop:
         packageName = arrayGet(packages, ixPackage)
         if(ixPackage != 0, markdownPrint('**|**'))
-        markdownPrint(if(vName == packageName && vType == packageType, packageName, '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')'))
+        markdownPrint( \
+            if(vName == packageName && vType == packageType, packageName, \
+                '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')') + \
+            if(ixPackage == arrayLength(packages) - 1, '  ', '') \
+        )
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(packages)) packageLoop
 endfunction
 
 
 function downloadsWindowMenu(windows)
-    markdownPrint('', '**Window:**')
+    markdownPrint('**Window:**')
     ixWindow = 0
     windowLoop:
         window = arrayGet(windows, ixWindow)
