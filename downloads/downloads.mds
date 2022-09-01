@@ -4,10 +4,10 @@
 
 async function downloadsMain(javascriptPackages, pythonPackages)
     # Menu
-    markdownPrint('[Home](#var=)', '')
+    markdownPrint(if(vName != null, '[Rankings](#var=)', '[Home](..)'), '')
     downloadsPackageMenu(javascriptPackages, 'JavaScript')
     downloadsPackageMenu(pythonPackages, 'Python')
-    if(vName, downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45)))
+    if(vName != null, downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45)))
 
     # Document title
     title = if(vType != null, vType, '') + ' Package Downloads' + if(vName != null, ' - ' + vName, '')
