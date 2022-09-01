@@ -4,10 +4,15 @@
 
 async function downloadsMain(javascriptPackages, pythonPackages)
     # Menu
-    markdownPrint(if(vName != null, '[Rankings](#var=)', '[Home](..)'), '')
-    downloadsPackageMenu(javascriptPackages, 'JavaScript')
-    downloadsPackageMenu(pythonPackages, 'Python')
-    if(vName != null, downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45)))
+    jumpif (vName != null) menuPackage
+        markdownPrint('[Home](..)', '')
+        jump menuDone
+    menuPackage:
+        markdownPrint('[Rankings](#var=)', '')
+        downloadsPackageMenu(javascriptPackages, 'JavaScript')
+        downloadsPackageMenu(pythonPackages, 'Python')
+        downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
+    menuDone:
 
     # Document title
     title = if(vType != null, vType, '') + ' Package Downloads' + if(vName != null, ' - ' + vName, '')
@@ -90,8 +95,6 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
     dataLoop:
         packageName = objectGet(arrayGet(dataInfo, ixPackage), 'packageName')
         packageType = objectGet(arrayGet(dataInfo, ixPackage), 'packageType')
-        isDuplicate = arrayIndexOf(if(packageType == 'Python', javascriptPackages, pythonPackages), packageName) != -1
-        displayName = packageName + if(isDuplicate, ' (' + packageType + ')', '')
         packageURL = if(packageType == 'Python', \
             'https://pypi.org/project/' + encodeURIComponent(packageName) + '/', \
             'https://www.npmjs.com/package/' + encodeURIComponent(packageName))
@@ -110,7 +113,8 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('year', 'month'))
         dataMonthMax = dataAggregate(dataMonth, 'downloads', 'max')
         arrayPush(packageData, objectNew( \
-            'Package', '[' + displayName + '](' + packageURL + ')', \
+            'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
+            'Language', '[' + packageType + '](' + packageURL + ')', \
             'Monthly Downloads', objectGet(arrayGet(dataMonthMax, 0), 'downloads') \
         ))
 
@@ -119,7 +123,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
 
     # Render the rankings chart
     dataSort(packageData, arrayNew(arrayNew('Monthly Downloads', true)))
-    dataTable(packageData, objectNew('markdown', arrayNew('Package')))
+    dataTable(packageData, objectNew('markdown', arrayNew('Package', 'Language')))
 endfunction
 
 
