@@ -110,8 +110,23 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         # Compute the maximum monthly downloads
         dataCalculatedField(data, 'year', 'year(date)')
         dataCalculatedField(data, 'month', 'month(date)')
-        dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('year', 'month'))
-        dataMonthMax = dataAggregate(dataMonth, 'downloads', 'max')
+        dataMonth = dataAggregate(data, objectNew( \
+            'categories', arrayNew('year', 'month'), \
+            'measures', arrayNew( \
+                objectNew( \
+                    'field', 'downloads', \
+                    'function', 'sum' \
+                ) \
+            ) \
+        ))
+        dataMonthMax = dataAggregate(dataMonth, objectNew( \
+            'measures', arrayNew( \
+                objectNew( \
+                    'field', 'downloads', \
+                    'function', 'max' \
+                ) \
+            ) \
+        ))
         arrayPush(packageData, objectNew( \
             'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
             'Language', '[' + packageType + '](' + packageURL + ')', \
@@ -184,7 +199,15 @@ async function downloadsDashboard(packageName, packageType)
 
     # Aggregate by month
     dataCalculatedField(data, 'month', 'dateFn(year(date), month(date), 1)', objectNew('dateFn', datetimeNew))
-    dataMonth = dataAggregate(data, 'downloads', 'sum', arrayNew('month', 'category'))
+    dataMonth = dataAggregate(data, objectNew( \
+        'categories', arrayNew('month', 'category'), \
+        'measures', arrayNew( \
+            objectNew( \
+                'field', 'downloads', \
+                'function', 'sum' \
+            ) \
+        ) \
+    ))
 
     # Render the monthly line chart
     dataLineChart(dataMonth, objectNew( \
