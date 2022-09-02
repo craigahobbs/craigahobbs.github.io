@@ -18,6 +18,8 @@
 
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
 
+[Package Downloads Dashboard](https://craigahobbs.github.io/downloads/)
+
 [Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/doc/)
 
 [Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md)
