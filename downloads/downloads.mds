@@ -179,7 +179,7 @@ async function downloadsDashboard(packageName, packageType)
         'height', chartHeight, \
         'x', 'date', \
         'y', arrayNew('downloads'), \
-        'ytick', objectNew('start', 0), \
+        'yTicks', objectNew('start', 0), \
         'datetime', 'day', \
         'precision', 0 \
     ))
@@ -192,7 +192,7 @@ async function downloadsDashboard(packageName, packageType)
         'x', 'date', \
         'y', arrayNew('downloads'), \
         'color', 'category', \
-        'ytick', objectNew('start', 0), \
+        'yTicks', objectNew('start', 0), \
         'datetime', 'day', \
         'precision', 0 \
     ))
@@ -217,7 +217,7 @@ async function downloadsDashboard(packageName, packageType)
         'x', 'month', \
         'y', arrayNew('downloads'), \
         'color', 'category', \
-        'ytick', objectNew('start', 0), \
+        'yTicks', objectNew('start', 0), \
         'datetime', 'month', \
         'precision', 0 \
     ))
