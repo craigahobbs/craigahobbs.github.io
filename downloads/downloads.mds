@@ -124,7 +124,7 @@ async function downloadsDashboard(packageName, packageType)
     chartHeight = 250
 
     # Render the daily running average chart
-    downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
+    downloadsWindowMenu(arrayNew(7, 15, 21, 31))
     dataLineChart(dataAvg, objectNew( \
         'title', 'Average Daily Downloads (' + windowSize + ' day window) - ' + packageName, \
         'width', chartWidth - mathFloor(1.5 * getTextWidth('with_mirrors', getTextHeight('', 0))), \
