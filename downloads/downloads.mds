@@ -107,14 +107,14 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         arrayPush(packageData, objectNew( \
             'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
             'Language', '[' + packageType + '](' + packageURL + ')', \
-            'Monthly Downloads', objectGet(arrayGet(dataMonthMax, 0), 'downloads') \
+            'Downloads', objectGet(arrayGet(dataMonthMax, 0), 'downloads') \
         ))
 
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(dataURLs)) dataLoop
 
     # Render the rankings chart
-    dataSort(packageData, arrayNew(arrayNew('Monthly Downloads', true)))
+    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
     dataTable(packageData, objectNew('markdown', arrayNew('Package', 'Language')))
 endfunction
 
