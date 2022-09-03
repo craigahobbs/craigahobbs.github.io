@@ -64,18 +64,12 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         monthly = dataAggregate(data, objectNew( \
             'categories', arrayNew('year', 'month'), \
             'measures', arrayNew( \
-                objectNew( \
-                    'field', 'downloads', \
-                    'function', 'sum' \
-                ) \
+                objectNew('field', 'downloads', 'function', 'sum') \
             ) \
         ))
         monthlyMax = dataAggregate(monthly, objectNew( \
             'measures', arrayNew( \
-                objectNew( \
-                    'field', 'downloads', \
-                    'function', 'max' \
-                ) \
+                objectNew('field', 'downloads', 'function', 'max') \
             ) \
         ))
         arrayPush(packageData, objectNew( \
@@ -156,20 +150,19 @@ async function downloadsDashboard(packageName, packageType)
     ))
 
     # Aggregate by month
-    dataCalculatedField(data, 'month', 'dateFn(year(date), month(date), 1)', objectNew('dateFn', datetimeNew))
+    dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)', objectNew('datetimeNew', datetimeNew))
     monthly = dataAggregate(data, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'measures', arrayNew( \
-            objectNew( \
-                'field', 'downloads', \
-                'function', 'sum' \
-            ) \
+            objectNew('field', 'downloads', 'function', 'sum') \
         ) \
     ))
-    monthly = dataFilter(monthly, 'month < date(year(now), month(now), 1)', objectNew('now', datetimeNow()))
+    today = datetimeToday()
+    currentMonth = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
+    monthlyComplete = dataFilter(monthly, 'month < currentMonth', objectNew('currentMonth', currentMonth))
 
     # Render the monthly line chart
-    dataLineChart(monthly, objectNew( \
+    dataLineChart(monthlyComplete, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
