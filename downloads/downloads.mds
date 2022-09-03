@@ -4,19 +4,12 @@
 
 async function downloadsMain(javascriptPackages, pythonPackages)
     # Menu
-    jumpif (vName != null) menuPackage
-        markdownPrint('[Home](..)', '')
-        jump menuDone
-    menuPackage:
-        markdownPrint('[Rankings](#var=)', '')
-        downloadsPackageMenu(javascriptPackages, 'JavaScript')
-        downloadsPackageMenu(pythonPackages, 'Python')
-        downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
-    menuDone:
+    markdownPrint(if(vName != null, '[Rankings](#var=)', '[Home](..)'))
 
     # Document title
-    title = if(vType != null, vType, '') + ' Package Downloads' + if(vName != null, ' - ' + vName, '')
+    title = if(vType != null, vName + ' Downloads', 'Package Downloads')
     markdownPrint('', '# ' + title)
+    downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
     setDocumentTitle(title)
 
     # Package dashboard
@@ -24,24 +17,8 @@ async function downloadsMain(javascriptPackages, pythonPackages)
 endfunction
 
 
-function downloadsPackageMenu(packages, packageType)
-    markdownPrint('**' + packageType + ':**')
-    ixPackage = 0
-    packageLoop:
-        packageName = arrayGet(packages, ixPackage)
-        if(ixPackage != 0, markdownPrint('**|**'))
-        markdownPrint( \
-            if(vName == packageName && vType == packageType, packageName, \
-                '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')') + \
-            if(ixPackage == arrayLength(packages) - 1, '  ', '') \
-        )
-        ixPackage = ixPackage + 1
-    jumpif (ixPackage < arrayLength(packages)) packageLoop
-endfunction
-
-
 function downloadsWindowMenu(windows)
-    markdownPrint('**Window:**')
+    markdownPrint('', '**Window:**')
     ixWindow = 0
     windowLoop:
         window = arrayGet(windows, ixWindow)
