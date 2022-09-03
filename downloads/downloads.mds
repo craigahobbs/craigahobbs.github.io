@@ -3,45 +3,19 @@
 
 
 async function downloadsMain(javascriptPackages, pythonPackages)
-    # Menu
-    markdownPrint(if(vName != null, '[Rankings](#var=)', '[Home](..)'))
-
-    # Document title
-    title = if(vType != null, vName + ' Downloads', 'Package Downloads')
-    markdownPrint('', '# ' + title)
-    downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
-    setDocumentTitle(title)
-
-    # Package dashboard
-    if(vName != null, downloadsDashboard(vName, vType), downloadsRankings(javascriptPackages, pythonPackages))
-endfunction
-
-
-function downloadsWindowMenu(windows)
-    markdownPrint('', '**Window:**')
-    ixWindow = 0
-    windowLoop:
-        window = arrayGet(windows, ixWindow)
-        if(ixWindow != 0, markdownPrint('**|**'))
-        markdownPrint(if(vWindow == window, window + ' days', '[' + window + ' days](' + downloadsLink(null, null, window) + ')'))
-        ixWindow = ixWindow + 1
-    jumpif (ixWindow < arrayLength(windows)) windowLoop
-endfunction
-
-
-function downloadsLink(name, type, window)
-    name = if(name != null, name, vName)
-    type = if(type != null, type, vType)
-    window = if(window != null, window, vWindow)
-    parts = arrayNew()
-    if(name != null, arrayPush(parts, "var.vName='" + name + "'"))
-    if(type != null, arrayPush(parts, "var.vType='" + type + "'"))
-    if(window != null, arrayPush(parts, 'var.vWindow=' + window))
-    return if(arrayLength(parts) == 0, '#var=', '#' + arrayJoin(parts, '&'))
+    markdownPrint(if(vName != null, '[Rankings](#var=)', '[Home](..)'), '')
+    title = if(vName != null, \
+        downloadsDashboard(vName, vType), \
+        downloadsRankings(javascriptPackages, pythonPackages))
 endfunction
 
 
 async function downloadsRankings(javascriptPackages, pythonPackages)
+    # Document title
+    title = 'Package Downloads'
+    markdownPrint('', '# ' + title)
+    setDocumentTitle(title)
+
     # Compute the list of package raw data URLs
     dataURLs = arrayNew()
     dataInfo = arrayNew()
@@ -87,7 +61,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         # Compute the maximum monthly downloads
         dataCalculatedField(data, 'year', 'year(date)')
         dataCalculatedField(data, 'month', 'month(date)')
-        dataMonth = dataAggregate(data, objectNew( \
+        monthly = dataAggregate(data, objectNew( \
             'categories', arrayNew('year', 'month'), \
             'measures', arrayNew( \
                 objectNew( \
@@ -96,7 +70,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
                 ) \
             ) \
         ))
-        dataMonthMax = dataAggregate(dataMonth, objectNew( \
+        monthlyMax = dataAggregate(monthly, objectNew( \
             'measures', arrayNew( \
                 objectNew( \
                     'field', 'downloads', \
@@ -107,7 +81,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         arrayPush(packageData, objectNew( \
             'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
             'Language', '[' + packageType + '](' + packageURL + ')', \
-            'Downloads', objectGet(arrayGet(dataMonthMax, 0), 'downloads') \
+            'Downloads', objectGet(arrayGet(monthlyMax, 0), 'downloads') \
         ))
 
         ixPackage = ixPackage + 1
@@ -120,8 +94,10 @@ endfunction
 
 
 async function downloadsDashboard(packageName, packageType)
-    chartWidth = 1000
-    chartHeight = 250
+    # Document title
+    title = packageName + ' Downloads'
+    markdownPrint('', '# ' + title)
+    setDocumentTitle(title)
 
     # Load and validate the package data
     data = if(packageType == 'Python', \
@@ -149,7 +125,12 @@ async function downloadsDashboard(packageName, packageType)
         ixDay = ixDay + 1
     jumpif (ixDay < arrayLength(dataWithMirrors) - windowSizeHalf) dayLoop
 
+    # Chart constants
+    chartWidth = 1000
+    chartHeight = 250
+
     # Render the daily running average chart
+    downloadsWindowMenu(arrayNew(7, 15, 21, 31, 45))
     dataLineChart(dataAvg, objectNew( \
         'title', 'Average Daily Downloads (' + windowSize + ' day window) - ' + packageName, \
         'width', chartWidth - mathFloor(1.5 * getTextWidth('with_mirrors', getTextHeight('', 0))), \
@@ -176,7 +157,7 @@ async function downloadsDashboard(packageName, packageType)
 
     # Aggregate by month
     dataCalculatedField(data, 'month', 'dateFn(year(date), month(date), 1)', objectNew('dateFn', datetimeNew))
-    dataMonth = dataAggregate(data, objectNew( \
+    monthly = dataAggregate(data, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'measures', arrayNew( \
             objectNew( \
@@ -185,9 +166,10 @@ async function downloadsDashboard(packageName, packageType)
             ) \
         ) \
     ))
+    monthly = dataFilter(monthly, 'month < date(year(now), month(now), 1)', objectNew('now', datetimeNow()))
 
     # Render the monthly line chart
-    dataLineChart(dataMonth, objectNew( \
+    dataLineChart(monthly, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
@@ -200,11 +182,35 @@ async function downloadsDashboard(packageName, packageType)
     ))
 
     # Render the monthly table by most recent
-    dataSort(dataMonth, arrayNew(arrayNew('month', true), arrayNew('category')))
-    dataTable(dataMonth, objectNew( \
+    dataSort(monthly, arrayNew(arrayNew('month', true), arrayNew('category')))
+    dataTable(monthly, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'datetime', 'month' \
     ))
+endfunction
+
+
+function downloadsWindowMenu(windows)
+    markdownPrint('', '**Window:**')
+    ixWindow = 0
+    windowLoop:
+        window = arrayGet(windows, ixWindow)
+        if(ixWindow != 0, markdownPrint('**|**'))
+        markdownPrint(if(vWindow == window, window + ' days', '[' + window + ' days](' + downloadsLink(null, null, window) + ')'))
+        ixWindow = ixWindow + 1
+    jumpif (ixWindow < arrayLength(windows)) windowLoop
+endfunction
+
+
+function downloadsLink(name, type, window)
+    name = if(name != null, name, vName)
+    type = if(type != null, type, vType)
+    window = if(window != null, window, vWindow)
+    parts = arrayNew()
+    if(name != null, arrayPush(parts, "var.vName='" + name + "'"))
+    if(type != null, arrayPush(parts, "var.vType='" + type + "'"))
+    if(window != null, arrayPush(parts, 'var.vWindow=' + window))
+    return if(arrayLength(parts) == 0, '#var=', '#' + arrayJoin(parts, '&'))
 endfunction
 
 
