@@ -22,7 +22,7 @@
 
 [Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/doc/)
 
-[Solar Dashboard](https://craigahobbs.github.io/solar/#url=solar.md&var.vPage='Solar')
+[Solar Dashboard](https://craigahobbs.github.io/solar/)
 
 [Sunrise Dashboard](https://craigahobbs.github.io/sunrise/#url=sunrise.md)
 
