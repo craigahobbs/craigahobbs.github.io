@@ -3,7 +3,7 @@
 
 
 async function downloadsMain(javascriptPackages, pythonPackages)
-    markdownPrint(if(vName != null, '[Rankings](#var=)', '[Home](..)'), '')
+    if(vName != null, markdownPrint('[Rankings](#var=)'))
     title = if(vName != null, \
         downloadsDashboard(vName, vType), \
         downloadsRankings(javascriptPackages, pythonPackages))
@@ -98,33 +98,42 @@ async function downloadsDashboard(packageName, packageType)
         downloadsPythonDataValidate(fetch(downloadsPythonDataURL(packageName)), packageName), \
         downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)), packageName))
 
+    # Render the window size menu
+    windowSizes = arrayNew(10, 15, 20, 30)
+    windowSize = if(vWindow != null, vWindow, arrayGet(windowSizes, 1))
+    markdownPrint('', '**Window:**')
+    ixWindow = 0
+    windowLoop:
+        window = arrayGet(windowSizes, ixWindow)
+        if(ixWindow != 0, markdownPrint('|'))
+        markdownPrint(if(window == windowSize, window + ' days', '[' + window + ' days](' + downloadsLink(null, null, window) + ')'))
+        ixWindow = ixWindow + 1
+    jumpif (ixWindow < arrayLength(windowSizes)) windowLoop
+
     # Compute the with-mirrors three-week daily running average
-    windowSize = if(vWindow != null, vWindow, 21)
-    windowSizeHalf = (windowSize - 1) / 2
-    ixDay = windowSizeHalf
+    ixDay = windowSize
     dataAvg = arrayNew()
     dataWithMirrors = dataFilter(data, 'category == "with_mirrors"')
     dataSort(dataWithMirrors, arrayNew(arrayNew('date')))
     dayLoop:
         avgSum = 0
-        ixDayAvg = ixDay - windowSizeHalf
+        ixDayAvg = ixDay - windowSize + 1
         dayAvgLoop:
             avgSum = avgSum + objectGet(arrayGet(dataWithMirrors, ixDayAvg), 'downloads')
             ixDayAvg = ixDayAvg + 1
-        jumpif (ixDayAvg < ixDay + windowSizeHalf + 1) dayAvgLoop
+        jumpif (ixDayAvg <= ixDay) dayAvgLoop
         arrayPush(dataAvg, objectNew( \
             'date', objectGet(arrayGet(dataWithMirrors, ixDay), 'date'), \
             'downloads', avgSum / windowSize \
         ))
         ixDay = ixDay + 1
-    jumpif (ixDay < arrayLength(dataWithMirrors) - windowSizeHalf) dayLoop
+    jumpif (ixDay < arrayLength(dataWithMirrors)) dayLoop
 
     # Chart constants
     chartWidth = 1000
     chartHeight = 250
 
     # Render the daily running average chart
-    downloadsWindowMenu(arrayNew(7, 15, 21, 31))
     dataLineChart(dataAvg, objectNew( \
         'title', 'Average Daily Downloads (' + windowSize + ' day window) - ' + packageName, \
         'width', chartWidth - mathFloor(1.5 * getTextWidth('with_mirrors', getTextHeight('', 0))), \
@@ -180,18 +189,6 @@ async function downloadsDashboard(packageName, packageType)
         'categories', arrayNew('month', 'category'), \
         'datetime', 'month' \
     ))
-endfunction
-
-
-function downloadsWindowMenu(windows)
-    markdownPrint('', '**Window:**')
-    ixWindow = 0
-    windowLoop:
-        window = arrayGet(windows, ixWindow)
-        if(ixWindow != 0, markdownPrint('**|**'))
-        markdownPrint(if(vWindow == window, window + ' days', '[' + window + ' days](' + downloadsLink(null, null, window) + ')'))
-        ixWindow = ixWindow + 1
-    jumpif (ixWindow < arrayLength(windows)) windowLoop
 endfunction
 
 
