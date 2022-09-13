@@ -18,7 +18,7 @@ define JAVASCRIPT_DATA_RULE
 .PHONY: javascript-$(strip $1)
 javascript-$(strip $1):
 	$(call WGET_CMD, \
-		"https://npm-stat.com/api/download-counts?package=$(strip $1)"`python -c "$$$$JAVASCRIPT_RANGE"`, \
+		"https://npm-stat.com/api/download-counts?package=$(strip $1)"`python3 -c "$$$$JAVASCRIPT_RANGE"`, \
 		data/javascript-$(strip $1).json)
 
 .PHONY: data
