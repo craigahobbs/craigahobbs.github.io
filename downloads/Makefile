@@ -17,9 +17,10 @@ WGET_CMD = if which wget; then wget -q -c -O $(2) $(1); else curl -f -s -o $(2) 
 define JAVASCRIPT_DATA_RULE
 .PHONY: javascript-$(strip $1)
 javascript-$(strip $1):
-	$(call WGET_CMD, \
+	@echo Downloading data/javascript-$(strip $1).json
+	@WGET_OUTPUT=$$$$($(call WGET_CMD, \
 		"https://npm-stat.com/api/download-counts?package=$(strip $1)"`python3 -c "$$$$JAVASCRIPT_RANGE"`, \
-		data/javascript-$(strip $1).json)
+		data/javascript-$(strip $1).json))
 
 .PHONY: data
 data: javascript-$(strip $1)
@@ -40,9 +41,10 @@ export JAVASCRIPT_RANGE
 define PYTHON_DATA_RULE
 .PHONY: python-$(strip $1)
 python-$(strip $1):
-	$(call WGET_CMD, \
+	@echo Downloading data/python-$(strip $1).json
+	@WGET_OUTPUT=$$$$($(call WGET_CMD, \
 		"https://pypistats.org/api/packages/$(strip $1)/overall", \
-		data/python-$(strip $1).json)
+		data/python-$(strip $1).json))
 
 .PHONY: data
 data: python-$(strip $1)
