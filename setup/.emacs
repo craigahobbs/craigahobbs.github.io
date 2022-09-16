@@ -59,7 +59,12 @@
  '(column-number-mode t)
  '(compilation-scroll-output t)
  '(compile-command "make ")
- '(default-frame-alist '((width . 120) (height . 55) (tool-bar-lines . 0)))
+ '(default-frame-alist
+    '((width . 120)
+      (height . 55)
+      (tool-bar-lines . 0)
+      (foreground-color . "white")
+      (background-color . "black")))
  '(fill-column 100)
  '(global-auto-revert-mode t nil (autorevert))
  '(global-whitespace-mode t)
