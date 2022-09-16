@@ -1,5 +1,3 @@
-# Happy Holidays
-
 ~~~ markdown-script
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
@@ -7,8 +5,11 @@
 
 function main()
     # Menu
+    setDocumentTitle('Happy Holidays')
     jumpif (vPrint) skipMenu
         markdownPrint( \
+            '# Happy Holidays', \
+            '', \
             '[Reset](#var=) |', \
             '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
             '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
