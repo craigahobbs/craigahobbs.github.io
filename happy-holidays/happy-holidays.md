@@ -4,6 +4,10 @@
 
 
 function main()
+    # Set the title
+    titleText = if(vMessage, vMessage, 'Happy Holidays!')
+    setDocumentTitle(titleText)
+
     # Menu
     jumpif (vPrint) skipMenu
         markdownPrint( \
@@ -28,14 +32,12 @@ function main()
     shapes(blueEllipse, 15, 0.015)
 
     # Measure the title box height
-    titleText = if(vMessage, vMessage, 'Happy Holidays!')
     titleBoxWidth = 0.8 * getDrawingWidth()
     titleTextWidth = 0.9 * titleBoxWidth
     titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * getDrawingHeight())
     titleBoxHeight = 3 * titleTextHeight
 
     # Draw the title
-    setDocumentTitle(titleText)
     drawStyle('black', 5, '#ff0000f0')
     drawRect(0.5 * getDrawingWidth() - 0.5 * titleBoxWidth, 0.5 * getDrawingHeight() - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
