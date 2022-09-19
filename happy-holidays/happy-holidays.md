@@ -5,11 +5,8 @@
 
 function main()
     # Menu
-    setDocumentTitle('Happy Holidays')
     jumpif (vPrint) skipMenu
         markdownPrint( \
-            '# Happy Holidays', \
-            '', \
             '[Reset](#var=) |', \
             '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
             '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
@@ -38,6 +35,7 @@ function main()
     titleBoxHeight = 3 * titleTextHeight
 
     # Draw the title
+    setDocumentTitle(titleText)
     drawStyle('black', 5, '#ff0000f0')
     drawRect(0.5 * getDrawingWidth() - 0.5 * titleBoxWidth, 0.5 * getDrawingHeight() - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
