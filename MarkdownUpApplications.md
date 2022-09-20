@@ -1,5 +1,3 @@
-[Home](#url=)
-
 # MarkdownUp Applications
 
 [CalcSript Library Documentation Viewer](https://craigahobbs.github.io/calc-script/library/)
