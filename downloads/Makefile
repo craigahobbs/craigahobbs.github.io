@@ -10,7 +10,7 @@ help:
 
 
 # Download command function
-WGET_CMD = if which wget; then wget -q -c -O $(2) $(1); else curl -f -s -o $(2) $(1); fi
+WGET_CMD = if which wget; then wget -q -c -O - $(1) > $(2); else curl -f -s -o $(2) $(1); fi
 
 
 # JavaScript package download rule
