@@ -30,9 +30,9 @@ endef
 # Python script to compute JavaScript download URL range arguments
 define JAVASCRIPT_RANGE
 import datetime
-today = datetime.date.today()
-year_ago = today.replace(year=today.year - 1)
-print(f"&from={year_ago.isoformat()}&until={today.isoformat()}")
+until_date = datetime.date.today()
+from_date = until_date.replace(month=until_date.month - 6)
+print(f"&from={from_date.isoformat()}&until={until_date.isoformat()}")
 endef
 export JAVASCRIPT_RANGE
 
