@@ -189,6 +189,7 @@ async function downloadsDashboard(packageName, packageType)
     dataSort(monthly, arrayNew(arrayNew('month', true), arrayNew('category')))
     dataTable(monthly, objectNew( \
         'categories', arrayNew('month', 'category'), \
+        'fields', arrayNew('downloads'), \
         'datetime', 'month' \
     ))
 endfunction
