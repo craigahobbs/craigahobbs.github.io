@@ -42,6 +42,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
     # Fetch the package raw data and validate
     dataRaw = fetch(dataURLs)
     packageData = arrayNew()
+    packageFields = arrayNew('Package', 'Language')
     ixPackage = 0
     dataLoop:
         packageName = objectGet(arrayGet(dataInfo, ixPackage), 'packageName')
@@ -58,7 +59,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         # Filter to only "with_mirrors"
         data = dataFilter(data, 'category == "with_mirrors"')
 
-        # Compute the maximum monthly downloads
+        # Compute the monthly downloads
         dataCalculatedField(data, 'year', 'year(date)')
         dataCalculatedField(data, 'month', 'month(date)')
         monthly = dataAggregate(data, objectNew( \
@@ -67,23 +68,33 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
                 objectNew('field', 'downloads', 'function', 'sum') \
             ) \
         ))
-        monthlyMax = dataAggregate(monthly, objectNew( \
-            'measures', arrayNew( \
-                objectNew('field', 'downloads', 'function', 'max') \
-            ) \
-        ))
-        arrayPush(packageData, objectNew( \
+        dataSort(monthly, arrayNew(arrayNew('Package'), arrayNew('year', true), arrayNew('month', true)))
+
+        # Add fields for the most recent three months downloads
+        ixMonth = 2
+        packageRow =  objectNew( \
             'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
-            'Language', '[' + packageType + '](' + packageURL + ')', \
-            'Downloads', objectGet(arrayGet(monthlyMax, 0), 'downloads') \
-        ))
+            'Language', '[' + packageType + '](' + packageURL + ')' \
+        )
+        arrayPush(packageData, packageRow)
+        monthLoop:
+            monthRow = arrayGet(monthly, ixMonth)
+            month = objectGet(monthRow, 'month')
+            monthField = objectGet(monthRow, 'year') + '-' + if(month < 10, '0', '') + month
+            if(ixPackage == 0, arrayPush(packageFields, monthField))
+            objectSet(packageRow, monthField, objectGet(monthRow, 'downloads'))
+            ixMonth = ixMonth - 1
+        jumpif (ixMonth >= 0) monthLoop
 
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(dataURLs)) dataLoop
 
     # Render the rankings chart
-    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
-    dataTable(packageData, objectNew('markdown', arrayNew('Package', 'Language')))
+    dataSort(packageData, arrayNew(arrayNew(arrayGet(packageFields, arrayLength(packageFields) - 1), true)))
+    dataTable(packageData, objectNew( \
+        'fields', packageFields, \
+        'markdown', arrayNew('Package', 'Language') \
+    ))
 endfunction
 
 
