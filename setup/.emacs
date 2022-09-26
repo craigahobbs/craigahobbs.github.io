@@ -16,13 +16,12 @@
   (package-install `js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
-;; calc-script-mode
-(unless (package-installed-p 'calc-script-mode)
-  (let ((mode-file (make-temp-file "calc-script-mode")))
-    (url-copy-file "https://craigahobbs.github.io/calc-script/language/calc-script-mode.el" mode-file t)
+;; calcscript-mode
+(unless (package-installed-p 'calcscript-mode)
+  (let ((mode-file (make-temp-file "calcscript-mode")))
+    (url-copy-file "https://craigahobbs.github.io/calc-script/language/calcscript-mode.el" mode-file t)
     (package-install-file mode-file)
     (delete-file mode-file)))
-(add-to-list 'auto-mode-alist '("\\.mds?\\'" . calc-script-mode))
 
 ;; schema-markdown-mode
 (unless (package-installed-p 'schema-markdown-mode)
@@ -30,7 +29,6 @@
     (url-copy-file "https://craigahobbs.github.io/schema-markdown-js/language/schema-markdown-mode.el" mode-file t)
     (package-install-file mode-file)
     (delete-file mode-file)))
-(add-to-list 'auto-mode-alist '("\\.smd?\\'" . schema-markdown-mode))
 
 ;; Activate Savehist mode
 (savehist-mode 1)
@@ -41,9 +39,6 @@
 ;; Enable global upcase/downcase commands
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
-
-;; Use text-mode to edit Markdown files
-(add-to-list 'auto-mode-alist '("\\.md\\'" . text-mode))
 
 
 ;;;
