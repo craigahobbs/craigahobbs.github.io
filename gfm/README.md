@@ -2,6 +2,7 @@
 
 ## Links
 
+- [Edit](https://github.com/craigahobbs/craigahobbs.github.io/edit/main/gfm/README.md)
 - [GitHub Flavored Markdown Spec](https://github.github.com/gfm/)
 - [Markdown Guide](https://www.markdownguide.org/basic-syntax/)
 - [Basic writing and formatting syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
