@@ -17,9 +17,8 @@ data = dataParseCSV( \
     '0,3,3,blockquotes', \
     '0,1,1,ordered list - check', \
     '0,1,1,images - check', \
-    '0,3,2,code spans (`)', \
+    '1,3,2,code spans (`)', \
     '0,1,1,links - check', \
-    '0,3,2,URL and email address autolinks (<>)', \
     '0,1,3,reference-style links', \
     '0,1,1,escapes - check', \
     "0,2,1,\"strikethrough, subscript, superscript\"", \
