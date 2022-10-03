@@ -23,9 +23,9 @@ data = dataParseCSV( \
     '0,1,1,escapes - check', \
     "0,2,1,\"strikethrough, subscript, superscript\"", \
     '0,2,2,footnotes', \
-    '0,2,2,HTML comments', \
+    '0,2,1,HTML comments', \
     '1,3,3,tables', \
-    '0,2,2,entity and numeric character references' \
+    '0,2,1,entity and numeric character references' \
 )
 
 dataCalculatedField(data, 'DescriptionLower', 'lower(Description)')
