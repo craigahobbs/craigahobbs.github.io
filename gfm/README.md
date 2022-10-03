@@ -19,10 +19,10 @@ data = dataParseCSV( \
     '0,1,1,images - check', \
     '1,3,2,code spans (`)', \
     '0,1,1,links - check', \
-    '0,1,3,reference-style links', \
+    '0,2,2,reference-style links', \
     '0,1,1,escapes - check', \
     "0,2,1,\"strikethrough, subscript, superscript\"", \
-    '0,1,3,footnotes', \
+    '0,2,2,footnotes', \
     '0,2,2,HTML comments', \
     '1,3,3,tables', \
     '0,2,2,entity and numeric character references' \
