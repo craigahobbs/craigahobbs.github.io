@@ -24,7 +24,7 @@ data = dataParseCSV( \
     "0,2,1,\"strikethrough, subscript, superscript\"", \
     '0,1,3,footnotes', \
     '0,2,2,HTML comments', \
-    '0,3,3,tables', \
+    '1,3,3,tables', \
     '0,2,2,entity and numeric character references' \
 )
 
