@@ -181,7 +181,7 @@ async function downloadsDashboard(packageName, packageType)
         'y', arrayNew('downloads'), \
         'color', 'category', \
         'yTicks', objectNew('start', 0), \
-        'datetime', 'month', \
+        'datetime', 'day', \
         'precision', 0 \
     ))
 
