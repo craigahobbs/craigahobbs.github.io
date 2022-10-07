@@ -10,16 +10,13 @@
 ~~~ markdown-script
 data = dataParseCSV( \
     'Done,Priority,Effort,Description', \
-    '0,1,1,line-breaks - check', \
     '0,2,1,bold/italic - underscores', \
-    '1,3,3,block quotes', \
-    '0,1,1,ordered list - check', \
-    '0,1,1,images - check', \
-    '1,3,2,code spans (`)', \
-    '0,1,1,links - check', \
-    '0,1,1,escapes - check', \
     "0,2,1,\"strikethrough\"", \
-    '1,3,3,tables' \
+    '0,2,2,markdown spec review and unit tests', \
+    '0,1,1,code review and performance testing', \
+    '1,3,2,code spans (`)', \
+    '1,3,3,tables', \
+    '1,3,3,block quotes' \
 )
 
 dataCalculatedField(data, 'DescriptionLower', 'lower(Description)')
