@@ -22,8 +22,7 @@ data = dataParseCSV( \
     "0,2,1,\"strikethrough\"", \
     '0,2,2,footnotes', \
     '0,2,1,HTML comments', \
-    '1,3,3,tables', \
-    '0,2,1,entity and numeric character references' \
+    '1,3,3,tables' \
 )
 
 dataCalculatedField(data, 'DescriptionLower', 'lower(Description)')
