@@ -19,7 +19,6 @@ data = dataParseCSV( \
     '0,1,1,links - check', \
     '0,1,1,escapes - check', \
     "0,2,1,\"strikethrough\"", \
-    '0,2,2,footnotes', \
     '1,3,3,tables' \
 )
 
