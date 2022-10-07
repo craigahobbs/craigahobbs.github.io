@@ -14,7 +14,7 @@ data = dataParseCSV( \
     'Done,Priority,Effort,Description', \
     '0,1,1,line-breaks - check', \
     '0,2,1,bold/italic - underscores', \
-    '0,3,3,blockquotes', \
+    '1,3,3,blockquotes', \
     '0,1,1,ordered list - check', \
     '0,1,1,images - check', \
     '1,3,2,code spans (`)', \
