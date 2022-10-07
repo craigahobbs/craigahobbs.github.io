@@ -33,9 +33,9 @@ dataSort(data, arrayNew(arrayNew('Priority', true), arrayNew('Effort'), arrayNew
 dataNotDone = dataFilter(data, '!Done')
 dataDone = dataFilter(data, 'Done')
 
-notDoneEffort = dataAggregate(dataNotDone, objectNew('measures', arrayNew(objectNew('field', 'Effort', 'function', 'sum'))))
+totalEffort = dataAggregate(data, objectNew('measures', arrayNew(objectNew('field', 'Effort', 'function', 'sum'))))
 doneEffort = dataAggregate(dataDone, objectNew('measures', arrayNew(objectNew('field', 'Effort', 'function', 'sum'))))
-donePercent = 100 * objectGet(arrayGet(doneEffort, 0), 'Effort') / objectGet(arrayGet(notDoneEffort, 0), 'Effort')
+donePercent = 100 * objectGet(arrayGet(doneEffort, 0), 'Effort') / objectGet(arrayGet(totalEffort, 0), 'Effort')
 
 dataTable(dataNotDone, objectNew('fields', arrayNew('Priority', 'Effort', 'Description')))
 jumpif (arrayLength(dataDone) == 0) doneNone
