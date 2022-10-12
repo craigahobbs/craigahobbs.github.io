@@ -15,7 +15,7 @@ data = dataParseCSV( \
     '0,2,2,markdown spec review and unit tests', \
     '0,1,1,code review and performance testing', \
     '0,1,1,update readme with markdown flavor information', \
-    '1,3,2,code spans (`)', \
+    '1,3,2,code spans', \
     '1,3,3,tables', \
     '1,3,3,block quotes' \
 )
