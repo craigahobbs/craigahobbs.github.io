@@ -10,7 +10,7 @@
 ~~~ markdown-script
 data = dataParseCSV( \
     'Done,Priority,Effort,Description', \
-    '0,2,1,bold/italic - underscores', \
+    '1,2,1,bold/italic - underscores', \
     "0,2,1,\"strikethrough\"", \
     '0,2,2,markdown spec review and unit tests', \
     '0,1,1,code review and performance testing', \
