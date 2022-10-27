@@ -233,6 +233,8 @@ function fruitFlyTrapDiagram()
 
     # Draw the fruit fly trap diagram
     setDrawingSize(width, height)
+    drawStyle('none', 0, 'white')
+    drawRect(0, 0, width, height)
 
     # Liquid
     drawStyle('none', 0, '#cc99ff80')
@@ -246,7 +248,7 @@ function fruitFlyTrapDiagram()
     drawVLine(glassTop)
 
     # Cone
-    drawStyle('black', lineWidth, 'white')
+    drawStyle('black', lineWidth, 'none')
     drawMove(coneTopLeft, coneTop)
     drawLine(coneBottomLeft, coneBottom)
     drawHLine(coneBottomRight)
