@@ -7,14 +7,14 @@ async function main()
     # Input schema documentation?
     jumpif (!vDocInput) noInputDoc
         markdownPrint('[Home](#var=)', '')
-        schemaPrint(tespoTypes, 'TespoInput')
+        elementModelRender(schemaElements(tespoTypes, 'TespoInput'))
         return
     noInputDoc:
 
     # Output schema documentation?
     jumpif (!vDocOutput) noOutputDoc
         markdownPrint('[Home](#var=)', '')
-        schemaPrint(tespoTypes, 'TespoOutput')
+        elementModelRender(schemaElements(tespoTypes, 'TespoOutput'))
         return
     noOutputDoc:
 
