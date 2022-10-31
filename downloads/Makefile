@@ -31,7 +31,7 @@ endef
 define JAVASCRIPT_RANGE
 import datetime
 until_date = datetime.date.today()
-from_date = until_date.replace(month=until_date.month - 6)
+from_date = until_date.replace(month=until_date.month - 6, day=1)
 print(f"&from={from_date.isoformat()}&until={until_date.isoformat()}")
 endef
 export JAVASCRIPT_RANGE
