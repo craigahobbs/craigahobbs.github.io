@@ -189,6 +189,8 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     # Draw the cone form
     edge = 5 * lineWidth
     setDrawingSize(2 * edge + formMaxX - formMinX, 2 * edge + formMaxY - formMinY)
+    drawStyle('none', 0, 'white')
+    drawRect(0, 0, getDrawingWidth(), getDrawingHeight())
     drawStyle('black', lineWidth, 'none', 3 * lineWidth + ' ' + 3 * lineWidth)
     drawMove(edge - formMinX, edge)
     drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > mathPi(), 1, edge + flapOuterX - formMinX, edge + formMaxY - flapOuterY)
