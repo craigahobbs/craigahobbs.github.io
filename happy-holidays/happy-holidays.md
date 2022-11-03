@@ -25,11 +25,11 @@ function main()
     setDrawingSize(if(vWidth, vWidth, 600), if(vHeight, vHeight, 300))
 
     # Draw the stars
-    shapes(skinnyStar, 10, 0.10)
-    shapes(chubbyStar, 30, 0.05)
-    shapes(grayBall, 15, 0.02)
-    shapes(purpleBall, 15, 0.01)
-    shapes(blueEllipse, 15, 0.015)
+    shapes(skinnyStar, 15, 0.10)
+    shapes(chubbyStar, 40, 0.05)
+    shapes(grayBall, 20, 0.02)
+    shapes(purpleBall, 20, 0.01)
+    shapes(blueEllipse, 20, 0.015)
 
     # Measure the title box height
     titleBoxWidth = 0.8 * getDrawingWidth()
@@ -38,7 +38,7 @@ function main()
     titleBoxHeight = 3 * titleTextHeight
 
     # Draw the title
-    drawStyle('black', 5, '#ff0000f0')
+    drawStyle('silver', 5, '#ff0000f0')
     drawRect(0.5 * getDrawingWidth() - 0.5 * titleBoxWidth, 0.5 * getDrawingHeight() - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
     drawText(titleText, 0.5 * getDrawingWidth(), 0.5 * getDrawingHeight())
@@ -62,7 +62,7 @@ endfunction
 
 
 function skinnyStar(x, y, size)
-    drawStyle('gray')
+    drawStyle('silver')
     drawMove(x + 0.5 * size, y)
     drawVLine(y + size)
     drawMove(x + 0.35 * size, y + 0.5 * size)
@@ -73,7 +73,7 @@ endfunction
 function chubbyStar(x, y, size)
     fillRand = mathRandom()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
-    drawStyle('black', 2, fill)
+    drawStyle('silver', 2, fill)
     drawMove(x, y)
     drawLine(x + 0.5 * size, y + 0.33 * size)
     drawLine(x + size, y)
@@ -89,7 +89,7 @@ endfunction
 function grayBall(x, y, size)
     fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c0c0c0', '#e0e0e0')
-    drawStyle('black', 2, fill)
+    drawStyle('silver', 2, fill)
     drawRect(x, y, size, size, 3, 3)
 endfunction
 
@@ -97,13 +97,13 @@ endfunction
 function purpleBall(x, y, size)
     fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c000c0', '#e000e0')
-    drawStyle('black', 2, fill)
+    drawStyle('silver', 2, fill)
     drawCircle(x, y, size)
 endfunction
 
 
 function blueEllipse(x, y, size)
-    drawStyle('black', 2, '#00c0f0')
+    drawStyle('silver', 2, '#00c0f0')
     drawEllipse(x, y, size, 0.5 * size)
 endfunction
 
