@@ -5,7 +5,7 @@
 MAKEJ ?= -j
 
 
-.PHONY: changed clean commit help pull report superclean
+.PHONY: changed clean commit gh-pages gh-pages-check help list pull superclean
 help:
 	@echo 'usage: make [changed|clean|commit|gh-pages|gh-pages-check|pull|report|superclean]'
 	@echo '            TYPE=[python|javascript|makefile|other]'
@@ -80,6 +80,15 @@ endif
 endif
 
 
+# list
+$(call PROJECT_RULE_HEADER, $(1), $(2), list)
+ifneq '$(VERBOSE)' ''
+	@echo '$(strip $(2)) ($(strip $(1)))'
+else
+	@echo '$(strip $(2))'
+endif
+
+
 # pull
 $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
 	if [ ! -d $$$$HOME/src/$(strip $(2)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(2)); fi
@@ -92,11 +101,6 @@ ifneq '$(strip $(1))' 'other'
 	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
 endif
 	cd $$$$HOME/src/$(strip $(2)) && git pull
-
-
-# report
-$(call PROJECT_RULE_HEADER, $(1), $(2), report)
-	@echo '$(strip $(2)) ($(strip $(1)))'
 
 
 # superclean
