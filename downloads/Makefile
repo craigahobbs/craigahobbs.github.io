@@ -13,30 +13,6 @@ help:
 WGET_CMD = if which wget; then wget -q -c -O - $(1) > $(2); else curl -f -s -o $(2) $(1); fi
 
 
-# JavaScript package download rule
-define JAVASCRIPT_DATA_RULE
-.PHONY: javascript-$(strip $1)
-javascript-$(strip $1):
-	@echo Downloading data/javascript-$(strip $1).json
-	@WGET_OUTPUT=$$$$($(call WGET_CMD, \
-		"https://npm-stat.com/api/download-counts?package=$(strip $1)"`python3 -c "$$$$JAVASCRIPT_RANGE"`, \
-		data/javascript-$(strip $1).json))
-
-.PHONY: data
-data: javascript-$(strip $1)
-endef
-
-
-# Python script to compute JavaScript download URL range arguments
-define JAVASCRIPT_RANGE
-import datetime
-until_date = datetime.date.today()
-from_date = until_date.replace(month=until_date.month - 6, day=1)
-print(f"&from={from_date.isoformat()}&until={until_date.isoformat()}")
-endef
-export JAVASCRIPT_RANGE
-
-
 # Python package download rule
 define PYTHON_DATA_RULE
 .PHONY: python-$(strip $1)
@@ -49,15 +25,6 @@ python-$(strip $1):
 .PHONY: data
 data: python-$(strip $1)
 endef
-
-
-# JavaScript package download rules
-$(eval $(call JAVASCRIPT_DATA_RULE, calc-script))
-$(eval $(call JAVASCRIPT_DATA_RULE, element-model))
-$(eval $(call JAVASCRIPT_DATA_RULE, markdown-model))
-$(eval $(call JAVASCRIPT_DATA_RULE, markdown-up))
-$(eval $(call JAVASCRIPT_DATA_RULE, schema-markdown-doc))
-$(eval $(call JAVASCRIPT_DATA_RULE, schema-markdown))
 
 
 # Python package download rules

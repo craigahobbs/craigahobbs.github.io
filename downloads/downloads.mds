@@ -209,7 +209,7 @@ endfunction
 
 function downloadsJavascriptDataURL(packageName)
     today = datetimeToday()
-    yearAgo = datetimeNew(datetimeYear(today) - 1, datetimeMonth(today), datetimeDay(today))
+    yearAgo = datetimeNew(datetimeYear(today), datetimeMonth(today) - 6, datetimeDay(today))
     return 'https://api.npmjs.org/downloads/range/' + \
         datetimeISOFormat(yearAgo, true) + ':' + datetimeISOFormat(today, true) + '/' + packageName
 endfunction
