@@ -208,30 +208,28 @@ endfunction
 
 
 function downloadsJavascriptDataURL(packageName)
-    #today = datetimeToday()
-    #yearAgo = datetimeNew(datetimeYear(today) - 1, datetimeMonth(today), datetimeDay(today))
-    #return 'https://npm-stat.com/api/download-counts?package=' + package + \
-    #    '&from=' + datetimeISOFormat(yearAgo, true) + '&until=' + datetimeISOFormat(today, true)
-    return 'data/javascript-' + packageName + '.json'
+    today = datetimeToday()
+    yearAgo = datetimeNew(datetimeYear(today) - 1, datetimeMonth(today), datetimeDay(today))
+    return 'https://api.npmjs.org/downloads/range/' + \
+        datetimeISOFormat(yearAgo, true) + ':' + datetimeISOFormat(today, true) + '/' + packageName
 endfunction
 
 
 function downloadsJavascriptDataValidate(dataRaw, packageName)
     # Reshape the data
     data = arrayNew()
-    downloadDates = objectGet(dataRaw, packageName)
-    jumpif (arrayLength(downloadDates) == 0) dataDone
-    dates = objectKeys(downloadDates)
-    ixDate = 0
-    dateLoop:
-        date = arrayGet(dates, ixDate)
+    downloads = objectGet(dataRaw, 'downloads')
+    jumpif (arrayLength(downloads) == 0) dataDone
+    ixDownload = 0
+    downloadLoop:
+        download = arrayGet(downloads, ixDownload)
         arrayPush(data, objectNew( \
-            'date', date, \
-            'downloads', objectGet(downloadDates, date), \
+            'date', objectGet(download, 'day'), \
+            'downloads', objectGet(download, 'downloads'), \
             'category', 'with_mirrors' \
         ))
-        ixDate = ixDate + 1
-    jumpif (ixDate < arrayLength(dates)) dateLoop
+        ixDownload = ixDownload + 1
+    jumpif (ixDownload < arrayLength(downloads)) downloadLoop
     dataDone:
 
     # Validate the data
