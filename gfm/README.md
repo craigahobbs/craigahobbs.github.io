@@ -10,7 +10,11 @@
 ~~~ markdown-script
 data = dataParseCSV( \
     'Done,Priority,Effort,Description', \
-    '0,   2,       2,     markdown spec review and unit tests', \
+    '0,   2,       2,     link reference definitions', \
+    '0,   2,       1,     entity and character references', \
+    '0,   2,       1,     hr spacing between paragraphs', \
+    '0,   2,       1,     fix lookbehind cases (in a branch)', \
+    '0,   3,       3,     markdown spec review and unit tests', \
     '0,   1,       1,     code review and performance testing', \
     '0,   1,       1,     update readme with markdown flavor information', \
     '1,   2,       1,     strikethrough', \
