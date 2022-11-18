@@ -7,7 +7,7 @@ MAKEJ ?= -j
 
 .PHONY: changed clean commit gh-pages gh-pages-check help list pull superclean
 help:
-	@echo 'usage: make [changed|clean|commit|gh-pages|gh-pages-check|pull|report|superclean]'
+	@echo 'usage: make [changed|clean|commit|gh-pages|gh-pages-check|help|list|pull|superclean]'
 	@echo '            TYPE=[python|javascript|makefile|other]'
 
 
@@ -82,11 +82,7 @@ endif
 
 # list
 $(call PROJECT_RULE_HEADER, $(1), $(2), list)
-ifneq '$(VERBOSE)' ''
-	@echo '$(strip $(2)) ($(strip $(1)))'
-else
 	@echo '$(strip $(2))'
-endif
 
 
 # pull
