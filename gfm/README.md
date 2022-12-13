@@ -9,8 +9,8 @@
 ~~~ markdown-script
 data = dataParseCSV( \
     'Done,Priority,Effort,Description', \
-    '0,   1,       1,     fix lookbehind cases (in a branch)', \
     '0,   1,       1,     update readme with markdown flavor information', \
+    '1,   1,       1,     fix lookbehind cases (in a branch)', \
     '1,   2,       2,     link reference definitions', \
     '1,   2,       1,     hr spacing between paragraphs', \
     '1,   1,       1,     code review and performance testing', \
