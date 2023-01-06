@@ -1,94 +1,20 @@
 ~~~ markdown-script
-# The Chaos Balls model
-ballsTypes = schemaParse( \
-    '# The Chaos Balls Model', \
-    'struct ChaosBalls', \
-    '', \
-    '    # The background color', \
-    '    string backgroundColor', \
-    '', \
-    '    # The border color', \
-    '    string borderColor', \
-    '', \
-    '    # The border size, as a ratio of width/height', \
-    '    float(>= 0, <= 0.2) borderSize', \
-    '', \
-    '    # The change period, in seconds', \
-    '    float period', \
-    '', \
-    '    # The ball groups', \
-    '    BallGroup[len > 0] groups', \
-    '', \
-    '# A Chaos Ball Group', \
-    'struct BallGroup', \
-    '', \
-    '    # The ball count', \
-    '    int count', \
-    '', \
-    '    # The ball color', \
-    '    string color', \
-    '', \
-    '    # The minimum size, as a ratio of the width/height', \
-    '    float(> 0, <= 0.5) minSize', \
-    '', \
-    '    # The maximum size, as a ratio of the width/height', \
-    '    float(> 0, <= 0.5) maxSize', \
-    '', \
-    '    # The minimum speed, as a ratio of the width/height per second', \
-    '    float(> 0, <= 0.5) minSpeed', \
-    '', \
-    '    # The maximum speed, as a ratio of the width/height per second', \
-    '    float(> 0, <= 0.5) maxSpeed', \
-    '', \
-    '# The Chaos Balls runtime model', \
-    'struct RuntimeBalls', \
-    '', \
-    '    # The Chaos Balls model', \
-    '    ChaosBalls chaosBalls', \
-    '', \
-    '    # The runtime balls', \
-    '    RuntimeBall[len > 0] balls', \
-    '', \
-    '# The runtime ball model', \
-    'struct RuntimeBall', \
-    '', \
-    '    # The ball color', \
-    '    string color', \
-    '', \
-    '    # The ball size, as a ratio of the width/height', \
-    '    float size', \
-    '', \
-    '    # The ball x-position, as a ratio of the width', \
-    '    float x', \
-    '', \
-    '    # The ball y-position, as a ratio of the height', \
-    '    float y', \
-    '', \
-    '    # The ball delta-x, as a ratio of the width', \
-    '    float dx', \
-    '', \
-    '    # The ball delta-y, as a ratio of the width', \
-    '    float dy', \
-    '' \
-)
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-# The default Chaos Balls configuration
-ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
-    'backgroundColor', 'white', \
-    'borderColor', 'blue', \
-    'borderSize', 0.05, \
-    'period', 0.05, \
-    'groups', arrayNew( \
-        objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
-        objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
-        objectNew('count', 30, 'color', '#ff000040', 'minSize', 0.1, 'maxSize', 0.2, 'minSpeed', 0.2, 'maxSpeed', 0.25) \
-    ) \
-))
+#
+# Chaos Balls - configurable animated chaos
+#
 
 
 async function ballsMain()
-    if(vURL != null, ballsOpen(vURL), ballsResize())
+    # Execute the command - or render the balls
+    if(vURL != null, ballsOpen(vURL), \
+    if(vDoc != null, ballsSpec(), \
+    ballsResize()))
+
+    # Set the window resize handler
     setWindowResize(ballsResize)
 endfunction
 
@@ -101,6 +27,12 @@ async function ballsOpen(url)
 endfunction
 
 
+function ballsSpec()
+    setDocumentTitle('ChaosBalls')
+    elementModelRender(schemaElements(ballsTypes, 'ChaosBalls'))
+endfunction
+
+
 function ballsResize()
     ballsTimeout(true)
 endfunction
@@ -108,6 +40,7 @@ endfunction
 
 function ballsTimeout(noMove)
     balls = ballsLoad()
+    setDocumentTitle('Chaos Balls')
     if(!noMove, ballsMove(balls))
     ballsDraw(balls)
     documentReset()
@@ -259,5 +192,96 @@ function ballsMove(balls)
 endfunction
 
 
+# The Chaos Balls model
+ballsTypes = schemaParse( \
+    '# The Chaos Balls Model', \
+    'struct ChaosBalls', \
+    '', \
+    '    # The background color', \
+    '    string backgroundColor', \
+    '', \
+    '    # The border color', \
+    '    string borderColor', \
+    '', \
+    '    # The border size, as a ratio of width/height', \
+    '    float(>= 0, <= 0.2) borderSize', \
+    '', \
+    '    # The change period, in seconds', \
+    '    float period', \
+    '', \
+    '    # The ball groups', \
+    '    BallGroup[len > 0] groups', \
+    '', \
+    '', \
+    '# A Chaos Ball Group', \
+    'struct BallGroup', \
+    '', \
+    '    # The ball count', \
+    '    int count', \
+    '', \
+    '    # The ball color', \
+    '    string color', \
+    '', \
+    '    # The minimum size, as a ratio of the width/height', \
+    '    float(> 0, <= 0.5) minSize', \
+    '', \
+    '    # The maximum size, as a ratio of the width/height', \
+    '    float(> 0, <= 0.5) maxSize', \
+    '', \
+    '    # The minimum speed, as a ratio of the width/height per second', \
+    '    float(> 0, <= 0.5) minSpeed', \
+    '', \
+    '    # The maximum speed, as a ratio of the width/height per second', \
+    '    float(> 0, <= 0.5) maxSpeed', \
+    '', \
+    '', \
+    '# The Chaos Balls runtime model', \
+    'struct RuntimeBalls', \
+    '', \
+    '    # The Chaos Balls model', \
+    '    ChaosBalls chaosBalls', \
+    '', \
+    '    # The runtime balls', \
+    '    RuntimeBall[len > 0] balls', \
+    '', \
+    '', \
+    '# The runtime ball model', \
+    'struct RuntimeBall', \
+    '', \
+    '    # The ball color', \
+    '    string color', \
+    '', \
+    '    # The ball size, as a ratio of the width/height', \
+    '    float size', \
+    '', \
+    '    # The ball x-position, as a ratio of the width', \
+    '    float x', \
+    '', \
+    '    # The ball y-position, as a ratio of the height', \
+    '    float y', \
+    '', \
+    '    # The ball delta-x, as a ratio of the width', \
+    '    float dx', \
+    '', \
+    '    # The ball delta-y, as a ratio of the width', \
+    '    float dy' \
+)
+
+
+# The default Chaos Balls configuration
+ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
+    'backgroundColor', 'white', \
+    'borderColor', 'blue', \
+    'borderSize', 0.05, \
+    'period', 0.05, \
+    'groups', arrayNew( \
+        objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
+        objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
+        objectNew('count', 30, 'color', '#ff000040', 'minSize', 0.1, 'maxSize', 0.2, 'minSpeed', 0.2, 'maxSpeed', 0.25) \
+    ) \
+))
+
+
+# Call the main entry point
 ballsMain()
 ~~~
