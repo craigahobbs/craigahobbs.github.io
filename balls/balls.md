@@ -4,81 +4,113 @@
 
 
 #
-# Chaos Balls - configurable animated chaos
+# Chaos Balls - configurable chaos
 #
 
 
 # Chaos Balls application main entry point
-async function ballsMain()
+async function chaosBallsMain()
+    # Set the default title
+    setDocumentTitle('Chaos Balls')
+
     # Execute the command - or render the balls
-    if(vURL != null, ballsOpen(vURL), \
-    if(vDoc, ballsDoc(), \
-    ballsResize()))
+    if(vURL != null, chaosBallsFetch(vURL), \
+        if(vDoc, chaosBallsDoc(), \
+        chaosBallsResize()))
 
     # Set the window resize handler
-    setWindowResize(ballsResize)
+    setWindowResize(chaosBallsResize)
 endfunction
 
 
-async function ballsOpen(url)
-    chaosBalls = if(!url, ballsDefault, schemaValidate(ballsTypes, 'ChaosBalls', fetch(url)))
-    balls = if(chaosBalls != null, ballsRuntime(chaosBalls))
-    if(balls != null, sessionStorageSet('balls', jsonStringify(balls)))
+# Fetch a Chaos Balls model
+async function chaosBallsFetch(url)
+    # Fetch and validate the model
+    modelJSON = fetch(url)
+    model = if(modelJSON != null, schemaValidate(ballsTypes, 'ChaosBalls', modelJSON))
+    jumpif (model != null) sessionOK
+        markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + url + '"')
+        if(modelJSON != null, markdownPrint('', '~~~', jsonStringify(modelJSON, 4), '~~~'))
+        return
+    sessionOK:
+
+    # Create the session state
+    session = chaosBallsNewSession(model)
+    sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
+
+    # Start the animation
     setWindowLocation('#var=')
 endfunction
 
 
-function ballsDoc()
-    setDocumentTitle('ChaosBalls')
+# Render the Chaos Balls model documentation
+function chaosBallsDoc()
+    setDocumentTitle('Chaos Balls Specification')
     elementModelRender(schemaElements(ballsTypes, 'ChaosBalls'))
 endfunction
 
 
-function ballsResize()
-    ballsTimeout(true)
+# Chaos Balls window resize handler
+function chaosBallsResize()
+    chaosBallsTimeout(true)
 endfunction
 
 
-function ballsTimeout(noMove)
-    balls = ballsLoad()
+# Chaos Balls animation timeout handler
+function chaosBallsTimeout(noMove)
+    # Get the session state
+    session = chaosBallsGetSession()
+
+    # Move the session balls (if necessary)
     period = 0.05
-    setDocumentTitle('Chaos Balls')
-    if(!noMove, ballsMove(balls, period))
-    ballsDraw(balls)
+    if(!noMove, chaosBallsMove(session, period))
+
+    # Render the balls
     documentReset()
-    if(vPlay, setWindowTimeout(ballsTimeout, period * 1000))
+    chaosBallsRender(session)
+
+    # Start the timer (unless paused)
+    if(!vPause, setWindowTimeout(chaosBallsTimeout, period * 1000))
 endfunction
 
 
-function ballsWidth()
+# Chaos Balls width helper
+function chaosBallsWidth()
     return getWindowWidth() - 4 * getTextHeight()
 endfunction
 
 
-function ballsHeight()
+# Chaos Balls height helper
+function chaosBallsHeight()
     return getWindowHeight() - 4 * getTextHeight()
 endfunction
 
 
-function ballsLoad()
-    balls = sessionStorageGet('balls')
-    balls = if(balls != null, schemaValidate(ballsTypes, 'ChaosBallsSession', jsonParse(balls)))
-    jumpif (balls != null) ballsDone
-        balls = ballsRuntime(ballsDefault)
-        sessionStorageSet('balls', jsonStringify(balls))
-    ballsDone:
-    return balls
+# Get the Chaos= Balls session object
+function chaosBallsGetSession()
+    # Parse and validate the session object
+    session = sessionStorageGet(chaosBallsSessionKey)
+    session = if(session != null, schemaValidate(ballsTypes, 'ChaosBallsSession', jsonParse(session)))
+
+    # If there is no session, create a default session
+    jumpif (session != null) sessionDone
+        session = chaosBallsNewSession(ballsDefault)
+        sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
+    sessionDone:
+
+    return session
 endfunction
 
 
-function ballsRuntime(chaosBalls)
-    ballsBalls = arrayNew()
-    balls = objectNew('model', chaosBalls, 'balls', ballsBalls)
+# Create a new Chaos Balls session object
+function chaosBallsNewSession(model)
+    balls = arrayNew()
+    session = objectNew('model', model, 'balls', balls)
 
     # Iterate the ball groups
     ixGroup = 0
-    groups = objectGet(chaosBalls, 'groups')
-    borderSize = objectGet(chaosBalls, 'borderSize')
+    groups = objectGet(model, 'groups')
+    borderSize = objectGet(model, 'borderSize')
     groupLoop:
         group = arrayGet(groups, ixGroup)
         groupCount = objectGet(group, 'count')
@@ -109,7 +141,7 @@ function ballsRuntime(chaosBalls)
             dy = speed * mathSin(speedAngle)
 
             # Add the ball
-            arrayPush(ballsBalls, objectNew('color', groupColor, 'size', size, 'x', x, 'y', y, 'dx', dx, 'dy', dy))
+            arrayPush(balls, objectNew('color', groupColor, 'size', size, 'x', x, 'y', y, 'dx', dx, 'dy', dy))
 
             ixBall = ixBall + 1
         jumpif (ixBall < groupCount) ballLoop
@@ -117,78 +149,89 @@ function ballsRuntime(chaosBalls)
         ixGroup = ixGroup + 1
     jumpif (ixGroup < arrayLength(groups)) groupLoop
 
-    return balls
+    return session
 endfunction
 
 
-function ballsDraw(balls)
-    width = ballsWidth()
-    height = ballsHeight()
+# Render the Chaos Balls
+function chaosBallsRender(session)
+    # Compute the width/height
+    width = chaosBallsWidth()
+    height = chaosBallsHeight()
     widthHeight = mathMin(width, height)
 
-    chaosBalls = objectGet(balls, 'model')
-    backgroundColor = objectGet(chaosBalls, 'backgroundColor')
-    borderColor = objectGet(chaosBalls, 'borderColor')
-    borderSize = objectGet(chaosBalls, 'borderSize')
-    borderSizePx = borderSize * widthHeight
-
+    # Render the background and border
+    model = objectGet(session, 'model')
+    borderSize = objectGet(model, 'borderSize') * widthHeight
     setDrawingSize(width, height)
-    drawStyle(borderColor, borderSizePx, backgroundColor)
-    drawRect(0.5 * borderSizePx, 0.5 * borderSizePx, width - borderSizePx, height - borderSizePx)
+    drawStyle(objectGet(model, 'borderColor'), borderSize, objectGet(model, 'backgroundColor'))
+    drawRect(0.5 * borderSize, 0.5 * borderSize, width - borderSize, height - borderSize)
 
+    # Render the balls
     ixBall = 0
-    ballsBalls = objectGet(balls, 'balls')
+    balls = objectGet(session, 'balls')
     ballLoop:
-        ball = arrayGet(ballsBalls, ixBall)
+        ball = arrayGet(balls, ixBall)
         drawStyle(null, 0, objectGet(ball, 'color'))
         drawCircle(objectGet(ball, 'x') * width, objectGet(ball, 'y') * height, 0.5 * objectGet(ball, 'size') * widthHeight)
         ixBall = ixBall + 1
-    jumpif (ixBall < arrayLength(ballsBalls)) ballLoop
+    jumpif (ixBall < arrayLength(balls)) ballLoop
 endfunction
 
 
-function ballsMove(balls, period)
-    width = ballsWidth()
-    height = ballsHeight()
+# Move the Chaos Balls
+function chaosBallsMove(session, period)
+    # Compute the width/height
+    width = chaosBallsWidth()
+    height = chaosBallsHeight()
     widthHeight = mathMin(width, height)
 
-    chaosBalls = objectGet(balls, 'model')
-    borderSize = objectGet(chaosBalls, 'borderSize') * widthHeight
+    # Compute the border size
+    model = objectGet(session, 'model')
+    borderSize = objectGet(model, 'borderSize') * widthHeight
 
+    # Move each ball
     ixBall = 0
-    ballsBalls = objectGet(balls, 'balls')
+    balls = objectGet(session, 'balls')
     ballLoop:
-        ball = arrayGet(ballsBalls, ixBall)
+        ball = arrayGet(balls, ixBall)
+
+        # Compute the ball size, position, and direction
         size = objectGet(ball, 'size') * widthHeight
         x = objectGet(ball, 'x') * width
         y = objectGet(ball, 'y') * height
-        dxR = objectGet(ball, 'dx')
-        dx = dxR * period * width
-        dyR = objectGet(ball, 'dy')
-        dy = dyR * period * height
+        dxParam = objectGet(ball, 'dx')
+        dx = dxParam * period * width
+        dyParam = objectGet(ball, 'dy')
+        dy = dyParam * period * height
 
+        # Compute the X and Y extents for this ball
         xMin = borderSize + 0.5 * size
         xMax = width - xMin
         yMin = borderSize + 0.5 * size
         yMax = height - yMin
 
+        # Compute the new X coordinate - adjust if out of bounds
         x = x + dx
-        dxR = if(x < xMin || x > xMax, -dxR, dxR)
+        dxParam = if(x < xMin || x > xMax, -dxParam, dxParam)
         x = if(x < xMin, xMin + (xMin - x), if(x > xMax, xMax - (x - xMax), x))
 
+        # Compute the new Y coordinate - adjust if out of bounds
         y = y + dy
-        dyR = if(y < yMin || y > yMax, -dyR, dyR)
+        dyParam = if(y < yMin || y > yMax, -dyParam, dyParam)
         y = if(y < yMin, yMin + (yMin - y), if(y > yMax, yMax - (y - yMax), y))
 
+        # Update the ball position and direction
         objectSet(ball, 'x', x / width)
         objectSet(ball, 'y', y / height)
-        objectSet(ball, 'dx', dxR)
-        objectSet(ball, 'dy', dyR)
+        objectSet(ball, 'dx', dxParam)
+        objectSet(ball, 'dy', dyParam)
 
         ixBall = ixBall + 1
-    jumpif (ixBall < arrayLength(ballsBalls)) ballLoop
+    jumpif (ixBall < arrayLength(balls)) ballLoop
 
-    sessionStorageSet('balls', jsonStringify(balls))
+    # Update the session storage
+    sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
 endfunction
 
 
@@ -265,6 +308,10 @@ ballsTypes = schemaParse( \
 )
 
 
+# The Chaos Ball session storage keys
+chaosBallsSessionKey = 'chaosBalls'
+
+
 # The default Chaos Balls configuration
 ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
     'backgroundColor', 'white', \
@@ -279,5 +326,5 @@ ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
 
 
 # Call the main entry point
-ballsMain()
+chaosBallsMain()
 ~~~
