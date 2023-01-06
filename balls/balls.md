@@ -1,170 +1,261 @@
 ~~~ markdown-script
-width = 1000
-height = 600
-borderColor = 'black'
-borderSize = 10
-ballsTimeoutMs = 25
-ballsSpeedX = 500
-ballsSpeedY = 300
-
-ballColorCount = 30
-ballSizeCount = 10
-ballColors = arrayNew('blue', 'green', 'red', 'lightblue', 'lightgreen', 'pink')
-ballSizeMin = 30
-ballSizeMax = 60
-
+# The Chaos Balls model
 ballsTypes = schemaParse( \
-    'struct RandomBalls', \
-    '    string(len > 0) borderSize', \
+    '# The Chaos Balls Model', \
+    'struct ChaosBalls', \
+    '', \
+    '    # The background color', \
+    '    string backgroundColor', \
+    '', \
+    '    # The border color', \
     '    string borderColor', \
-    '    RandomBall[len > 0] balls', \
     '', \
-    '# The random ball generator model', \
-    'struct RandomBall', \
+    '    # The border size, as a ratio of width/height', \
+    '    float(>= 0, <= 0.2) borderSize', \
     '', \
-    '    # The minimum X-delta as a percentage of the width per second', \
-    '    float(>= 0, <= 0.2) minDx', \
+    '    # The change period, in seconds', \
+    '    float period', \
     '', \
-    '    # The maximum X-delta as a percentage of the width per second', \
-    '    float(>= 0, <= 0.2) maxDx', \
+    '    # The ball groups', \
+    '    BallGroup[len > 0] groups', \
     '', \
-    '    # The minimum Y-delta as a percentage of the height per second', \
-    '    float(>= 0, <= 0.2) minDy', \
+    '# A Chaos Ball Group', \
+    'struct BallGroup', \
     '', \
-    '    # The maximum Y-delta as a percentage of the height per second', \
-    '    float(>= 0, <= 0.2) maxDy', \
+    '    # The ball count', \
+    '    int count', \
     '', \
-    '    # The minimum size as a percentage of the height', \
-    '    float(>= 0, <= 0.2) minSize', \
-    '', \
-    '    # The maximum size as a percentage of the height', \
-    '    float(>= 0, <= 0.2) maxSize', \
-    '', \
-    '    # The list of potential colors', \
-    '    string[len > 0] colors', \
-    '', \
-    'struct Ball', \
-    '    float x', \
-    '    float y', \
-    '    float dx', \
-    '    float dy', \
-    '    float size', \
+    '    # The ball color', \
     '    string color', \
     '', \
-    '    float xMin', \
-    '    float yMin', \
-    '    float xMax', \
-    '    float yMax', \
+    '    # The minimum size, as a ratio of the width/height', \
+    '    float(> 0, <= 0.5) minSize', \
     '', \
-    'struct Balls', \
-    '    Ball[] balls' \
+    '    # The maximum size, as a ratio of the width/height', \
+    '    float(> 0, <= 0.5) maxSize', \
+    '', \
+    '    # The minimum speed, as a ratio of the width/height per second', \
+    '    float(> 0, <= 0.5) minSpeed', \
+    '', \
+    '    # The maximum speed, as a ratio of the width/height per second', \
+    '    float(> 0, <= 0.5) maxSpeed', \
+    '', \
+    '# The Chaos Balls runtime model', \
+    'struct RuntimeBalls', \
+    '', \
+    '    # The Chaos Balls model', \
+    '    ChaosBalls chaosBalls', \
+    '', \
+    '    # The runtime balls', \
+    '    RuntimeBall[len > 0] balls', \
+    '', \
+    '# The runtime ball model', \
+    'struct RuntimeBall', \
+    '', \
+    '    # The ball color', \
+    '    string color', \
+    '', \
+    '    # The ball size, as a ratio of the width/height', \
+    '    float size', \
+    '', \
+    '    # The ball x-position, as a ratio of the width', \
+    '    float x', \
+    '', \
+    '    # The ball y-position, as a ratio of the height', \
+    '    float y', \
+    '', \
+    '    # The ball delta-x, as a ratio of the width', \
+    '    float dx', \
+    '', \
+    '    # The ball delta-y, as a ratio of the width', \
+    '    float dy', \
+    '' \
 )
 
 
-function ballsMain()
-    ballsDraw()
-    if(!vReset && vPlay, setWindowTimeout(ballsTimeout, ballsTimeoutMs))
+# The default Chaos Balls configuration
+ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
+    'backgroundColor', 'white', \
+    'borderColor', 'blue', \
+    'borderSize', 0.05, \
+    'period', 0.05, \
+    'groups', arrayNew( \
+        objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
+        objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
+        objectNew('count', 30, 'color', '#ff000040', 'minSize', 0.1, 'maxSize', 0.2, 'minSpeed', 0.2, 'maxSpeed', 0.25) \
+    ) \
+))
+
+
+async function ballsMain()
+    if(vURL != null, ballsOpen(vURL), ballsResize())
+    setWindowResize(ballsResize)
+endfunction
+
+
+async function ballsOpen(url)
+    chaosBalls = if(!url, ballsDefault, schemaValidate(ballsTypes, 'ChaosBalls', fetch(url)))
+    balls = if(chaosBalls != null, ballsRuntime(chaosBalls))
+    if(balls != null, sessionStorageSet('balls', jsonStringify(balls)))
+    setWindowLocation('#var=')
+endfunction
+
+
+function ballsResize()
+    ballsTimeout(true)
+endfunction
+
+
+function ballsTimeout(noMove)
+    balls = ballsLoad()
+    if(!noMove, ballsMove(balls))
+    ballsDraw(balls)
+    documentReset()
+    if(vPlay, setWindowTimeout(ballsTimeout, objectGet(objectGet(balls, 'chaosBalls'), 'period') * 1000))
+endfunction
+
+
+function ballsWidth()
+    return getWindowWidth() - 4 * getTextHeight()
+endfunction
+
+
+function ballsHeight()
+    return getWindowHeight() - 4 * getTextHeight()
 endfunction
 
 
 function ballsLoad()
-    ballsJSON = sessionStorageGet('balls')
-    ballsObj = if(ballsJSON != null, schemaValidate(ballsTypes, 'Balls', jsonParse(ballsJSON)))
-    jumpif (!vReset && ballsObj != null) ballsDone
-        balls = arrayNew()
-        ballsObj = objectNew('balls', balls)
-        ixColor = 0
-        colorLoop:
-            ballColor = arrayGet(ballColors, ixColor % arrayLength(ballColors))
-            ballSizeDelta = if(ballSizeCount > 1, (ballSizeMax - ballSizeMin) / (ballSizeCount - 1), 0)
-            ballSize = ballSizeMin
-            sizeLoop:
-                xMin = borderSize + 0.5 * ballSize
-                xMax = width - borderSize - 0.5 * ballSize
-                yMin = borderSize + 0.5 * ballSize
-                yMax = height - borderSize - 0.5 * ballSize
-                ball = objectNew( \
-                    'x', mathRound(xMin + mathRandom() * (xMax - xMin), 0), \
-                    'y', mathRound(yMin + mathRandom() * (yMax - yMin), 0), \
-                    'dx', if(mathRound(10 * mathRandom(), 0) % 2, 1, -1) * (ballsTimeoutMs / 1000) * ballsSpeedX, \
-                    'dy', if(mathRound(10 * mathRandom(), 0) % 2, 1, -1) * (ballsTimeoutMs / 1000) * ballsSpeedY, \
-                    'xMin', xMin, \
-                    'xMax', xMax, \
-                    'yMin', yMin, \
-                    'yMax', yMax, \
-                    'color', ballColor, \
-                    'size', ballSize \
-                )
-                arrayPush(balls, ball)
-                ballSize = ballSize + ballSizeDelta
-            jumpif (ballSize <= ballSizeMax) sizeLoop
-            ixColor = ixColor + 1
-        jumpif (ixColor < ballColorCount) colorLoop
-
-        sessionStorageSet('balls', jsonStringify(schemaValidate(ballsTypes, 'Balls', ballsObj)))
+    balls = sessionStorageGet('balls')
+    balls = if(balls != null, schemaValidate(ballsTypes, 'RuntimeBalls', jsonParse(balls)))
+    jumpif (balls != null) ballsDone
+        balls = ballsRuntime(ballsDefault)
+        sessionStorageSet('balls', jsonStringify(balls))
     ballsDone:
-    return ballsObj
+    return balls
 endfunction
 
 
-function ballsDraw()
-    ballsObj = ballsLoad()
-    balls = objectGet(ballsObj, 'balls')
+function ballsRuntime(chaosBalls)
+    ballsBalls = arrayNew()
+    balls = objectNew('chaosBalls', chaosBalls, 'balls', ballsBalls)
 
-    markdownPrint('# Balls', '', '[Play](#var.vPlay=1&var.vReset=0) | [Reset](#var.vReset=1)', '')
-    setDocumentTitle('Balls')
+    # Iterate the ball groups
+    ixGroup = 0
+    groups = objectGet(chaosBalls, 'groups')
+    borderSize = objectGet(chaosBalls, 'borderSize')
+    groupLoop:
+        group = arrayGet(groups, ixGroup)
+        groupCount = objectGet(group, 'count')
+        groupColor = objectGet(group, 'color')
+        groupMinSize = objectGet(group, 'minSize')
+        groupMaxSize = objectGet(group, 'maxSize')
+        groupMinSpeed = objectGet(group, 'minSpeed')
+        groupMaxSpeed = objectGet(group, 'maxSpeed')
+
+        # Create the group's balls
+        ixBall = 0
+        ballLoop:
+            # Compute a random size
+            size = groupMinSize + mathRandom() * (groupMaxSize - groupMinSize)
+
+            # Compute a random x and y
+            xMin = borderSize + 0.5 * size
+            xMax = 1 - xMin
+            yMin = borderSize + 0.5 * size
+            yMax = 1 - yMin
+            x = xMin + mathRandom() * (xMax - xMin)
+            y = yMin + mathRandom() * (yMax - yMin)
+
+            # Compute a random dx and dy
+            speed = groupMinSpeed + mathRandom() * (groupMaxSpeed - groupMinSpeed)
+            speedAngle = mathRandom() * 2 * mathPi()
+            dx = speed * mathCos(speedAngle)
+            dy = speed * mathSin(speedAngle)
+
+            # Add the ball
+            arrayPush(ballsBalls, objectNew('color', groupColor, 'size', size, 'x', x, 'y', y, 'dx', dx, 'dy', dy))
+
+            ixBall = ixBall + 1
+        jumpif (ixBall < groupCount) ballLoop
+
+        ixGroup = ixGroup + 1
+    jumpif (ixGroup < arrayLength(groups)) groupLoop
+
+    # Validate the runtime balls model
+    return schemaValidate(ballsTypes, 'RuntimeBalls', balls)
+endfunction
+
+
+function ballsDraw(balls)
+    width = ballsWidth()
+    height = ballsHeight()
+    widthHeight = mathMin(width, height)
+
+    chaosBalls = objectGet(balls, 'chaosBalls')
+    backgroundColor = objectGet(chaosBalls, 'backgroundColor')
+    borderColor = objectGet(chaosBalls, 'borderColor')
+    borderSize = objectGet(chaosBalls, 'borderSize')
+    borderSizePx = borderSize * widthHeight
 
     setDrawingSize(width, height)
-    drawStyle(borderColor, borderSize)
-    drawRect(0.5 * borderSize, 0.5 * borderSize, width - borderSize, height - borderSize)
+    drawStyle(borderColor, borderSizePx, backgroundColor)
+    drawRect(0.5 * borderSizePx, 0.5 * borderSizePx, width - borderSizePx, height - borderSizePx)
+
     ixBall = 0
+    ballsBalls = objectGet(balls, 'balls')
     ballLoop:
-        ball = arrayGet(balls, ixBall)
+        ball = arrayGet(ballsBalls, ixBall)
         drawStyle(null, 0, objectGet(ball, 'color'))
-        drawCircle(objectGet(ball, 'x'), objectGet(ball, 'y'), 0.5 * objectGet(ball, 'size'))
+        drawCircle(objectGet(ball, 'x') * width, objectGet(ball, 'y') * height, 0.5 * objectGet(ball, 'size') * widthHeight)
         ixBall = ixBall + 1
-    jumpif (ixBall < arrayLength(balls)) ballLoop
+    jumpif (ixBall < arrayLength(ballsBalls)) ballLoop
 endfunction
 
 
-function ballsTimeout()
-    ballsObj = ballsLoad()
-    balls = objectGet(ballsObj, 'balls')
+function ballsMove(balls)
+    width = ballsWidth()
+    height = ballsHeight()
+    widthHeight = mathMin(width, height)
+
+    chaosBalls = objectGet(balls, 'chaosBalls')
+    borderSize = objectGet(chaosBalls, 'borderSize') * widthHeight
+    period = objectGet(chaosBalls, 'period')
 
     ixBall = 0
+    ballsBalls = objectGet(balls, 'balls')
     ballLoop:
-        ball = arrayGet(balls, ixBall)
+        ball = arrayGet(ballsBalls, ixBall)
+        size = objectGet(ball, 'size') * widthHeight
+        x = objectGet(ball, 'x') * width
+        y = objectGet(ball, 'y') * height
+        dxR = objectGet(ball, 'dx')
+        dx = dxR * period * width
+        dyR = objectGet(ball, 'dy')
+        dy = dyR * period * height
 
-        dx = objectGet(ball, 'dx')
-        x = objectGet(ball, 'x') + dx
-        xMin = objectGet(ball, 'xMin')
-        xMax = objectGet(ball, 'xMax')
-        dx = if(x >= xMin && x <= xMax, dx, -dx)
-        x = if(x >= xMin, x, xMin + (xMin - x))
-        x = if(x <= xMax, x, xMax - (x - xMax))
+        xMin = borderSize + 0.5 * size
+        xMax = width - xMin
+        yMin = borderSize + 0.5 * size
+        yMax = height - yMin
 
-        objectSet(ball, 'x', x)
-        objectSet(ball, 'dx', dx)
+        x = x + dx
+        dxR = if(x < xMin || x > xMax, -dxR, dxR)
+        x = if(x < xMin, xMin + (xMin - x), if(x > xMax, xMax - (x - xMax), x))
 
-        dy = objectGet(ball, 'dy')
-        y = objectGet(ball, 'y') + dy
-        yMin = objectGet(ball, 'yMin')
-        yMax = objectGet(ball, 'yMax')
-        dy = if(y >= yMin && y <= yMax, dy, -dy)
-        y = if(y >= yMin, y, yMin + (yMin - y))
-        y = if(y <= yMax, y, yMax - (y - yMax))
+        y = y + dy
+        dyR = if(y < yMin || y > yMax, -dyR, dyR)
+        y = if(y < yMin, yMin + (yMin - y), if(y > yMax, yMax - (y - yMax), y))
 
-        objectSet(ball, 'y', y)
-        objectSet(ball, 'dy', dy)
+        objectSet(ball, 'x', x / width)
+        objectSet(ball, 'y', y / height)
+        objectSet(ball, 'dx', dxR)
+        objectSet(ball, 'dy', dyR)
 
         ixBall = ixBall + 1
-    jumpif (ixBall < arrayLength(balls)) ballLoop
+    jumpif (ixBall < arrayLength(ballsBalls)) ballLoop
 
-    sessionStorageSet('balls', jsonStringify(schemaValidate(ballsTypes, 'Balls', ballsObj)))
-
-    documentReset()
-    ballsDraw()
-    if(!vReset && vPlay, setWindowTimeout(ballsTimeout, ballsTimeoutMs))
+    sessionStorageSet('balls', jsonStringify(schemaValidate(ballsTypes, 'RuntimeBalls', balls)))
 endfunction
 
 

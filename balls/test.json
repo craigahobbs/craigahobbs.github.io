@@ -1,0 +1,9 @@
+{
+    "backgroundColor": "green",
+    "borderColor": "red",
+    "borderSize": 0.2,
+    "period": 0.1,
+    "groups": [
+        {"count": 20, "color": "gray", "minSize": 0.3, "maxSize": 0.4, "minSpeed": 0.2, "maxSpeed": 0.3}
+    ]
+}
