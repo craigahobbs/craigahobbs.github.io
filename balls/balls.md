@@ -27,7 +27,7 @@ endfunction
 async function chaosBallsFetch(url)
     # Fetch and validate the model
     modelJSON = fetch(url)
-    model = if(modelJSON != null, schemaValidate(ballsTypes, 'ChaosBalls', modelJSON))
+    model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
     jumpif (model != null) sessionOK
         markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + url + '"')
         if(modelJSON != null, markdownPrint('', '~~~', jsonStringify(modelJSON, 4), '~~~'))
@@ -46,7 +46,7 @@ endfunction
 # Render the Chaos Balls model documentation
 function chaosBallsDoc()
     setDocumentTitle('Chaos Balls Specification')
-    elementModelRender(schemaElements(ballsTypes, 'ChaosBalls'))
+    elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
 endfunction
 
 
@@ -90,7 +90,7 @@ endfunction
 function chaosBallsGetSession()
     # Parse and validate the session object
     sessionJSON = sessionStorageGet(chaosBallsSessionKey)
-    session = if(sessionJSON != null, schemaValidate(ballsTypes, 'ChaosBallsSession', jsonParse(sessionJSON)))
+    session = if(sessionJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBallsSession', jsonParse(sessionJSON)))
 
     # If there is no session, create a default session
     jumpif (session != null) sessionDone
@@ -236,7 +236,7 @@ endfunction
 
 
 # The Chaos Balls model
-ballsTypes = schemaParse( \
+chaosBallsTypes = schemaParse( \
     '# The Chaos Balls model', \
     'struct ChaosBalls', \
     '', \
@@ -313,7 +313,7 @@ chaosBallsSessionKey = 'chaosBalls'
 
 
 # The default Chaos Balls configuration
-chaosBallsDefaultModel = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
+chaosBallsDefaultModel = schemaValidate(chaosBallsTypes, 'ChaosBalls', objectNew( \
     'backgroundColor', 'white', \
     'borderColor', 'blue', \
     'borderSize', 0.05, \
