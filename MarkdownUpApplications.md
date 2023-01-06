@@ -2,6 +2,8 @@
 
 [CalcSript Library Documentation Viewer](https://craigahobbs.github.io/calc-script/library/)
 
+[Chaos Balls](https://craigahobbs.github.io/balls/)
+
 [Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
 
 [Conway's Game of Life](https://craigahobbs.github.io/life/)
