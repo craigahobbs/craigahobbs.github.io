@@ -89,12 +89,12 @@ endfunction
 # Get the Chaos= Balls session object
 function chaosBallsGetSession()
     # Parse and validate the session object
-    session = sessionStorageGet(chaosBallsSessionKey)
-    session = if(session != null, schemaValidate(ballsTypes, 'ChaosBallsSession', jsonParse(session)))
+    sessionJSON = sessionStorageGet(chaosBallsSessionKey)
+    session = if(sessionJSON != null, schemaValidate(ballsTypes, 'ChaosBallsSession', jsonParse(sessionJSON)))
 
     # If there is no session, create a default session
     jumpif (session != null) sessionDone
-        session = chaosBallsNewSession(ballsDefault)
+        session = chaosBallsNewSession(chaosBallsDefaultModel)
         sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
     sessionDone:
 
@@ -313,7 +313,7 @@ chaosBallsSessionKey = 'chaosBalls'
 
 
 # The default Chaos Balls configuration
-ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
+chaosBallsDefaultModel = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
     'backgroundColor', 'white', \
     'borderColor', 'blue', \
     'borderSize', 0.05, \
