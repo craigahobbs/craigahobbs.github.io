@@ -8,10 +8,11 @@
 #
 
 
+# Chaos Balls application main entry point
 async function ballsMain()
     # Execute the command - or render the balls
     if(vURL != null, ballsOpen(vURL), \
-    if(vDoc != null, ballsSpec(), \
+    if(vDoc, ballsDoc(), \
     ballsResize()))
 
     # Set the window resize handler
@@ -27,7 +28,7 @@ async function ballsOpen(url)
 endfunction
 
 
-function ballsSpec()
+function ballsDoc()
     setDocumentTitle('ChaosBalls')
     elementModelRender(schemaElements(ballsTypes, 'ChaosBalls'))
 endfunction
@@ -40,11 +41,12 @@ endfunction
 
 function ballsTimeout(noMove)
     balls = ballsLoad()
+    period = 0.05
     setDocumentTitle('Chaos Balls')
-    if(!noMove, ballsMove(balls))
+    if(!noMove, ballsMove(balls, period))
     ballsDraw(balls)
     documentReset()
-    if(vPlay, setWindowTimeout(ballsTimeout, objectGet(objectGet(balls, 'chaosBalls'), 'period') * 1000))
+    if(vPlay, setWindowTimeout(ballsTimeout, period * 1000))
 endfunction
 
 
@@ -60,7 +62,7 @@ endfunction
 
 function ballsLoad()
     balls = sessionStorageGet('balls')
-    balls = if(balls != null, schemaValidate(ballsTypes, 'RuntimeBalls', jsonParse(balls)))
+    balls = if(balls != null, schemaValidate(ballsTypes, 'ChaosBallsSession', jsonParse(balls)))
     jumpif (balls != null) ballsDone
         balls = ballsRuntime(ballsDefault)
         sessionStorageSet('balls', jsonStringify(balls))
@@ -71,7 +73,7 @@ endfunction
 
 function ballsRuntime(chaosBalls)
     ballsBalls = arrayNew()
-    balls = objectNew('chaosBalls', chaosBalls, 'balls', ballsBalls)
+    balls = objectNew('model', chaosBalls, 'balls', ballsBalls)
 
     # Iterate the ball groups
     ixGroup = 0
@@ -115,8 +117,7 @@ function ballsRuntime(chaosBalls)
         ixGroup = ixGroup + 1
     jumpif (ixGroup < arrayLength(groups)) groupLoop
 
-    # Validate the runtime balls model
-    return schemaValidate(ballsTypes, 'RuntimeBalls', balls)
+    return balls
 endfunction
 
 
@@ -125,7 +126,7 @@ function ballsDraw(balls)
     height = ballsHeight()
     widthHeight = mathMin(width, height)
 
-    chaosBalls = objectGet(balls, 'chaosBalls')
+    chaosBalls = objectGet(balls, 'model')
     backgroundColor = objectGet(chaosBalls, 'backgroundColor')
     borderColor = objectGet(chaosBalls, 'borderColor')
     borderSize = objectGet(chaosBalls, 'borderSize')
@@ -146,14 +147,13 @@ function ballsDraw(balls)
 endfunction
 
 
-function ballsMove(balls)
+function ballsMove(balls, period)
     width = ballsWidth()
     height = ballsHeight()
     widthHeight = mathMin(width, height)
 
-    chaosBalls = objectGet(balls, 'chaosBalls')
+    chaosBalls = objectGet(balls, 'model')
     borderSize = objectGet(chaosBalls, 'borderSize') * widthHeight
-    period = objectGet(chaosBalls, 'period')
 
     ixBall = 0
     ballsBalls = objectGet(balls, 'balls')
@@ -188,39 +188,36 @@ function ballsMove(balls)
         ixBall = ixBall + 1
     jumpif (ixBall < arrayLength(ballsBalls)) ballLoop
 
-    sessionStorageSet('balls', jsonStringify(schemaValidate(ballsTypes, 'RuntimeBalls', balls)))
+    sessionStorageSet('balls', jsonStringify(balls))
 endfunction
 
 
 # The Chaos Balls model
 ballsTypes = schemaParse( \
-    '# The Chaos Balls Model', \
+    '# The Chaos Balls model', \
     'struct ChaosBalls', \
     '', \
     '    # The background color', \
-    '    string backgroundColor', \
+    '    string(len > 0) backgroundColor', \
     '', \
     '    # The border color', \
-    '    string borderColor', \
+    '    string(len > 0) borderColor', \
     '', \
     '    # The border size, as a ratio of width/height', \
     '    float(>= 0, <= 0.2) borderSize', \
     '', \
-    '    # The change period, in seconds', \
-    '    float period', \
-    '', \
     '    # The ball groups', \
-    '    BallGroup[len > 0] groups', \
+    '    ChaosBallsGroup[len > 0] groups', \
     '', \
     '', \
-    '# A Chaos Ball Group', \
-    'struct BallGroup', \
+    '# A ball group', \
+    'struct ChaosBallsGroup', \
     '', \
     '    # The ball count', \
-    '    int count', \
+    '    int(>= 1) count', \
     '', \
     '    # The ball color', \
-    '    string color', \
+    '    string(len > 0) color', \
     '', \
     '    # The minimum size, as a ratio of the width/height', \
     '    float(> 0, <= 0.5) minSize', \
@@ -235,18 +232,18 @@ ballsTypes = schemaParse( \
     '    float(> 0, <= 0.5) maxSpeed', \
     '', \
     '', \
-    '# The Chaos Balls runtime model', \
-    'struct RuntimeBalls', \
+    '# The Chaos Balls session model', \
+    'struct ChaosBallsSession', \
     '', \
     '    # The Chaos Balls model', \
-    '    ChaosBalls chaosBalls', \
+    '    ChaosBalls model', \
     '', \
     '    # The runtime balls', \
-    '    RuntimeBall[len > 0] balls', \
+    '    ChaosBallsBall[len > 0] balls', \
     '', \
     '', \
-    '# The runtime ball model', \
-    'struct RuntimeBall', \
+    '# The Chaos Balls session ball model', \
+    'struct ChaosBallsBall', \
     '', \
     '    # The ball color', \
     '    string color', \
@@ -273,7 +270,6 @@ ballsDefault = schemaValidate(ballsTypes, 'ChaosBalls', objectNew( \
     'backgroundColor', 'white', \
     'borderColor', 'blue', \
     'borderSize', 0.05, \
-    'period', 0.05, \
     'groups', arrayNew( \
         objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
         objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
