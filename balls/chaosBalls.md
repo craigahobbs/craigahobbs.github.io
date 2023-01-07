@@ -13,40 +13,30 @@ async function chaosBallsMain()
     # Set the default title
     setDocumentTitle('Chaos Balls')
 
-    # Execute the command - or render the balls
-    if(vURL != null, chaosBallsFetch(vURL), \
-        if(vDoc, chaosBallsDoc(), \
-        chaosBallsResize()))
+    # Display Chaos Ball model documentation?
+    jumpif (!vDoc) docDone
+        setDocumentTitle('Chaos Balls Specification')
+        elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
+        return
+    docDone:
+
+    # Fetch the Chaos Balls model, if requested
+    jumpif (vURL == null) fetchDone
+        modelJSON = fetch(vURL)
+        model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
+        jumpif (model != null) fetchOK
+            markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + vURL + '"')
+            if(modelJSON != null, markdownPrint('', '~~~', jsonStringify(modelJSON, 4), '~~~'))
+            return
+        fetchOK:
+        chaosBallsSetSession(chaosBallsNewSession(model))
+    fetchDone:
+
+    # Render the Chaos Balls
+    chaosBallsResize()
 
     # Set the window resize handler
     setWindowResize(chaosBallsResize)
-endfunction
-
-
-# Fetch a Chaos Balls model
-async function chaosBallsFetch(url)
-    # Fetch and validate the model
-    modelJSON = fetch(url)
-    model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
-    jumpif (model != null) sessionOK
-        markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + url + '"')
-        if(modelJSON != null, markdownPrint('', '~~~', jsonStringify(modelJSON, 4), '~~~'))
-        return
-    sessionOK:
-
-    # Create the session state
-    session = chaosBallsNewSession(model)
-    sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
-
-    # Start the animation
-    setWindowLocation('#var=')
-endfunction
-
-
-# Render the Chaos Balls model documentation
-function chaosBallsDoc()
-    setDocumentTitle('Chaos Balls Specification')
-    elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
 endfunction
 
 
@@ -89,16 +79,22 @@ endfunction
 # Get the Chaos= Balls session object
 function chaosBallsGetSession()
     # Parse and validate the session object
-    sessionJSON = sessionStorageGet(chaosBallsSessionKey)
+    sessionJSON = sessionStorageGet('chaosBalls')
     session = if(sessionJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBallsSession', jsonParse(sessionJSON)))
 
     # If there is no session, create a default session
     jumpif (session != null) sessionDone
         session = chaosBallsNewSession(chaosBallsDefaultModel)
-        sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
+        sessionStorageSet('chaosBalls', jsonStringify(session))
     sessionDone:
 
     return session
+endfunction
+
+
+# Set the Chaos= Balls session object
+function chaosBallsSetSession(session)
+    sessionStorageSet('chaosBalls', jsonStringify(session))
 endfunction
 
 
@@ -231,7 +227,7 @@ function chaosBallsMove(session, period)
     jumpif (ixBall < arrayLength(balls)) ballLoop
 
     # Update the session storage
-    sessionStorageSet(chaosBallsSessionKey, jsonStringify(session))
+    chaosBallsSetSession(session)
 endfunction
 
 
@@ -306,10 +302,6 @@ chaosBallsTypes = schemaParse( \
     '    # The ball delta-y, as a ratio of the width', \
     '    float dy' \
 )
-
-
-# The Chaos Ball session storage keys
-chaosBallsSessionKey = 'chaosBalls'
 
 
 # The default Chaos Balls configuration
