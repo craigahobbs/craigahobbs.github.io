@@ -197,9 +197,9 @@ function chaosBallsMove(session, period)
         x = objectGet(ball, 'x') * width
         y = objectGet(ball, 'y') * height
         dxParam = objectGet(ball, 'dx')
-        dx = dxParam * period * width
+        dx = dxParam * period * widthHeight
         dyParam = objectGet(ball, 'dy')
-        dy = dyParam * period * height
+        dy = dyParam * period * widthHeight
 
         # Compute the X and Y extents for this ball
         xMin = borderSize + 0.5 * size
@@ -296,10 +296,10 @@ chaosBallsTypes = schemaParse( \
     '    # The ball y-position, as a ratio of the height', \
     '    float y', \
     '', \
-    '    # The ball delta-x, as a ratio of the width', \
+    '    # The ball delta-x, as a ratio of the width/height', \
     '    float dx', \
     '', \
-    '    # The ball delta-y, as a ratio of the width', \
+    '    # The ball delta-y, as a ratio of the width/height', \
     '    float dy' \
 )
 
