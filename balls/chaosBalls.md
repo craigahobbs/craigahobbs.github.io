@@ -26,9 +26,14 @@ async function chaosBallsMain()
         model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
         jumpif (model != null) fetchOK
             markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + vURL + '"')
-            if(modelJSON != null, markdownPrint('', '~~~', jsonStringify(modelJSON, 4), '~~~'))
             return
         fetchOK:
+
+        # Same as session model? If so, don't reset...
+        session = chaosBallsGetSession()
+        jumpif (session == null || jsonStringify(objectGet(session, 'model')) == jsonStringify(model)) fetchDone
+
+        # Create the new session
         chaosBallsSetSession(chaosBallsNewSession(model))
     fetchDone:
 
@@ -60,7 +65,7 @@ function chaosBallsTimeout(noMove)
     chaosBallsRender(session)
 
     # Start the timer (unless paused)
-    if(!vPause, setWindowTimeout(chaosBallsTimeout, period * 1000))
+    if(vPlay == null || vPlay, setWindowTimeout(chaosBallsTimeout, period * 1000))
 endfunction
 
 
