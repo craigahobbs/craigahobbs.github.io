@@ -108,7 +108,7 @@ function chaosBallsMenu()
     menuDone:
 
     # Render the menu items
-    markdownPrint('**Chaos Balls**&nbsp;&nbsp;&nbsp;' + arrayJoin(items, '&nbsp;|&nbsp;'), '')
+    markdownPrint('**Chaos Balls**  ', arrayJoin(items, '&nbsp;|&nbsp;'), '')
 endfunction
 
 
@@ -132,7 +132,7 @@ endfunction
 
 # Chaos Balls height helper
 function chaosBallsHeight()
-    return getWindowHeight() - if(vFullScreen, 3, 4.5) * getTextHeight()
+    return getWindowHeight() - if(vFullScreen, 3, 6) * getTextHeight()
 endfunction
 
 
