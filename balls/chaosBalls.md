@@ -85,15 +85,17 @@ endfunction
 function chaosBallsMenu()
     items = arrayNew()
 
+    # Get the frame rate
+    rateIndex = chaosBallsGetRate()
+    rateArg = if(rateIndex != chaosBallsMenuRateDefault, '&var.vRate=' + rateIndex, '')
+
     # Paused?
     jumpif (vPause) menuPaused
-        arrayPush(items, '[Pause](#var.vPause=1)')
+        arrayPush(items, '[Pause](#var.vPause=1' + rateArg + ')')
         jump menuDone
     menuPaused:
-        rateIndex = chaosBallsGetRate()
         rateDown = if(rateIndex > 0, rateIndex - 1, null)
         rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
-        rateArg = if(rateIndex != chaosBallsMenuRateDefault, '&var.vRate=' + rateIndex, '')
         arrayPush(items, '[Play](#var.vPause=0' + rateArg + ')')
         arrayPush(items, '[Step](#var=)')
         arrayPush(items, '[Reset](#var=)')
