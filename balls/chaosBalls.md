@@ -56,6 +56,9 @@ function chaosBallsTimeout(noMove)
     # Get the session state
     session = chaosBallsGetSession()
 
+    # Render the menu (unless in full screen mode)
+    if(!vFullScreen, chaosBallsMenu())
+
     # Move the session balls (if necessary)
     period = 0.05
     if(!noMove, chaosBallsMove(session, period))
@@ -65,7 +68,25 @@ function chaosBallsTimeout(noMove)
     chaosBallsRender(session)
 
     # Start the timer (unless paused)
-    if(vPlay == null || vPlay, setWindowTimeout(chaosBallsTimeout, period * 1000))
+    if(!vPause, setWindowTimeout(chaosBallsTimeout, period * 1000))
+endfunction
+
+
+# Render the menu
+function chaosBallsMenu()
+    items = arrayNew()
+
+    if(!vPause, arrayPush(items, '[Pause](#var.vPause=1)'))
+    if(vPause, arrayPush(items, '[Play](#var=)'))
+    if(vPause, arrayPush(items, '[Step](#var=)'))
+    arrayPush(items, '[Reset](#var=)')
+    arrayPush(items, '[Default](#var=)')
+    arrayPush(items, '[<<](#var=) 22 Hz [>>](#var=)')
+    arrayPush(items, '[Full](#var.vFullScreen=1)')
+    arrayPush(items, '[About](#url=README.md)')
+
+    # Render the menu items
+    markdownPrint(arrayJoin(items, ' | '), '')
 endfunction
 
 
