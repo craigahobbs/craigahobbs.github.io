@@ -69,7 +69,7 @@ function chaosBallsTimeout(noMove)
     if(!vFullScreen, chaosBallsMenu())
 
     # Move the session balls (if necessary)
-    period = 1 / arrayGet(chaosBallsMenuRates, chaosBallsGetRate())
+    period = chaosBallsGetPeriod()
     if(!noMove, chaosBallsMove(session, period))
 
     # Render the balls
@@ -81,10 +81,32 @@ function chaosBallsTimeout(noMove)
 endfunction
 
 
+# Menu step button on-click handler
+function chaosBallsStep()
+    session = chaosBallsGetSession()
+    chaosBallsMove(session, chaosBallsGetPeriod())
+    chaosBallsResize()
+endfunction
+
+
+# Menu reset button on-click handler
+function chaosBallsReset()
+    session = chaosBallsGetSession()
+    session = chaosBallsNewSession(objectGet(session, 'model'))
+    chaosBallsSetSession(session)
+    chaosBallsResize()
+endfunction
+
+
 # Render the menu
 function chaosBallsMenu()
-    # Create the menu items
+    # Create the menu elements
     items = arrayNew()
+    elements = arrayNew( \
+        objectNew('html', 'b', 'elem', objectNew('text', 'Chaos Balls')), \
+        objectNew('html', 'br'), \
+        items \
+    )
 
     # Get the frame rate
     rateIndex = chaosBallsGetRate()
@@ -92,23 +114,49 @@ function chaosBallsMenu()
 
     # Paused?
     jumpif (vPause) menuPaused
-        arrayPush(items, '[Pause](#var.vPause=1' + rateArg + ')')
+        chaosBallsMenuLink(items, 'Pause', '#var.vPause=1' + rateArg)
         jump menuDone
     menuPaused:
+        nbsp = stringFromCharCode(160)
         rateDown = if(rateIndex > 0, rateIndex - 1, null)
         rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
-        arrayPush(items, '[Play](#var.vPause=0' + rateArg + ')')
-        arrayPush(items, '[Step](#var=)')
-        arrayPush(items, '[Reset](#var=)')
-        arrayPush(items, if(rateDown == null, '<<', '[<<](#var.vPause=1&var.vRate=' + rateDown + ')') + \
-            ' ' + arrayGet(chaosBallsMenuRates, rateIndex) + ' ' + \
-            if(rateUp == null, '>>', '[>>](#var.vPause=1&var.vRate=' + rateUp + ')'))
-        arrayPush(items, '[Full](#var.vFullScreen=1' + rateArg + ')')
-        arrayPush(items, '[About](#url=README.md)')
+        chaosBallsMenuLink(items, 'Play', '#var.vPause=0' + rateArg)
+        chaosBallsMenuLink(items, 'Step', chaosBallsStep)
+        chaosBallsMenuLink(items, 'Reset', chaosBallsReset)
+        chaosBallsMenuLink(items, '<<', if(rateDown != null, '#var.vPause=1&var.vRate=' + rateDown))
+        chaosBallsMenuLink(items, arrayGet(chaosBallsMenuRates, rateIndex) + nbsp + 'Hz', null, true)
+        chaosBallsMenuLink(items, '>>', if(rateUp != null, '#var.vPause=1&var.vRate=' + rateUp), true)
+        chaosBallsMenuLink(items, 'Full', '#var.vFullScreen=1' + rateArg)
+        chaosBallsMenuLink(items, 'About', '#url=README.md')
     menuDone:
 
     # Render the menu items
-    markdownPrint('**Chaos Balls**  ', arrayJoin(items, '&nbsp;|&nbsp;'), '')
+    elementModelRender(elements)
+endfunction
+
+
+# Helper for adding menu links
+function chaosBallsMenuLink(items, text, url, noSeparator)
+    nbsp = stringFromCharCode(160)
+    arrayPush(items, arrayNew( \
+        if(arrayLength(items) > 0, objectNew('text', if(noSeparator, nbsp, nbsp + '|' + nbsp)), null), \
+        if(url != null, \
+            if(stringLength(url) != null, \
+                objectNew( \
+                    'html', 'a', \
+                    'attr', objectNew('href', documentURL(url)), \
+                    'elem', objectNew('text', text) \
+                ), \
+                objectNew( \
+                    'html', 'a', \
+                    'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+                    'elem', objectNew('text', text), \
+                    'callback', objectNew('click', url) \
+                ) \
+            ), \
+            objectNew('text', text) \
+        ) \
+    ))
 endfunction
 
 
@@ -121,6 +169,12 @@ chaosBallsMenuRateDefault = 2
 function chaosBallsGetRate()
     rateMax = arrayLength(chaosBallsMenuRates) - 1
     return if(vRate != null, mathMax(0, mathMin(rateMax, vRate)), chaosBallsMenuRateDefault)
+endfunction
+
+
+# Get the current period, in seconds
+function chaosBallsGetPeriod()
+    return 1 / arrayGet(chaosBallsMenuRates, chaosBallsGetRate())
 endfunction
 
 
