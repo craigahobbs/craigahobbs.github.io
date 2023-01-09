@@ -16,22 +16,31 @@ async function chaosBallsMain()
     # Display Chaos Ball model documentation?
     jumpif (!vDoc) docDone
         setDocumentTitle('Chaos Balls Specification')
+        markdownPrint('[Home](#url=README.md)', '')
         elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
         return
     docDone:
 
-    # Fetch the Chaos Balls model, if requested
+    # Set the Chaos Balls model, if requested
     jumpif (vURL == null) fetchDone
-        modelJSON = fetch(vURL)
-        model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
-        jumpif (model != null) fetchOK
+        # Default model?
+        jumpif (vURL == '') modelDefault
+            # Fetch and validate the Chaos Balls JSON model
+            modelJSON = fetch(vURL)
+            model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
+            jumpif (model != null) modelDone
+
+            # Report the fetch or validation error
             markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + vURL + '"')
             return
-        fetchOK:
+        modelDefault:
+            # Set the default model
+            model = chaosBallsDefaultModel
+        modelDone:
 
         # Same as session model? If so, don't reset...
         session = chaosBallsGetSession()
-        jumpif (session == null || jsonStringify(objectGet(session, 'model')) == jsonStringify(model)) fetchDone
+        jumpif (jsonStringify(objectGet(session, 'model')) == jsonStringify(model)) fetchDone
 
         # Create the new session
         chaosBallsSetSession(chaosBallsNewSession(model))
@@ -60,7 +69,7 @@ function chaosBallsTimeout(noMove)
     if(!vFullScreen, chaosBallsMenu())
 
     # Move the session balls (if necessary)
-    period = 0.05
+    period = 1 / arrayGet(chaosBallsMenuRates, chaosBallsGetRate())
     if(!noMove, chaosBallsMove(session, period))
 
     # Render the balls
@@ -76,28 +85,51 @@ endfunction
 function chaosBallsMenu()
     items = arrayNew()
 
-    if(!vPause, arrayPush(items, '[Pause](#var.vPause=1)'))
-    if(vPause, arrayPush(items, '[Play](#var=)'))
-    if(vPause, arrayPush(items, '[Step](#var=)'))
-    arrayPush(items, '[Reset](#var=)')
-    arrayPush(items, '[<<](#var=) 22 Hz [>>](#var=)')
-    arrayPush(items, '[Full](#var.vFullScreen=1)')
-    arrayPush(items, '[About](#url=README.md)')
+    # Paused?
+    jumpif (vPause) menuPaused
+        arrayPush(items, '[Pause](#var.vPause=1)')
+        jump menuDone
+    menuPaused:
+        rateIndex = chaosBallsGetRate()
+        rateDown = if(rateIndex > 0, rateIndex - 1, null)
+        rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
+        rateArg = if(rateIndex != chaosBallsMenuRateDefault, '&var.vRate=' + rateIndex, '')
+        arrayPush(items, '[Play](#var.vPause=0' + rateArg + ')')
+        arrayPush(items, '[Step](#var=)')
+        arrayPush(items, '[Reset](#var=)')
+        arrayPush(items, if(rateDown == null, '<<', '[<<](#var.vPause=1&var.vRate=' + rateDown + ')') + \
+            ' ' + arrayGet(chaosBallsMenuRates, rateIndex) + ' ' + \
+            if(rateUp == null, '>>', '[>>](#var.vPause=1&var.vRate=' + rateUp + ')'))
+        arrayPush(items, '[Full](#var.vFullScreen=1' + rateArg + ')')
+        arrayPush(items, '[About](#url=README.md)')
+    menuDone:
 
     # Render the menu items
     markdownPrint(arrayJoin(items, ' | '), '')
 endfunction
 
 
+# List of available menu frame rates, in Hz
+chaosBallsMenuRates = arrayNew(10, 15, 20, 30, 45, 60)
+chaosBallsMenuRateDefault = 2
+
+
+# Get the current rate
+function chaosBallsGetRate()
+    rateMax = arrayLength(chaosBallsMenuRates) - 1
+    return if(vRate != null, mathMax(0, mathMin(rateMax, vRate)), chaosBallsMenuRateDefault)
+endfunction
+
+
 # Chaos Balls width helper
 function chaosBallsWidth()
-    return getWindowWidth() - 4 * getTextHeight()
+    return getWindowWidth() - 3 * getTextHeight()
 endfunction
 
 
 # Chaos Balls height helper
 function chaosBallsHeight()
-    return getWindowHeight() - 4 * getTextHeight()
+    return getWindowHeight() - if(vFullScreen, 3, 4.5) * getTextHeight()
 endfunction
 
 
