@@ -83,6 +83,7 @@ endfunction
 
 # Render the menu
 function chaosBallsMenu()
+    # Create the menu items
     items = arrayNew()
 
     # Get the frame rate
@@ -107,7 +108,7 @@ function chaosBallsMenu()
     menuDone:
 
     # Render the menu items
-    markdownPrint(arrayJoin(items, ' | '), '')
+    markdownPrint('**Chaos Balls**&nbsp;&nbsp;&nbsp;' + arrayJoin(items, '&nbsp;|&nbsp;'), '')
 endfunction
 
 
