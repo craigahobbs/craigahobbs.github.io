@@ -63,6 +63,7 @@ endfunction
 # Chaos Balls animation timeout handler
 function chaosBallsTimeout(noMove)
     # Get the session state
+    startTime = datetimeNow()
     session = chaosBallsGetSession()
 
     # Render the menu (unless in full screen mode)
@@ -77,7 +78,9 @@ function chaosBallsTimeout(noMove)
     chaosBallsRender(session)
 
     # Start the timer (unless paused)
-    if(!vPause, setWindowTimeout(chaosBallsTimeout, period * 1000))
+    endTime = datetimeNow()
+    ellapsedMs = endTime - startTime
+    if(!vPause, setWindowTimeout(chaosBallsTimeout, mathMax(0, period * 1000 - ellapsedMs)))
 endfunction
 
 
@@ -102,11 +105,11 @@ endfunction
 function chaosBallsMenu()
     # Create the menu elements
     items = arrayNew()
-    elements = arrayNew( \
+    elements = objectNew('html', 'p', 'elem', arrayNew( \
         objectNew('html', 'b', 'elem', objectNew('text', 'Chaos Balls')), \
         objectNew('html', 'br'), \
         items \
-    )
+    ))
 
     # Get the frame rate
     rateIndex = chaosBallsGetRate()
