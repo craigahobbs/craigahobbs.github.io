@@ -1,12 +1,19 @@
 # Chaos Balls
 
-TODO
+Chaos Balls is a configurable colored ball animation application.
 
-[Chaos Balls JSON Schema](#url=chaosBalls.md&var.vDoc=1)
+[Launch Chaos Balls][Default]
 
 
 ## Gallery
 
-[Default](#url=chaosBalls.md&var.vURL='')
+[Default]: #url=chaosBalls.md&var.vURL=''
+
+[Default]
 
 [Test](#url=chaosBalls.md&var.vURL='gallery/test.json')
+
+
+## Create Your Own Design
+
+[Chaos Balls JSON Schema](#url=chaosBalls.md&var.vDoc=1)
