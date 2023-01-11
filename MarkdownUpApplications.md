@@ -2,7 +2,7 @@
 
 [CalcSript Library Documentation Viewer](https://craigahobbs.github.io/calc-script/library/)
 
-[Chaos Balls](https://craigahobbs.github.io/balls/)
+[Chaos Balls](https://craigahobbs.github.io/chaosBalls/)
 
 [Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
 
