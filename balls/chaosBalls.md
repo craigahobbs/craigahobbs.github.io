@@ -89,6 +89,7 @@ function chaosBallsStep()
     session = chaosBallsGetSession()
     chaosBallsMove(session, chaosBallsGetPeriod())
     chaosBallsResize()
+    if(!vPause, setWindowLocation(chaosBallsMenuURL(1)))
 endfunction
 
 
@@ -113,53 +114,62 @@ function chaosBallsMenu(noMenu)
     ))))
     arrayPush(elements, objectNew('html', 'div', 'attr', objectNew('id', chaosBallsMenuResetID, 'style', 'display=none')))
 
-    # Get the frame rate
+    # Add the menu items
+    nbsp = stringFromCharCode(160)
     rateIndex = chaosBallsGetRate()
-    rateArg = if(rateIndex != chaosBallsMenuRateDefault, '&var.vRate=' + rateIndex, '')
+    rateDown = if(rateIndex > 0, rateIndex - 1, null)
+    rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
+    if(!vPause, chaosBallsMenuLink(items, 'Pause', chaosBallsMenuURL(1)))
+    if(vPause, chaosBallsMenuLink(items, 'Play', chaosBallsMenuURL(0)))
+    chaosBallsMenuButton(items, 'Step', chaosBallsStep)
+    chaosBallsMenuButton(items, 'Reset', chaosBallsReset)
+    chaosBallsMenuLink(items, '<<', if(rateDown != null, chaosBallsMenuURL(null, rateDown)))
+    chaosBallsMenuLink(items, arrayGet(chaosBallsMenuRates, rateIndex) + nbsp + 'Hz', null, true)
+    chaosBallsMenuLink(items, '>>', if(rateUp != null, chaosBallsMenuURL(null, rateUp)), true)
+    chaosBallsMenuLink(items, 'Full', chaosBallsMenuURL(0, null, true))
+    chaosBallsMenuLink(items, 'About', '#url=README.md')
 
-    # Paused?
-    jumpif (vPause) menuPaused
-        chaosBallsMenuLink(items, 'Pause', '#var.vPause=1' + rateArg)
-        jump menuDone
-    menuPaused:
-        nbsp = stringFromCharCode(160)
-        rateDown = if(rateIndex > 0, rateIndex - 1, null)
-        rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
-        chaosBallsMenuLink(items, 'Play', '#var.vPause=0' + rateArg)
-        chaosBallsMenuLink(items, 'Step', chaosBallsStep)
-        chaosBallsMenuLink(items, 'Reset', chaosBallsReset)
-        chaosBallsMenuLink(items, '<<', if(rateDown != null, '#var.vPause=1&var.vRate=' + rateDown))
-        chaosBallsMenuLink(items, arrayGet(chaosBallsMenuRates, rateIndex) + nbsp + 'Hz', null, true)
-        chaosBallsMenuLink(items, '>>', if(rateUp != null, '#var.vPause=1&var.vRate=' + rateUp), true)
-        chaosBallsMenuLink(items, 'Full', '#var.vFullScreen=1' + rateArg)
-        chaosBallsMenuLink(items, 'About', '#url=README.md')
-    menuDone:
-
-    # Render the menu items
+    # Render the menu elements
     elementModelRender(elements)
 endfunction
 
 
-# Helper for adding menu links
+# Helper for creating menu link URLs
+function chaosBallsMenuURL(pause, rate, fullScreen)
+    # Compute the URLs argument state
+    pause = if(pause != null, pause, vPause)
+    rate = if(rate != null, rate, vRate)
+
+    # Create the URL
+    parts = arrayNew()
+    if(pause != null, arrayPush(parts, 'var.vPause=' + pause))
+    if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
+    if(fullScreen, arrayPush(parts, 'var.vFullScreen=1'))
+    return '#' + arrayJoin(parts, '&')
+endfunction
+
+
+# Helper for creating menu link elements
 function chaosBallsMenuLink(items, text, url, noSeparator)
     nbsp = stringFromCharCode(160)
     arrayPush(items, arrayNew( \
+        if(arrayLength(items) > 0, objectNew('text', if(noSeparator, ' ', nbsp + '| ')), null), \
+        if(url == null, objectNew('text', text), \
+            objectNew('html', 'a', 'attr', objectNew('href', documentURL(url)), 'elem', objectNew('text', text))) \
+    ))
+endfunction
+
+
+# Helper for creating menu button elements
+function chaosBallsMenuButton(items, text, callback, noSeparator)
+    nbsp = stringFromCharCode(160)
+    arrayPush(items, arrayNew( \
         if(arrayLength(items) > 0, objectNew('text', if(noSeparator, nbsp, nbsp + '|' + nbsp)), null), \
-        if(url != null, \
-            if(stringLength(url) != null, \
-                objectNew( \
-                    'html', 'a', \
-                    'attr', objectNew('href', documentURL(url)), \
-                    'elem', objectNew('text', text) \
-                ), \
-                objectNew( \
-                    'html', 'a', \
-                    'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
-                    'elem', objectNew('text', text), \
-                    'callback', objectNew('click', url) \
-                ) \
-            ), \
-            objectNew('text', text) \
+        objectNew( \
+            'html', 'a', \
+            'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+            'elem', objectNew('text', text), \
+            'callback', objectNew('click', callback) \
         ) \
     ))
 endfunction
