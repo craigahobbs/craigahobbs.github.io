@@ -10,43 +10,40 @@
 
 # Chaos Balls application main entry point
 async function chaosBallsMain()
-    # Set the default title
-    setDocumentTitle('Chaos Balls')
-
     # Display Chaos Ball model documentation?
     jumpif (!vDoc) docDone
-        setDocumentTitle('Chaos Balls Specification')
+        setDocumentTitle('Chaos Balls JSON Format')
         markdownPrint('[Home](#url=README.md)', '')
         elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
         return
     docDone:
 
+    # Set the default title
+    setDocumentTitle('Chaos Balls')
+
     # Set the Chaos Balls model, if requested
     jumpif (vURL == null) fetchDone
-        # Default model?
-        jumpif (vURL == '') modelDefault
+        # Set the default model?
+        jumpif (vURL != '') modelFetch
+            model = chaosBallsDefaultModel
+            jump modelDone
+        modelFetch:
             # Fetch and validate the Chaos Balls JSON model
             modelJSON = fetch(vURL)
             model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
-            jumpif (model != null) modelDone
-
-            # Report the fetch or validation error
-            markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + vURL + '"')
-            return
-        modelDefault:
-            # Set the default model
-            model = chaosBallsDefaultModel
+            jumpif (model != null) modelOK
+                markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + vURL + '"')
+                return
+            modelOK:
         modelDone:
 
-        # Same as session model? If so, don't reset...
+        # Create a new, random session from the model (unless its the same as the session's model)
         session = chaosBallsGetSession()
-        jumpif (jsonStringify(objectGet(session, 'model')) == jsonStringify(model)) fetchDone
-
-        # Create the new session
+        jumpif (jsonStringify(model) == jsonStringify(objectGet(session, 'model'))) fetchDone
         chaosBallsSetSession(chaosBallsNewSession(model))
     fetchDone:
 
-    # Render the Chaos Balls
+    # Render the balls
     chaosBallsResize()
 
     # Set the window resize handler
@@ -86,18 +83,30 @@ endfunction
 
 # Menu step button on-click handler
 function chaosBallsStep()
+    # Get the session state
     session = chaosBallsGetSession()
+
+    # Move the session balls
     chaosBallsMove(session, chaosBallsGetPeriod())
+
+    # Render the balls
     chaosBallsResize()
+
+    # Pause playing, if necessary
     if(!vPause, setWindowLocation(chaosBallsMenuURL(1)))
 endfunction
 
 
 # Menu reset button on-click handler
 function chaosBallsReset()
+    # Get the session state
     session = chaosBallsGetSession()
+
+    # Create a new, random session from the current session model
     session = chaosBallsNewSession(objectGet(session, 'model'))
     chaosBallsSetSession(session)
+
+    # Render the balls
     chaosBallsResize()
 endfunction
 
@@ -105,29 +114,36 @@ endfunction
 # Render the menu
 function chaosBallsMenu(noMenu)
     # Create the menu elements
-    items = arrayNew()
     elements = arrayNew()
-    if(!noMenu && !vFullScreen, arrayPush(elements, objectNew('html', 'p', 'elem', arrayNew( \
-        objectNew('html', 'b', 'elem', objectNew('text', 'Chaos Balls')), \
-        objectNew('html', 'br'), \
-        items \
-    ))))
-    arrayPush(elements, objectNew('html', 'div', 'attr', objectNew('id', chaosBallsMenuResetID, 'style', 'display=none')))
 
-    # Add the menu items
-    nbsp = stringFromCharCode(160)
-    rateIndex = chaosBallsGetRate()
-    rateDown = if(rateIndex > 0, rateIndex - 1, null)
-    rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
-    if(!vPause, chaosBallsMenuLink(items, 'Pause', chaosBallsMenuURL(1)))
-    if(vPause, chaosBallsMenuLink(items, 'Play', chaosBallsMenuURL(0)))
-    chaosBallsMenuButton(items, 'Step', chaosBallsStep)
-    chaosBallsMenuButton(items, 'Reset', chaosBallsReset)
-    chaosBallsMenuLink(items, '<<', if(rateDown != null, chaosBallsMenuURL(null, rateDown)))
-    chaosBallsMenuLink(items, arrayGet(chaosBallsMenuRates, rateIndex) + nbsp + 'Hz', null, true)
-    chaosBallsMenuLink(items, '>>', if(rateUp != null, chaosBallsMenuURL(null, rateUp)), true)
-    chaosBallsMenuLink(items, 'Full', chaosBallsMenuURL(0, null, true))
-    chaosBallsMenuLink(items, 'About', '#url=README.md')
+    # Add the menu elements
+    jumpif (noMenu || vFullScreen) menuDone
+        # Add the application title
+        items = arrayNew()
+        arrayPush(elements, objectNew('html', 'p', 'elem', arrayNew( \
+            objectNew('html', 'b', 'elem', objectNew('text', 'Chaos Balls')), \
+            objectNew('html', 'br'), \
+            items \
+        )))
+
+        # Add the menu items
+        nbsp = stringFromCharCode(160)
+        rateIndex = chaosBallsGetRate()
+        rateDown = if(rateIndex > 0, rateIndex - 1, null)
+        rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
+        if(!vPause, chaosBallsMenuLink(items, 'Pause', chaosBallsMenuURL(1)))
+        if(vPause, chaosBallsMenuLink(items, 'Play', chaosBallsMenuURL(0)))
+        chaosBallsMenuButton(items, 'Step', chaosBallsStep)
+        chaosBallsMenuButton(items, 'Reset', chaosBallsReset)
+        chaosBallsMenuLink(items, '<<', if(rateDown != null, chaosBallsMenuURL(null, rateDown)))
+        chaosBallsMenuLink(items, arrayGet(chaosBallsMenuRates, rateIndex) + nbsp + 'Hz', null, true)
+        chaosBallsMenuLink(items, '>>', if(rateUp != null, chaosBallsMenuURL(null, rateUp)), true)
+        chaosBallsMenuLink(items, 'Full', chaosBallsMenuURL(0, null, true))
+        chaosBallsMenuLink(items, 'About', '#url=README.md')
+    menuDone:
+
+    # Add the document reset ID
+    arrayPush(elements, objectNew('html', 'div', 'attr', objectNew('id', chaosBallsMenuResetID, 'style', 'display=none')))
 
     # Render the menu elements
     elementModelRender(elements)
@@ -136,7 +152,7 @@ endfunction
 
 # Helper for creating menu link URLs
 function chaosBallsMenuURL(pause, rate, fullScreen)
-    # Compute the URLs argument state
+    # Compute the URL argument state
     pause = if(pause != null, pause, vPause)
     rate = if(rate != null, rate, vRate)
 
@@ -184,26 +200,26 @@ chaosBallsMenuRates = arrayNew(10, 15, 20, 30, 45, 60)
 chaosBallsMenuRateDefault = 2
 
 
-# Get the current rate
+# Get the current frame rate, in Hz
 function chaosBallsGetRate()
     rateMax = arrayLength(chaosBallsMenuRates) - 1
     return if(vRate != null, mathMax(0, mathMin(rateMax, vRate)), chaosBallsMenuRateDefault)
 endfunction
 
 
-# Get the current period, in seconds
+# Get the current frame rate period, in seconds
 function chaosBallsGetPeriod()
     return 1 / arrayGet(chaosBallsMenuRates, chaosBallsGetRate())
 endfunction
 
 
-# Chaos Balls width helper
+# Get the Chaos Balls drawing width
 function chaosBallsWidth()
     return getWindowWidth() - 3 * getTextHeight()
 endfunction
 
 
-# Chaos Balls height helper
+# Get the Chaos Balls drawing height
 function chaosBallsHeight()
     return getWindowHeight() - if(vFullScreen, 3, 6) * getTextHeight()
 endfunction
@@ -437,7 +453,7 @@ chaosBallsTypes = schemaParse( \
 )
 
 
-# The default Chaos Balls configuration
+# The default Chaos Balls model
 chaosBallsDefaultModel = schemaValidate(chaosBallsTypes, 'ChaosBalls', objectNew( \
     'backgroundColor', 'white', \
     'borderColor', 'blue', \
