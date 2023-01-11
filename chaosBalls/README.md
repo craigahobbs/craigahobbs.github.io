@@ -18,7 +18,7 @@ To create your own design, create a [Chaos Balls JSON file][JSON]. Next, link to
 application][Default] with the "var.vURL" argument set to the URL of your JSON file. For example:
 
 ~~~
-https://craigahobbs.github.io/chaosBalls/#var.vURL='https://johndoe.github.io/chaosBallsGallery/cool.json'
+https://craigahobbs.github.io/chaosBalls/#var.vURL='https://johndoe.github.io/chaosBalls/cool.json'
 ~~~
 
 [JSON]: https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vDoc=1
