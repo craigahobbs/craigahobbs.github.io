@@ -61,20 +61,20 @@ endfunction
 
 
 # Chaos Balls animation timeout handler
-function chaosBallsTimeout(noMove)
+function chaosBallsTimeout(isResize)
     # Get the session state
     startTime = datetimeNow()
     session = chaosBallsGetSession()
 
-    # Render the menu (unless in full screen mode)
-    if(!vFullScreen, chaosBallsMenu())
+    # Render the menu
+    chaosBallsMenu(!isResize)
+    if(!isResize, setDocumentReset(chaosBallsMenuResetID))
 
-    # Move the session balls (if necessary)
+    # Move the session balls
     period = chaosBallsGetPeriod()
-    if(!noMove, chaosBallsMove(session, period))
+    if(!isResize, chaosBallsMove(session, period))
 
     # Render the balls
-    documentReset()
     chaosBallsRender(session)
 
     # Start the timer (unless paused)
@@ -102,14 +102,16 @@ endfunction
 
 
 # Render the menu
-function chaosBallsMenu()
+function chaosBallsMenu(noMenu)
     # Create the menu elements
     items = arrayNew()
-    elements = objectNew('html', 'p', 'elem', arrayNew( \
+    elements = arrayNew()
+    if(!noMenu && !vFullScreen, arrayPush(elements, objectNew('html', 'p', 'elem', arrayNew( \
         objectNew('html', 'b', 'elem', objectNew('text', 'Chaos Balls')), \
         objectNew('html', 'br'), \
         items \
-    ))
+    ))))
+    arrayPush(elements, objectNew('html', 'div', 'attr', objectNew('id', chaosBallsMenuResetID, 'style', 'display=none')))
 
     # Get the frame rate
     rateIndex = chaosBallsGetRate()
@@ -161,6 +163,10 @@ function chaosBallsMenuLink(items, text, url, noSeparator)
         ) \
     ))
 endfunction
+
+
+# The below-menu document reset ID
+chaosBallsMenuResetID = 'chaosBallsMenu'
 
 
 # List of available menu frame rates, in Hz

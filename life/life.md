@@ -255,14 +255,12 @@ function lifeOnTimeout()
 
     # Update the life state and re-render
     lifeSave(nextLife)
-    documentReset()
     main()
 endfunction
 
 
 function lifeOnClickStep()
     lifeSave(lifeNext(lifeLoad()))
-    documentReset()
     main()
 endfunction
 
@@ -270,14 +268,12 @@ endfunction
 function lifeOnClickRandom()
     life = lifeLoad()
     lifeSave(lifeNew(objectGet(life, 'width'), objectGet(life, 'height')))
-    documentReset()
     main()
 endfunction
 
 
 function lifeOnClickReset()
     lifeSave(lifeNew())
-    documentReset()
     main()
     setWindowLocation('#var=')
 endfunction
@@ -308,7 +304,6 @@ function lifeUpdateWidthHeight(widthRatio, heightRatio)
     width = mathMax(minimumWidthHeight, mathCeil(widthRatio * objectGet(life, 'width')))
     height = mathMax(minimumWidthHeight, mathCeil(heightRatio * objectGet(life, 'height')))
     lifeSave(lifeNew(width, height))
-    documentReset()
     main()
 endfunction
 
@@ -331,7 +326,6 @@ function lifeOnClickCell(px, py)
 
     # Update the life state and re-render
     lifeSave(life)
-    documentReset()
     main()
 endfunction
 
