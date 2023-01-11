@@ -16,4 +16,11 @@ Chaos Balls is a configurable colored ball animation application.
 
 ## Create Your Own Design
 
-[Chaos Balls JSON Schema](#url=chaosBalls.md&var.vDoc=1)
+To create your own Chaos Balls design, create a
+[Chaos Balls JSON file](#url=chaosBalls.md&var.vDoc=1).
+Next, link to the Chaos Balls application with the "var.vURL" argument set to the URL of your JSON file.
+For example:
+
+~~~
+https://craigahobbs.github.io/balls/#var.vURL='https://johndoe.github.io/chaosBallsGallery/cool.json'
+~~~
