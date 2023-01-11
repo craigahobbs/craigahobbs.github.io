@@ -455,9 +455,9 @@ chaosBallsTypes = schemaParse( \
 
 # The default Chaos Balls model
 chaosBallsDefaultModel = schemaValidate(chaosBallsTypes, 'ChaosBalls', objectNew( \
-    'backgroundColor', 'white', \
-    'borderColor', 'blue', \
-    'borderSize', 0.05, \
+    'backgroundColor', '#ffffff', \
+    'borderColor', '#505050', \
+    'borderSize', 0.03, \
     'groups', arrayNew( \
         objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
         objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
