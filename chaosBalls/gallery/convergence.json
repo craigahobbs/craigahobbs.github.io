@@ -1,7 +1,5 @@
 {
     "backgroundColor": "#d1b58f",
-    "borderColor": "#505050",
-    "borderSize": 0.03,
     "groups": [
         {"count": 100, "color": "#2b2a2580", "minSize": 0.1, "maxSize": 0.3, "minSpeed": 0.01, "maxSpeed": 0.02},
         {"count": 80, "color": "#e2d5c2c0", "minSize": 0.02, "maxSize": 0.1, "minSpeed": 0.02, "maxSpeed": 0.04},

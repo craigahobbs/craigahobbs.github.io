@@ -256,7 +256,6 @@ function chaosBallsNewSession(model)
     # Iterate the ball groups
     ixGroup = 0
     groups = objectGet(model, 'groups')
-    borderSize = objectGet(model, 'borderSize')
     groupLoop:
         group = arrayGet(groups, ixGroup)
         groupCount = objectGet(group, 'count')
@@ -273,9 +272,9 @@ function chaosBallsNewSession(model)
             size = groupMinSize + mathRandom() * (groupMaxSize - groupMinSize)
 
             # Compute a random x and y
-            xMin = borderSize + 0.5 * size
+            xMin = 0.5 * size
             xMax = 1 - xMin
-            yMin = borderSize + 0.5 * size
+            yMin = 0.5 * size
             yMax = 1 - yMin
             x = xMin + mathRandom() * (xMax - xMin)
             y = yMin + mathRandom() * (yMax - yMin)
@@ -306,12 +305,11 @@ function chaosBallsRender(session)
     height = chaosBallsHeight()
     widthHeight = mathMin(width, height)
 
-    # Render the background and border
+    # Render the background
     model = objectGet(session, 'model')
-    borderSize = objectGet(model, 'borderSize') * widthHeight
     setDrawingSize(width, height)
-    drawStyle(objectGet(model, 'borderColor'), borderSize, objectGet(model, 'backgroundColor'))
-    drawRect(0.5 * borderSize, 0.5 * borderSize, width - borderSize, height - borderSize)
+    drawStyle('none', 0, objectGet(model, 'backgroundColor'))
+    drawRect(0, 0, width, height)
 
     # Render the balls
     ixBall = 0
@@ -332,10 +330,6 @@ function chaosBallsMove(session, period)
     height = chaosBallsHeight()
     widthHeight = mathMin(width, height)
 
-    # Compute the border size
-    model = objectGet(session, 'model')
-    borderSize = objectGet(model, 'borderSize') * widthHeight
-
     # Move each ball
     ixBall = 0
     balls = objectGet(session, 'balls')
@@ -352,9 +346,9 @@ function chaosBallsMove(session, period)
         dy = dyParam * period * widthHeight
 
         # Compute the X and Y extents for this ball
-        xMin = borderSize + 0.5 * size
+        xMin = 0.5 * size
         xMax = width - xMin
-        yMin = borderSize + 0.5 * size
+        yMin = 0.5 * size
         yMax = height - yMin
 
         # Compute the new X coordinate - adjust if out of bounds
@@ -388,12 +382,6 @@ chaosBallsTypes = schemaParse( \
     '', \
     '    # The background color', \
     '    string(len > 0) backgroundColor', \
-    '', \
-    '    # The border color', \
-    '    string(len > 0) borderColor', \
-    '', \
-    '    # The border size, as a ratio of width/height', \
-    '    float(>= 0, <= 0.2) borderSize', \
     '', \
     '    # The ball groups', \
     '    ChaosBallsGroup[len > 0] groups', \
@@ -457,8 +445,6 @@ chaosBallsTypes = schemaParse( \
 # The default Chaos Balls model
 chaosBallsDefaultModel = schemaValidate(chaosBallsTypes, 'ChaosBalls', objectNew( \
     'backgroundColor', '#ffffff', \
-    'borderColor', '#505050', \
-    'borderSize', 0.03, \
     'groups', arrayNew( \
         objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
         objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
