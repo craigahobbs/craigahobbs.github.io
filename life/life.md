@@ -24,7 +24,7 @@ minimumWidthHeight = 10
 
 # Life cell and background colors
 lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
-lifeBorderColor = 'black'
+lifeBorderColor = '#606060'
 
 
 function main()
