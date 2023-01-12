@@ -1,0 +1,13 @@
+{
+    "backgroundColor": "#ffffff",
+    "borderColor": "#505050",
+    "borderSize": 0.03,
+    "groups": [
+        {"count": 120, "color": "gray", "minSize": 0.03, "maxSize": 0.1, "minSpeed": 0.2, "maxSpeed": 0.3},
+        {"count": 120, "color": "blue", "minSize": 0.03, "maxSize": 0.1, "minSpeed": 0.2, "maxSpeed": 0.3},
+        {"count": 220, "color": "orange", "minSize": 0.03, "maxSize": 0.04, "minSpeed": 0.2, "maxSpeed": 0.3},
+        {"count": 120, "color": "gray", "minSize": 0.03, "maxSize": 0.1, "minSpeed": 0.2, "maxSpeed": 0.3},
+        {"count": 120, "color": "blue", "minSize": 0.03, "maxSize": 0.1, "minSpeed": 0.2, "maxSpeed": 0.3},
+        {"count": 220, "color": "white", "minSize": 0.03, "maxSize": 0.04, "minSpeed": 0.2, "maxSpeed": 0.3}
+    ]
+}

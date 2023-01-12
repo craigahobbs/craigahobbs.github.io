@@ -158,6 +158,7 @@ function chaosBallsMenuURL(pause, rate, fullScreen)
 
     # Create the URL
     parts = arrayNew()
+    if(vURL != null, arrayPush(parts, "var.vURL='" + encodeURI(vURL) + "'"))
     if(pause != null, arrayPush(parts, 'var.vPause=' + pause))
     if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
     if(fullScreen, arrayPush(parts, 'var.vFullScreen=1'))
