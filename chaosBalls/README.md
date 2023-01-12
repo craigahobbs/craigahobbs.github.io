@@ -13,7 +13,7 @@ Chaos Balls is a configurable colored ball animation application.
 (inspired by [the Jackson Pollock painting](https://www.jackson-pollock.org/convergence.jsp))
 
 [Shimmering Substance](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/shimmeringSubstance.json')
-(inspired by [the Jackson Pollock painting](https://www.jackson-pollock.org/shimmeringSubstance.jsp))
+(inspired by [the Jackson Pollock painting](https://www.jackson-pollock.org/shimmering-substance.jsp))
 
 [White Light](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/whiteLight.json')
 (inspired by [the Jackson Pollock painting](https://www.jackson-pollock.org/white-light.jsp))
