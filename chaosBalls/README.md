@@ -9,7 +9,10 @@ Chaos Balls is a configurable colored ball animation application.
 
 [Default]
 
-[White Light](#url=chaosBalls.md&var.vURL='https://craigahobbs.github.io/chaosBalls/gallery/whiteLight.json')
+[Convergence](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/covergence.json')
+(inspired by [the Jackson Pollock painting](https://www.jackson-pollock.org/convergence.jsp))
+
+[White Light](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/whiteLight.json')
 (inspired by [the Jackson Pollock painting](https://www.jackson-pollock.org/white-light.jsp))
 
 ## Create Your Own Design
