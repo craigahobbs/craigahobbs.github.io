@@ -9,7 +9,9 @@ Chaos Balls is a configurable colored ball animation application.
 
 [Default]
 
-[Fast Color](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/fastColor.json')
+[Color (Fast)](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/colorFast.json')
+
+[Color (Slow)](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/colorSlow.json')
 
 [Convergence](https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL='gallery/convergence.json')
 (inspired by [the Jackson Pollock painting](https://en.wikipedia.org/wiki/Convergence_(Pollock\)))
