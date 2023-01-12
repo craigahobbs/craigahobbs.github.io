@@ -1,0 +1,12 @@
+{
+    "backgroundColor": "#d0c9b0",
+    "borderColor": "#505050",
+    "borderSize": 0.03,
+    "groups": [
+        {"count": 30, "color": "#5f6e59", "minSize": 0.04, "maxSize": 0.06, "minSpeed": 0.01, "maxSpeed": 0.02},
+        {"count": 50, "color": "#1c1605", "minSize": 0.01, "maxSize": 0.04, "minSpeed": 0.01, "maxSpeed": 0.02},
+        {"count": 100, "color": "#c7939f", "minSize": 0.02, "maxSize": 0.04, "minSpeed": 0.02, "maxSpeed": 0.03},
+        {"count": 15, "color": "#df1e19", "minSize": 0.02, "maxSize": 0.05, "minSpeed": 0.02, "maxSpeed": 0.03},
+        {"count": 250, "color": "#f6e55880", "minSize": 0.03, "maxSize": 0.07, "minSpeed": 0.01, "maxSpeed": 0.02}
+    ]
+}
