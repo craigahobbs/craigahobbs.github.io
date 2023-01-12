@@ -58,7 +58,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         # Filter to only "with_mirrors"
         data = dataFilter(data, 'category == "with_mirrors"')
 
-        # Compute the maximum monthly downloads
+        # Compute the average monthly downloads
         dataCalculatedField(data, 'Month', 'datetimeNew(year(date), month(date), 1)', objectNew('datetimeNew', datetimeNew))
         monthly = dataAggregate(data, objectNew( \
             'categories', arrayNew('Month'), \
@@ -66,25 +66,26 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
                 objectNew('field', 'downloads', 'function', 'sum') \
             ) \
         ))
-        monthlyMax = dataAggregate(monthly, objectNew( \
+        monthlyAverage = dataAggregate(monthly, objectNew( \
             'measures', arrayNew( \
-                objectNew('field', 'downloads', 'function', 'max') \
+                objectNew('field', 'downloads', 'function', 'average') \
             ) \
         ))
         arrayPush(packageData, objectNew( \
             'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
             'Language', '[' + packageType + '](' + packageURL + ')', \
-            'Downloads', objectGet(arrayGet(monthlyMax, 0), 'downloads') \
+            'Downloads', objectGet(arrayGet(monthlyAverage, 0), 'downloads') \
         ))
 
         ixPackage = ixPackage + 1
     jumpif (ixPackage < arrayLength(dataURLs)) dataLoop
 
-    # Render the rankings chart
+    # Render the rankings table
     dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
     dataTable(packageData, objectNew( \
         'fields', arrayNew('Package', 'Language', 'Downloads'), \
-        'markdown', arrayNew('Package', 'Language') \
+        'markdown', arrayNew('Package', 'Language'), \
+        'precision', 0 \
     ))
 endfunction
 
@@ -100,66 +101,6 @@ async function downloadsDashboard(packageName, packageType)
         downloadsPythonDataValidate(fetch(downloadsPythonDataURL(packageName)), packageName), \
         downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)), packageName))
 
-    # Render the window size menu
-    windowSizes = arrayNew(10, 15, 20, 30)
-    windowSize = if(vWindow != null, vWindow, arrayGet(windowSizes, 1))
-    markdownPrint('', '**Window:**')
-    ixWindow = 0
-    windowLoop:
-        window = arrayGet(windowSizes, ixWindow)
-        if(ixWindow != 0, markdownPrint('|'))
-        markdownPrint(if(window == windowSize, window + ' days', '[' + window + ' days](' + downloadsLink(null, null, window) + ')'))
-        ixWindow = ixWindow + 1
-    jumpif (ixWindow < arrayLength(windowSizes)) windowLoop
-
-    # Compute the with-mirrors three-week daily running average
-    ixDay = windowSize
-    dataAvg = arrayNew()
-    dataWithMirrors = dataFilter(data, 'category == "with_mirrors"')
-    dataSort(dataWithMirrors, arrayNew(arrayNew('date')))
-    dayLoop:
-        avgSum = 0
-        ixDayAvg = ixDay - windowSize + 1
-        dayAvgLoop:
-            avgSum = avgSum + objectGet(arrayGet(dataWithMirrors, ixDayAvg), 'downloads')
-            ixDayAvg = ixDayAvg + 1
-        jumpif (ixDayAvg <= ixDay) dayAvgLoop
-        arrayPush(dataAvg, objectNew( \
-            'date', objectGet(arrayGet(dataWithMirrors, ixDay), 'date'), \
-            'downloads', avgSum / windowSize \
-        ))
-        ixDay = ixDay + 1
-    jumpif (ixDay < arrayLength(dataWithMirrors)) dayLoop
-
-    # Chart constants
-    chartWidth = 1000
-    chartHeight = 250
-
-    # Render the daily running average chart
-    dataLineChart(dataAvg, objectNew( \
-        'title', 'Average Daily Downloads (' + windowSize + ' day window) - ' + packageName, \
-        'width', chartWidth - mathFloor(1.5 * getTextWidth('with_mirrors', getTextHeight('', 0))), \
-        'height', chartHeight, \
-        'x', 'date', \
-        'y', arrayNew('downloads'), \
-        'yTicks', objectNew('start', 0), \
-        'datetime', 'day', \
-        'precision', 0 \
-    ))
-
-    # Render the daily line chart
-    dataLineChart(data, objectNew( \
-        'title', 'Daily Downloads - ' + packageName, \
-        'width', chartWidth, \
-        'height', chartHeight, \
-        'x', 'date', \
-        'y', arrayNew('downloads'), \
-        'color', 'category', \
-        'yTicks', objectNew('start', 0), \
-        'datetime', 'day', \
-        'precision', 0 \
-    ))
-
     # Aggregate by month
     dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)', objectNew('datetimeNew', datetimeNew))
     monthly = dataAggregate(data, objectNew( \
@@ -172,12 +113,29 @@ async function downloadsDashboard(packageName, packageType)
     currentMonth = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
     monthlyComplete = dataFilter(monthly, 'month < currentMonth', objectNew('currentMonth', currentMonth))
 
+    # Chart constants
+    chartWidth = 1000
+    chartHeight = 250
+
     # Render the monthly line chart
     dataLineChart(monthlyComplete, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'month', \
+        'y', arrayNew('downloads'), \
+        'color', 'category', \
+        'yTicks', objectNew('start', 0), \
+        'datetime', 'day', \
+        'precision', 0 \
+    ))
+
+    # Render the daily line chart
+    dataLineChart(data, objectNew( \
+        'title', 'Daily Downloads - ' + packageName, \
+        'width', chartWidth, \
+        'height', chartHeight, \
+        'x', 'date', \
         'y', arrayNew('downloads'), \
         'color', 'category', \
         'yTicks', objectNew('start', 0), \
@@ -209,7 +167,7 @@ endfunction
 
 function downloadsJavascriptDataURL(packageName)
     today = datetimeToday()
-    yearAgo = datetimeNew(datetimeYear(today), datetimeMonth(today) - 6, datetimeDay(today))
+    yearAgo = datetimeNew(datetimeYear(today), datetimeMonth(today) - 12, datetimeDay(today))
     return 'https://api.npmjs.org/downloads/range/' + \
         datetimeISOFormat(yearAgo, true) + ':' + datetimeISOFormat(today, true) + '/' + packageName
 endfunction
