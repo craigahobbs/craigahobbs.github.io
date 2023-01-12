@@ -9,7 +9,7 @@ Chaos Balls is a configurable colored ball animation application.
 
 [Default]
 
-[White Light]
+[White Light](#url=chaosBalls.md&var.vURL='https://craigahobbs.github.io/chaosBalls/gallery/whiteLight.json')
 
 
 ## Create Your Own Design
@@ -23,5 +23,4 @@ https://craigahobbs.github.io/chaosBalls/#var.vURL='https://johndoe.github.io/ch
 
 
 [Default]: https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vURL=''
-[White Light]: #url=chaosBalls.md&var.vURL='gallery/whiteLight.json'
 [JSON]: https://craigahobbs.github.io/chaosBalls/#url=chaosBalls.md&var.vDoc=1
