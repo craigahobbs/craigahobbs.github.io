@@ -27,11 +27,11 @@ function main()
     drawRect(0, 0, width, height)
 
     # Draw the stars
-    shapes(skinnyStar, 15, 0.2, 0.3)
-    shapes(chubbyStar, 40, 0.1, 0.15)
-    shapes(grayBall, 30, 0.05, 0.1)
-    shapes(purpleBall, 30, 0.05, 0.1)
-    shapes(blueEllipse, 30, 0.02, 0.1)
+    shapes(skinnyStar, 20, 0.2, 0.3)
+    shapes(chubbyStar, 50, 0.05, 0.12)
+    shapes(grayBall, 30, 0.02, 0.07)
+    shapes(purpleBall, 30, 0.02, 0.07)
+    shapes(blueEllipse, 30, 0.02, 0.05)
 
     # Measure the title box height
     titleBoxWidth = 0.8 * width
@@ -50,13 +50,13 @@ function main()
 endfunction
 
 
-function shapes(shapeFn, count, minSizeParam, maxSizeParam)
+function shapes(shapeFn, count, minSize, maxSize)
     width = getDrawingWidth()
     height = getDrawingHeight()
     widthHeight = mathMin(width, height)
     ix = 0
     loop:
-        size = widthHeight * minSizeParam + mathRandom() * (maxSizeParam - minSizeParam)
+        size = widthHeight * (minSize + mathRandom() * (maxSize - minSize))
         minX = size
         maxX = width - size
         minY = size
