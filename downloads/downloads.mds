@@ -113,6 +113,15 @@ async function downloadsDashboard(packageName, packageType)
     currentMonth = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
     monthlyComplete = dataFilter(monthly, 'month < currentMonth', objectNew('currentMonth', currentMonth))
 
+    # Compute the average monthly downloads
+    monthlyWithMirrors = dataFilter(monthly, 'category == "with_mirrors"')
+    monthlyAverageData = dataAggregate(monthlyWithMirrors, objectNew( \
+        'measures', arrayNew( \
+            objectNew('field', 'downloads', 'function', 'average') \
+        ) \
+    ))
+    monthlyAverage = mathRound(objectGet(arrayGet(monthlyAverageData, 0), 'downloads'))
+
     # Chart constants
     chartWidth = 1000
     chartHeight = 250
@@ -126,6 +135,9 @@ async function downloadsDashboard(packageName, packageType)
         'y', arrayNew('downloads'), \
         'color', 'category', \
         'yTicks', objectNew('start', 0), \
+        'yLines', arrayNew( \
+            objectNew('value', monthlyAverage) \
+        ), \
         'datetime', 'day', \
         'precision', 0 \
     ))
