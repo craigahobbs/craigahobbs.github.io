@@ -9,52 +9,58 @@ function main()
     setDocumentTitle(titleText)
 
     # Menu
-    jumpif (vPrint) skipMenu
-        markdownPrint( \
-            '[Reset](#var=) |', \
-            '[Small](#var.vWidth=400&var.vHeight=250' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-            '[Medium](#var.vWidth=700&var.vHeight=350' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-            '[Large](#var.vWidth=1000&var.vHeight=450' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ') |', \
-            "[Custom Message](#var.vMessage='Hello!'" + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + ') |', \
-            '[Print](#var.vPrint=1' + if(vWidth, '&var.vWidth=' + vWidth, '') + if(vHeight, '&var.vHeight=' + vHeight, '') + \
-                if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
-        )
-    skipMenu:
+    if (!vFullScreen, markdownPrint( \
+        '**Happy Holidays**  ', \
+        '[Reset](#var=) |', \
+        "[Custom](#var.vMessage='Edit%20Message%20in%20URL') |", \
+        '[Full](#var.vFullScreen=1' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
+    ))
+
+    # Compute the drawing width/height
+    drawTextStyle()
+    width = getWindowWidth() - 3 * getTextHeight()
+    height = getWindowHeight() - if(vFullScreen, 3, 6) * getTextHeight()
 
     # Set the drawing width/height
-    setDrawingSize(if(vWidth, vWidth, 600), if(vHeight, vHeight, 300))
+    setDrawingSize(width, height)
     drawStyle('none', 0, 'white')
-    drawRect(0, 0, getDrawingWidth(), getDrawingHeight())
+    drawRect(0, 0, width, height)
 
     # Draw the stars
-    shapes(skinnyStar, 15, 0.10)
-    shapes(chubbyStar, 40, 0.05)
-    shapes(grayBall, 20, 0.02)
-    shapes(purpleBall, 20, 0.01)
-    shapes(blueEllipse, 20, 0.015)
+    shapes(skinnyStar, 15, 0.2, 0.3)
+    shapes(chubbyStar, 40, 0.1, 0.15)
+    shapes(grayBall, 30, 0.05, 0.1)
+    shapes(purpleBall, 30, 0.05, 0.1)
+    shapes(blueEllipse, 30, 0.02, 0.1)
 
     # Measure the title box height
-    titleBoxWidth = 0.8 * getDrawingWidth()
+    titleBoxWidth = 0.8 * width
     titleTextWidth = 0.9 * titleBoxWidth
-    titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * getDrawingHeight())
+    titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * height)
     titleBoxHeight = 3 * titleTextHeight
 
     # Draw the title
     drawStyle('black', 5, '#ff0000f0')
-    drawRect(0.5 * getDrawingWidth() - 0.5 * titleBoxWidth, 0.5 * getDrawingHeight() - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
+    drawRect(0.5 * width - 0.5 * titleBoxWidth, 0.5 * height - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
-    drawText(titleText, 0.5 * getDrawingWidth(), 0.5 * getDrawingHeight())
+    drawText(titleText, 0.5 * width, 0.5 * height)
+
+    # Set the resize handler
+    setWindowResize(main)
 endfunction
 
 
-function shapes(shapeFn, count, sizeRatio)
+function shapes(shapeFn, count, minSizeParam, maxSizeParam)
+    width = getDrawingWidth()
+    height = getDrawingHeight()
+    widthHeight = mathMin(width, height)
     ix = 0
     loop:
-        size = sizeRatio * (1 + 2 * mathRandom()) * if(getDrawingWidth() < getDrawingHeight(), getDrawingWidth(), getDrawingHeight())
+        size = widthHeight * minSizeParam + mathRandom() * (maxSizeParam - minSizeParam)
         minX = size
-        maxX = getDrawingWidth() - size
+        maxX = width - size
         minY = size
-        maxY = getDrawingHeight() - size
+        maxY = height - size
         x = minX + mathRandom() * (maxX - minX)
         y = minY + mathRandom() * (maxY - minY)
         shapeFn(x, y, size)
@@ -100,7 +106,7 @@ function purpleBall(x, y, size)
     fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c000c0', '#e000e0')
     drawStyle('black', 2, fill)
-    drawCircle(x, y, size)
+    drawCircle(x, y, 0.5 * size)
 endfunction
 
 
