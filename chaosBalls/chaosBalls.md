@@ -416,11 +416,11 @@ chaosBallsTypes = schemaParse( \
     '    ChaosBalls model', \
     '', \
     '    # The runtime balls', \
-    '    ChaosBallsBall[len > 0] balls', \
+    '    ChaosBallsSessionBall[len > 0] balls', \
     '', \
     '', \
     '# The Chaos Balls session ball model', \
-    'struct ChaosBallsBall', \
+    'struct ChaosBallsSessionBall', \
     '', \
     '    # The ball color', \
     '    string color', \
