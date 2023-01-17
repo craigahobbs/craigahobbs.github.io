@@ -204,7 +204,7 @@ endfunction
 
 
 function fruitFlyTrapDiagram()
-    annotationTextSize = getTextHeight()
+    annotationTextSize = getDocumentFontSize()
     width = 16 * annotationTextSize
     height = 14  * annotationTextSize
 

@@ -17,9 +17,8 @@ function main()
     ))
 
     # Compute the drawing width/height
-    drawTextStyle()
-    width = getWindowWidth() - 3 * getTextHeight()
-    height = getWindowHeight() - if(vFullScreen, 3, 6) * getTextHeight()
+    width = getWindowWidth() - 3 * getDocumentFontSize()
+    height = getWindowHeight() - if(vFullScreen, 3, 6) * getDocumentFontSize()
 
     # Set the drawing width/height
     setDrawingSize(width, height)

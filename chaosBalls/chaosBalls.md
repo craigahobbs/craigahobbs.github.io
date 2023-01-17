@@ -216,13 +216,13 @@ endfunction
 
 # Get the Chaos Balls drawing width
 function chaosBallsWidth()
-    return getWindowWidth() - 3 * getTextHeight()
+    return getWindowWidth() - 3 * getDocumentFontSize()
 endfunction
 
 
 # Get the Chaos Balls drawing height
 function chaosBallsHeight()
-    return getWindowHeight() - if(vFullScreen, 3, 6) * getTextHeight()
+    return getWindowHeight() - if(vFullScreen, 3, 6) * getDocumentFontSize()
 endfunction
 
 
