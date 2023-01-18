@@ -9,15 +9,18 @@ defaultBorderRatio = 0.1
 defaultBorderSize = 5
 defaultColor = 0
 defaultDepth = 6
+defaultFreq = 1
 defaultGap = 1
 defaultHeight = 50
 defaultInitRatio = 0.2
-defaultPeriod = 1000
 defaultWidth = 50
+defaultWidthHeightDelta = 5
+
+# Life change frequencies, in Hz
+lifeFrequencies = arrayNew(1, 2, 4, 6, 8, 10, 12, 15)
 
 # Limits
 minimumGap = 1
-minimumPeriod = 100
 minimumWidthHeight = 10
 
 # Life cell and background colors
@@ -33,16 +36,15 @@ function main()
     border = objectGet(args, 'border')
     borderRaw = objectGet(argsRaw, 'border')
     color = objectGet(args, 'color')
+    freq = objectGet(args, 'freq')
     gap = objectGet(args, 'gap')
     load = objectGet(args, 'load')
-    period = objectGet(args, 'period')
     play = objectGet(args, 'play')
     save = objectGet(args, 'save')
 
     # Title
     title = "Conway's Game of Life"
     setDocumentTitle(title)
-    elementModelRender(arrayNew(objectNew('html', 'b', 'elem', objectNew('text', title)), objectNew('html', 'br')))
 
     # Load?
     jumpif (load == null) noLoad
@@ -56,21 +58,22 @@ function main()
 
     # Save menu
     jumpif (!save) menuSaveEnd
-        markdownPrint( \
-            '**Save:** ', \
-            lifeLink('Load', lifeURL(argsRaw, 0, null, null, null, null, null, lifeEncode(life))) \
+        menuElements = arrayNew( \
+            objectNew('html', 'b', 'elem', objectNew('text', 'Save: ')), \
+            lifeLinkElements('Load', lifeURL(argsRaw, 0, null, null, null, null, null, lifeEncode(life))) \
         )
     menuSaveEnd:
 
     # Pause menu
+    nbsp = stringFromCharCode(160)
+    linkSeparator = objectNew('text', ' ')
+    linkSection = objectNew('text', nbsp + '| ')
     jumpif (save || play) menuPauseEnd
         nextColor = (color + 1) % arrayLength(lifeColors)
         nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
         nextBackground = (background + 1) % arrayLength(lifeColors)
         nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
-        linkSeparator = objectNew('text', ' ')
-        linkSection = objectNew('text', ' | ')
-        elementModelRender(arrayNew( \
+        menuElements = arrayNew( \
             lifeLinkElements('Play', lifeURL(argsRaw, 1)), \
             linkSection, \
             lifeButtonElements('Step', lifeOnClickStep), \
@@ -86,31 +89,41 @@ function main()
             lifeLinkElements('Border', lifeURL(argsRaw, 0, null, null, null, if(borderRaw != null, 0, defaultBorderSize))), \
             linkSeparator, \
             lifeButtonElements('Reset', lifeOnClickReset), \
-            arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Width: '))), \
-            lifeButtonElements('More', lifeOnClickWidthMore), \
-            linkSeparator, \
-            lifeButtonElements('Less', lifeOnClickWidthLess), \
-            arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Height: '))), \
-            lifeButtonElements('More', lifeOnClickHeightMore), \
-            linkSeparator, \
-            lifeButtonElements('Less', lifeOnClickHeightLess) \
-        ))
+            linkSection, \
+            lifeButtonElements('<<', lifeOnClickWidthLess), \
+            arrayNew(objectNew('text', nbsp + 'Width' + nbsp)), \
+            lifeButtonElements('>>', lifeOnClickWidthMore), \
+            linkSection, \
+            lifeButtonElements('<<', lifeOnClickHeightLess), \
+            arrayNew(objectNew('text', nbsp + 'Height' + nbsp)), \
+            lifeButtonElements('>>', lifeOnClickHeightMore) \
+        )
     menuPauseEnd:
 
     # Play menu
     jumpif (save || !play) menuPlayEnd
-        markdownPrint( \
-            lifeLink('Pause', lifeURL(argsRaw, 0)), \
-            ' | **Speed:** ' + lifeLink('More', lifeURL(argsRaw, 1, mathMax(minimumPeriod, numberToFixed(0.75 * period, 2)))) + \
-                ' ' + lifeLink('Less', lifeURL(argsRaw, 1, numberToFixed(1.25 * period, 2))) \
+        menuElements = arrayNew( \
+            lifeLinkElements('Pause', lifeURL(argsRaw, 0)), \
+            linkSection, \
+            lifeLinkElements('<<', lifeURL(argsRaw, 1, mathMax(0, freq - 1))), \
+            arrayNew(objectNew('text', nbsp + arrayGet(lifeFrequencies, freq) + nbsp + 'Hz' + nbsp)), \
+            lifeLinkElements('>>', lifeURL(argsRaw, 1, mathMin(arrayLength(lifeFrequencies) - 1, freq + 1))) \
         )
     menuPlayEnd:
+
+    # Render the menu
+    elementModelRender(objectNew('html', 'p', 'elem', arrayNew( \
+        objectNew('html', 'b', 'elem', objectNew('text', title)), \
+        objectNew('html', 'br'), \
+        menuElements \
+    )))
 
     # Life board
     size = lifeSize(args, life)
     lifeDraw(life, size, gap, arrayGet(lifeColors, color), arrayGet(lifeColors, background), lifeBorderColor, border, !play)
 
     # Play?
+    period = 1000 / arrayGet(lifeFrequencies, freq)
     if(!save && play, setWindowTimeout(lifeOnTimeout, period))
 
     # Set the window resize handler
@@ -138,20 +151,20 @@ function lifeArgs(raw)
         'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), if(!raw, defaultBorderRatio)), \
         'color', if(vColor != null, vColor % arrayLength(lifeColors), if(!raw, defaultColor)), \
         'depth', if(vDepth != null, vDepth, if(!raw, defaultDepth)), \
+        'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), if(!raw, defaultFreq)), \
         'gap', if(vGap != null, mathMax(minimumGap, vGap), if(!raw, defaultGap)), \
         'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), if(!raw, defaultInitRatio)), \
         'load', vLoad, \
-        'period', if(vPeriod != null, mathMax(minimumPeriod, vPeriod), if(!raw, defaultPeriod)), \
         'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
         'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)) \
     )
 endfunction
 
 
-function lifeURL(argsRaw, play, period, color, background, border, save, load)
+function lifeURL(argsRaw, play, freq, color, background, border, save, load)
     # URL args
     play = if(play != null, play, objectGet(argsRaw, 'play'))
-    period = if(period != null, period, objectGet(argsRaw, 'period'))
+    freq = if(freq != null, freq, objectGet(argsRaw, 'freq'))
     color = if(color != null, color, objectGet(argsRaw, 'color'))
     background = if(background != null, background, objectGet(argsRaw, 'background'))
     border = if(border != null, if(border, border, null), objectGet(argsRaw, 'border'))
@@ -170,7 +183,7 @@ function lifeURL(argsRaw, play, period, color, background, border, save, load)
         if(gap != null, '&var.vGap=' + gap, '') + \
         if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
         if(load != null, "&var.vLoad='" + load + "'", '') + \
-        if(period != null, '&var.vPeriod=' + period, '') + \
+        if(freq != null, '&var.vFreq=' + freq, '') + \
         if(play, '&var.vPlay=1', '') + \
         if(save, '&var.vSave=1', '')
     return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
@@ -287,29 +300,29 @@ endfunction
 
 
 function lifeOnClickWidthLess()
-    lifeUpdateWidthHeight(0.9, 1)
+    lifeUpdateWidthHeight(-defaultWidthHeightDelta, 0)
 endfunction
 
 
 function lifeOnClickWidthMore()
-    lifeUpdateWidthHeight(1.1, 1)
+    lifeUpdateWidthHeight(defaultWidthHeightDelta, 0)
 endfunction
 
 
 function lifeOnClickHeightLess()
-    lifeUpdateWidthHeight(1, 0.9)
+    lifeUpdateWidthHeight(0, -defaultWidthHeightDelta)
 endfunction
 
 
 function lifeOnClickHeightMore()
-    lifeUpdateWidthHeight(1, 1.1)
+    lifeUpdateWidthHeight(0, defaultWidthHeightDelta)
 endfunction
 
 
-function lifeUpdateWidthHeight(widthRatio, heightRatio)
+function lifeUpdateWidthHeight(widthDelta, heightDelta)
     life = lifeLoad()
-    width = mathMax(minimumWidthHeight, mathCeil(widthRatio * objectGet(life, 'width')))
-    height = mathMax(minimumWidthHeight, mathCeil(heightRatio * objectGet(life, 'height')))
+    width = mathMax(minimumWidthHeight, mathCeil(widthDelta + objectGet(life, 'width')))
+    height = mathMax(minimumWidthHeight, mathCeil(heightDelta + objectGet(life, 'height')))
     lifeSave(lifeNew(width, height))
     main()
 endfunction
