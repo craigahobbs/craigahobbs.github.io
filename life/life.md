@@ -13,13 +13,11 @@ defaultGap = 1
 defaultHeight = 50
 defaultInitRatio = 0.2
 defaultPeriod = 1000
-defaultSize = 10
 defaultWidth = 50
 
 # Limits
 minimumGap = 1
 minimumPeriod = 100
-minimumSize = 1
 minimumWidthHeight = 10
 
 # Life cell and background colors
@@ -40,12 +38,11 @@ function main()
     period = objectGet(args, 'period')
     play = objectGet(args, 'play')
     save = objectGet(args, 'save')
-    size = objectGet(args, 'size')
 
     # Title
     title = "Conway's Game of Life"
     setDocumentTitle(title)
-    markdownPrint("# " + title, '')
+    markdownPrint('**' + title + '**  ')
 
     # Load?
     jumpif (load == null) noLoad
@@ -61,7 +58,7 @@ function main()
     jumpif (!save) menuSaveEnd
         markdownPrint( \
             '**Save:** ', \
-            lifeLink('Load', lifeURL(argsRaw, 0, null, null, null, null, null, null, lifeEncode(life))) \
+            lifeLink('Load', lifeURL(argsRaw, 0, null, null, null, null, null, lifeEncode(life))) \
         )
     menuSaveEnd:
 
@@ -73,20 +70,20 @@ function main()
         nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
         linkSeparator = objectNew('text', ' ')
         linkSection = objectNew('text', ' | ')
-        elementModelRender(objectNew('html', 'p', 'elem', arrayNew( \
+        elementModelRender(arrayNew( \
             lifeLinkElements('Play', lifeURL(argsRaw, 1)), \
             linkSection, \
             lifeButtonElements('Step', lifeOnClickStep), \
             linkSeparator, \
             lifeButtonElements('Random', lifeOnClickRandom), \
             linkSeparator, \
-            lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, null, 1)), \
+            lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, 1)), \
             linkSection, \
-            lifeLinkElements('Background', lifeURL(argsRaw, 0, null, null, null, nextBackground)), \
+            lifeLinkElements('Background', lifeURL(argsRaw, 0, null, null, nextBackground)), \
             linkSeparator, \
-            lifeLinkElements('Cell', lifeURL(argsRaw, 0, null, null, nextColor)), \
+            lifeLinkElements('Cell', lifeURL(argsRaw, 0, null, nextColor)), \
             linkSeparator, \
-            lifeLinkElements('Border', lifeURL(argsRaw, 0, null, null, null, null, if(borderRaw != null, 0, defaultBorderSize))), \
+            lifeLinkElements('Border', lifeURL(argsRaw, 0, null, null, null, if(borderRaw != null, 0, defaultBorderSize))), \
             linkSeparator, \
             lifeButtonElements('Reset', lifeOnClickReset), \
             arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Width: '))), \
@@ -96,12 +93,8 @@ function main()
             arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Height: '))), \
             lifeButtonElements('More', lifeOnClickHeightMore), \
             linkSeparator, \
-            lifeButtonElements('Less', lifeOnClickHeightLess), \
-            arrayNew(linkSection, objectNew('html', 'b', 'elem', objectNew('text', 'Size: '))), \
-            lifeLinkElements('More', lifeURL(argsRaw, 0, null, mathMax(minimumSize, size + 1))), \
-            linkSeparator, \
-            lifeLinkElements('Less', lifeURL(argsRaw, 0, null, mathMax(minimumSize, size - 1))) \
-        )))
+            lifeButtonElements('Less', lifeOnClickHeightLess) \
+        ))
     menuPauseEnd:
 
     # Play menu
@@ -114,10 +107,27 @@ function main()
     menuPlayEnd:
 
     # Life board
+    size = lifeSize(args, life)
     lifeDraw(life, size, gap, arrayGet(lifeColors, color), arrayGet(lifeColors, background), lifeBorderColor, border, !play)
 
     # Play?
     if(!save && play, setWindowTimeout(lifeOnTimeout, period))
+
+    # Set the window resize handler
+    setWindowResize(main)
+endfunction
+
+
+function lifeSize(args, life)
+    totalWidth = getWindowWidth() - 3 * getDocumentFontSize()
+    totalHeight = getWindowHeight() - 6 * getDocumentFontSize()
+    lifeWidth = objectGet(life, 'width')
+    lifeHeight = objectGet(life, 'height')
+    gap = objectGet(args, 'gap')
+    border = objectGet(args, 'border')
+    sizeWidth = (totalWidth - gap * (lifeWidth + 1) - 2 * border) / lifeWidth
+    sizeHeight = (totalHeight - gap * (lifeHeight + 1) - 2 * border) / lifeHeight
+    return mathMax(1, mathMin(sizeWidth, sizeHeight))
 endfunction
 
 
@@ -133,17 +143,15 @@ function lifeArgs(raw)
         'load', vLoad, \
         'period', if(vPeriod != null, mathMax(minimumPeriod, vPeriod), if(!raw, defaultPeriod)), \
         'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
-        'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)), \
-        'size', if(vSize != null, mathMax(minimumSize, vSize), if(!raw, defaultSize)) \
+        'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)) \
     )
 endfunction
 
 
-function lifeURL(argsRaw, play, period, size, color, background, border, save, load)
+function lifeURL(argsRaw, play, period, color, background, border, save, load)
     # URL args
     play = if(play != null, play, objectGet(argsRaw, 'play'))
     period = if(period != null, period, objectGet(argsRaw, 'period'))
-    size = if(size != null, size, objectGet(argsRaw, 'size'))
     color = if(color != null, color, objectGet(argsRaw, 'color'))
     background = if(background != null, background, objectGet(argsRaw, 'background'))
     border = if(border != null, if(border, border, null), objectGet(argsRaw, 'border'))
@@ -164,8 +172,7 @@ function lifeURL(argsRaw, play, period, size, color, background, border, save, l
         if(load != null, "&var.vLoad='" + load + "'", '') + \
         if(period != null, '&var.vPeriod=' + period, '') + \
         if(play, '&var.vPlay=1', '') + \
-        if(save, '&var.vSave=1', '') + \
-        if(size != null, '&var.vSize=' + size, '')
+        if(save, '&var.vSave=1', '')
     return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
 endfunction
 
@@ -310,12 +317,12 @@ endfunction
 
 function lifeOnClickCell(px, py)
     args = lifeArgs()
-    size = objectGet(args, 'size')
+    life = lifeLoad()
+    size = lifeSize(args, life)
     gap = objectGet(args, 'gap')
     border = objectGet(args, 'border')
 
     # Compute the cell index to toggle
-    life = lifeLoad()
     x = mathMax(0, mathMin(objectGet(life, 'width') - 1, mathFloor((px - border) / (size + gap))))
     y = mathMax(0, mathMin(objectGet(life, 'height') - 1, mathFloor((py - border) / (size + gap))))
     iCell = y * objectGet(life, 'width') + x
