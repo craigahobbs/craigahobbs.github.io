@@ -42,7 +42,7 @@ function main()
     # Title
     title = "Conway's Game of Life"
     setDocumentTitle(title)
-    markdownPrint('**' + title + '**  ')
+    elementModelRender(arrayNew(objectNew('html', 'b', 'elem', objectNew('text', title)), objectNew('html', 'br')))
 
     # Load?
     jumpif (load == null) noLoad
