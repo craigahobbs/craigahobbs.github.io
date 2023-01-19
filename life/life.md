@@ -137,18 +137,27 @@ function lifeMenuElements(args, life)
     linkSeparator = objectNew('text', ' ')
     linkSection = objectNew('text', nbsp + '| ')
 
-    # Which menu? (save, play, or pause)
+    # Color menu part
     argsRaw = lifeArgs(true)
+    background = objectGet(args, 'background')
+    borderRaw = objectGet(argsRaw, 'border')
+    color = objectGet(args, 'color')
+    nextColor = (color + 1) % arrayLength(lifeColors)
+    nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
+    nextBackground = (background + 1) % arrayLength(lifeColors)
+    nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
+    colorElements = arrayNew( \
+        lifeLinkElements('Background', lifeURL(argsRaw, null, null, null, nextBackground)), \
+        linkSeparator, \
+        lifeLinkElements('Cell', lifeURL(argsRaw, null, null, nextColor)), \
+        linkSeparator, \
+        lifeLinkElements('Border', lifeURL(argsRaw, null, null, null, null, if(borderRaw != null, 0, defaultBorderSize))) \
+    )
+
+    # Which menu? (save, play, or pause)
     jumpif (objectGet(args, 'save')) menuSave
     jumpif (objectGet(args, 'play')) menuPlay
         # Pause menu
-        background = objectGet(args, 'background')
-        borderRaw = objectGet(argsRaw, 'border')
-        color = objectGet(args, 'color')
-        nextColor = (color + 1) % arrayLength(lifeColors)
-        nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
-        nextBackground = (background + 1) % arrayLength(lifeColors)
-        nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
         return arrayNew( \
             lifeLinkElements('Play', lifeURL(argsRaw, 1)), \
             linkSection, \
@@ -156,15 +165,11 @@ function lifeMenuElements(args, life)
             linkSeparator, \
             lifeButtonElements('Random', lifeOnClickRandom), \
             linkSeparator, \
+            lifeButtonElements('Reset', lifeOnClickReset), \
+            linkSeparator, \
             lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, 1)), \
             linkSection, \
-            lifeLinkElements('Background', lifeURL(argsRaw, 0, null, null, nextBackground)), \
-            linkSeparator, \
-            lifeLinkElements('Cell', lifeURL(argsRaw, 0, null, nextColor)), \
-            linkSeparator, \
-            lifeLinkElements('Border', lifeURL(argsRaw, 0, null, null, null, if(borderRaw != null, 0, defaultBorderSize))), \
-            linkSeparator, \
-            lifeButtonElements('Reset', lifeOnClickReset), \
+            colorElements, \
             linkSection, \
             lifeButtonElements('<<', lifeOnClickWidthLess), \
             arrayNew(objectNew('text', nbsp + 'Width' + nbsp)), \
@@ -179,6 +184,8 @@ function lifeMenuElements(args, life)
         freq = objectGet(args, 'freq')
         return arrayNew( \
             lifeLinkElements('Pause', lifeURL(argsRaw, 0)), \
+            linkSection, \
+            colorElements, \
             linkSection, \
             lifeLinkElements('<<', lifeURL(argsRaw, 1, mathMax(0, freq - 1))), \
             arrayNew(objectNew('text', nbsp + arrayGet(lifeFrequencies, freq) + nbsp + 'Hz' + nbsp)), \
