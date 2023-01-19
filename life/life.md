@@ -99,34 +99,30 @@ endfunction
 
 # Create the Life application variable-arguments object
 function lifeArgs(raw)
-    return objectNew( \
-        'background', if(vBackground != null, vBackground % arrayLength(lifeColors), if(!raw, defaultBackground)), \
-        'border', if(vBorder != null, mathMax(minBorder, vBorder), if(!raw, 0)), \
-        'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), if(!raw, defaultBorderRatio)), \
-        'color', if(vColor != null, vColor % arrayLength(lifeColors), if(!raw, defaultColor)), \
-        'depth', if(vDepth != null, vDepth, if(!raw, defaultDepth)), \
-        'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), if(!raw, defaultFreq)), \
-        'gap', if(vGap != null, mathMax(minimumGap, vGap), if(!raw, defaultGap)), \
-        'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), if(!raw, defaultInitRatio)), \
-        'load', vLoad, \
-        'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
-        'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)) \
-    )
-endfunction
-
-
-# Helper to determine if all variable arguments are empty
-function lifeArgsEmpty(args)
-    keys = objectKeys(args)
-    ixKey = 0
-    keyLoop:
-        value = objectGet(args, arrayGet(keys, ixKey))
-        jumpif (value == null) valueNull
-            return false
-        valueNull:
-        ixKey = ixKey + 1
-    jumpif (ixKey < arrayLength(keys)) keyLoop
-    return true
+    args = objectNew()
+    if(vBackground != null || !raw, \
+        objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), defaultBackground)))
+    if(vBorder != null || !raw, \
+        objectSet(args, 'border', if(vBorder != null, mathMax(minBorder, vBorder), 0)))
+    if(vBorderRatio != null || !raw, \
+        objectSet(args, 'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), defaultBorderRatio)))
+    if(vColor != null || !raw, \
+        objectSet(args, 'color', if(vColor != null, vColor % arrayLength(lifeColors), defaultColor)))
+    if(vDepth != null || !raw, \
+        objectSet(args, 'depth', if(vDepth != null, vDepth, defaultDepth)))
+    if(vFreq != null || !raw, \
+        objectSet(args, 'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), defaultFreq)))
+    if(vGap != null || !raw, \
+        objectSet(args, 'gap', if(vGap != null, mathMax(minimumGap, vGap),  defaultGap)))
+    if(vInitRatio != null || !raw, \
+        objectSet(args, 'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), defaultInitRatio)))
+    if(vLoad != null, \
+        objectSet(args, 'load', vLoad))
+    if(vPlay != null || !raw, \
+        objectSet(args, 'play', if(vPlay != null, if(vPlay, 1, 0), 1)))
+    if(vSave != null || !raw, \
+        objectSet(args, 'save', if(vSave != null, if(vSave, 1, 0), 0)))
+    return args
 endfunction
 
 
@@ -225,7 +221,7 @@ function lifeURL(argsRaw, play, freq, color, background, border, save, load)
         if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
         if(load != null, "&var.vLoad='" + load + "'", '') + \
         if(freq != null, '&var.vFreq=' + freq, '') + \
-        if(play, '&var.vPlay=1', '') + \
+        if(play != null, '&var.vPlay=' + play, '') + \
         if(save, '&var.vSave=1', '')
     return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
 endfunction
@@ -299,9 +295,9 @@ endfunction
 # Life application reset click handler
 function lifeOnClickReset()
     lifeSave(lifeNew())
-    emptyArgs = lifeArgsEmpty(lifeArgs(true))
-    if(emptyArgs, main())
-    if(!emptyArgs, setWindowLocation('#var='))
+    resetArgs = (jsonStringify(lifeArgs(true)) == '{"play":0}')
+    if(resetArgs, main())
+    if(!resetArgs, setWindowLocation('#var.vPlay=0'))
 endfunction
 
 
