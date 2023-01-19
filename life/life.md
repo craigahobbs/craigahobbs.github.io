@@ -46,20 +46,23 @@ function main()
     title = "Conway's Game of Life"
     setDocumentTitle(title)
 
-    # Load?
-    jumpif (load == null) noLoad
-        lifeSave(lifeDecode(load))
-        setWindowLocation(lifeURL(argsRaw))
-        return
-    noLoad:
-
     # Load the life state
     life = lifeLoad()
+
+    # Load?
+    jumpif (load == null) loadDone
+        loadedLife = lifeDecode(load)
+
+        # Save the loaded life (unless its already loaded)
+        jumpif (load == objectGet(life, 'initial')) loadDone
+            life = loadedLife
+            lifeSave(loadedLife)
+    loadDone:
 
     # Save menu
     jumpif (!save) menuSaveEnd
         menuElements = arrayNew( \
-            objectNew('html', 'b', 'elem', objectNew('text', 'Save: ')), \
+            objectNew('text', 'Save: '), \
             lifeLinkElements('Load', lifeURL(argsRaw, 0, null, null, null, null, null, lifeEncode(life))) \
         )
     menuSaveEnd:
@@ -158,6 +161,20 @@ function lifeArgs(raw)
         'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 0)), \
         'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)) \
     )
+endfunction
+
+
+function lifeArgsEmpty(args)
+    keys = objectKeys(args)
+    ixKey = 0
+    keyLoop:
+        value = objectGet(args, arrayGet(keys, ixKey))
+        jumpif (value == null) valueNull
+            return false
+        valueNull:
+        ixKey = ixKey + 1
+    jumpif (ixKey < arrayLength(keys)) keyLoop
+    return true
 endfunction
 
 
@@ -265,7 +282,7 @@ function lifeOnTimeout()
     iCycle = 0
     cycleLoop:
         jumpif (lifeJSON != jsonStringify(lifeCycle)) cycleNone
-            nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
+            nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
             jump cycleDone
         cycleNone:
         lifeCycle = lifeNext(lifeCycle)
@@ -275,27 +292,28 @@ function lifeOnTimeout()
 
     # Update the life state and re-render
     lifeSave(nextLife)
-    main()
+    lifeUpdate()
 endfunction
 
 
 function lifeOnClickStep()
     lifeSave(lifeNext(lifeLoad()))
-    main()
+    lifeUpdate()
 endfunction
 
 
 function lifeOnClickRandom()
     life = lifeLoad()
     lifeSave(lifeNew(objectGet(life, 'width'), objectGet(life, 'height')))
-    main()
+    lifeUpdate()
 endfunction
 
 
 function lifeOnClickReset()
     lifeSave(lifeNew())
-    main()
-    setWindowLocation('#var=')
+    emptyArgs = lifeArgsEmpty(lifeArgs(true))
+    if(emptyArgs, main())
+    if(!emptyArgs, setWindowLocation('#var='))
 endfunction
 
 
@@ -324,7 +342,7 @@ function lifeUpdateWidthHeight(widthDelta, heightDelta)
     width = mathMax(minimumWidthHeight, mathCeil(widthDelta + objectGet(life, 'width')))
     height = mathMax(minimumWidthHeight, mathCeil(heightDelta + objectGet(life, 'height')))
     lifeSave(lifeNew(width, height))
-    main()
+    lifeUpdate()
 endfunction
 
 
@@ -346,6 +364,19 @@ function lifeOnClickCell(px, py)
 
     # Update the life state and re-render
     lifeSave(life)
+    lifeUpdate()
+endfunction
+
+
+function lifeUpdate()
+    # Is there a load argument? If so, delete it and update the window location
+    argsRaw = lifeArgs(true)
+    jumpif (objectGet(argsRaw, 'load') == null) loadDone
+        objectDelete(argsRaw, 'load')
+        setWindowLocation(lifeURL(argsRaw))
+        return
+    loadDone:
+
     main()
 endfunction
 
@@ -355,20 +386,15 @@ lifeTypes = schemaParse( \
     'struct Life', \
     '    int(>= ' + minimumWidthHeight + ') width', \
     '    int(>= ' + minimumWidthHeight + ') height', \
-    '    int(>= 0, <= 1)[len > 0] cells' \
+    '    int(>= 0, <= 1)[len > 0] cells', \
+    '    string initial' \
 )
 
 
-function lifeNew(width, height, noInit)
+function lifeNew(width, height, initial, noInit)
     width = if(width != null, width, defaultWidth)
     height = if(height != null, height, defaultHeight)
-
-    # Create the blank life object
-    life = objectNew()
-    objectSet(life, 'width', width)
-    objectSet(life, 'height', height)
     cells = arrayNewSize(width * height)
-    objectSet(life, 'cells', cells)
 
     # Initialize the life
     jumpif (noInit) skipInit
@@ -389,6 +415,9 @@ function lifeNew(width, height, noInit)
         jumpif (y < height) yLoop
     skipInit:
 
+    # Create the blank life object
+    life = objectNew('width', width, 'height', height, 'initial', initial, 'cells', cells)
+    if(initial == null, objectSet(life, 'initial', lifeEncode(life)))
     return life
 endfunction
 
@@ -417,7 +446,7 @@ function lifeNext(life)
     cells = objectGet(life, 'cells')
 
     # Compute the next life generation
-    lifeNext = lifeNew(width, height, true)
+    lifeNext = lifeNew(width, height, objectGet(life, 'initial'), true)
     nextCells = objectGet(lifeNext, 'cells')
     y = 0
     yLoop:
@@ -487,7 +516,7 @@ function lifeDecode(lifeStr)
     cellsStr = arrayGet(parts, 2)
 
     # Decode the cell string
-    life = lifeNew(width, height, true)
+    life = lifeNew(width, height, lifeStr, true)
     cells = objectGet(life, 'cells')
     iCell = 0
     iChar = 0
