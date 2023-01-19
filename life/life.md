@@ -77,7 +77,9 @@ endfunction
 
 
 # Helper to update the Life application following a Life object state change
-function lifeUpdate()
+function lifeUpdate(periodAdjust)
+    periodAdjust = if(periodAdjust != null, periodAdjust, 0)
+
     # Is there a load argument? If so, delete it and update the window location
     argsRaw = lifeArgs(true)
     jumpif (objectGet(argsRaw, 'load') == null) loadDone
@@ -92,7 +94,7 @@ function lifeUpdate()
     lifeDraw(lifeLoad(), args)
 
     # Set the play timeout
-    period = 1000 / arrayGet(lifeFrequencies, objectGet(args, 'freq'))
+    period = mathMax(0, 1000 / arrayGet(lifeFrequencies, objectGet(args, 'freq')) - periodAdjust)
     if(objectGet(args, 'play'), setWindowTimeout(lifeOnTimeout, period))
 endfunction
 
@@ -250,14 +252,16 @@ endfunction
 
 # Life application timeout handler
 function lifeOnTimeout()
-    args = lifeArgs()
-    depth = objectGet(args, 'depth')
+    # Get the start time
+    startTime = datetimeNow()
 
     # Compute the next life state
     life = lifeLoad()
     nextLife = lifeNext(life)
 
     # Is there a cycle?
+    args = lifeArgs()
+    depth = objectGet(args, 'depth')
     lifeJSON = jsonStringify(objectGet(life, 'cells'))
     lifeCycle = nextLife
     iCycle = 0
@@ -271,9 +275,13 @@ function lifeOnTimeout()
     jumpif (iCycle < depth) cycleLoop
     cycleDone:
 
-    # Update the life state and re-render
+    # Update the life state
     lifeSave(nextLife)
-    lifeUpdate()
+
+    # Compute the ellapsed time and update
+    endTime = datetimeNow()
+    ellapsedMs = endTime - startTime
+    lifeUpdate(ellapsedMs)
 endfunction
 
 
