@@ -17,7 +17,7 @@ defaultWidth = 50
 defaultWidthHeightDelta = 5
 
 # Life change frequencies, in Hz
-lifeFrequencies = arrayNew(1, 2, 4, 6, 8, 10, 12, 15)
+lifeFrequencies = arrayNew(1, 2, 4, 6, 8, 10, 20, 30)
 
 # Limits
 minimumGap = 1
@@ -277,11 +277,11 @@ function lifeOnTimeout()
     nextLife = lifeNext(life)
 
     # Is there a cycle?
-    lifeJSON = jsonStringify(life)
+    lifeJSON = jsonStringify(objectGet(life, 'cells'))
     lifeCycle = nextLife
     iCycle = 0
     cycleLoop:
-        jumpif (lifeJSON != jsonStringify(lifeCycle)) cycleNone
+        jumpif (lifeJSON != jsonStringify(objectGet(lifeCycle, 'cells'))) cycleNone
             nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
             jump cycleDone
         cycleNone:
