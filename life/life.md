@@ -151,7 +151,9 @@ function lifeMenuElements(args, life)
         linkSeparator, \
         lifeLinkElements('Cell', lifeURL(argsRaw, objectNew('color', nextColor))), \
         linkSeparator, \
-        lifeLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, defaultBorderSize)))) \
+        lifeLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, defaultBorderSize)))), \
+        linkSection, \
+        lifeLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))) \
     )
 
     # Which menu? (save, play, or pause)
@@ -186,8 +188,6 @@ function lifeMenuElements(args, life)
             lifeLinkElements('Pause', lifeURL(argsRaw, objectNew('play', 0))), \
             linkSection, \
             colorElements, \
-            linkSection, \
-            lifeLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))), \
             linkSection, \
             lifeLinkElements('<<', lifeURL(argsRaw, objectNew('freq', mathMax(0, freq - 1)))), \
             arrayNew(objectNew('text', nbsp + arrayGet(lifeFrequencies, freq) + nbsp + 'Hz' + nbsp)), \
