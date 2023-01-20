@@ -56,11 +56,11 @@ function main()
 
     # Render the menu
     elementModelRender(arrayNew( \
-        objectNew('html', 'p', 'elem', arrayNew( \
+        if(!objectGet(args, 'fullScreen'), objectNew('html', 'p', 'elem', arrayNew( \
             objectNew('html', 'b', 'elem', objectNew('text', title)), \
             objectNew('html', 'br'), \
             lifeMenuElements(args, life) \
-        )), \
+        ))), \
         objectNew('html', 'div', 'attr', objectNew('id', lifeDocumentResetID, 'style', 'display: none;')) \
     ))
 
@@ -114,6 +114,8 @@ function lifeArgs(raw)
         objectSet(args, 'depth', if(vDepth != null, vDepth, defaultDepth)))
     if(vFreq != null || !raw, \
         objectSet(args, 'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), defaultFreq)))
+    if(vFullScreen != null || !raw, \
+        objectSet(args, 'fullScreen', if(vFullScreen != null, if(vFullScreen, 1, 0), 0)))
     if(vGap != null || !raw, \
         objectSet(args, 'gap', if(vGap != null, mathMax(minimumGap, vGap),  defaultGap)))
     if(vInitRatio != null || !raw, \
@@ -145,11 +147,11 @@ function lifeMenuElements(args, life)
     nextBackground = (background + 1) % arrayLength(lifeColors)
     nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
     colorElements = arrayNew( \
-        lifeLinkElements('Background', lifeURL(argsRaw, null, null, null, nextBackground)), \
+        lifeLinkElements('Ground', lifeURL(argsRaw, objectNew('background', nextBackground))), \
         linkSeparator, \
-        lifeLinkElements('Cell', lifeURL(argsRaw, null, null, nextColor)), \
+        lifeLinkElements('Cell', lifeURL(argsRaw, objectNew('color', nextColor))), \
         linkSeparator, \
-        lifeLinkElements('Border', lifeURL(argsRaw, null, null, null, null, if(borderRaw != null, 0, defaultBorderSize))) \
+        lifeLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, defaultBorderSize)))) \
     )
 
     # Which menu? (save, play, or pause)
@@ -157,7 +159,7 @@ function lifeMenuElements(args, life)
     jumpif (objectGet(args, 'play')) menuPlay
         # Pause menu
         return arrayNew( \
-            lifeLinkElements('Play', lifeURL(argsRaw, 1)), \
+            lifeLinkElements('Play', lifeURL(argsRaw, objectNew('play', 1))), \
             linkSection, \
             lifeButtonElements('Step', lifeOnClickStep), \
             linkSeparator, \
@@ -165,7 +167,7 @@ function lifeMenuElements(args, life)
             linkSeparator, \
             lifeButtonElements('Reset', lifeOnClickReset), \
             linkSeparator, \
-            lifeLinkElements('Save', lifeURL(argsRaw, 0, null, null, null, null, 1)), \
+            lifeLinkElements('Save', lifeURL(argsRaw, objectNew('play', 0, 'save', 1))), \
             linkSection, \
             colorElements, \
             linkSection, \
@@ -181,32 +183,45 @@ function lifeMenuElements(args, life)
     menuPlay:
         freq = objectGet(args, 'freq')
         return arrayNew( \
-            lifeLinkElements('Pause', lifeURL(argsRaw, 0)), \
+            lifeLinkElements('Pause', lifeURL(argsRaw, objectNew('play', 0))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            lifeLinkElements('<<', lifeURL(argsRaw, 1, mathMax(0, freq - 1))), \
+            lifeLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))), \
+            linkSection, \
+            lifeLinkElements('<<', lifeURL(argsRaw, objectNew('freq', mathMax(0, freq - 1)))), \
             arrayNew(objectNew('text', nbsp + arrayGet(lifeFrequencies, freq) + nbsp + 'Hz' + nbsp)), \
-            lifeLinkElements('>>', lifeURL(argsRaw, 1, mathMin(arrayLength(lifeFrequencies) - 1, freq + 1))) \
+            lifeLinkElements('>>', lifeURL(argsRaw, objectNew('freq', mathMin(arrayLength(lifeFrequencies) - 1, freq + 1)))) \
         )
         jump menuDone
     menuSave:
         return arrayNew( \
             objectNew('text', 'Save: '), \
-            lifeLinkElements('Load', lifeURL(argsRaw, 0, null, null, null, null, null, lifeEncode(life))) \
+            lifeLinkElements('Load', lifeURL(argsRaw, objectNew('load', lifeEncode(life)))) \
         )
     menuDone:
 endfunction
 
 
 # Create a life application URL
-function lifeURL(argsRaw, play, freq, color, background, border, save, load)
-    # URL args
+function lifeURL(argsRaw, options)
+    # Options
+    play = objectGet(options, 'play')
+    freq = objectGet(options, 'freq')
+    color = objectGet(options, 'color')
+    background = objectGet(options, 'background')
+    border = objectGet(options, 'border')
+    save = objectGet(options, 'save')
+    load = objectGet(options, 'load')
+    fullScreen = objectGet(options, 'fullScreen')
+
+    # Variable arguments
     play = if(play != null, play, objectGet(argsRaw, 'play'))
     freq = if(freq != null, freq, objectGet(argsRaw, 'freq'))
     color = if(color != null, color, objectGet(argsRaw, 'color'))
     background = if(background != null, background, objectGet(argsRaw, 'background'))
     border = if(border != null, if(border, border, null), objectGet(argsRaw, 'border'))
+    fullScreen = if(fullScreen != null, fullScreen, objectGet(argsRaw, 'fullScreen'))
     gap = objectGet(argsRaw, 'gap')
     depth = objectGet(argsRaw, 'depth')
     initRatio = objectGet(argsRaw, 'initRatio')
@@ -219,10 +234,11 @@ function lifeURL(argsRaw, play, freq, color, background, border, save, load)
         if(borderRatio != null, '&var.vBorderRatio=' + borderRatio, '') + \
         if(color != null, '&var.vColor=' + color, '') + \
         if(depth != null, '&var.vDepth=' + depth, '') + \
+        if(freq != null, '&var.vFreq=' + freq, '') + \
+        if(fullScreen != null, '&var.vFullScreen=' + fullScreen, '') + \
         if(gap != null, '&var.vGap=' + gap, '') + \
         if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
         if(load != null, "&var.vLoad='" + load + "'", '') + \
-        if(freq != null, '&var.vFreq=' + freq, '') + \
         if(play != null, '&var.vPlay=' + play, '') + \
         if(save, '&var.vSave=1', '')
     return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
@@ -510,7 +526,7 @@ endfunction
 # Compute the Life board cell size
 function lifeSize(life, args)
     totalWidth = getWindowWidth() - 3 * getDocumentFontSize()
-    totalHeight = getWindowHeight() - 6 * getDocumentFontSize()
+    totalHeight = getWindowHeight() - if(objectGet(args, 'fullScreen'), 3, 6) * getDocumentFontSize()
     lifeWidth = objectGet(life, 'width')
     lifeHeight = objectGet(life, 'height')
     gap = objectGet(args, 'gap')
