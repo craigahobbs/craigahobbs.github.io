@@ -3,11 +3,6 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-#
-# Chaos Balls - configurable chaos
-#
-
-
 # Chaos Balls application main entry point
 async function chaosBallsMain()
     # Display Chaos Ball model documentation?

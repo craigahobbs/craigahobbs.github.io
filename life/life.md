@@ -3,36 +3,8 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-# Defaults
-defaultBackground = 1
-defaultBorderRatio = 0.1
-defaultBorderSize = 5
-defaultColor = 0
-defaultDepth = 6
-defaultFreq = 1
-defaultGap = 1
-defaultHeight = 50
-defaultInitRatio = 0.2
-defaultWidth = 50
-defaultWidthHeightDelta = 5
-
-# Limits
-minimumGap = 1
-minimumWidthHeight = 10
-
-# Life change frequencies, in Hz
-lifeFrequencies = arrayNew(1, 2, 4, 6, 8, 10, 20, 30)
-
-# Life cell and background colors
-lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
-lifeBorderColor = '#606060'
-
-# The life board document reset ID
-lifeDocumentResetID = 'lifeReset'
-
-
 # Life application main entry point
-function main()
+function lifeMain()
     # Application arguments
     args = lifeArgs()
 
@@ -103,23 +75,23 @@ endfunction
 function lifeArgs(raw)
     args = objectNew()
     if(vBackground != null || !raw, \
-        objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), defaultBackground)))
+        objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), 1)))
     if(vBorder != null || !raw, \
         objectSet(args, 'border', if(vBorder != null, mathMax(minBorder, vBorder), 0)))
     if(vBorderRatio != null || !raw, \
-        objectSet(args, 'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), defaultBorderRatio)))
+        objectSet(args, 'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), 0.1)))
     if(vColor != null || !raw, \
-        objectSet(args, 'color', if(vColor != null, vColor % arrayLength(lifeColors), defaultColor)))
+        objectSet(args, 'color', if(vColor != null, vColor % arrayLength(lifeColors), 0)))
     if(vDepth != null || !raw, \
-        objectSet(args, 'depth', if(vDepth != null, vDepth, defaultDepth)))
+        objectSet(args, 'depth', if(vDepth != null, vDepth, 6)))
     if(vFreq != null || !raw, \
-        objectSet(args, 'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), defaultFreq)))
+        objectSet(args, 'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), 1)))
     if(vFullScreen != null || !raw, \
         objectSet(args, 'fullScreen', if(vFullScreen != null, if(vFullScreen, 1, 0), 0)))
     if(vGap != null || !raw, \
-        objectSet(args, 'gap', if(vGap != null, mathMax(minimumGap, vGap),  defaultGap)))
+        objectSet(args, 'gap', if(vGap != null, mathMax(1, vGap),  1)))
     if(vInitRatio != null || !raw, \
-        objectSet(args, 'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), defaultInitRatio)))
+        objectSet(args, 'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), 0.2)))
     if(vLoad != null, \
         objectSet(args, 'load', vLoad))
     if(vPlay != null || !raw, \
@@ -151,7 +123,7 @@ function lifeMenuElements(args, life)
         linkSeparator, \
         lifeLinkElements('Cell', lifeURL(argsRaw, objectNew('color', nextColor))), \
         linkSeparator, \
-        lifeLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, defaultBorderSize)))), \
+        lifeLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, 5)))), \
         linkSection, \
         lifeLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))) \
     )
@@ -201,6 +173,16 @@ function lifeMenuElements(args, life)
         )
     menuDone:
 endfunction
+
+
+# The Life application menu change frequencies, in Hz
+lifeFrequencies = arrayNew(0.5, 1, 2, 4, 6, 8, 10, 20, 30)
+
+# The Life application menu colors
+lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
+
+# The Life application menu/board document reset ID
+lifeDocumentResetID = 'lifeReset'
 
 
 # Create a life application URL
@@ -320,40 +302,40 @@ endfunction
 function lifeOnClickReset()
     lifeSave(lifeNew())
     resetArgs = (jsonStringify(lifeArgs(true)) == '{"play":0}')
-    if(resetArgs, main())
+    if(resetArgs, lifeMain())
     if(!resetArgs, setWindowLocation('#var.vPlay=0'))
 endfunction
 
 
 # Life application width-less click handler
 function lifeOnClickWidthLess()
-    lifeUpdateWidthHeight(-defaultWidthHeightDelta, 0)
+    lifeUpdateWidthHeight(-5, 0)
 endfunction
 
 
 # Life application width-more click handler
 function lifeOnClickWidthMore()
-    lifeUpdateWidthHeight(defaultWidthHeightDelta, 0)
+    lifeUpdateWidthHeight(5, 0)
 endfunction
 
 
 # Life application height-less click handler
 function lifeOnClickHeightLess()
-    lifeUpdateWidthHeight(0, -defaultWidthHeightDelta)
+    lifeUpdateWidthHeight(0, -5)
 endfunction
 
 
 # Life application height-more click handler
 function lifeOnClickHeightMore()
-    lifeUpdateWidthHeight(0, defaultWidthHeightDelta)
+    lifeUpdateWidthHeight(0, 5)
 endfunction
 
 
 # Helper for width/height less/more click handlers
 function lifeUpdateWidthHeight(widthDelta, heightDelta)
     life = lifeLoad()
-    width = mathMax(minimumWidthHeight, mathCeil(widthDelta + objectGet(life, 'width')))
-    height = mathMax(minimumWidthHeight, mathCeil(heightDelta + objectGet(life, 'height')))
+    width = mathMax(10, mathCeil(widthDelta + objectGet(life, 'width')))
+    height = mathMax(10, mathCeil(heightDelta + objectGet(life, 'height')))
     lifeSave(lifeNew(width, height))
     lifeUpdate()
 endfunction
@@ -383,15 +365,15 @@ endfunction
 
 
 # Life session state object schema
-lifeTypes = schemaParse( \
+lifeSession = schemaParse( \
     '# The Life session state', \
     'struct Life', \
     '', \
     '    # The Life board width', \
-    '    int(>= ' + minimumWidthHeight + ') width', \
+    '    int(>= 10) width', \
     '', \
     '    # The Life board height', \
-    '    int(>= ' + minimumWidthHeight + ') height', \
+    '    int(>= 10) height', \
     '', \
     '    # The Life board cell state array', \
     '    int(>= 0, <= 1)[len > 0] cells', \
@@ -403,8 +385,8 @@ lifeTypes = schemaParse( \
 
 # Create a new Life object
 function lifeNew(width, height, initial, noInit)
-    width = if(width != null, width, defaultWidth)
-    height = if(height != null, height, defaultHeight)
+    width = if(width != null, width, 50)
+    height = if(height != null, height, 50)
     cells = arrayNewSize(width * height)
 
     # Initialize the life
@@ -437,7 +419,7 @@ endfunction
 function lifeLoad()
     life = sessionStorageGet('life')
     life = if(life != null, jsonParse(life))
-    life = if(life != null, schemaValidate(lifeTypes, 'Life', life))
+    life = if(life != null, schemaValidate(lifeSession, 'Life', life))
     life = if(life != null && objectGet(life, 'width') * objectGet(life, 'height') == arrayLength(objectGet(life, 'cells')), life)
     jumpif (life != null) done
         life = lifeNew()
@@ -497,7 +479,7 @@ function lifeDraw(life, args)
     if(!objectGet(args, 'play'), drawOnClick(lifeOnClickCell))
 
     # Draw the background
-    drawStyle(lifeBorderColor, border, arrayGet(lifeColors, objectGet(args, 'background')))
+    drawStyle('#606060', border, arrayGet(lifeColors, objectGet(args, 'background')))
     drawRect(0.5 * border, 0.5 * border, getDrawingWidth() - border, getDrawingHeight() - border)
 
     # Draw the cells
@@ -614,5 +596,5 @@ lifeEncodeChars = '0123456789' + lifeEncodeAlpha + stringUpper(lifeEncodeAlpha)
 
 
 # Execute the main entry point
-main()
+lifeMain()
 ~~~
