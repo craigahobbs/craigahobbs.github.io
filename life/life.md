@@ -5,19 +5,17 @@
 
 # Life application main entry point
 function lifeMain()
-    # Application arguments
-    args = lifeArgs()
-
-    # Title
-    title = "Conway's Game of Life"
-    setDocumentTitle(title)
+    # Set the title
+    setDocumentTitle("Conway's Game of Life")
 
     # Load the life state
     life = lifeLoad()
 
     # Load argument provided?
+    args = lifeArgs()
     load = objectGet(args, 'load')
     jumpif (load == null) loadDone
+        # Decode the load argument
         loadedLife = lifeDecode(load)
 
         # Save the loaded life (unless its already loaded)
@@ -26,31 +24,88 @@ function lifeMain()
             lifeSave(loadedLife)
     loadDone:
 
+    # Render the application
+    lifeRender(life, args)
+
+    # Set the timeout handler
+    lifeSetTimeout(args)
+
+    # Set the window resize handler
+    setWindowResize(lifeResize)
+endfunction
+
+
+# Helper to render the application
+function lifeRender(life, args)
     # Render the menu
     elementModelRender(arrayNew( \
         if(!objectGet(args, 'fullScreen'), objectNew('html', 'p', 'elem', arrayNew( \
-            objectNew('html', 'b', 'elem', objectNew('text', title)), \
+            objectNew('html', 'b', 'elem', objectNew('text', "Conway's Game of Life")), \
             objectNew('html', 'br'), \
-            lifeMenuElements(args, life) \
+            lifeMenuElements(life, args) \
         ))), \
         objectNew('html', 'div', 'attr', objectNew('id', lifeDocumentResetID, 'style', 'display: none;')) \
     ))
 
-    # Life board
+    # Render the Life board
     lifeDraw(life, args)
-
-    # Set the play timeout
-    period = 1000 / arrayGet(lifeFrequencies, objectGet(args, 'freq'))
-    if(objectGet(args, 'play') && !objectGet(args, 'save'), setWindowTimeout(lifeOnTimeout, period))
-
-    # Set the window resize handler
-    setWindowResize(main)
 endfunction
 
 
-# Helper to update the Life application following a Life object state change
-function lifeUpdate(periodAdjust)
-    periodAdjust = if(periodAdjust != null, periodAdjust, 0)
+# Life application window resize handler
+function lifeResize(life, args)
+    life = lifeLoad()
+    args = lifeArgs()
+
+    # Render the application
+    lifeRender(life, args)
+
+    # Set the timeout handler
+    lifeSetTimeout(args)
+endfunction
+
+
+# Life application timeout handler
+function lifeTimeout()
+    startTime = datetimeNow()
+    life = lifeLoad()
+    args = lifeArgs()
+
+    # Compute the next life state
+    nextLife = lifeNext(life)
+
+    # Is there a cycle?
+    depth = objectGet(args, 'depth')
+    lifeJSON = jsonStringify(objectGet(life, 'cells'))
+    lifeCycle = nextLife
+    iCycle = 0
+    cycleLoop:
+        jumpif (lifeJSON != jsonStringify(objectGet(lifeCycle, 'cells'))) cycleNone
+            nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
+            jump cycleDone
+        cycleNone:
+        lifeCycle = lifeNext(lifeCycle)
+        iCycle = iCycle + 1
+    jumpif (iCycle < depth) cycleLoop
+    cycleDone:
+
+    # Update the life state
+    lifeSave(nextLife)
+
+    # Render the application
+    setDocumentReset(lifeDocumentResetID)
+    lifeDraw(life, args)
+
+    # Set the timeout handler
+    endTime = datetimeNow()
+    lifeSetTimeout(args, startTime, endTime)
+endfunction
+
+
+# Helper to update the application following a session change
+function lifeUpdate()
+    life = lifeLoad()
+    args = lifeArgs()
 
     # Is there a load argument? If so, delete it and update the window location
     argsRaw = lifeArgs(true)
@@ -60,50 +115,43 @@ function lifeUpdate(periodAdjust)
         return
     loadDone:
 
-    # Re-render
-    args = lifeArgs()
-    setDocumentReset(lifeDocumentResetID)
-    lifeDraw(lifeLoad(), args)
+    # Render the application
+    lifeRender(life, args)
 
-    # Set the play timeout
-    period = mathMax(0, 1000 / arrayGet(lifeFrequencies, objectGet(args, 'freq')) - periodAdjust)
-    if(objectGet(args, 'play'), setWindowTimeout(lifeOnTimeout, period))
+    # Set the timeout handler
+    lifeSetTimeout(args, startTime, endTime)
+endfunction
+
+
+# Helper to set the timeout handler
+function lifeSetTimeout(args, startTime, endTime)
+    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
+    periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - ellapsedMs)
+    if(objectGet(args, 'play'), setWindowTimeout(lifeTimeout, periodMs))
 endfunction
 
 
 # Create the Life application variable-arguments object
 function lifeArgs(raw)
     args = objectNew()
-    if(vBackground != null || !raw, \
-        objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), 1)))
-    if(vBorder != null || !raw, \
-        objectSet(args, 'border', if(vBorder != null, mathMax(minBorder, vBorder), 0)))
-    if(vBorderRatio != null || !raw, \
-        objectSet(args, 'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), 0.1)))
-    if(vColor != null || !raw, \
-        objectSet(args, 'color', if(vColor != null, vColor % arrayLength(lifeColors), 0)))
-    if(vDepth != null || !raw, \
-        objectSet(args, 'depth', if(vDepth != null, vDepth, 6)))
-    if(vFreq != null || !raw, \
-        objectSet(args, 'freq', if(vFreq != null, mathMax(0, mathMin(arrayLength(lifeFrequencies) - 1, vFreq)), 1)))
-    if(vFullScreen != null || !raw, \
-        objectSet(args, 'fullScreen', if(vFullScreen != null, if(vFullScreen, 1, 0), 0)))
-    if(vGap != null || !raw, \
-        objectSet(args, 'gap', if(vGap != null, mathMax(1, vGap),  1)))
-    if(vInitRatio != null || !raw, \
-        objectSet(args, 'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), 0.2)))
-    if(vLoad != null, \
-        objectSet(args, 'load', vLoad))
-    if(vPlay != null || !raw, \
-        objectSet(args, 'play', if(vPlay != null, if(vPlay, 1, 0), 1)))
-    if(vSave != null || !raw, \
-        objectSet(args, 'save', if(vSave != null, if(vSave, 1, 0), 0)))
+    objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), if(!raw, 1)))
+    objectSet(args, 'border', if(vBorder != null, mathMax(minBorder, vBorder), if(!raw, 0)))
+    objectSet(args, 'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), if(!raw, 0.1)))
+    objectSet(args, 'color', if(vColor != null, vColor % arrayLength(lifeColors), if(!raw, 0)))
+    objectSet(args, 'depth', if(vDepth != null, vDepth, if(!raw, 6)))
+    objectSet(args, 'fullScreen', if(vFullScreen != null, if(vFullScreen, 1, 0), if(!raw, 0)))
+    objectSet(args, 'gap', if(vGap != null, mathMax(1, vGap), if(!raw,  1)))
+    objectSet(args, 'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), if(!raw, 0.2)))
+    objectSet(args, 'load', vLoad)
+    objectSet(args, 'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 1)))
+    objectSet(args, 'rate', if(vRate != null, mathMax(0, mathMin(arrayLength(lifeRates) - 1, vRate)), if(!raw, 1)))
+    objectSet(args, 'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)))
     return args
 endfunction
 
 
 # Create the Life application menu element model
-function lifeMenuElements(args, life)
+function lifeMenuElements(life, args)
     # Menu separators
     nbsp = stringFromCharCode(160)
     linkSeparator = objectNew('text', ' ')
@@ -135,35 +183,37 @@ function lifeMenuElements(args, life)
         return arrayNew( \
             lifeLinkElements('Play', lifeURL(argsRaw, objectNew('play', 1))), \
             linkSection, \
-            lifeButtonElements('Step', lifeOnClickStep), \
+            lifeButtonElements('Step', lifeClickStep), \
             linkSeparator, \
-            lifeButtonElements('Random', lifeOnClickRandom), \
+            lifeButtonElements('Random', lifeClickRandom), \
             linkSeparator, \
-            lifeButtonElements('Reset', lifeOnClickReset), \
+            lifeButtonElements('Reset', lifeClickReset), \
             linkSeparator, \
             lifeLinkElements('Save', lifeURL(argsRaw, objectNew('play', 0, 'save', 1))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            lifeButtonElements('<<', lifeOnClickWidthLess), \
+            lifeButtonElements('<<', lifeClickWidthLess), \
             arrayNew(objectNew('text', nbsp + 'Width' + nbsp)), \
-            lifeButtonElements('>>', lifeOnClickWidthMore), \
+            lifeButtonElements('>>', lifeClickWidthMore), \
             linkSection, \
-            lifeButtonElements('<<', lifeOnClickHeightLess), \
+            lifeButtonElements('<<', lifeClickHeightLess), \
             arrayNew(objectNew('text', nbsp + 'Height' + nbsp)), \
-            lifeButtonElements('>>', lifeOnClickHeightMore) \
+            lifeButtonElements('>>', lifeClickHeightMore) \
         )
         jump menuDone
     menuPlay:
-        freq = objectGet(args, 'freq')
+        rate = objectGet(args, 'rate')
+        rateDown = if(rate > 0, rate - 1)
+        rateUp= if(rate < arrayLength(lifeRates) - 1, rate + 1)
         return arrayNew( \
             lifeLinkElements('Pause', lifeURL(argsRaw, objectNew('play', 0))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            lifeLinkElements('<<', lifeURL(argsRaw, objectNew('freq', mathMax(0, freq - 1)))), \
-            arrayNew(objectNew('text', nbsp + arrayGet(lifeFrequencies, freq) + nbsp + 'Hz' + nbsp)), \
-            lifeLinkElements('>>', lifeURL(argsRaw, objectNew('freq', mathMin(arrayLength(lifeFrequencies) - 1, freq + 1)))) \
+            lifeLinkElements('<<', if(rateDown != null, lifeURL(argsRaw, objectNew('rate', rateDown)))), \
+            arrayNew(objectNew('text', nbsp + arrayGet(lifeRates, rate) + nbsp + 'Hz' + nbsp)), \
+            lifeLinkElements('>>', if(rateUp != null, lifeURL(argsRaw, objectNew('rate', rateUp)))) \
         )
         jump menuDone
     menuSave:
@@ -175,8 +225,8 @@ function lifeMenuElements(args, life)
 endfunction
 
 
-# The Life application menu change frequencies, in Hz
-lifeFrequencies = arrayNew(0.5, 1, 2, 4, 6, 8, 10, 20, 30)
+# The Life application menu change rates, in Hz
+lifeRates = arrayNew(0.5, 1, 2, 4, 6, 8, 10, 20, 30)
 
 # The Life application menu colors
 lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
@@ -185,21 +235,21 @@ lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold
 lifeDocumentResetID = 'lifeReset'
 
 
-# Create a life application URL
-function lifeURL(argsRaw, options)
-    # Options
-    play = objectGet(options, 'play')
-    freq = objectGet(options, 'freq')
-    color = objectGet(options, 'color')
-    background = objectGet(options, 'background')
-    border = objectGet(options, 'border')
-    save = objectGet(options, 'save')
-    load = objectGet(options, 'load')
-    fullScreen = objectGet(options, 'fullScreen')
+# Helper to create an application URL
+function lifeURL(argsRaw, args)
+    # URL arguments
+    play = objectGet(args, 'play')
+    rate = objectGet(args, 'rate')
+    color = objectGet(args, 'color')
+    background = objectGet(args, 'background')
+    border = objectGet(args, 'border')
+    save = objectGet(args, 'save')
+    load = objectGet(args, 'load')
+    fullScreen = objectGet(args, 'fullScreen')
 
     # Variable arguments
     play = if(play != null, play, objectGet(argsRaw, 'play'))
-    freq = if(freq != null, freq, objectGet(argsRaw, 'freq'))
+    rate = if(rate != null, rate, objectGet(argsRaw, 'rate'))
     color = if(color != null, color, objectGet(argsRaw, 'color'))
     background = if(background != null, background, objectGet(argsRaw, 'background'))
     border = if(border != null, if(border, border, null), objectGet(argsRaw, 'border'))
@@ -216,28 +266,34 @@ function lifeURL(argsRaw, options)
         if(borderRatio != null, '&var.vBorderRatio=' + borderRatio, '') + \
         if(color != null, '&var.vColor=' + color, '') + \
         if(depth != null, '&var.vDepth=' + depth, '') + \
-        if(freq != null, '&var.vFreq=' + freq, '') + \
         if(fullScreen != null, '&var.vFullScreen=' + fullScreen, '') + \
         if(gap != null, '&var.vGap=' + gap, '') + \
         if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
         if(load != null, "&var.vLoad='" + load + "'", '') + \
         if(play != null, '&var.vPlay=' + play, '') + \
+        if(rate != null, '&var.vRate=' + rate, '') + \
         if(save, '&var.vSave=1', '')
     return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
 endfunction
 
 
-# Create a link element model
+# Helper to create a link element model
 function lifeLinkElements(text, url)
-    return objectNew( \
-        'html', 'a', \
-        'attr', objectNew('href', documentURL(url)), \
-        'elem', objectNew('text', text) \
-    )
+    return if(url != null, \
+        objectNew( \
+            'html', 'a', \
+            'attr', objectNew('href', documentURL(url)), \
+            'elem', objectNew('text', text) \
+        ), \
+        objectNew( \
+            'html', 'span', \
+            'attr', objectNew('style', 'user-select: none;'), \
+            'elem', objectNew('text', text) \
+        ))
 endfunction
 
 
-# Create a link-button element model
+# Helper to create a link-button element model
 function lifeButtonElements(text, onclick)
     return objectNew( \
         'html', 'a', \
@@ -248,85 +304,60 @@ function lifeButtonElements(text, onclick)
 endfunction
 
 
-# Life application timeout handler
-function lifeOnTimeout()
-    # Get the start time
-    startTime = datetimeNow()
-
-    # Compute the next life state
-    life = lifeLoad()
-    nextLife = lifeNext(life)
-
-    # Is there a cycle?
-    args = lifeArgs()
-    depth = objectGet(args, 'depth')
-    lifeJSON = jsonStringify(objectGet(life, 'cells'))
-    lifeCycle = nextLife
-    iCycle = 0
-    cycleLoop:
-        jumpif (lifeJSON != jsonStringify(objectGet(lifeCycle, 'cells'))) cycleNone
-            nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
-            jump cycleDone
-        cycleNone:
-        lifeCycle = lifeNext(lifeCycle)
-        iCycle = iCycle + 1
-    jumpif (iCycle < depth) cycleLoop
-    cycleDone:
-
-    # Update the life state
-    lifeSave(nextLife)
-
-    # Compute the ellapsed time and update
-    endTime = datetimeNow()
-    ellapsedMs = endTime - startTime
-    lifeUpdate(ellapsedMs)
-endfunction
-
-
 # Life application step click handler
-function lifeOnClickStep()
-    lifeSave(lifeNext(lifeLoad()))
+function lifeClickStep()
+    life = lifeLoad()
+    lifeSave(lifeNext(life))
     lifeUpdate()
 endfunction
 
 
 # Life application random click handler
-function lifeOnClickRandom()
+function lifeClickRandom()
     life = lifeLoad()
-    lifeSave(lifeNew(objectGet(life, 'width'), objectGet(life, 'height')))
+    life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
+    lifeSave(life)
     lifeUpdate()
 endfunction
 
 
 # Life application reset click handler
-function lifeOnClickReset()
-    lifeSave(lifeNew())
-    resetArgs = (jsonStringify(lifeArgs(true)) == '{"play":0}')
-    if(resetArgs, lifeMain())
-    if(!resetArgs, setWindowLocation('#var.vPlay=0'))
+function lifeClickReset()
+    life = lifeNew()
+    lifeSave(life)
+
+    # If we're already at the reset location, just update
+    resetLocation = '#var.vPlay=0'
+    argsRaw = lifeArgs(true)
+    jumpif (lifeURL(argsRaw) != resetLocation) locationOK
+        lifeUpdate()
+        return
+    locationOK:
+
+    setWindowLocation(resetLocation)
 endfunction
 
 
 # Life application width-less click handler
-function lifeOnClickWidthLess()
+function lifeClickWidthLess()
     lifeUpdateWidthHeight(-5, 0)
 endfunction
 
 
 # Life application width-more click handler
-function lifeOnClickWidthMore()
+function lifeClickWidthMore()
     lifeUpdateWidthHeight(5, 0)
 endfunction
 
 
 # Life application height-less click handler
-function lifeOnClickHeightLess()
+function lifeClickHeightLess()
     lifeUpdateWidthHeight(0, -5)
 endfunction
 
 
 # Life application height-more click handler
-function lifeOnClickHeightMore()
+function lifeClickHeightMore()
     lifeUpdateWidthHeight(0, 5)
 endfunction
 
@@ -342,9 +373,9 @@ endfunction
 
 
 # Life application cell click handler
-function lifeOnClickCell(px, py)
-    args = lifeArgs()
+function lifeClickCell(px, py)
     life = lifeLoad()
+    args = lifeArgs()
     size = lifeSize(life, args)
     gap = objectGet(args, 'gap')
     border = objectGet(args, 'border')
@@ -362,25 +393,6 @@ function lifeOnClickCell(px, py)
     lifeSave(life)
     lifeUpdate()
 endfunction
-
-
-# Life session state object schema
-lifeSession = schemaParse( \
-    '# The Life session state', \
-    'struct Life', \
-    '', \
-    '    # The Life board width', \
-    '    int(>= 10) width', \
-    '', \
-    '    # The Life board height', \
-    '    int(>= 10) height', \
-    '', \
-    '    # The Life board cell state array', \
-    '    int(>= 0, <= 1)[len > 0] cells', \
-    '', \
-    "    # The Life board's encoded initial cell state", \
-    '    string initial' \
-)
 
 
 # Create a new Life object
@@ -435,38 +447,6 @@ function lifeSave(life)
 endfunction
 
 
-# Compute the next Life object state
-function lifeNext(life)
-    width = objectGet(life, 'width')
-    height = objectGet(life, 'height')
-    cells = objectGet(life, 'cells')
-
-    # Compute the next life generation
-    lifeNext = lifeNew(width, height, objectGet(life, 'initial'), true)
-    nextCells = objectGet(lifeNext, 'cells')
-    y = 0
-    yLoop:
-        x = 0
-        xLoop:
-            neighbor = if(x > 0 && y > 0, arrayGet(cells, (y - 1) * width + x - 1), 0) + \
-                if(y > 0, arrayGet(cells, (y - 1) * width + x), 0) + \
-                if(x < width - 1 && y > 0, arrayGet(cells, (y - 1) * width + x + 1), 0) + \
-                if(x > 0, arrayGet(cells, y * width + x - 1), 0) + \
-                if(x < width - 1, arrayGet(cells, y * width + x + 1), 0) + \
-                if(x > 0 && y < height - 1, arrayGet(cells, (y + 1) * width + x - 1), 0) + \
-                if(y < height - 1, arrayGet(cells, (y + 1) * width + x), 0) + \
-                if(x < width - 1 && y < height - 1, arrayGet(cells, (y + 1) * width + x + 1), 0)
-            arraySet(nextCells, y * width + x, \
-                if(arrayGet(cells, y * width + x), if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0)))
-            x = x + 1
-        jumpif (x < width) xLoop
-        y = y + 1
-    jumpif (y < height) yLoop
-
-    return lifeNext
-endfunction
-
-
 # Draw the life board
 function lifeDraw(life, args)
     # Set the drawing size
@@ -476,7 +456,7 @@ function lifeDraw(life, args)
     gap = objectGet(args, 'gap')
     border = objectGet(args, 'border')
     setDrawingSize(width * (gap + size) + gap + 2 * border, height * (gap + size) + gap + 2 * border)
-    if(!objectGet(args, 'play'), drawOnClick(lifeOnClickCell))
+    if(!objectGet(args, 'play'), drawOnClick(lifeClickCell))
 
     # Draw the background
     drawStyle('#606060', border, arrayGet(lifeColors, objectGet(args, 'background')))
@@ -516,6 +496,38 @@ function lifeSize(life, args)
     sizeWidth = (totalWidth - gap * (lifeWidth + 1) - 2 * border) / lifeWidth
     sizeHeight = (totalHeight - gap * (lifeHeight + 1) - 2 * border) / lifeHeight
     return mathMax(1, mathMin(sizeWidth, sizeHeight))
+endfunction
+
+
+# Compute the next Life object state
+function lifeNext(life)
+    width = objectGet(life, 'width')
+    height = objectGet(life, 'height')
+    cells = objectGet(life, 'cells')
+
+    # Compute the next life generation
+    lifeNext = lifeNew(width, height, objectGet(life, 'initial'), true)
+    nextCells = objectGet(lifeNext, 'cells')
+    y = 0
+    yLoop:
+        x = 0
+        xLoop:
+            neighbor = if(x > 0 && y > 0, arrayGet(cells, (y - 1) * width + x - 1), 0) + \
+                if(y > 0, arrayGet(cells, (y - 1) * width + x), 0) + \
+                if(x < width - 1 && y > 0, arrayGet(cells, (y - 1) * width + x + 1), 0) + \
+                if(x > 0, arrayGet(cells, y * width + x - 1), 0) + \
+                if(x < width - 1, arrayGet(cells, y * width + x + 1), 0) + \
+                if(x > 0 && y < height - 1, arrayGet(cells, (y + 1) * width + x - 1), 0) + \
+                if(y < height - 1, arrayGet(cells, (y + 1) * width + x), 0) + \
+                if(x < width - 1 && y < height - 1, arrayGet(cells, (y + 1) * width + x + 1), 0)
+            arraySet(nextCells, y * width + x, \
+                if(arrayGet(cells, y * width + x), if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0)))
+            x = x + 1
+        jumpif (x < width) xLoop
+        y = y + 1
+    jumpif (y < height) yLoop
+
+    return lifeNext
 endfunction
 
 
@@ -593,6 +605,25 @@ endfunction
 # Life encoding characters
 lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
 lifeEncodeChars = '0123456789' + lifeEncodeAlpha + stringUpper(lifeEncodeAlpha)
+
+
+# Life session state object schema
+lifeSession = schemaParse( \
+    '# The Life session state', \
+    'struct Life', \
+    '', \
+    '    # The Life board width', \
+    '    int(>= 10) width', \
+    '', \
+    '    # The Life board height', \
+    '    int(>= 10) height', \
+    '', \
+    '    # The Life board cell state array', \
+    '    int(>= 0, <= 1)[len > 0] cells', \
+    '', \
+    "    # The Life board's encoded initial cell state", \
+    '    string initial' \
+)
 
 
 # Execute the main entry point

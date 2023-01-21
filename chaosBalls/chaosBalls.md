@@ -13,8 +13,11 @@ async function chaosBallsMain()
         return
     docDone:
 
-    # Set the default title
+    # Set the title
     setDocumentTitle('Chaos Balls')
+
+    # Load the session
+    session = chaosBallsGetSession()
 
     # Set the Chaos Balls model, if requested
     jumpif (vURL == null) fetchDone
@@ -33,213 +36,202 @@ async function chaosBallsMain()
         modelDone:
 
         # Create a new, random session from the model (unless its the same as the session's model)
-        session = chaosBallsGetSession()
         jumpif (jsonStringify(model) == jsonStringify(objectGet(session, 'model'))) fetchDone
         chaosBallsSetSession(chaosBallsNewSession(model))
     fetchDone:
 
-    # Render the balls
-    chaosBallsResize()
+    # Render the application
+    chaosBallsRender(session)
+
+    # Set the timeout handler
+    chaosBallsSetTimeout()
 
     # Set the window resize handler
     setWindowResize(chaosBallsResize)
 endfunction
 
 
+# Helper to render the application
+function chaosBallsRender(session)
+    # Render the menu
+    elementModelRender(arrayNew( \
+        if(!vFullScreen, objectNew('html', 'p', 'elem', arrayNew( \
+            objectNew('html', 'b', 'elem', objectNew('text', "Chaos Balls")), \
+            objectNew('html', 'br'), \
+            chaosBallsMenuElements() \
+        ))), \
+        objectNew('html', 'div', 'attr', objectNew('id', chaosBallsDocumentResetID, 'style', 'display: none;')) \
+    ))
+
+    # Render the balls
+    chaosBallsDraw(session)
+endfunction
+
 # Chaos Balls window resize handler
 function chaosBallsResize()
-    chaosBallsTimeout(true)
+    session = chaosBallsGetSession()
+
+    # Render the application
+    chaosBallsRender(session)
+
+    # Set the timeout handler
+    chaosBallsSetTimeout()
 endfunction
 
 
 # Chaos Balls animation timeout handler
-function chaosBallsTimeout(isResize)
-    # Get the session state
+function chaosBallsTimeout()
     startTime = datetimeNow()
-    session = chaosBallsGetSession()
-
-    # Render the menu
-    chaosBallsMenu(!isResize)
-    if(!isResize, setDocumentReset(chaosBallsMenuResetID))
-
-    # Move the session balls
-    period = chaosBallsGetPeriod()
-    if(!isResize, chaosBallsMove(session, period))
-
-    # Render the balls
-    chaosBallsRender(session)
-
-    # Start the timer (unless paused)
-    endTime = datetimeNow()
-    ellapsedMs = endTime - startTime
-    if(!vPause, setWindowTimeout(chaosBallsTimeout, mathMax(0, period * 1000 - ellapsedMs)))
-endfunction
-
-
-# Menu step button on-click handler
-function chaosBallsStep()
-    # Get the session state
     session = chaosBallsGetSession()
 
     # Move the session balls
     chaosBallsMove(session, chaosBallsGetPeriod())
 
     # Render the balls
-    chaosBallsResize()
+    setDocumentReset(chaosBallsDocumentResetID)
+    chaosBallsDraw(session)
 
-    # Pause playing, if necessary
-    if(!vPause, setWindowLocation(chaosBallsMenuURL(1)))
+    # Set the timeout handler
+    endTime = datetimeNow()
+    chaosBallsSetTimeout(startTime, endTime)
 endfunction
 
 
-# Menu reset button on-click handler
-function chaosBallsReset()
-    # Get the session state
-    session = chaosBallsGetSession()
+# Helper to update the application following a session change
+function chaosBallsUpdate(session)
+    # Render the application
+    chaosBallsRender(session)
 
-    # Create a new, random session from the current session model
-    session = chaosBallsNewSession(objectGet(session, 'model'))
-    chaosBallsSetSession(session)
-
-    # Render the balls
-    chaosBallsResize()
+    # Set the timeout handler
+    chaosBallsSetTimeout()
 endfunction
 
 
-# Render the menu
-function chaosBallsMenu(noMenu)
-    # Create the menu elements
-    elements = arrayNew()
-
-    # Add the menu elements
-    jumpif (noMenu || vFullScreen) menuDone
-        # Add the application title
-        items = arrayNew()
-        arrayPush(elements, objectNew('html', 'p', 'elem', arrayNew( \
-            objectNew('html', 'b', 'elem', objectNew('text', 'Chaos Balls')), \
-            objectNew('html', 'br'), \
-            items \
-        )))
-
-        # Add the menu items
-        nbsp = stringFromCharCode(160)
-        rateIndex = chaosBallsGetRate()
-        rateDown = if(rateIndex > 0, rateIndex - 1, null)
-        rateUp = if(rateIndex < arrayLength(chaosBallsMenuRates) - 1, rateIndex + 1, null)
-        if(!vPause, chaosBallsMenuLink(items, 'Pause', chaosBallsMenuURL(1)))
-        if(vPause, chaosBallsMenuLink(items, 'Play', chaosBallsMenuURL(0)))
-        chaosBallsMenuButton(items, 'Step', chaosBallsStep)
-        chaosBallsMenuButton(items, 'Reset', chaosBallsReset)
-        chaosBallsMenuLink(items, '<<', if(rateDown != null, chaosBallsMenuURL(null, rateDown)))
-        chaosBallsMenuLink(items, arrayGet(chaosBallsMenuRates, rateIndex) + nbsp + 'Hz', null, true)
-        chaosBallsMenuLink(items, '>>', if(rateUp != null, chaosBallsMenuURL(null, rateUp)), true)
-        chaosBallsMenuLink(items, 'Full', chaosBallsMenuURL(0, null, true))
-        chaosBallsMenuLink(items, 'About', '#url=README.md')
-    menuDone:
-
-    # Add the document reset ID
-    arrayPush(elements, objectNew('html', 'div', 'attr', objectNew('id', chaosBallsMenuResetID, 'style', 'display=none')))
-
-    # Render the menu elements
-    elementModelRender(elements)
+# Helper to set the timeout handler
+function chaosBallsSetTimeout(startTime, endTime)
+    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
+    periodMs = mathMax(0, 1000 * chaosBallsGetPeriod() - ellapsedMs)
+    if(vPlay, setWindowTimeout(chaosBallsTimeout, periodMs))
 endfunction
-
-
-# Helper for creating menu link URLs
-function chaosBallsMenuURL(pause, rate, fullScreen)
-    # Compute the URL argument state
-    pause = if(pause != null, pause, vPause)
-    rate = if(rate != null, rate, vRate)
-
-    # Create the URL
-    parts = arrayNew()
-    if(vURL != null, arrayPush(parts, "var.vURL='" + encodeURIComponent(vURL) + "'"))
-    if(pause != null, arrayPush(parts, 'var.vPause=' + pause))
-    if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
-    if(fullScreen, arrayPush(parts, 'var.vFullScreen=1'))
-    return '#' + arrayJoin(parts, '&')
-endfunction
-
-
-# Helper for creating menu link elements
-function chaosBallsMenuLink(items, text, url, noSeparator)
-    nbsp = stringFromCharCode(160)
-    arrayPush(items, arrayNew( \
-        if(arrayLength(items) > 0, objectNew('text', if(noSeparator, ' ', nbsp + '| ')), null), \
-        if(url == null, objectNew('text', text), \
-            objectNew('html', 'a', 'attr', objectNew('href', documentURL(url)), 'elem', objectNew('text', text))) \
-    ))
-endfunction
-
-
-# Helper for creating menu button elements
-function chaosBallsMenuButton(items, text, callback, noSeparator)
-    nbsp = stringFromCharCode(160)
-    arrayPush(items, arrayNew( \
-        if(arrayLength(items) > 0, objectNew('text', if(noSeparator, nbsp, nbsp + '|' + nbsp)), null), \
-        objectNew( \
-            'html', 'a', \
-            'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
-            'elem', objectNew('text', text), \
-            'callback', objectNew('click', callback) \
-        ) \
-    ))
-endfunction
-
-
-# The below-menu document reset ID
-chaosBallsMenuResetID = 'chaosBallsMenu'
-
-
-# List of available menu frame rates, in Hz
-chaosBallsMenuRates = arrayNew(10, 15, 20, 30, 45, 60)
-chaosBallsMenuRateDefault = 2
 
 
 # Get the current frame rate, in Hz
 function chaosBallsGetRate()
-    rateMax = arrayLength(chaosBallsMenuRates) - 1
-    return if(vRate != null, mathMax(0, mathMin(rateMax, vRate)), chaosBallsMenuRateDefault)
+    rateMax = arrayLength(chaosBallsRates) - 1
+    return if(vRate != null, mathMax(0, mathMin(rateMax, vRate)), chaosBallsRateDefault)
 endfunction
 
 
 # Get the current frame rate period, in seconds
 function chaosBallsGetPeriod()
-    return 1 / arrayGet(chaosBallsMenuRates, chaosBallsGetRate())
+    return 1 / arrayGet(chaosBallsRates, chaosBallsGetRate())
 endfunction
 
 
-# Get the Chaos Balls drawing width
-function chaosBallsWidth()
-    return getWindowWidth() - 3 * getDocumentFontSize()
+# Render the menu
+function chaosBallsMenuElements()
+    # Menu separators
+    nbsp = stringFromCharCode(160)
+    linkSeparator = objectNew('text', ' ')
+    linkSection = objectNew('text', nbsp + '| ')
+
+    # Create the menu element model
+    rate = chaosBallsGetRate()
+    rateDown = if(rate > 0, rate - 1)
+    rateUp= if(rate < arrayLength(chaosBallsRates) - 1, rate + 1)
+    return arrayNew( \
+        if(vPlay, chaosBallsLinkElements('Pause', chaosBallsURL(objectNew('play', 0)))), \
+        if(!vPlay, chaosBallsLinkElements('Play', chaosBallsURL(objectNew('play', 1)))), \
+        linkSection, \
+        chaosBallsButtonElements('Step', chaosBallsStep), \
+        linkSeparator, \
+        chaosBallsButtonElements('Reset', chaosBallsReset), \
+        linkSection, \
+        chaosBallsLinkElements('<<', if(rateDown != null, chaosBallsURL(objectNew('rate', rateDown)))), \
+        objectNew('text', nbsp + arrayGet(chaosBallsRates, rate) + nbsp + 'Hz' + nbsp), \
+        chaosBallsLinkElements('>>', if(rateUp != null, chaosBallsURL(objectNew('rate', rateUp)))), \
+        linkSection, \
+        chaosBallsLinkElements('Full', chaosBallsURL(objectNew('fullScreen', true))), \
+        linkSection, \
+        chaosBallsLinkElements('About', '#url=README.md') \
+    )
 endfunction
 
 
-# Get the Chaos Balls drawing height
-function chaosBallsHeight()
-    return getWindowHeight() - if(vFullScreen, 3, 6) * getDocumentFontSize()
+# List of available menu frame rates, in Hz
+chaosBallsRates = arrayNew(10, 15, 20, 30, 45, 60)
+chaosBallsRateDefault = 2
+
+# The below-menu document reset ID
+chaosBallsDocumentResetID = 'chaosBallsMenu'
+
+
+# Helper to create an application URL
+function chaosBallsURL(args)
+    # URL arguments
+    fullScreen = objectGet(args, 'fullScreen')
+    play = objectGet(args, 'play')
+    rate = objectGet(args, 'rate')
+    url = objectGet(args, 'url')
+
+    # Variable arguments
+    fullScreen = if(fullScreen != null, fullScreen, vFullScreen)
+    play = if(play != null, play, vPlay)
+    rate = if(rate != null, rate, vRate)
+    url = if(url != null, url, vURL)
+
+    # Create the URL
+    parts = arrayNew()
+    if(fullScreen, arrayPush(parts, 'var.vFullScreen=1'))
+    if(play != null, arrayPush(parts, 'var.vPlay=' + play))
+    if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
+    if(vURL != null, arrayPush(parts, "var.vURL='" + encodeURIComponent(vURL) + "'"))
+    return '#' + arrayJoin(parts, '&')
 endfunction
 
 
-# Get the Chaos= Balls session object
-function chaosBallsGetSession()
-    # Parse and validate the session object
-    sessionJSON = sessionStorageGet('chaosBalls')
-    session = if(sessionJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBallsSession', jsonParse(sessionJSON)))
-
-    # If there is no session, create a default session
-    jumpif (session != null) sessionDone
-        session = chaosBallsNewSession(chaosBallsDefaultModel)
-        sessionStorageSet('chaosBalls', jsonStringify(session))
-    sessionDone:
-
-    return session
+# Helper to create a link element model
+function chaosBallsLinkElements(text, url)
+    return if(url != null, \
+        objectNew( \
+            'html', 'a', \
+            'attr', objectNew('href', documentURL(url)), \
+            'elem', objectNew('text', text) \
+        ), \
+        objectNew( \
+            'html', 'span', \
+            'attr', objectNew('style', 'user-select: none;'), \
+            'elem', objectNew('text', text) \
+        ))
 endfunction
 
 
-# Set the Chaos= Balls session object
-function chaosBallsSetSession(session)
-    sessionStorageSet('chaosBalls', jsonStringify(session))
+# Helper to create a link-button element model
+function chaosBallsButtonElements(text, callback)
+    return objectNew( \
+        'html', 'a', \
+        'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+        'elem', objectNew('text', text), \
+        'callback', objectNew('click', callback) \
+    )
+endfunction
+
+
+# Menu step button on-click handler
+function chaosBallsStep()
+    session = chaosBallsGetSession()
+    chaosBallsMove(session, chaosBallsGetPeriod())
+    if(!vPlay, chaosBallsUpdate(session))
+    if(vPlay, setWindowLocation(chaosBallsURL(objectNew('play', 0))))
+endfunction
+
+
+# Menu reset button on-click handler
+function chaosBallsReset()
+    session = chaosBallsGetSession()
+    session = chaosBallsNewSession(objectGet(session, 'model'))
+    chaosBallsSetSession(session)
+    chaosBallsUpdate(session)
 endfunction
 
 
@@ -293,8 +285,30 @@ function chaosBallsNewSession(model)
 endfunction
 
 
+# Get the Chaos= Balls session object
+function chaosBallsGetSession()
+    # Parse and validate the session object
+    sessionJSON = sessionStorageGet('chaosBalls')
+    session = if(sessionJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBallsSession', jsonParse(sessionJSON)))
+
+    # If there is no session, create a default session
+    jumpif (session != null) sessionDone
+        session = chaosBallsNewSession(chaosBallsDefaultModel)
+        sessionStorageSet('chaosBalls', jsonStringify(session))
+    sessionDone:
+
+    return session
+endfunction
+
+
+# Set the Chaos= Balls session object
+function chaosBallsSetSession(session)
+    sessionStorageSet('chaosBalls', jsonStringify(session))
+endfunction
+
+
 # Render the Chaos Balls
-function chaosBallsRender(session)
+function chaosBallsDraw(session)
     # Compute the width/height
     width = chaosBallsWidth()
     height = chaosBallsHeight()
@@ -315,6 +329,18 @@ function chaosBallsRender(session)
         drawCircle(objectGet(ball, 'x') * width, objectGet(ball, 'y') * height, 0.5 * objectGet(ball, 'size') * widthHeight)
         ixBall = ixBall + 1
     jumpif (ixBall < arrayLength(balls)) ballLoop
+endfunction
+
+
+# Get the Chaos Balls drawing width
+function chaosBallsWidth()
+    return getWindowWidth() - 3 * getDocumentFontSize()
+endfunction
+
+
+# Get the Chaos Balls drawing height
+function chaosBallsHeight()
+    return getWindowHeight() - if(vFullScreen, 3, 6) * getDocumentFontSize()
 endfunction
 
 
