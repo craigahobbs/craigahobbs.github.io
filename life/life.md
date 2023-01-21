@@ -10,9 +10,9 @@ function lifeMain()
 
     # Load the life state
     life = lifeLoad()
+    args = lifeArgs()
 
     # Load argument provided?
-    args = lifeArgs()
     load = objectGet(args, 'load')
     jumpif (load == null) loadDone
         # Decode the load argument
@@ -53,7 +53,7 @@ endfunction
 
 
 # Life application window resize handler
-function lifeResize(life, args)
+function lifeResize()
     life = lifeLoad()
     args = lifeArgs()
 
@@ -103,10 +103,7 @@ endfunction
 
 
 # Helper to update the application following a session change
-function lifeUpdate()
-    life = lifeLoad()
-    args = lifeArgs()
-
+function lifeUpdate(life, args)
     # Is there a load argument? If so, delete it and update the window location
     argsRaw = lifeArgs(true)
     jumpif (objectGet(argsRaw, 'load') == null) loadDone
@@ -260,20 +257,20 @@ function lifeURL(argsRaw, args)
     borderRatio = objectGet(argsRaw, 'borderRatio')
 
     # Return the URL
-    urlArgs = \
-        if(background != null, '&var.vBackground=' + background, '') + \
-        if(border != null, '&var.vBorder=' + border, '') + \
-        if(borderRatio != null, '&var.vBorderRatio=' + borderRatio, '') + \
-        if(color != null, '&var.vColor=' + color, '') + \
-        if(depth != null, '&var.vDepth=' + depth, '') + \
-        if(fullScreen != null, '&var.vFullScreen=' + fullScreen, '') + \
-        if(gap != null, '&var.vGap=' + gap, '') + \
-        if(initRatio != null, '&var.vInitRatio=' + initRatio, '') + \
-        if(load != null, "&var.vLoad='" + load + "'", '') + \
-        if(play != null, '&var.vPlay=' + play, '') + \
-        if(rate != null, '&var.vRate=' + rate, '') + \
-        if(save, '&var.vSave=1', '')
-    return if(stringLength(urlArgs) > 0, '#' + stringSlice(urlArgs, 1), '#var=')
+    parts = arrayNew()
+    if(background != null, arrayPush(parts, 'var.vBackground=' + background))
+    if(border != null, arrayPush(parts, 'var.vBorder=' + border))
+    if(borderRatio != null, arrayPush(parts, 'var.vBorderRatio=' + borderRatio))
+    if(color != null, arrayPush(parts, 'var.vColor=' + color))
+    if(depth != null, arrayPush(parts, 'var.vDepth=' + depth))
+    if(fullScreen != null, arrayPush(parts, 'var.vFullScreen=' + fullScreen))
+    if(gap != null, arrayPush(parts, 'var.vGap=' + gap))
+    if(initRatio != null, arrayPush(parts, 'var.vInitRatio=' + initRatio))
+    if(load != null, arrayPush(parts, "var.vLoad='" + load + "'"))
+    if(play != null, arrayPush(parts, 'var.vPlay=' + play))
+    if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
+    if(save, arrayPush(parts, 'var.vSave=1'))
+    return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
 
 
@@ -307,8 +304,10 @@ endfunction
 # Life application step click handler
 function lifeClickStep()
     life = lifeLoad()
-    lifeSave(lifeNext(life))
-    lifeUpdate()
+    life = lifeNext(life)
+    args = lifeArgs()
+    lifeSave(life)
+    lifeUpdate(life, args)
 endfunction
 
 
@@ -316,21 +315,23 @@ endfunction
 function lifeClickRandom()
     life = lifeLoad()
     life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
+    args = lifeArgs()
     lifeSave(life)
-    lifeUpdate()
+    lifeUpdate(life, args)
 endfunction
 
 
 # Life application reset click handler
 function lifeClickReset()
     life = lifeNew()
+    args = lifeArgs()
     lifeSave(life)
 
     # If we're already at the reset location, just update
     resetLocation = '#var.vPlay=0'
     argsRaw = lifeArgs(true)
     jumpif (lifeURL(argsRaw) != resetLocation) locationOK
-        lifeUpdate()
+        lifeUpdate(life, args)
         return
     locationOK:
 
@@ -365,10 +366,12 @@ endfunction
 # Helper for width/height less/more click handlers
 function lifeUpdateWidthHeight(widthDelta, heightDelta)
     life = lifeLoad()
+    args = lifeArgs()
     width = mathMax(10, mathCeil(widthDelta + objectGet(life, 'width')))
     height = mathMax(10, mathCeil(heightDelta + objectGet(life, 'height')))
-    lifeSave(lifeNew(width, height))
-    lifeUpdate()
+    life = lifeNew(width, height)
+    lifeSave(life)
+    lifeUpdate(life, args)
 endfunction
 
 
@@ -391,7 +394,7 @@ function lifeClickCell(px, py)
 
     # Update the life state and re-render
     lifeSave(life)
-    lifeUpdate()
+    lifeUpdate(life, args)
 endfunction
 
 
