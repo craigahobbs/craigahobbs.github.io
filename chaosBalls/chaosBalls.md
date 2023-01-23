@@ -277,7 +277,7 @@ function chaosBallsNewSession(model)
 endfunction
 
 
-# Get the Chaos= Balls session object
+# Get the Chaos Balls session object
 function chaosBallsGetSession()
     # Parse and validate the session object
     sessionJSON = sessionStorageGet('chaosBalls')
