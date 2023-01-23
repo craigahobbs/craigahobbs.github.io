@@ -27,15 +27,12 @@ function lifeMain()
     # Render the application
     lifeRender(life, args)
 
-    # Set the timeout handler
-    lifeSetTimeout(args)
-
     # Set the window resize handler
     setWindowResize(lifeResize)
 endfunction
 
 
-# Helper to render the application
+# Render the Life application
 function lifeRender(life, args)
     # Render the menu
     elementModelRender(arrayNew( \
@@ -49,6 +46,17 @@ function lifeRender(life, args)
 
     # Render the Life board
     lifeDraw(life, args)
+
+    # Set the timeout handler
+    lifeSetTimeout(args)
+endfunction
+
+
+# Helper to set the timeout handler
+function lifeSetTimeout(args, startTime, endTime)
+    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
+    periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - ellapsedMs)
+    if(objectGet(args, 'play'), setWindowTimeout(lifeTimeout, periodMs))
 endfunction
 
 
@@ -56,12 +64,7 @@ endfunction
 function lifeResize()
     life = lifeLoad()
     args = lifeArgs()
-
-    # Render the application
     lifeRender(life, args)
-
-    # Set the timeout handler
-    lifeSetTimeout(args)
 endfunction
 
 
@@ -99,32 +102,6 @@ function lifeTimeout()
     # Set the timeout handler
     endTime = datetimeNow()
     lifeSetTimeout(args, startTime, endTime)
-endfunction
-
-
-# Helper to update the application following a session change
-function lifeUpdate(life, args)
-    # Is there a load argument? If so, delete it and update the window location
-    argsRaw = lifeArgs(true)
-    jumpif (objectGet(argsRaw, 'load') == null) loadDone
-        objectDelete(argsRaw, 'load')
-        setWindowLocation(lifeURL(argsRaw))
-        return
-    loadDone:
-
-    # Render the application
-    lifeRender(life, args)
-
-    # Set the timeout handler
-    lifeSetTimeout(args, startTime, endTime)
-endfunction
-
-
-# Helper to set the timeout handler
-function lifeSetTimeout(args, startTime, endTime)
-    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
-    periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - ellapsedMs)
-    if(objectGet(args, 'play'), setWindowTimeout(lifeTimeout, periodMs))
 endfunction
 
 
@@ -307,7 +284,7 @@ function lifeClickStep()
     life = lifeNext(life)
     args = lifeArgs()
     lifeSave(life)
-    lifeUpdate(life, args)
+    lifeRender(life, args)
 endfunction
 
 
@@ -317,7 +294,7 @@ function lifeClickRandom()
     life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
     args = lifeArgs()
     lifeSave(life)
-    lifeUpdate(life, args)
+    lifeRender(life, args)
 endfunction
 
 
@@ -331,7 +308,7 @@ function lifeClickReset()
     resetLocation = '#var.vPlay=0'
     argsRaw = lifeArgs(true)
     jumpif (lifeURL(argsRaw) != resetLocation) locationOK
-        lifeUpdate(life, args)
+        lifeRender(life, args)
         return
     locationOK:
 
@@ -341,37 +318,37 @@ endfunction
 
 # Life application width-less click handler
 function lifeClickWidthLess()
-    lifeUpdateWidthHeight(-5, 0)
+    lifeRenderWidthHeight(-5, 0)
 endfunction
 
 
 # Life application width-more click handler
 function lifeClickWidthMore()
-    lifeUpdateWidthHeight(5, 0)
+    lifeRenderWidthHeight(5, 0)
 endfunction
 
 
 # Life application height-less click handler
 function lifeClickHeightLess()
-    lifeUpdateWidthHeight(0, -5)
+    lifeRenderWidthHeight(0, -5)
 endfunction
 
 
 # Life application height-more click handler
 function lifeClickHeightMore()
-    lifeUpdateWidthHeight(0, 5)
+    lifeRenderWidthHeight(0, 5)
 endfunction
 
 
 # Helper for width/height less/more click handlers
-function lifeUpdateWidthHeight(widthDelta, heightDelta)
+function lifeRenderWidthHeight(widthDelta, heightDelta)
     life = lifeLoad()
     args = lifeArgs()
     width = mathMax(10, mathCeil(widthDelta + objectGet(life, 'width')))
     height = mathMax(10, mathCeil(heightDelta + objectGet(life, 'height')))
     life = lifeNew(width, height)
     lifeSave(life)
-    lifeUpdate(life, args)
+    lifeRender(life, args)
 endfunction
 
 
@@ -394,7 +371,7 @@ function lifeClickCell(px, py)
 
     # Update the life state and re-render
     lifeSave(life)
-    lifeUpdate(life, args)
+    lifeRender(life, args)
 endfunction
 
 

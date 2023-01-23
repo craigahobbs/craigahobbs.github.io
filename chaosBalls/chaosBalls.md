@@ -46,15 +46,12 @@ async function chaosBallsMain()
     # Render the application
     chaosBallsRender(session, args)
 
-    # Set the timeout handler
-    chaosBallsSetTimeout(args)
-
     # Set the window resize handler
     setWindowResize(chaosBallsResize)
 endfunction
 
 
-# Helper to render the application
+# Render the Chaos Balls application
 function chaosBallsRender(session, args)
     # Render the menu
     elementModelRender(arrayNew( \
@@ -68,22 +65,29 @@ function chaosBallsRender(session, args)
 
     # Render the balls
     chaosBallsDraw(session, args)
-endfunction
-
-# Chaos Balls window resize handler
-function chaosBallsResize()
-    session = chaosBallsGetSession()
-    args = chaosBallsArgs()
-
-    # Render the application
-    chaosBallsRender(session, args)
 
     # Set the timeout handler
     chaosBallsSetTimeout(args)
 endfunction
 
 
-# Chaos Balls animation timeout handler
+# Helper to set the timeout handler
+function chaosBallsSetTimeout(args, startTime, endTime)
+    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
+    periodMs = mathMax(0, 1000 / arrayGet(chaosBallsRates, objectGet(args, 'rate')) - ellapsedMs)
+    if(objectGet(args, 'play'), setWindowTimeout(chaosBallsTimeout, periodMs))
+endfunction
+
+
+# Chaos Balls window resize handler
+function chaosBallsResize()
+    session = chaosBallsGetSession()
+    args = chaosBallsArgs()
+    chaosBallsRender(session, args)
+endfunction
+
+
+# Chaos Balls timeout handler
 function chaosBallsTimeout()
     startTime = datetimeNow()
     session = chaosBallsGetSession()
@@ -99,24 +103,6 @@ function chaosBallsTimeout()
     # Set the timeout handler
     endTime = datetimeNow()
     chaosBallsSetTimeout(args, startTime, endTime)
-endfunction
-
-
-# Helper to update the application following a session change
-function chaosBallsUpdate(session, args)
-    # Render the application
-    chaosBallsRender(session, args)
-
-    # Set the timeout handler
-    chaosBallsSetTimeout(args)
-endfunction
-
-
-# Helper to set the timeout handler
-function chaosBallsSetTimeout(args, startTime, endTime)
-    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
-    periodMs = mathMax(0, 1000 / arrayGet(chaosBallsRates, objectGet(args, 'rate')) - ellapsedMs)
-    if(objectGet(args, 'play'), setWindowTimeout(chaosBallsTimeout, periodMs))
 endfunction
 
 
@@ -163,10 +149,10 @@ function chaosBallsMenuElements(args)
 endfunction
 
 
-# List of available menu frame rates, in Hz
+# The Chaos Balls menu frame rates, in Hz
 chaosBallsRates = arrayNew(10, 15, 20, 30, 45, 60)
 
-# The below-menu document reset ID
+# The Chaos Balls document reset ID
 chaosBallsDocumentResetID = 'chaosBallsMenu'
 
 
@@ -221,23 +207,23 @@ function chaosBallsButtonElements(text, callback)
 endfunction
 
 
-# Menu step button on-click handler
+# Chaos Balls step click handler
 function chaosBallsStep()
     session = chaosBallsGetSession()
     args = chaosBallsArgs()
     chaosBallsMove(session, args)
-    if(!objectGet(args, 'play'), chaosBallsUpdate(session, args))
+    if(!objectGet(args, 'play'), chaosBallsRender(session, args))
     if(objectGet(args, 'play'), setWindowLocation(chaosBallsURL(chaosBallsArgs(true), objectNew('play', 0))))
 endfunction
 
 
-# Menu reset button on-click handler
+# Chaos Balls reset click handler
 function chaosBallsReset()
     session = chaosBallsGetSession()
     session = chaosBallsNewSession(objectGet(session, 'model'))
     args = chaosBallsArgs()
     chaosBallsSetSession(session)
-    chaosBallsUpdate(session, args)
+    chaosBallsRender(session, args)
 endfunction
 
 
@@ -313,7 +299,7 @@ function chaosBallsSetSession(session)
 endfunction
 
 
-# Render the Chaos Balls
+# Draw the Chaos Balls
 function chaosBallsDraw(session, args)
     # Compute the width/height
     width = chaosBallsWidth()
