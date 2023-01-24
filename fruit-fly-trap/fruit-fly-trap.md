@@ -22,7 +22,28 @@ function main()
     title = 'The Fruit Fly Trap Maker'
     setDocumentTitle(title)
 
-    jumpif (vPrint > 0) skipInstructions
+    # Print the cone form?
+    jumpif (!vPrint) printNot
+        # Print close link
+        elementModelRender(objectNew( \
+            'html', 'p', \
+            'attr', objectNew('class', 'markdown-model-no-print'), \
+            'elem', objectNew( \
+                'html', 'a', \
+                'attr', objectNew('href', documentURL(coneURL(objectNew('print', 0)))), \
+                'elem', objectNew('text', 'Close') \
+            ) \
+        ))
+
+        # Render the cone form
+        pixelsPerPoint = 4 / 3
+        pointsPerCm = 28.3464567
+        pointsPerInch = 72
+        pixelsPerUnit = if(isMetric, pointsPerCm, pointsPerInch) * pixelsPerPoint
+        coneForm(diameter * pixelsPerUnit, bottom * pixelsPerUnit, coneHeight * pixelsPerUnit, \
+            flapLength * pixelsPerUnit, 1, coneExtraLength * pixelsPerUnit)
+        return
+    printNot:
 
     # Introduction
     markdownPrint( \
@@ -49,28 +70,36 @@ function main()
         '1. Take the following measurements from a drinking glass (see diagram above).', \
         '', \
         '    **Top diameter (d)** (' + \
-            if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), coneLink('Less', null, diameter - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), coneLink('More', null, diameter + delta), 'More') + \
+            if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), \
+                coneLink('Less', objectNew('diameter', diameter - delta)), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), \
+                coneLink('More', objectNew('diameter', diameter + delta)), 'More') + \
             '): ' + diameter + ' ' + units, \
         '', \
         '    **Height (h)** (' + \
-            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), coneLink('Less', height - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), coneLink('More', height + delta), 'More') + \
+            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), \
+                coneLink('Less', objectNew('height', height - delta)), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), \
+                coneLink('More', objectNew('height', height + delta)), 'More') + \
             '): ' + height + ' ' + units, \
         '', \
         '    **Bottom offset (o)** (' + \
-            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), coneLink('Less', null, null, null, offset - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), coneLink('More', null, null, null, offset + delta), 'More') + \
+            if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), \
+                coneLink('Less', objectNew('offset', offset - delta)), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), \
+                coneLink('More', objectNew('offset', offset + delta)), 'More') + \
             '): ' + offset + ' ' + units, \
         '', \
         '    **Bottom diameter (b)** (' + \
-            if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), coneLink('Less', null, null, bottom - delta), 'Less') + ' | ' + \
-            if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), coneLink('More', null, null, bottom + delta), 'More') + \
+            if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), \
+                coneLink('Less', objectNew('bottom', bottom - delta)), 'Less') + ' | ' + \
+            if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), \
+                coneLink('More', objectNew('bottom', bottom + delta)), 'More') + \
             '): ' + bottom + ' ' + units, \
         '', \
         '2. Print the cone form using the link below.', \
         '', \
-        '   ' + coneLink('Print Cone Form', null, null, null, null, 1), \
+        '   ' + coneLink('Print Cone Form', objectNew('print', 1)), \
         '', \
         "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
         '', \
@@ -82,38 +111,40 @@ function main()
         '', \
         '6. Set the trap near where you have fruit flies.' \
     )
-
-    jump skipConeForm
-    skipInstructions:
-
-    # Print close link
-    markdownPrint('', coneLink('Close', null, null, null, null, null, 'the-fruit-fly-trap-maker'))
-
-    # Render the cone form
-    pixelsPerPoint = 4 / 3
-    pointsPerCm = 28.3464567
-    pointsPerInch = 72
-    pixelsPerUnit = if(isMetric, pointsPerCm, pointsPerInch) * pixelsPerPoint
-    coneForm(diameter * pixelsPerUnit, bottom * pixelsPerUnit, coneHeight * pixelsPerUnit, \
-        flapLength * pixelsPerUnit, 1, coneExtraLength * pixelsPerUnit)
-
-    skipConeForm:
 endfunction
 
 
-function coneLink(text, height, diameter, bottom, offset, print, anchor)
-    height = if(height != null, height, vHeight)
-    diameter = if(diameter != null, diameter, vDiameter)
+function coneLink(text, args)
+    return '[' + text + '](' + coneURL(args) + ')'
+endfunction
+
+
+function coneURL(args)
+    # Argument overrides
+    bottom = objectGet(args, 'bottom')
+    diameter = objectGet(args, 'diameter')
+    height = objectGet(args, 'height')
+    metric = objectGet(args, 'metric')
+    offset = objectGet(args, 'offset')
+    print = objectGet(args, 'print')
+
+    # Variable arguments
     bottom = if(bottom != null, bottom, vBottom)
+    diameter = if(diameter != null, diameter, vDiameter)
+    height = if(height != null, height, vHeight)
+    metric = if(metric != null, metric, vMetric)
     offset = if(offset != null, offset, vOffset)
-    args = if(print, '&var.vPrint=1', '') + \
-        if(vMetric, '&var.vMetric=1', '') + \
-        if(height, '&var.vHeight=' + mathRound(height, 3), '') + \
-        if(diameter, '&var.vDiameter=' + mathRound(diameter, 3), '') + \
-        if(bottom, '&var.vBottom=' + mathRound(bottom, 3), '') + \
-        if(offset, '&var.vOffset=' + mathRound(offset, 3), '')
-    args = if(stringLength(args), stringSlice(args, 1), 'var=') + if(anchor, '&' + anchor, '')
-    return '[' + text + '](#' + args + ')'
+    print = if(print != null, print, vPrint)
+
+    # Create the URL
+    parts = arrayNew()
+    if(bottom != null, arrayPush(parts, 'var.vBottom=' + mathRound(bottom, 3)))
+    if(diameter != null, arrayPush(parts, 'var.vDiameter=' + mathRound(diameter, 3)))
+    if(height != null, arrayPush(parts, 'var.vHeight=' + mathRound(height, 3)))
+    if(metric != null, arrayPush(parts, 'var.vMetric=' + metric))
+    if(offset != null, arrayPush(parts, 'var.vOffset=' + mathRound(offset, 3)))
+    if(print != null, arrayPush(parts, 'var.vPrint=' + print))
+    return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
 
 
