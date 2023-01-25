@@ -75,16 +75,16 @@ function lifeTimeout()
     args = lifeArgs()
 
     # Compute the next life state
-    nextLife = lifeNext(life)
+    lifeJSON = jsonStringify(objectGet(life, 'cells'))
+    life = lifeNext(life)
 
     # Is there a cycle?
     depth = objectGet(args, 'depth')
-    lifeJSON = jsonStringify(objectGet(life, 'cells'))
-    lifeCycle = nextLife
+    lifeCycle = life
     iCycle = 0
     cycleLoop:
         jumpif (lifeJSON != jsonStringify(objectGet(lifeCycle, 'cells'))) cycleNone
-            nextLife = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
+            life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
             jump cycleDone
         cycleNone:
         lifeCycle = lifeNext(lifeCycle)
@@ -93,7 +93,7 @@ function lifeTimeout()
     cycleDone:
 
     # Update the life state
-    lifeSave(nextLife)
+    lifeSave(life)
 
     # Render the application
     setDocumentReset(lifeDocumentResetID)
