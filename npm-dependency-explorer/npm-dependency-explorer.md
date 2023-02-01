@@ -4,10 +4,10 @@
 # The npm Dependency Explorer main entry point
 async function ndeMain()
     # Variable arguments
-    packageName = if(vPackage != null, vPackage, 'calc-script')
+    packageName = if(vName != null, vName, 'markdown-up')
     packageVersion = vVersion
     dependencyKey = objectGet(ndeDependencyTypeKeys, vType)
-    dependencyType = if(dependencyKey != null, vType, 'package')
+    dependencyType = if(dependencyKey != null, vType, 'Package')
     dependencyKey = if(dependencyKey != null, dependencyKey, objectGet(ndeDependencyTypeKeys, dependencyType))
 
     # Get the package dependencies
@@ -29,27 +29,48 @@ async function ndeMain()
         return
     packageOK:
 
-    # Render the dependency table
-    dependencies = if(!vDirect, dependencies, dataFilter(dependencies, 'Direct'))
-    dataSort(dependencies, arrayNew( \
-        arrayNew('PackageName'), \
-        arrayNew('PackageVersion'), \
-        arrayNew('DependentName'), \
-        arrayNew('DependentVersion') \
-    ))
-    dataTable(dependencies, objectNew( \
+    # Dependency statistics
+    dependenciesDirect = dataFilter(dependencies, 'Direct')
+    dependenciesTotal = dataAggregate(dependencies, objectNew( \
         'categories', arrayNew('PackageName', 'PackageVersion'), \
-        'fields', arrayNew('DependentName', 'DependentVersion') \
+        'measures', arrayNew( \
+            objectNew('field', 'DependentName', 'function', 'count', 'name', 'Count') \
+        ) \
     ))
+
+    # Report the package name and dependency stats
+    dependenciesDescriptor = if(dependencyType != 'Package', '**' + dependencyType + '** ', '')
+    markdownPrint( \
+        '## ' + markdownEscape(packageName), \
+        '', \
+        'Direct ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesDirect) + ' \\', \
+        'Total ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesTotal) \
+    )
+
+    # Render the dependency table
+    dependenciesTable = if(!vDirect, dependencies, dependenciesDirect)
+    jumpif (arrayLength(dependenciesTable) == 0) tableDone
+        markdownPrint('### ' + dependenciesDescriptor + ' Dependencies')
+        dataSort(dependenciesTable, arrayNew( \
+            arrayNew('PackageName'), \
+            arrayNew('PackageVersion'), \
+            arrayNew('DependentName'), \
+            arrayNew('DependentVersion') \
+        ))
+        dataTable(dependenciesTable, objectNew( \
+            'categories', arrayNew('PackageName', 'PackageVersion'), \
+            'fields', arrayNew('DependentName', 'DependentVersion') \
+        ))
+    tableDone:
 endfunction
 
 
 # Map of type argument string to npm package JSON dependency map key
 ndeDependencyTypeKeys = objectNew( \
-    'development', 'devDependencies', \
-    'optional', 'optionalDependencies', \
-    'package', 'dependencies', \
-    'peer', 'peerDependencies' \
+    'Development', 'devDependencies', \
+    'Optional', 'optionalDependencies', \
+    'Package', 'dependencies', \
+    'Peer', 'peerDependencies' \
 )
 
 
