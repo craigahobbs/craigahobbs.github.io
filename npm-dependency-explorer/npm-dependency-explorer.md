@@ -9,6 +9,7 @@ async function ndeMain()
     dependencyKey = objectGet(ndeDependencyTypeKeys, vType)
     dependencyType = if(dependencyKey != null, vType, 'Package')
     dependencyKey = if(dependencyKey != null, dependencyKey, objectGet(ndeDependencyTypeKeys, dependencyType))
+    dependenciesDescriptor = if(dependencyType != 'Package', '**' + dependencyType + '** ', '')
 
     # Get the package dependencies
     dependencies = arrayNew()
@@ -39,7 +40,6 @@ async function ndeMain()
     ))
 
     # Report the package name and dependency stats
-    dependenciesDescriptor = if(dependencyType != 'Package', '**' + dependencyType + '** ', '')
     markdownPrint( \
         '## ' + markdownEscape(packageName), \
         '', \
