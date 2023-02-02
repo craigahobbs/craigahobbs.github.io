@@ -65,8 +65,8 @@ async function ndePackage()
     markdownPrint( \
         '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
-        '**Version:** ' + markdownEscape(packageVersion) + ' \\', \
-        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')), \
+        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + ' \\', \
+        '**Version:** ' + markdownEscape(packageVersion), \
         '', \
         '**Direct ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesDirect) + ' \\', \
         '**Total ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesTotal), \
