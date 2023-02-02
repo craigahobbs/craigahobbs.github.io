@@ -103,6 +103,8 @@ function ndePackageSelect()
     markdownPrint( \
         'Coming soon!', \
         '', \
+        "[eslint](#var.vName='eslint')", \
+        '', \
         "[markdown-up](#var.vName='markdown-up')", \
         '', \
         "[npm](#var.vName='npm')" \
