@@ -3,8 +3,14 @@
 ~~~ markdown-script
 # The npm Dependency Explorer main entry point
 async function ndeMain()
+    if(vName != null, ndePackage(), ndePackageSelect())
+endfunction
+
+
+# Render the package dependencies page
+async function ndePackage()
     # Variable arguments
-    packageName = if(vName != null, vName, 'markdown-up')
+    packageName = vName
     packageVersion = vVersion
     dependencyKey = objectGet(ndeDependencyTypeKeys, vType)
     dependencyType = if(dependencyKey != null, vType, 'Package')
@@ -39,12 +45,24 @@ async function ndeMain()
         ) \
     ))
 
+    # Compute the dependency type links
+    linkPackage = if(dependencyType == 'Package', '**Package**', \
+        "[Package](#var.vName='" + encodeURIComponent(packageName) + "')")
+    linkDevelopment = if(dependencyType == 'Development', '**Development**', \
+        "[Development](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Development')")
+    linkOptional = if(dependencyType == 'Optional', '**Optional**', \
+        "[Optional](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Optional')")
+    linkPeer = if(dependencyType == 'Peer', '**Peer**', \
+        "[Peer](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Peer')")
+
     # Report the package name and dependency stats
     markdownPrint( \
         '## ' + markdownEscape(packageName), \
         '', \
         'Direct ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesDirect) + ' \\', \
-        'Total ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesTotal) \
+        'Total ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesTotal), \
+        '', \
+        'Dependency type: ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
 
     # Render the dependency table
@@ -72,6 +90,18 @@ ndeDependencyTypeKeys = objectNew( \
     'Package', 'dependencies', \
     'Peer', 'peerDependencies' \
 )
+
+
+# Render the package selection page
+function ndePackageSelect()
+    markdownPrint( \
+        '**Enter package name:** TODO', \
+        '', \
+        "[markdown-up](#var.vName='markdown-up')", \
+        '', \
+        "[npm](#var.vName='npm')" \
+    )
+endfunction
 
 
 # Dependency data schema
@@ -116,7 +146,7 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     packageDone:
 
     # Package and version already loaded?
-    packageVersion = if(packageVersion != null, packageVersion, ndePackageVersionLatest(packages, packageName))
+    packageVersion = if(packageVersion != null, packageVersion, ndePackageVersionLatest(packageData))
     packageVersionKey = packageName + ',' + packageVersion
     jumpif (!objectGet(completed, packageVersionKey)) versionNotLoaded
         return
@@ -124,7 +154,7 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     objectSet(completed, packageVersionKey, true)
 
     # Get the package JSON
-    packageJSON = objectGet(objectGet(packageData, 'versions'), packageVersion)
+    packageJSON = ndePackageJSON(packageData, packageVersion)
     jumpif (packageJSON != null) versionOK
         arrayPush(errors, 'Unknown version "' + packageVersion + '" of package "' + packageName + '"')
         return
@@ -167,7 +197,9 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     nameLoop:
         # Determine the dependency version
         dependencyName = arrayGet(dependencyNames, ixDependencyName)
-        dependencyVersion = ndePackageVersion(packages, dependencyName, objectGet(packageDependencies, dependencyName))
+        dependencyData = objectGet(packages, dependencyName)
+        dependencySemver = objectGet(packageDependencies, dependencyName)
+        dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
         jumpif (dependencyVersion == null) versionDone
             # Add the dependency row
             arrayPush(dependencies, objectNew( \
@@ -188,15 +220,20 @@ endfunction
 
 
 # Helper to compute a package's version from an npm semver
-function ndePackageVersion(packages, packageName)
-    return ndePackageVersionLatest(packages, packageName)
+function ndePackageVersion(packageData)
+    return ndePackageVersionLatest(packageData)
 endfunction
 
 
-# Helper to compute a package's latest version
-function ndePackageVersionLatest(packages, packageName)
-    packageData = objectGet(packages, packageName)
+# Helper to get a package's latest version
+function ndePackageVersionLatest(packageData)
     return objectGet(objectGet(packageData, 'dist-tags'), 'latest')
+endfunction
+
+
+# Helper to get a package version's JSON
+function ndePackageJSON(packageData, packageVersion)
+    return objectGet(objectGet(packageData, 'versions'), packageVersion)
 endfunction
 
 
