@@ -1,3 +1,5 @@
+[Home](#var=) | [About](#url=README.md)
+
 # npm Dependency Explorer
 
 ~~~ markdown-script
@@ -99,7 +101,7 @@ ndeDependencyTypeKeys = objectNew( \
 # Render the package selection page
 function ndePackageSelect()
     markdownPrint( \
-        '**Enter package name:** TODO', \
+        'Coming soon!', \
         '', \
         "[markdown-up](#var.vName='markdown-up')", \
         '', \
