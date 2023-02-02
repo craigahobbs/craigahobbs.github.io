@@ -87,20 +87,19 @@ async function ndePackage()
         ))
 
         # Make the name fields links
-        linkCalcVariables = objectNew( \
-            'arrayJoin', arrayJoin, 'arrayLength', arrayLength, 'arrayNew', arrayNew, 'arrayPush', arrayPush, \
-            'encodeURIComponent', encodeURIComponent, \
-            'markdownEscape', markdownEscape, \
-            'ndeLink', ndeLink, \
-            'objectGet', objectGet, 'objectNew', objectNew, \
-            'vDirect', vDirect \
-        )
-        dataCalculatedField(dependenciesTable, 'PackageName', \
-            "'[' + markdownEscape(PackageName) + '](' + ndeLink(objectNew('name', PackageName, 'version', PackageVersion)) + ')'", \
-            linkCalcVariables)
-        dataCalculatedField(dependenciesTable, 'DependentName', \
-            "'[' + markdownEscape(DependentName) + '](' + ndeLink(objectNew('name', DependentName, 'version', DependentVersion)) + ')'", \
-            linkCalcVariables)
+        ixRow = 0
+        rowLoop:
+            row = arrayGet(dependenciesTable, ixRow)
+            rowPackageName = objectGet(row, 'PackageName')
+            rowPackageVersion = objectGet(row, 'PackageVersion')
+            rowPackageLink = ndeLink(objectNew('name', rowPackageName, 'version', rowPackageVersion, 'type', 'Package'))
+            rowDependentName = objectGet(row, 'DependentName')
+            rowDependentVersion = objectGet(row, 'DependentVersion')
+            rowDependentLink = ndeLink(objectNew('name', rowDependentName, 'version', rowDependentVersion, 'type', 'Package'))
+            objectSet(row, 'PackageName', '[' + markdownEscape(rowPackageName) + '](' + rowPackageLink + ')')
+            objectSet(row, 'DependentName', '[' + markdownEscape(rowDependentName) + '](' + rowDependentLink + ')')
+            ixRow = ixRow + 1
+        jumpif (ixRow < arrayLength(dependenciesTable)) rowLoop
 
         # Render the dependencies table
         markdownPrint('### ' + dependenciesDescriptor + ' Dependencies')
