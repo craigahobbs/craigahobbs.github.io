@@ -5,15 +5,9 @@
 ~~~ markdown-script
 # The npm Dependency Explorer main entry point
 async function ndeMain()
-    if(vName != null, ndePackage(), ndePackageSelect())
-endfunction
-
-
-# Render the package dependencies page
-async function ndePackage()
     # Variable arguments
-    packageName = vName
-    packageVersion = vVersion
+    packageName = if(vName != null && stringLength(vName) > 0, vName)
+    packageVersion = if(vVersion != null && stringLength(vVersion) > 0, vVersion)
     dependencyKey = objectGet(ndeDependencyTypeKeys, vType)
     dependencyType = if(dependencyKey != null, vType, 'Package')
     dependencyKey = if(dependencyKey != null, dependencyKey, objectGet(ndeDependencyTypeKeys, dependencyType))
@@ -22,17 +16,45 @@ async function ndePackage()
     dependencies = arrayNew()
     packages = objectNew()
     errors = arrayNew()
-    ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, objectNew())
+    if(packageName != null, \
+        ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, objectNew()))
 
-    # Report errors, if necessary
-    jumpif (arrayLength(errors) == 0) packageOK
-        markdownPrint( \
-            'Failed to get dependency information for package "' + markdownEscape(packageName) + '"', \
-            '', \
-            '~~~', \
-            arrayJoin(errors, stringFromCharCode(13)), \
-            '~~~' \
-        )
+    # If no package is loaded, render the package selection form
+    errorCount = arrayLength(errors)
+    jumpif (packageName != null && errorCount == 0) packageOK
+        # Render the search form
+        elementModelRender(arrayNew( \
+            objectNew('html', 'p', 'elem', objectNew('html', 'b', 'elem', objectNew('text', 'Package Name:'))), \
+            objectNew('html', 'p', 'elem', objectNew( \
+                'html', 'input', \
+                'attr', objectNew( \
+                    'autocomplete', 'off', \
+                    'id', 'package-name-text', \
+                    'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
+                    'type', 'text', \
+                    'value', if(packageName != null, packageName, ''), \
+                    'size', '40' \
+                ), \
+                'callback', objectNew('keyup', ndePackageNameOnKeyup) \
+            )), \
+            objectNew('html', 'p', 'elem', objectNew( \
+                'html', 'a', \
+                'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+                'elem', objectNew('text', 'Explore Dependencies'), \
+                'callback', objectNew('click', ndePackageNameOnClick) \
+            )) \
+        ))
+        setDocumentFocus('package-name-text')
+
+        # Render error messages, if any
+        jumpif (errorCount == 0) errorsDone
+            ixError = 0
+            errorLoop:
+                markdownPrint('', 'Error: ' + markdownEscape(arrayGet(errors, ixError)))
+                ixError = ixError + 1
+            jumpif (ixError < errorCount) errorLoop
+        errorsDone:
+
         return
     packageOK:
 
@@ -55,7 +77,7 @@ async function ndePackage()
     linkDirect = if(vDirect, 'Direct', '[Direct](' + ndeLink(objectNew('direct', 1)) + ')')
 
     # Compute the dependency type links
-    linkPackage = if(dependencyType == 'Package', 'Package', '[Package](' + ndeLink(objectNew('type', 'Package')) + ')')
+    linkPackage = if(dependencyType == 'Package', 'Package', '[Package](' + ndeLink(objectNew('type', '')) + ')')
     linkDevelopment = if(dependencyType == 'Development', 'Development', '[Development](' + ndeLink(objectNew('type', 'Development')) + ')')
     linkOptional = if(dependencyType == 'Optional', 'Optional', '[Optional](' + ndeLink(objectNew('type', 'Optional')) + ')')
     linkPeer = if(dependencyType == 'Peer', 'Peer', '[Peer](' + ndeLink(objectNew('type', 'Peer')) + ')')
@@ -92,10 +114,10 @@ async function ndePackage()
             row = arrayGet(dependenciesTable, ixRow)
             rowPackageName = objectGet(row, 'PackageName')
             rowPackageVersion = objectGet(row, 'PackageVersion')
-            rowPackageLink = ndeLink(objectNew('name', rowPackageName, 'version', rowPackageVersion, 'type', 'Package'))
+            rowPackageLink = ndeLink(objectNew('name', rowPackageName, 'version', rowPackageVersion, 'type', ''))
             rowDependentName = objectGet(row, 'DependentName')
             rowDependentVersion = objectGet(row, 'DependentVersion')
-            rowDependentLink = ndeLink(objectNew('name', rowDependentName, 'version', rowDependentVersion, 'type', 'Package'))
+            rowDependentLink = ndeLink(objectNew('name', rowDependentName, 'version', rowDependentVersion, 'type', ''))
             objectSet(row, 'PackageName', '[' + markdownEscape(rowPackageName) + '](' + rowPackageLink + ')')
             objectSet(row, 'DependentName', '[' + markdownEscape(rowDependentName) + '](' + rowDependentLink + ')')
             ixRow = ixRow + 1
@@ -112,6 +134,15 @@ async function ndePackage()
 endfunction
 
 
+# Map of type argument string to npm package JSON dependency map key
+ndeDependencyTypeKeys = objectNew( \
+    'Development', 'devDependencies', \
+    'Optional', 'optionalDependencies', \
+    'Package', 'dependencies', \
+    'Peer', 'peerDependencies' \
+)
+
+
 # Helper to create application links
 function ndeLink(args)
     # Arguments overrides
@@ -126,6 +157,11 @@ function ndeLink(args)
     type = if(type != null, type, vType)
     direct = if(direct != null, direct, vDirect)
 
+    # Cleared arguments
+    name = if(name != null && stringLength(name) > 0, name)
+    version = if(version != null && stringLength(version) > 0, version)
+    type = if(type != null && stringLength(type) > 0, type)
+
     # Create the link
     parts = arrayNew()
     if(name != null, arrayPush(parts, "var.vName='" + encodeURIComponent(name) + "'"))
@@ -136,26 +172,14 @@ function ndeLink(args)
 endfunction
 
 
-# Map of type argument string to npm package JSON dependency map key
-ndeDependencyTypeKeys = objectNew( \
-    'Development', 'devDependencies', \
-    'Optional', 'optionalDependencies', \
-    'Package', 'dependencies', \
-    'Peer', 'peerDependencies' \
-)
+function ndePackageNameOnClick()
+    packageName = getDocumentInputValue('package-name-text')
+    setWindowLocation(ndeLink(objectNew('name', packageName, 'version', '', 'type', '', 'direct', 0)))
+endfunction
 
 
-# Render the package selection page
-function ndePackageSelect()
-    markdownPrint( \
-        'Coming soon!', \
-        '', \
-        "[eslint](#var.vName='eslint')", \
-        '', \
-        "[markdown-up](#var.vName='markdown-up')", \
-        '', \
-        "[npm](#var.vName='npm')" \
-    )
+function ndePackageNameOnKeyup(keyCode)
+    if(keyCode == 13, ndePackageNameOnClick())
 endfunction
 
 
@@ -248,21 +272,9 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
 endfunction
 
 
-# Helper to compute a package's version from an npm semver
-function ndePackageVersion(packageData)
-    return ndePackageVersionLatest(packageData)
-endfunction
-
-
-# Helper to get a package's latest version
-function ndePackageVersionLatest(packageData)
-    return objectGet(objectGet(packageData, 'dist-tags'), 'latest')
-endfunction
-
-
-# Helper to get a package version's JSON
-function ndePackageJSON(packageData, packageVersion)
-    return objectGet(objectGet(packageData, 'versions'), packageVersion)
+# Helper to create an npm package page URL
+function ndePackagePageURL(packageName)
+    return 'https://www.npmjs.com/package/' + packageName
 endfunction
 
 
@@ -272,9 +284,21 @@ function ndePackageDataURL(packageName)
 endfunction
 
 
-# Helper to create an npm package page URL
-function ndePackagePageURL(packageName)
-    return 'https://www.npmjs.com/package/' + packageName
+# Helper to get a package version's JSON
+function ndePackageJSON(packageData, packageVersion)
+    return objectGet(objectGet(packageData, 'versions'), packageVersion)
+endfunction
+
+
+# Helper to get a package's latest version
+function ndePackageVersionLatest(packageData)
+    return objectGet(objectGet(packageData, 'dist-tags'), 'latest')
+endfunction
+
+
+# Helper to compute a package's version from an npm semver
+function ndePackageVersion(packageData)
+    return ndePackageVersionLatest(packageData)
 endfunction
 
 
