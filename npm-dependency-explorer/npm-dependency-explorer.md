@@ -17,14 +17,12 @@ async function ndePackage()
     dependencyKey = objectGet(ndeDependencyTypeKeys, vType)
     dependencyType = if(dependencyKey != null, vType, 'Package')
     dependencyKey = if(dependencyKey != null, dependencyKey, objectGet(ndeDependencyTypeKeys, dependencyType))
-    dependenciesDescriptor = if(dependencyType != 'Package', '**' + dependencyType + '** ', '')
 
     # Get the package dependencies
     dependencies = arrayNew()
     packages = objectNew()
     errors = arrayNew()
     ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, objectNew())
-    schemaValidate(ndeTypes, 'PackageDependencies', dependencies)
 
     # Report errors, if necessary
     jumpif (arrayLength(errors) == 0) packageOK
@@ -38,7 +36,12 @@ async function ndePackage()
         return
     packageOK:
 
-    # Dependency statistics
+    # Get the package JSON
+    packageData = objectGet(packages, packageName)
+    packageVersion = if(packageVersion != null, packageVersion, ndePackageVersionLatest(packageData))
+    packageJSON = ndePackageJSON(packageData, packageVersion)
+
+    # Compute the dependency statistics
     dependenciesDirect = dataFilter(dependencies, 'Direct')
     dependenciesTotal = dataAggregate(dependencies, objectNew( \
         'categories', arrayNew('PackageName', 'PackageVersion'), \
@@ -47,28 +50,28 @@ async function ndePackage()
         ) \
     ))
 
+    # Compute the showing links
+    linkAll = if(!vDirect, 'All', '[All](' + ndeLink(objectNew('direct', 0)) + ')')
+    linkDirect = if(vDirect, 'Direct', '[Direct](' + ndeLink(objectNew('direct', 1)) + ')')
+
     # Compute the dependency type links
-    linkPackage = if(dependencyType == 'Package', '**Package**', \
-        "[Package](#var.vName='" + encodeURIComponent(packageName) + "')")
-    linkDevelopment = if(dependencyType == 'Development', '**Development**', \
-        "[Development](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Development')")
-    linkOptional = if(dependencyType == 'Optional', '**Optional**', \
-        "[Optional](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Optional')")
-    linkPeer = if(dependencyType == 'Peer', '**Peer**', \
-        "[Peer](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Peer')")
-    linkDirect = '[' + if(vDirect, 'Direct', 'All') + ' dependencies]' + if(vDirect, \
-        "(#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='" + encodeURIComponent(dependencyType) + "')", \
-        "(#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='" + encodeURIComponent(dependencyType) + "'&var.vDirect=1)")
+    linkPackage = if(dependencyType == 'Package', 'Package', '[Package](' + ndeLink(objectNew('type', 'Package')) + ')')
+    linkDevelopment = if(dependencyType == 'Development', 'Development', '[Development](' + ndeLink(objectNew('type', 'Development')) + ')')
+    linkOptional = if(dependencyType == 'Optional', 'Optional', '[Optional](' + ndeLink(objectNew('type', 'Optional')) + ')')
+    linkPeer = if(dependencyType == 'Peer', 'Peer', '[Peer](' + ndeLink(objectNew('type', 'Peer')) + ')')
 
     # Report the package name and dependency stats
+    dependenciesDescriptor = if(dependencyType != 'Package', '*' + dependencyType + '* ', '')
     markdownPrint( \
-        '## ' + markdownEscape(packageName), \
+        '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
-        'Direct ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesDirect) + ' \\', \
-        'Total ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesTotal), \
+        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')), \
         '', \
-        'Showing: ' + linkDirect + ' \\', \
-        'Dependency type: ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
+        '**Direct ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesDirect) + ' \\', \
+        '**Total ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesTotal), \
+        '', \
+        '**Showing:** ' + linkAll + ' | ' + linkDirect + ' \\',  \
+        '**Dependency type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
 
     # Render the dependency table
@@ -86,6 +89,30 @@ async function ndePackage()
             'fields', arrayNew('DependentName', 'DependentVersion') \
         ))
     tableDone:
+endfunction
+
+
+# Helper to create application links
+function ndeLink(args)
+    # Arguments overrides
+    name = objectGet(args, 'name')
+    version = objectGet(args, 'version')
+    type = objectGet(args, 'type')
+    direct = objectGet(args, 'direct')
+
+    # Variable arguments
+    name = if(name != null, name, vName)
+    version = if(version != null, version, vVersion)
+    type = if(type != null, type, vType)
+    direct = if(direct != null, direct, vDirect)
+
+    # Create the link
+    parts = arrayNew()
+    if(name != null, arrayPush(parts, "var.vName='" + encodeURIComponent(name) + "'"))
+    if(version != null, arrayPush(parts, "var.vVersion='" + encodeURIComponent(version) + "'"))
+    if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
+    if(direct != null && direct, arrayPush(parts, 'var.vDirect=1'))
+    return if(arrayLength(parts) != 0, '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
 
 
@@ -112,32 +139,6 @@ function ndePackageSelect()
 endfunction
 
 
-# Dependency data schema
-ndeTypes = schemaParse( \
-    '# A package dependency table', \
-    'typedef PackageDependency[] PackageDependencies', \
-    '', \
-    '', \
-    '# A package dependency row', \
-    'struct PackageDependency', \
-    '', \
-    '    # The dependency package name', \
-    '    string PackageName', \
-    '', \
-    '    # The dependency package version', \
-    '    string PackageVersion', \
-    '', \
-    '    # The dependent package name', \
-    '    string DependentName', \
-    '', \
-    '    # The dependent package version', \
-    '    string DependentVersion', \
-    '', \
-    '    # Is this is a direct dependency?', \
-    '    bool Direct' \
-)
-
-
 # Helper to compute an npm package's dependency data table
 async function ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, completed)
     isDirect = arrayLength(objectKeys(completed)) == 0
@@ -145,7 +146,7 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     # Fetch the package data, if necessary
     packageData = objectGet(packages, packageName)
     jumpif (packageData != null) packageDone
-        packageData = fetch(ndePackageURL(packageName))
+        packageData = fetch(ndePackageDataURL(packageName))
         jumpif (packageData != null) packageOK
             arrayPush(errors, 'Failed to load package data for "' + packageName + '"')
             return
@@ -180,9 +181,9 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     dependencyNames = objectKeys(packageDependencies)
     ixDependencyName = 0
     urlNameLoop:
-        dependencyName = arrayGet(dependencyNames, ixDependencyName)
+        dependencyName = stringNew(arrayGet(dependencyNames, ixDependencyName))
         dependencyData = objectGet(packages, dependencyName)
-        if(dependencyData == null, arrayPush(dependencyURLs, ndePackageURL(dependencyName)))
+        if(dependencyData == null, arrayPush(dependencyURLs, ndePackageDataURL(dependencyName)))
         if(dependencyData == null, arrayPush(dependencyURLNames, dependencyName))
         ixDependencyName = ixDependencyName + 1
     jumpif (ixDependencyName < arrayLength(dependencyNames)) urlNameLoop
@@ -204,7 +205,7 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     ixDependencyName = 0
     nameLoop:
         # Determine the dependency version
-        dependencyName = arrayGet(dependencyNames, ixDependencyName)
+        dependencyName = stringNew(arrayGet(dependencyNames, ixDependencyName))
         dependencyData = objectGet(packages, dependencyName)
         dependencySemver = objectGet(packageDependencies, dependencyName)
         dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
@@ -246,8 +247,14 @@ endfunction
 
 
 # Helper to create an npm package data URL
-function ndePackageURL(packageName)
+function ndePackageDataURL(packageName)
     return 'https://registry.npmjs.org/' + encodeURIComponent(packageName)
+endfunction
+
+
+# Helper to create an npm package page URL
+function ndePackagePageURL(packageName)
+    return 'https://www.npmjs.com/package/' + packageName
 endfunction
 
 
