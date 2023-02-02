@@ -65,6 +65,7 @@ async function ndePackage()
     markdownPrint( \
         '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
+        '**Version:** ' + markdownEscape(packageVersion) + ' \\', \
         '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')), \
         '', \
         '**Direct ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesDirect) + ' \\', \
@@ -77,16 +78,35 @@ async function ndePackage()
     # Render the dependency table
     dependenciesTable = if(!vDirect, dependencies, dependenciesDirect)
     jumpif (arrayLength(dependenciesTable) == 0) tableDone
-        markdownPrint('### ' + dependenciesDescriptor + ' Dependencies')
+        # Sort the table data
         dataSort(dependenciesTable, arrayNew( \
             arrayNew('PackageName'), \
             arrayNew('PackageVersion'), \
             arrayNew('DependentName'), \
             arrayNew('DependentVersion') \
         ))
+
+        # Make the name fields links
+        linkCalcVariables = objectNew( \
+            'arrayJoin', arrayJoin, 'arrayLength', arrayLength, 'arrayNew', arrayNew, 'arrayPush', arrayPush, \
+            'encodeURIComponent', encodeURIComponent, \
+            'markdownEscape', markdownEscape, \
+            'ndeLink', ndeLink, \
+            'objectGet', objectGet, 'objectNew', objectNew \
+        )
+        dataCalculatedField(dependenciesTable, 'PackageName', \
+            "'[' + markdownEscape(PackageName) + '](' + ndeLink(objectNew('name', PackageName, 'version', PackageVersion)) + ')'", \
+            linkCalcVariables)
+        dataCalculatedField(dependenciesTable, 'DependentName', \
+            "'[' + markdownEscape(DependentName) + '](' + ndeLink(objectNew('name', DependentName, 'version', DependentVersion)) + ')'", \
+            linkCalcVariables)
+
+        # Render the dependencies table
+        markdownPrint('### ' + dependenciesDescriptor + ' Dependencies')
         dataTable(dependenciesTable, objectNew( \
             'categories', arrayNew('PackageName', 'PackageVersion'), \
-            'fields', arrayNew('DependentName', 'DependentVersion') \
+            'fields', arrayNew('DependentName', 'DependentVersion'), \
+            'markdown', arrayNew('PackageName', 'DependentName') \
         ))
     tableDone:
 endfunction
