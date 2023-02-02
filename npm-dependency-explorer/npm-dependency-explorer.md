@@ -172,12 +172,14 @@ function ndeLink(args)
 endfunction
 
 
+# Package name button on-click handler
 function ndePackageNameOnClick()
     packageName = getDocumentInputValue('package-name-text')
     setWindowLocation(ndeLink(objectNew('name', packageName, 'version', '', 'type', '', 'direct', 0)))
 endfunction
 
 
+# Package name text input on-keyup handler
 function ndePackageNameOnKeyup(keyCode)
     if(keyCode == 13, ndePackageNameOnClick())
 endfunction
@@ -223,17 +225,19 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
     dependencyURLs = arrayNew()
     dependencyURLNames = arrayNew()
     dependencyNames = objectKeys(packageDependencies)
-    ixDependencyName = 0
-    urlNameLoop:
-        dependencyName = stringNew(arrayGet(dependencyNames, ixDependencyName))
-        dependencyData = objectGet(packages, dependencyName)
-        if(dependencyData == null, arrayPush(dependencyURLs, ndePackageDataURL(dependencyName)))
-        if(dependencyData == null, arrayPush(dependencyURLNames, dependencyName))
-        ixDependencyName = ixDependencyName + 1
-    jumpif (ixDependencyName < arrayLength(dependencyNames)) urlNameLoop
+    jumpif (arrayLength(dependencyNames) == 0) urlsDone
+        ixDependencyName = 0
+        urlNameLoop:
+            dependencyName = arrayGet(dependencyNames, ixDependencyName)
+            dependencyData = objectGet(packages, dependencyName)
+            if(dependencyData == null, arrayPush(dependencyURLs, ndePackageDataURL(dependencyName)))
+            if(dependencyData == null, arrayPush(dependencyURLNames, dependencyName))
+            ixDependencyName = ixDependencyName + 1
+        jumpif (ixDependencyName < arrayLength(dependencyNames)) urlNameLoop
+    urlsDone:
 
     # Fetch the dependency package data in parallel
-    jumpif (arrayLength(dependencyURLs) == 0) urlsDone
+    jumpif (arrayLength(dependencyURLs) == 0) dataDone
         dependencyDatum = fetch(dependencyURLs)
         ixDependencyURL = 0
         urlLoop:
@@ -243,32 +247,34 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
             if(dependencyData == null, arrayPush(errors, 'Failed to load package data for "' + dependencyName + '"'))
             ixDependencyURL = ixDependencyURL + 1
         jumpif (ixDependencyURL < arrayLength(dependencyURLs)) urlLoop
-    urlsDone:
+    dataDone:
 
-    # Add each package dependency name
-    ixDependencyName = 0
-    nameLoop:
-        # Determine the dependency version
-        dependencyName = stringNew(arrayGet(dependencyNames, ixDependencyName))
-        dependencyData = objectGet(packages, dependencyName)
-        dependencySemver = objectGet(packageDependencies, dependencyName)
-        dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
-        jumpif (dependencyVersion == null) versionDone
-            # Add the dependency row
-            arrayPush(dependencies, objectNew( \
-                'PackageName', dependencyName, \
-                'PackageVersion', dependencyVersion, \
-                'DependentName', packageName, \
-                'DependentVersion', packageVersion, \
-                'Direct', isDirect \
-            ))
+    # Add the package dependency rows
+    jumpif (arrayLength(dependencyNames) == 0) rowsDone
+        ixDependencyName = 0
+        nameLoop:
+            # Determine the dependency version
+            dependencyName = arrayGet(dependencyNames, ixDependencyName)
+            dependencyData = objectGet(packages, dependencyName)
+            dependencySemver = objectGet(packageDependencies, dependencyName)
+            dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
+            jumpif (dependencyVersion == null) versionDone
+                # Add the dependency row
+                arrayPush(dependencies, objectNew( \
+                    'PackageName', dependencyName, \
+                    'PackageVersion', dependencyVersion, \
+                    'DependentName', packageName, \
+                    'DependentVersion', packageVersion, \
+                    'Direct', isDirect \
+                ))
 
-            # Add the dependency's dependencies
-            ndePackageDependencies(dependencyName, dependencyVersion, 'dependencies', dependencies, packages, errors, completed)
-        versionDone:
+                # Add the dependency's dependencies
+                ndePackageDependencies(dependencyName, dependencyVersion, 'dependencies', dependencies, packages, errors, completed)
+            versionDone:
 
-        ixDependencyName = ixDependencyName + 1
-    jumpif (ixDependencyName < arrayLength(dependencyNames)) nameLoop
+            ixDependencyName = ixDependencyName + 1
+        jumpif (ixDependencyName < arrayLength(dependencyNames)) nameLoop
+    rowsDone:
 endfunction
 
 
