@@ -92,7 +92,8 @@ async function ndePackage()
             'encodeURIComponent', encodeURIComponent, \
             'markdownEscape', markdownEscape, \
             'ndeLink', ndeLink, \
-            'objectGet', objectGet, 'objectNew', objectNew \
+            'objectGet', objectGet, 'objectNew', objectNew, \
+            'vDirect', vDirect \
         )
         dataCalculatedField(dependenciesTable, 'PackageName', \
             "'[' + markdownEscape(PackageName) + '](' + ndeLink(objectNew('name', PackageName, 'version', PackageVersion)) + ')'", \
