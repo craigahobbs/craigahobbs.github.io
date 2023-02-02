@@ -36,7 +36,7 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 
 1. Install Debian 11 on a **wired connection**:
 
-2. Add "non-free" in the "Software & Updates" application
+2. Add "non-free-firmware" in the "Software & Updates" application
 
 3. Install the wifi drivers using the following commands:
 
