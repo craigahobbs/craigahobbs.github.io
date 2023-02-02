@@ -54,6 +54,9 @@ async function ndePackage()
         "[Optional](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Optional')")
     linkPeer = if(dependencyType == 'Peer', '**Peer**', \
         "[Peer](#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='Peer')")
+    linkDirect = '[' + if(vDirect, 'Direct', 'All') + ' dependencies]' + if(vDirect, \
+        "(#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='" + encodeURIComponent(dependencyType) + "')", \
+        "(#var.vName='" + encodeURIComponent(packageName) + "'&var.vType='" + encodeURIComponent(dependencyType) + "'&var.vDirect=1)")
 
     # Report the package name and dependency stats
     markdownPrint( \
@@ -62,6 +65,7 @@ async function ndePackage()
         'Direct ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesDirect) + ' \\', \
         'Total ' + stringLower(dependenciesDescriptor) + 'dependencies: ' + arrayLength(dependenciesTotal), \
         '', \
+        'Showing: ' + linkDirect + ' \\', \
         'Dependency type: ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
 
