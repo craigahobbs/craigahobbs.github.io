@@ -56,8 +56,8 @@ async function ndeMain()
 
     # Get the package dependencies
     dependencies = arrayNew()
-    errors = arrayNew()
-    ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, objectNew())
+    warnings = arrayNew()
+    ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, objectNew())
 
     # Compute the dependency statistics
     dependenciesDirect = dataFilter(dependencies, 'Direct')
@@ -95,15 +95,15 @@ async function ndeMain()
     )
 
     # Render warnings
-    jumpif (arrayLength(errors) == 0) errorsDone
+    jumpif (arrayLength(warnings) == 0) warningsDone
         markdownPrint('', '### Warnings')
-        ixError = 0
-        errorLoop:
-            error = arrayGet(errors, ixError)
-            markdownPrint('', '- ' + error)
-            ixError = ixError + 1
-        jumpif (ixError < arrayLength(errors)) errorLoop
-    errorsDone:
+        ixWarning = 0
+        warningLoop:
+            warning = arrayGet(warnings, ixWarning)
+            markdownPrint('', '- ' + warning)
+            ixWarning = ixWarning + 1
+        jumpif (ixWarning < arrayLength(warnings)) warningLoop
+    warningsDone:
 
     # Render the dependency table
     dependenciesTable = if(!vDirect, dependencies, dependenciesDirect)
@@ -116,7 +116,7 @@ async function ndeMain()
             arrayNew('DependentVersion') \
         ))
 
-        # Make the name fields links
+        # Make the name field links
         ixRow = 0
         rowLoop:
             row = arrayGet(dependenciesTable, ixRow)
@@ -290,56 +290,54 @@ endfunction
 
 
 # Helper to compute an npm package's dependency data table
-async function ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, completed)
+async function ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, completed)
     isDirect = arrayLength(objectKeys(completed)) == 0
 
     # Package and version already loaded?
-    packageData = objectGet(packages, packageName)
-    packageVersion = if(packageVersion != null, packageVersion, ndePackageVersionLatest(packageData))
-    packageVersionKey = packageName + ',' + packageVersion
-    jumpif (!objectGet(completed, packageVersionKey)) versionNotLoaded
+    if(!objectHas(completed, packageName), objectSet(completed, packageName, objectNew()))
+    completedVersions = objectGet(completed, packageName)
+    jumpif (!objectHas(completedVersions, packageVersion)) completedDone
         return
-    versionNotLoaded:
-    objectSet(completed, packageVersionKey, true)
+    completedDone:
+    objectSet(completedVersions, packageVersion, true)
 
-    # Get the package dependencies map
+    # Get the package dependencies object
+    packageData = objectGet(packages, packageName)
     packageJSON = ndePackageJSON(packageData, packageVersion)
     packageDependencies = objectGet(packageJSON, dependencyKey)
-    jumpif (packageDependencies != null) dependenciesOK
+    dependencyNames = if(packageDependencies != null, objectKeys(packageDependencies))
+    jumpif (packageDependencies != null && arrayLength(dependencyNames) > 0) dependenciesOK
         return
     dependenciesOK:
-    dependencyNames = objectKeys(packageDependencies)
 
     # Add the package dependency rows
-    jumpif (arrayLength(dependencyNames) == 0) rowsDone
-        ixDependencyName = 0
-        nameLoop:
-            # Determine the dependency version
-            dependencyName = arrayGet(dependencyNames, ixDependencyName)
-            dependencySemver = objectGet(packageDependencies, dependencyName)
-            dependencyData = objectGet(packages, dependencyName)
-            if(dependencyData == null, \
-                arrayPush(errors, 'Failed to load package data for "' + dependencyName + '"'))
-            dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
-            if(dependencyData != null && dependencyVersion == null, \
-                arrayPush(errors, 'Unknown version "' + dependencyVersion + '" of package "' + dependencyName + '"'))
-            jumpif (dependencyVersion == null) versionDone
-                # Add the dependency row
-                arrayPush(dependencies, objectNew( \
-                    'PackageName', dependencyName, \
-                    'PackageVersion', dependencyVersion, \
-                    'DependentName', packageName, \
-                    'DependentVersion', packageVersion, \
-                    'Direct', isDirect \
-                ))
+    ixDependencyName = 0
+    nameLoop:
+        # Determine the dependency version
+        dependencyName = arrayGet(dependencyNames, ixDependencyName)
+        dependencySemver = objectGet(packageDependencies, dependencyName)
+        dependencyData = objectGet(packages, dependencyName)
+        if(dependencyData == null, \
+            arrayPush(warnings, 'Failed to load package data for "' + dependencyName + '"'))
+        dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
+        if(dependencyData != null && dependencyVersion == null, \
+            arrayPush(warnings, 'Unknown version "' + dependencyVersion + '" of package "' + dependencyName + '"'))
+        jumpif (dependencyVersion == null) versionDone
+            # Add the dependency row
+            arrayPush(dependencies, objectNew( \
+                'PackageName', dependencyName, \
+                'PackageVersion', dependencyVersion, \
+                'DependentName', packageName, \
+                'DependentVersion', packageVersion, \
+                'Direct', isDirect \
+            ))
 
-                # Add the dependency's dependencies
-                ndePackageDependencies(dependencyName, dependencyVersion, 'dependencies', dependencies, packages, errors, completed)
-            versionDone:
+            # Add the dependency's dependencies
+            ndePackageDependencies(packages, dependencies, warnings, dependencyName, dependencyVersion, 'dependencies', completed)
+        versionDone:
 
-            ixDependencyName = ixDependencyName + 1
-        jumpif (ixDependencyName < arrayLength(dependencyNames)) nameLoop
-    rowsDone:
+        ixDependencyName = ixDependencyName + 1
+    jumpif (ixDependencyName < arrayLength(dependencyNames)) nameLoop
 endfunction
 
 
