@@ -20,8 +20,7 @@ async function ndeMain()
         ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, objectNew()))
 
     # If no package is loaded, render the package selection form
-    errorCount = arrayLength(errors)
-    jumpif (packageName != null && errorCount == 0) packageOK
+    jumpif (packageName != null) packageOK
         # Render the search form
         elementModelRender(arrayNew( \
             objectNew('html', 'p', 'elem', objectNew('html', 'b', 'elem', objectNew('text', 'Package Name:'))), \
@@ -33,7 +32,7 @@ async function ndeMain()
                     'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
                     'type', 'text', \
                     'value', if(packageName != null, packageName, ''), \
-                    'size', '40' \
+                    'size', '36' \
                 ), \
                 'callback', objectNew('keyup', ndePackageNameOnKeyup) \
             )), \
@@ -45,18 +44,22 @@ async function ndeMain()
             )) \
         ))
         setDocumentFocus('package-name-text')
-
-        # Render error messages, if any
-        jumpif (errorCount == 0) errorsDone
-            ixError = 0
-            errorLoop:
-                markdownPrint('', 'Error: ' + markdownEscape(arrayGet(errors, ixError)))
-                ixError = ixError + 1
-            jumpif (ixError < errorCount) errorLoop
-        errorsDone:
-
         return
     packageOK:
+
+    # Render the package name sub-heading
+    markdownPrint('', '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')')
+
+    # Render error messages, if any
+    errorCount = arrayLength(errors)
+    jumpif (errorCount == 0) errorsDone
+        ixError = 0
+        errorLoop:
+            markdownPrint('', 'Error: ' + markdownEscape(arrayGet(errors, ixError)))
+            ixError = ixError + 1
+        jumpif (ixError < errorCount) errorLoop
+        return
+    errorsDone:
 
     # Get the package JSON
     packageData = objectGet(packages, packageName)
@@ -85,7 +88,6 @@ async function ndeMain()
     # Report the package name and dependency stats
     dependenciesDescriptor = if(dependencyType != 'Package', '*' + dependencyType + '* ', '')
     markdownPrint( \
-        '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
         '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + ' \\', \
         '**Version:** ' + markdownEscape(packageVersion), \
