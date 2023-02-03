@@ -78,22 +78,32 @@ async function ndeMain()
     linkOptional = if(dependencyType == 'Optional', 'Optional', '[Optional](' + ndeLink(objectNew('type', 'Optional')) + ')')
     linkPeer = if(dependencyType == 'Peer', 'Peer', '[Peer](' + ndeLink(objectNew('type', 'Peer')) + ')')
 
-    # Render the package name sub-heading
-    markdownPrint('', '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')')
-
     # Report the package name and dependency stats
-    dependenciesDescriptor = if(dependencyType != 'Package', '*' + dependencyType + '* ', '')
+    dependenciesDescriptor = if(dependencyType != 'Package', '*' + stringLower(dependencyType) + '* ', '')
     markdownPrint( \
+        '', \
+        '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
         '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + ' \\', \
         '**Version:** ' + markdownEscape(packageVersion), \
         '', \
-        '**Direct ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesDirect) + ' \\', \
-        '**Total ' + stringLower(dependenciesDescriptor) + 'dependencies:** ' + arrayLength(dependenciesTotal), \
+        '**Direct ' + dependenciesDescriptor + 'dependencies:** ' + arrayLength(dependenciesDirect) + ' \\', \
+        '**Total ' + dependenciesDescriptor + 'dependencies:** ' + arrayLength(dependenciesTotal), \
         '', \
         '**Showing:** ' + linkAll + ' | ' + linkDirect + ' \\',  \
         '**Dependency type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
+
+    # Render warnings
+    jumpif (arrayLength(errors) == 0) errorsDone
+        markdownPrint('', '### Warnings')
+        ixError = 0
+        errorLoop:
+            error = arrayGet(errors, ixError)
+            markdownPrint('', '- ' + error)
+            ixError = ixError + 1
+        jumpif (ixError < arrayLength(errors)) errorLoop
+    errorsDone:
 
     # Render the dependency table
     dependenciesTable = if(!vDirect, dependencies, dependenciesDirect)
@@ -122,7 +132,7 @@ async function ndeMain()
         jumpif (ixRow < arrayLength(dependenciesTable)) rowLoop
 
         # Render the dependencies table
-        markdownPrint('### ' + dependenciesDescriptor + ' Dependencies')
+        markdownPrint('### ' + if(dependencyType != 'Package', dependencyType, '') + ' Dependencies')
         dataTable(dependenciesTable, objectNew( \
             'categories', arrayNew('PackageName', 'PackageVersion'), \
             'fields', arrayNew('DependentName', 'DependentVersion'), \
@@ -283,29 +293,17 @@ endfunction
 async function ndePackageDependencies(packageName, packageVersion, dependencyKey, dependencies, packages, errors, completed)
     isDirect = arrayLength(objectKeys(completed)) == 0
 
-    # Get the package data
-    packageData = objectGet(packages, packageName)
-    jumpif (packageData != null) packageOK
-        return
-    packageOK:
-
     # Package and version already loaded?
+    packageData = objectGet(packages, packageName)
     packageVersion = if(packageVersion != null, packageVersion, ndePackageVersionLatest(packageData))
     packageVersionKey = packageName + ',' + packageVersion
     jumpif (!objectGet(completed, packageVersionKey)) versionNotLoaded
-        arrayPush(errors, 'Failed to load package data for "' + packageVersion + '"')
         return
     versionNotLoaded:
     objectSet(completed, packageVersionKey, true)
 
-    # Get the package JSON
-    packageJSON = ndePackageJSON(packageData, packageVersion)
-    jumpif (packageJSON != null) versionOK
-        arrayPush(errors, 'Unknown version "' + packageVersion + '" of package "' + packageName + '"')
-        return
-    versionOK:
-
     # Get the package dependencies map
+    packageJSON = ndePackageJSON(packageData, packageVersion)
     packageDependencies = objectGet(packageJSON, dependencyKey)
     jumpif (packageDependencies != null) dependenciesOK
         return
@@ -318,9 +316,13 @@ async function ndePackageDependencies(packageName, packageVersion, dependencyKey
         nameLoop:
             # Determine the dependency version
             dependencyName = arrayGet(dependencyNames, ixDependencyName)
-            dependencyData = objectGet(packages, dependencyName)
             dependencySemver = objectGet(packageDependencies, dependencyName)
+            dependencyData = objectGet(packages, dependencyName)
+            if(dependencyData == null, \
+                arrayPush(errors, 'Failed to load package data for "' + dependencyName + '"'))
             dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
+            if(dependencyData != null && dependencyVersion == null, \
+                arrayPush(errors, 'Unknown version "' + dependencyVersion + '" of package "' + dependencyName + '"'))
             jumpif (dependencyVersion == null) versionDone
                 # Add the dependency row
                 arrayPush(dependencies, objectNew( \
