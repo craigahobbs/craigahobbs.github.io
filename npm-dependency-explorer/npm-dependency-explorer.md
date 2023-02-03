@@ -1,7 +1,3 @@
-[Home](#var=) | [About](#url=README.md)
-
-# npm Dependency Explorer
-
 ~~~ markdown-script
 # The npm Dependency Explorer main entry point
 async function ndeMain()
@@ -18,6 +14,15 @@ async function ndeMain()
     packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, ndePackageVersionLatest(packageData)))
     packageJSON = if(packageData != null, ndePackageJSON(packageData, packageVersion))
     if(packageJSON != null, ndeFetchPackageData(packages, arrayNew(packageJSON), dependencyKey, objectNew()))
+
+    # Render the menu
+    currentURL = ndeLink(objectNew())
+    markdownPrint(if(currentURL != '#var=', '[Home](#var=)', 'Home') + ' | [About](#url=README.md)')
+
+    # Render the title
+    title = 'npm Dependency Explorer'
+    markdownPrint('', '# ' + markdownEscape(title))
+    setDocumentTitle(title + if(packageJSON != null, ' - ' + packageName, ''))
 
     # If no package is loaded, render the package selection form
     jumpif (packageJSON != null) packageOK
