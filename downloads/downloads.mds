@@ -59,9 +59,9 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
         data = dataFilter(data, 'category == "with_mirrors"')
 
         # Compute the average monthly downloads
-        dataCalculatedField(data, 'Month', 'datetimeNew(year(date), month(date), 1)', objectNew('datetimeNew', datetimeNew))
+        dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
         monthly = dataAggregate(data, objectNew( \
-            'categories', arrayNew('Month'), \
+            'categories', arrayNew('month'), \
             'measures', arrayNew( \
                 objectNew('field', 'downloads', 'function', 'sum') \
             ) \
@@ -102,7 +102,7 @@ async function downloadsDashboard(packageName, packageType)
         downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)), packageName))
 
     # Aggregate by month
-    dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)', objectNew('datetimeNew', datetimeNew))
+    dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
     monthly = dataAggregate(data, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'measures', arrayNew( \
