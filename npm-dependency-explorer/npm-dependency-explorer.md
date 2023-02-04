@@ -37,7 +37,7 @@ async function ndeMain()
                     'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
                     'type', 'text', \
                     'value', if(packageName != null, packageName, ''), \
-                    'size', '36' \
+                    'size', '32' \
                 ), \
                 'callback', objectNew('keyup', ndePackageNameOnKeyup) \
             )), \
