@@ -12,7 +12,7 @@ async function ndeMain()
     packageData = if(packageName != null, fetch(ndePackageDataURL(packageName)))
     packages = objectNew(packageName, packageData)
     packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, ndePackageVersionLatest(packageData)))
-    packageJSON = if(packageData != null, ndePackageJSON(packageData, packageVersion))
+    packageJSON = if(packageData != null && packageVersion != null, ndePackageJSON(packageData, packageVersion))
     if(packageJSON != null, ndeFetchPackageData(packages, arrayNew(packageJSON), dependencyKey, objectNew()))
 
     # Render the menu
