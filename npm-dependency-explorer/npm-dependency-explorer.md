@@ -67,9 +67,9 @@ async function ndeMain()
     # Compute the dependency statistics
     dependenciesDirect = dataFilter(dependencies, 'Direct')
     dependenciesTotal = dataAggregate(dependencies, objectNew( \
-        'categories', arrayNew('PackageName', 'PackageVersion'), \
+        'categories', arrayNew('Package', 'Version'), \
         'measures', arrayNew( \
-            objectNew('field', 'DependentName', 'function', 'count', 'name', 'Count') \
+            objectNew('field', 'Dependent', 'function', 'count', 'name', 'Count') \
         ) \
     ))
 
@@ -111,37 +111,29 @@ async function ndeMain()
     warningsDone:
 
     # Render the dependency table
-    dependenciesTable = if(!vDirect, dependencies, dependenciesDirect)
+    dependenciesFiltered = if(!vDirect, dependencies, dependenciesDirect)
+    dependenciesTable = arrayCopy(dependenciesFiltered)
     jumpif (arrayLength(dependenciesTable) == 0) tableDone
         # Sort the table data
         dataSort(dependenciesTable, arrayNew( \
-            arrayNew('PackageName'), \
-            arrayNew('PackageVersion'), \
-            arrayNew('DependentName'), \
-            arrayNew('DependentVersion') \
+            arrayNew('Package'), \
+            arrayNew('Version'), \
+            arrayNew('Dependent'), \
+            arrayNew('Dependent Version') \
         ))
 
         # Make the name field links
-        ixRow = 0
-        rowLoop:
-            row = arrayGet(dependenciesTable, ixRow)
-            rowPackageName = objectGet(row, 'PackageName')
-            rowPackageVersion = objectGet(row, 'PackageVersion')
-            rowPackageLink = ndeLink(objectNew('name', rowPackageName, 'version', rowPackageVersion, 'type', ''))
-            rowDependentName = objectGet(row, 'DependentName')
-            rowDependentVersion = objectGet(row, 'DependentVersion')
-            rowDependentLink = ndeLink(objectNew('name', rowDependentName, 'version', rowDependentVersion, 'type', ''))
-            objectSet(row, 'PackageName', '[' + markdownEscape(rowPackageName) + '](' + rowPackageLink + ')')
-            objectSet(row, 'DependentName', '[' + markdownEscape(rowDependentName) + '](' + rowDependentLink + ')')
-            ixRow = ixRow + 1
-        jumpif (ixRow < arrayLength(dependenciesTable)) rowLoop
+        dataCalculatedField(dependenciesTable, 'Package', \
+            "'[' + markdownEscape(Package) + '](' + ndeLink(objectNew('name', Package, 'version', Version, 'type', '')) + ')'")
+        dataCalculatedField(dependenciesTable, 'Dependent', \
+            "'[' + markdownEscape(Dependent) + '](' + ndeLink(objectNew('name', Dependent, 'version', [Dependent Version], 'type', '')) + ')'")
 
         # Render the dependencies table
         markdownPrint('### ' + if(dependencyType != 'Package', dependencyType, '') + ' Dependencies')
         dataTable(dependenciesTable, objectNew( \
-            'categories', arrayNew('PackageName', 'PackageVersion'), \
-            'fields', arrayNew('DependentName', 'DependentVersion'), \
-            'markdown', arrayNew('PackageName', 'DependentName') \
+            'categories', arrayNew('Package', 'Version'), \
+            'fields', arrayNew('Dependent', 'Dependent Version'), \
+            'markdown', arrayNew('Package', 'Dependent') \
         ))
     tableDone:
 endfunction
@@ -330,10 +322,10 @@ async function ndePackageDependencies(packages, dependencies, warnings, packageN
         jumpif (dependencyVersion == null) versionDone
             # Add the dependency row
             arrayPush(dependencies, objectNew( \
-                'PackageName', dependencyName, \
-                'PackageVersion', dependencyVersion, \
-                'DependentName', packageName, \
-                'DependentVersion', packageVersion, \
+                'Package', dependencyName, \
+                'Version', dependencyVersion, \
+                'Dependent', packageName, \
+                'Dependent Version', packageVersion, \
                 'Direct', isDirect \
             ))
 
