@@ -187,7 +187,7 @@ endfunction
 # Package name button on-click handler
 function ndePackageNameOnClick()
     packageName = stringTrim(getDocumentInputValue('package-name-text'))
-    setWindowLocation(ndeLink(objectNew('name', packageName, 'version', '', 'type', '', 'direct', 0)))
+    setWindowLocation(ndeLink(objectNew('name', packageName, 'version', '', 'type', '', 'direct', 0, 'sort', '')))
 endfunction
 
 
