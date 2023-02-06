@@ -59,23 +59,16 @@ async function ndeMain()
         return
     packageOK:
 
-    # Get the package dependencies
-    dependencies = arrayNew()
-    warnings = arrayNew()
-    ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, objectNew())
-
     # Compute the dependency statistics
-    dependenciesDirect = dataFilter(dependencies, 'Direct')
-    dependenciesTotal = dataAggregate(dependencies, objectNew( \
-        'categories', arrayNew('Package', 'Version'), \
-        'measures', arrayNew( \
-            objectNew('field', 'Dependent', 'function', 'count', 'name', 'Count') \
-        ) \
-    ))
+    dependencyStats = ndePackageStats(packages, packageName, packageVersion, dependencyKey)
 
     # Compute the showing links
     linkAll = if(!vDirect, 'All', '[All](' + ndeLink(objectNew('direct', 0)) + ')')
     linkDirect = if(vDirect, 'Direct', '[Direct](' + ndeLink(objectNew('direct', 1)) + ')')
+
+    # Compute the sort links
+    linkSortName = if(vSort != 'Dependencies', 'Name', '[Name](' + ndeLink(objectNew('sort', '')) + ')')
+    linkSortDependencies = if(vSort == 'Dependencies', 'Dependencies', '[Dependencies](' + ndeLink(objectNew('sort', 'Dependencies')) + ')')
 
     # Compute the dependency type links
     linkPackage = if(dependencyType == 'Package', 'Package', '[Package](' + ndeLink(objectNew('type', '')) + ')')
@@ -92,14 +85,16 @@ async function ndeMain()
         '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + ' \\', \
         '**Version:** ' + markdownEscape(packageVersion), \
         '', \
-        '**Direct ' + dependenciesDescriptor + 'dependencies:** ' + arrayLength(dependenciesDirect) + ' \\', \
-        '**Total ' + dependenciesDescriptor + 'dependencies:** ' + arrayLength(dependenciesTotal), \
+        '**Direct ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'countDirect') + ' \\', \
+        '**Total ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'count'), \
         '', \
         '**Showing:** ' + linkAll + ' | ' + linkDirect + ' \\',  \
+        '**Sort:** ' + linkSortName + ' | ' + linkSortDependencies + ' \\', \
         '**Dependency type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
 
     # Render warnings
+    warnings = objectGet(dependencyStats, 'warnings')
     jumpif (arrayLength(warnings) == 0) warningsDone
         markdownPrint('', '### Warnings')
         ixWarning = 0
@@ -111,16 +106,24 @@ async function ndeMain()
     warningsDone:
 
     # Render the dependency table
-    dependenciesFiltered = if(!vDirect, dependencies, dependenciesDirect)
+    dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
     dependenciesTable = arrayCopy(dependenciesFiltered)
     jumpif (arrayLength(dependenciesTable) == 0) tableDone
+        # Add the dependency count field
+        dataCalculatedField(dependenciesTable, 'Dependencies', \
+            "objectGet(ndePackageStats(packages, Package, Version, 'dependencies'), 'count')", \
+            objectNew('packages', packages))
+
         # Sort the table data
-        dataSort(dependenciesTable, arrayNew( \
+        sortFields = arrayNew()
+        if(vSort == 'Dependencies', arrayPush(sortFields, arrayNew('Dependencies', 1)))
+        arrayExtend(sortFields, arrayNew( \
             arrayNew('Package'), \
             arrayNew('Version'), \
             arrayNew('Dependent'), \
             arrayNew('Dependent Version') \
         ))
+        dataSort(dependenciesTable, sortFields)
 
         # Make the name field links
         dataCalculatedField(dependenciesTable, 'Package', \
@@ -132,7 +135,7 @@ async function ndeMain()
         markdownPrint('### ' + if(dependencyType != 'Package', dependencyType, '') + ' Dependencies')
         dataTable(dependenciesTable, objectNew( \
             'categories', arrayNew('Package', 'Version'), \
-            'fields', arrayNew('Dependent', 'Dependent Version'), \
+            'fields', arrayNew('Dependent', 'Dependent Version', 'Dependencies'), \
             'markdown', arrayNew('Package', 'Dependent') \
         ))
     tableDone:
@@ -155,24 +158,28 @@ function ndeLink(args)
     version = objectGet(args, 'version')
     type = objectGet(args, 'type')
     direct = objectGet(args, 'direct')
+    sort = objectGet(args, 'sort')
 
     # Variable arguments
     name = if(name != null, name, vName)
     version = if(version != null, version, vVersion)
     type = if(type != null, type, vType)
     direct = if(direct != null, direct, vDirect)
+    sort = if(sort != null, sort, vSort)
 
     # Cleared arguments
     name = if(name != null && stringLength(name) > 0, name)
     version = if(version != null && stringLength(version) > 0, version)
     type = if(type != null && stringLength(type) > 0, type)
+    sort = if(sort != null && stringLength(sort) > 0, sort)
 
     # Create the link
     parts = arrayNew()
-    if(name != null, arrayPush(parts, "var.vName='" + encodeURIComponent(name) + "'"))
-    if(version != null, arrayPush(parts, "var.vVersion='" + encodeURIComponent(version) + "'"))
-    if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
     if(direct != null && direct, arrayPush(parts, 'var.vDirect=1'))
+    if(name != null, arrayPush(parts, "var.vName='" + encodeURIComponent(name) + "'"))
+    if(sort != null, arrayPush(parts, "var.vSort='" + encodeURIComponent(sort) + "'"))
+    if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
+    if(version != null, arrayPush(parts, "var.vVersion='" + encodeURIComponent(version) + "'"))
     return if(arrayLength(parts) != 0, '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
 
@@ -286,8 +293,33 @@ async function ndeFetchPackageData(packages, packageJSONs, dependencyKey, comple
 endfunction
 
 
+# Helper to get a package's total and direct dependency counts
+function ndePackageStats(packages, packageName, packageVersion, dependencyKey)
+    # Get the package dependencies
+    dependencies = arrayNew()
+    warnings = arrayNew()
+    ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, objectNew())
+
+    # Compute the dependency statistics
+    dependenciesDirect = dataFilter(dependencies, 'Direct')
+    dependenciesTotal = dataAggregate(dependencies, objectNew( \
+        'categories', arrayNew('Package', 'Version'), \
+        'measures', arrayNew( \
+            objectNew('field', 'Dependent', 'function', 'count', 'name', 'Count') \
+        ) \
+    ))
+    return objectNew( \
+        'count', arrayLength(dependenciesTotal), \
+        'countDirect', arrayLength(dependenciesDirect), \
+        'dependencies', dependencies, \
+        'dependenciesDirect', dependenciesDirect, \
+        'warnings', warnings \
+    )
+endfunction
+
+
 # Helper to compute an npm package's dependency data table
-async function ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, completed)
+function ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, completed)
     isDirect = arrayLength(objectKeys(completed)) == 0
 
     # Package and version already loaded?
