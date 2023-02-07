@@ -1,0 +1,170 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+
+# Parse SemVer text to a SemVer object
+function semverNew(text)
+    semver = null
+
+    # Match the SemVer text
+    match = regexMatch(semverRegexSemver, text)
+    jumpif (match == null) semverDone
+    groups = objectGet(match, 'groups')
+
+    # Parse the release text
+    release = null
+    releaseText = objectGet(groups, 'release')
+    jumpif (releaseText == null) releaseDone
+        release = arrayNew()
+        parts = stringSplit(releaseText, '.')
+        ixPart = 0
+        partLoop:
+            part = arrayGet(parts, ixPart)
+
+            # Parse all-digits parts as integers
+            part = if(regexMatch(semverRegexDigits, part) != null, numberParseInt(part), part)
+            arrayPush(release, part)
+
+            ixPart = ixPart + 1
+        jumpif (ixPart < arrayLength(parts)) partLoop
+    releaseDone:
+
+    # Return the SemVer object
+    semver = if(groups != null, objectNew( \
+        'major', numberParseInt(objectGet(groups, 'major')), \
+        'minor', numberParseInt(objectGet(groups, 'minor')), \
+        'patch', numberParseInt(objectGet(groups, 'patch')), \
+        'release', release, \
+        'build', objectGet(groups, 'build') \
+    ))
+
+    semverDone:
+    return semver
+endfunction
+
+
+# SemVer parsing regular expressions
+semverRegexSemver = regexNew( \
+    '^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)' + \
+    '(?:-(?<release>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?' + \
+    '(?:\\+(?<build>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$' \
+)
+semverRegexDigits = regexNew('^\d+$')
+
+
+# Stringify a SemVer object
+function semverStringify(semver)
+    release = objectGet(semver, 'release')
+    build = objectGet(semver, 'build')
+    return arrayJoin(arrayNew( \
+        objectGet(semver, 'major'), '.', \
+        objectGet(semver, 'minor'), '.', \
+        objectGet(semver, 'patch'), \
+        if(release != null, '-' + arrayJoin(release, '.'), ''), \
+        if(build != null, '+' + build, '') \
+    ), '')
+endfunction
+
+
+# SemVer sort comparison func
+function semverCompare(semver, other)
+    # Compare the major version
+    semverMajor = objectGet(semver, 'major')
+    otherMajor = objectGet(other, 'major')
+    result = if(semverMajor < otherMajor, -1, if(semverMajor == otherMajor, 0, 1))
+    jumpif (result) resultDone
+
+    # Compare the minor version
+    semverMinor = objectGet(semver, 'minor')
+    otherMinor = objectGet(other, 'minor')
+    result = if(semverMinor < otherMinor, -1, if(semverMinor == otherMinor, 0, 1))
+    jumpif (result) resultDone
+
+    # Compare the patch version
+    semverPatch = objectGet(semver, 'patch')
+    otherPatch = objectGet(other, 'patch')
+    result = if(semverPatch < otherPatch, -1, if(semverPatch == otherPatch, 0, 1))
+    jumpif (result) resultDone
+
+    # Compare the release
+    semverRelease = objectGet(semver, 'release')
+    otherRelease = objectGet(other, 'release')
+    result = if(semverRelease != null, if(otherRelease != null, 0, -1), if(otherRelease != null, 1, 0))
+    jumpif (result) resultDone
+
+    # Compare the release parts
+    semverReleaseLength = arrayLength(semverRelease)
+    otherReleaseLength = arrayLength(otherRelease)
+    releaseLength = mathMax(semverReleaseLength, otherReleaseLength)
+    ixPart = 0
+    partLoop:
+        semverReleasePart = arrayGet(semverRelease, ixPart)
+        otherReleasePart = arrayGet(otherRelease, ixPart)
+
+        # Numeric parts are less-than non-numeric parts
+        semverPartNumeric = (stringLength(semverReleasePart) == null)
+        otherPartNumeric = (stringLength(otherReleasePart) == null)
+        result = if(semverPartNumeric && !otherPartNumeric, -1, if(!semverPartNumeric && otherPartNumeric, 1, 0))
+        jumpif (result) resultDone
+
+        # Compare the parts
+        release = if(semverReleasePart < otherReleasePart, -1, if(semverReleasePart == semverOtherPart, 0, 1))
+        jumpif (result) resultDone
+
+        ixPart = ixPart + 1
+    jumpif (ixPart < releaseLength) partLoop
+
+    # Compare the release parts lengths
+    result = if(semverReleaseLength < otherReleaseLength, -1, if(semverReleaseLength == otherReleaseLength, 0, 1))
+    jumpif (result) resultDone
+
+    # Compare the build
+    semverBuild = objectGet(semver, 'build')
+    otherBuild = objectGet(other, 'build')
+    result = if(semverBuild != null, if(otherBuild != null, 0, 1), if(otherBuild != null, -1, 0))
+    jumpif (result) resultDone
+    result = if(semverBuild < otherBuild, -1, if(semverBuild == otherBuild, 0, 1))
+
+    resultDone:
+    return result
+endfunction
+
+
+# Parse an array of SemVer text to an array of SemVer objects
+function semverVersions(versions)
+    semvers = arrayNew()
+    jumpif (!arrayLength(versions)) versionsDone
+        ixVersion = 0
+        versionLoop:
+            version = arrayGet(versions, ixVersion)
+            semver = semverNew(version)
+            if(semver != null, \
+                arrayPush(semvers, semver), \
+                debugLog('semver: Unrecognized SemVer "' + version + '"') \
+            )
+            ixVersion = ixVersion + 1
+        jumpif (ixVersion < arrayLength(versions)) versionLoop
+    versionDone:
+    return arraySort(semvers, semverCompare)
+endfunction
+
+
+# Match a SemVer range
+function semverMatch(versions, versionSpec)
+    # Tilde range
+    matchTilde = regexMatch(semverRangeRegexTilde, versionSpec)
+    jumpif (matchTilde == null) tildeDone
+        groups = objectGet(matchTilde, 'groups')
+        otherMajor = numberParseInt(objectGet(groups, 'major'))
+        otherMinor = numberParseInt(objectGet(groups, 'minor'))
+        filtered = dataFilter(versions, 'major == otherMajor && minor == otherMinor', \
+            objectNew('otherMajor', otherMajor, 'otherMinor', otherMinor))
+        return if(arrayLength(filtered) > 0, semverStringify(arrayPop(filtered)), null)
+    tildeDone:
+
+    return null
+endfunction
+
+
+# SemVer range regular expressions
+semverRangeRegexTilde = regexNew('^~(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)')

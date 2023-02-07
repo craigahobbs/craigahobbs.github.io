@@ -1,4 +1,10 @@
 ~~~ markdown-script
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include 'semver.mds'
+
+
 # The npm Dependency Explorer main entry point
 async function ndeMain()
     # Variable arguments
@@ -394,9 +400,9 @@ function ndePackageVersionLatest(packageData)
 endfunction
 
 
-# Helper to compute a package's version from an npm semver
-function ndePackageVersion(packageData, semver)
-    return if(semver, ndePackageVersionLatest(packageData), ndePackageVersionLatest(packageData))
+# Helper to compute a package's version from a SemVer range
+function ndePackageVersion(packageData, range)
+    return if(range, ndePackageVersionLatest(packageData), ndePackageVersionLatest(packageData))
 endfunction
 
 
