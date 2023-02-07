@@ -151,15 +151,34 @@ endfunction
 
 # Match a SemVer range
 function semverMatch(semvers, range)
-    # Tilde range
-    matchTilde = regexMatch(semverRangeRegexTilde, range)
-    jumpif (matchTilde == null) tildeDone
-        groups = objectGet(matchTilde, 'groups')
-        otherMajor = numberParseInt(objectGet(groups, 'major'))
-        otherMinor = numberParseInt(objectGet(groups, 'minor'))
+    # Carrot range
+    matchCarrot = regexMatch(semverRangeRegexCarrot, range)
+    jumpif (matchCarrot == null) carrotDone
+        groups = objectGet(matchCarrot, 'groups')
+        major = numberParseInt(objectGet(groups, 'major'))
+        minor = numberParseInt(objectGet(groups, 'minor'))
+        patch = numberParseInt(objectGet(groups, 'patch'))
+        filtered = if(major >= 1, \
+            dataFilter(semvers, 'major == otherMajor', objectNew('otherMajor', major)), \
+            if(minor >= 1, \
+                dataFilter(semvers, 'major == otherMajor && minor == otherMinor', \
+                    objectNew('otherMajor', major, 'otherMinor', minor)), \
+                dataFilter(semvers, 'major == otherMajor && minor == otherMinor && patch == otherPatch', \
+                    objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch)) \
+            ) \
+        )
+        return arrayPop(filtered)
+    carrotDone:
+
+    # Tilde range (major-minor)
+    matchTilde2 = regexMatch(semverRangeRegexTilde2, range)
+    jumpif (matchTilde2 == null) tildeDone
+        groups = objectGet(matchTilde2, 'groups')
+        major = numberParseInt(objectGet(groups, 'major'))
+        minor = numberParseInt(objectGet(groups, 'minor'))
         filtered = dataFilter(semvers, 'major == otherMajor && minor == otherMinor', \
-            objectNew('otherMajor', otherMajor, 'otherMinor', otherMinor))
-        return if(arrayLength(filtered) > 0, semverStringify(arrayPop(filtered)), null)
+            objectNew('otherMajor', major, 'otherMinor', minor))
+        return arrayPop(filtered)
     tildeDone:
 
     return null
@@ -167,4 +186,5 @@ endfunction
 
 
 # SemVer range regular expressions
-semverRangeRegexTilde = regexNew('^~(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)')
+semverRangeRegexCarrot = regexNew('^\\^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)')
+semverRangeRegexTilde2 = regexNew('^~(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)')
