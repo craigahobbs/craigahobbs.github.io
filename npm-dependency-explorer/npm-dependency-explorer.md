@@ -142,7 +142,10 @@ async function ndeMain()
         markdownPrint('### ' + if(dependencyType != 'Package', dependencyType, '') + ' Dependencies')
         dataTable(dependenciesTable, objectNew( \
             'categories', arrayNew('Package', 'Version'), \
-            'fields', arrayNew('Dependent', 'Dependent Version', 'Dependencies'), \
+            'fields', if(arrayLength(dataFilter(dependenciesTable, 'Latest != ""')) > 0, \
+                arrayNew('Latest', 'Range', 'Dependent', 'Dependent Version', 'Dependencies'), \
+                arrayNew('Range', 'Dependent', 'Dependent Version', 'Dependencies') \
+            ), \
             'markdown', arrayNew('Package', 'Dependent') \
         ))
     tableDone:
@@ -359,6 +362,7 @@ function ndePackageDependencies(packages, semvers, dependencies, warnings, packa
         if(dependencyData == null, \
             arrayPush(warnings, 'Failed to load package data for "' + dependencyName + '"'))
         dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemvers, dependencyRange))
+        dependencyLatest = ndePackageVersionLatest(dependencyData)
         if(dependencyData != null && dependencyVersion == null, \
             arrayPush(warnings, 'Unknown version "' + dependencyVersion + '" of package "' + dependencyName + '"'))
         jumpif (dependencyVersion == null) versionDone
@@ -366,6 +370,8 @@ function ndePackageDependencies(packages, semvers, dependencies, warnings, packa
             arrayPush(dependencies, objectNew( \
                 'Package', dependencyName, \
                 'Version', dependencyVersion, \
+                'Latest', if(dependencyVersion == dependencyLatest, '', dependencyLatest), \
+                'Range', dependencyRange, \
                 'Dependent', packageName, \
                 'Dependent Version', packageVersion, \
                 'Direct', isDirect \
