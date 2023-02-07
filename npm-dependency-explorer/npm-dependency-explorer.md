@@ -17,9 +17,10 @@ async function ndeMain()
     # Fetch the package data
     packageData = if(packageName != null, fetch(ndePackageDataURL(packageName)))
     packages = objectNew(packageName, packageData)
+    semvers = objectNew(packageName, semverVersions(objectKeys(objectGet(packageData, 'versions'))))
     packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, ndePackageVersionLatest(packageData)))
     packageJSON = if(packageData != null && packageVersion != null, ndePackageJSON(packageData, packageVersion))
-    if(packageJSON != null, ndeFetchPackageData(packages, arrayNew(packageJSON), dependencyKey, objectNew()))
+    if(packageJSON != null, ndeFetchPackageData(packages, semvers, arrayNew(packageJSON), dependencyKey, objectNew()))
 
     # Render the menu
     currentURL = ndeLink(objectNew())
@@ -66,7 +67,7 @@ async function ndeMain()
     packageOK:
 
     # Compute the dependency statistics
-    dependencyStats = ndePackageStats(packages, packageName, packageVersion, dependencyKey)
+    dependencyStats = ndePackageStats(packages, semvers, packageName, packageVersion, dependencyKey)
 
     # Compute the showing links
     linkAll = if(!vDirect, 'All', '[All](' + ndeLink(objectNew('direct', 0)) + ')')
@@ -117,8 +118,8 @@ async function ndeMain()
     jumpif (arrayLength(dependenciesTable) == 0) tableDone
         # Add the dependency count field
         dataCalculatedField(dependenciesTable, 'Dependencies', \
-            "objectGet(ndePackageStats(packages, Package, Version, 'dependencies'), 'count')", \
-            objectNew('packages', packages))
+            "objectGet(ndePackageStats(packages, semvers, Package, Version, 'dependencies'), 'count')", \
+            objectNew('packages', packages, 'semvers', semvers))
 
         # Sort the table data
         sortFields = arrayNew()
@@ -204,7 +205,7 @@ endfunction
 
 
 # Helper to recursively load package data
-async function ndeFetchPackageData(packages, packageJSONs, dependencyKey, completed)
+async function ndeFetchPackageData(packages, semvers, packageJSONs, dependencyKey, completed)
     # Compute the unloaded dependencies for the given package JSON
     unloaded = objectNew()
     ixPackage = 0
@@ -221,18 +222,18 @@ async function ndeFetchPackageData(packages, packageJSONs, dependencyKey, comple
         ixDependency = 0
         dependencyLoop:
             dependencyName = arrayGet(dependencyNames, ixDependency)
-            dependencySemver = objectGet(packageDependencies, dependencyName)
+            dependencyRange = objectGet(packageDependencies, dependencyName)
 
-            # Has this dependency/semver been processed?
+            # Has this dependency/range been processed?
             if(!objectHas(completed, dependencyName), objectSet(completed, dependencyName, objectNew()))
-            completedSemvers = objectGet(completed, dependencyName)
-            jumpif (objectHas(completedSemvers, dependencySemver)) dependencyContinue
-            objectSet(completedSemvers, dependencySemver, true)
+            completedRanges = objectGet(completed, dependencyName)
+            jumpif (objectHas(completedRanges, dependencyRange)) dependencyContinue
+            objectSet(completedRanges, dependencyRange, true)
 
-            # Add the unloaded dependency semver
+            # Add the unloaded dependency range
             if(!objectHas(unloaded, dependencyName), objectSet(unloaded, dependencyName, objectNew()))
-            dependencySemvers = objectGet(unloaded, dependencyName)
-            objectSet(dependencySemvers, dependencySemver, true)
+            dependencyRanges = objectGet(unloaded, dependencyName)
+            objectSet(dependencyRanges, dependencyRange, true)
 
             dependencyContinue:
             ixDependency = ixDependency + 1
@@ -264,6 +265,7 @@ async function ndeFetchPackageData(packages, packageJSONs, dependencyKey, comple
             dependencyName = arrayGet(unloadedURLNames, ixLoaded)
             dependencyData = arrayGet(loaded, ixLoaded)
             objectSet(packages, dependencyName, dependencyData)
+            objectSet(semvers, dependencyName, semverVersions(objectKeys(objectGet(dependencyData, 'versions'))))
             ixLoaded = ixLoaded + 1
         jumpif (ixLoaded < arrayLength(unloadedURLs)) fetchLoop
     fetchDone:
@@ -277,34 +279,35 @@ async function ndeFetchPackageData(packages, packageJSONs, dependencyKey, comple
             unloadedName = arrayGet(unloadedNames, ixUnloaded)
             unloadedData = objectGet(packages, unloadedName)
             jumpif (unloadedData == null) dependsContinue
+            unloadedSemvers = objectGet(semvers, unloadedName)
 
-            # Iterate each unloaded semver
-            unloadedSemvers = objectKeys(objectGet(unloaded, unloadedName))
-            ixSemver = 0
-            semverLoop:
-                unloadedSemver = arrayGet(unloadedSemvers, ixSemver)
-                unloadedVersion = ndePackageVersion(unloadedData, unloadedSemver)
+            # Iterate each unloaded range
+            unloadedRanges = objectKeys(objectGet(unloaded, unloadedName))
+            ixRange = 0
+            rangeLoop:
+                unloadedRange = arrayGet(unloadedRanges, ixRange)
+                unloadedVersion = ndePackageVersion(unloadedData, unloadedSemvers, unloadedRange)
                 unloadedJSON = if(unloadedVersion != null, ndePackageJSON(unloadedData, unloadedVersion))
                 if(unloadedJSON != null, arrayPush(unloadedJSONs, unloadedJSON))
-                ixSemver = ixSemver + 1
-            jumpif (ixSemver < arrayLength(unloadedSemvers)) semverLoop
+                ixRange = ixRange + 1
+            jumpif (ixRange < arrayLength(unloadedRanges)) rangeLoop
 
             dependsContinue:
             ixUnloaded = ixUnloaded + 1
         jumpif (ixUnloaded < arrayLength(unloadedNames)) dependsLoop
 
         # Compute the dependencies' dependencies
-        ndeFetchPackageData(packages, unloadedJSONs, 'dependencies', completed)
+        ndeFetchPackageData(packages, semvers, unloadedJSONs, 'dependencies', completed)
     dependsDone:
 endfunction
 
 
 # Helper to get a package's total and direct dependency counts
-function ndePackageStats(packages, packageName, packageVersion, dependencyKey)
+function ndePackageStats(packages, semvers, packageName, packageVersion, dependencyKey)
     # Get the package dependencies
     dependencies = arrayNew()
     warnings = arrayNew()
-    ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, objectNew())
+    ndePackageDependencies(packages, semvers, dependencies, warnings, packageName, packageVersion, dependencyKey, objectNew())
 
     # Compute the dependency statistics
     dependenciesDirect = dataFilter(dependencies, 'Direct')
@@ -325,7 +328,7 @@ endfunction
 
 
 # Helper to compute an npm package's dependency data table
-function ndePackageDependencies(packages, dependencies, warnings, packageName, packageVersion, dependencyKey, completed)
+function ndePackageDependencies(packages, semvers, dependencies, warnings, packageName, packageVersion, dependencyKey, completed)
     isDirect = arrayLength(objectKeys(completed)) == 0
 
     # Package and version already loaded?
@@ -350,11 +353,12 @@ function ndePackageDependencies(packages, dependencies, warnings, packageName, p
     nameLoop:
         # Determine the dependency version
         dependencyName = arrayGet(dependencyNames, ixDependencyName)
-        dependencySemver = objectGet(packageDependencies, dependencyName)
+        dependencyRange = objectGet(packageDependencies, dependencyName)
         dependencyData = objectGet(packages, dependencyName)
+        dependencySemvers = objectGet(semvers, dependencyName)
         if(dependencyData == null, \
             arrayPush(warnings, 'Failed to load package data for "' + dependencyName + '"'))
-        dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemver))
+        dependencyVersion = if(dependencyData != null, ndePackageVersion(dependencyData, dependencySemvers, dependencyRange))
         if(dependencyData != null && dependencyVersion == null, \
             arrayPush(warnings, 'Unknown version "' + dependencyVersion + '" of package "' + dependencyName + '"'))
         jumpif (dependencyVersion == null) versionDone
@@ -368,7 +372,7 @@ function ndePackageDependencies(packages, dependencies, warnings, packageName, p
             ))
 
             # Add the dependency's dependencies
-            ndePackageDependencies(packages, dependencies, warnings, dependencyName, dependencyVersion, 'dependencies', completed)
+            ndePackageDependencies(packages, semvers, dependencies, warnings, dependencyName, dependencyVersion, 'dependencies', completed)
         versionDone:
 
         ixDependencyName = ixDependencyName + 1
@@ -401,8 +405,10 @@ endfunction
 
 
 # Helper to compute a package's version from a SemVer range
-function ndePackageVersion(packageData, range)
-    return if(range, ndePackageVersionLatest(packageData), ndePackageVersionLatest(packageData))
+function ndePackageVersion(packageData, packageSemvers, range)
+    semver = semverMatch(packageSemvers, range)
+    if (semver == null, debugLog('nde: Unrecognized SemVer range "' + range + '"'))
+    return if(semver != null, semver, ndePackageVersionLatest(packageData))
 endfunction
 
 

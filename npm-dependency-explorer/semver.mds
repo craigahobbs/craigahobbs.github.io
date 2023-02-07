@@ -144,20 +144,20 @@ function semverVersions(versions)
             )
             ixVersion = ixVersion + 1
         jumpif (ixVersion < arrayLength(versions)) versionLoop
-    versionDone:
+    versionsDone:
     return arraySort(semvers, semverCompare)
 endfunction
 
 
 # Match a SemVer range
-function semverMatch(versions, versionSpec)
+function semverMatch(semvers, range)
     # Tilde range
-    matchTilde = regexMatch(semverRangeRegexTilde, versionSpec)
+    matchTilde = regexMatch(semverRangeRegexTilde, range)
     jumpif (matchTilde == null) tildeDone
         groups = objectGet(matchTilde, 'groups')
         otherMajor = numberParseInt(objectGet(groups, 'major'))
         otherMinor = numberParseInt(objectGet(groups, 'minor'))
-        filtered = dataFilter(versions, 'major == otherMajor && minor == otherMinor', \
+        filtered = dataFilter(semvers, 'major == otherMajor && minor == otherMinor', \
             objectNew('otherMajor', otherMajor, 'otherMinor', otherMinor))
         return if(arrayLength(filtered) > 0, semverStringify(arrayPop(filtered)), null)
     tildeDone:
