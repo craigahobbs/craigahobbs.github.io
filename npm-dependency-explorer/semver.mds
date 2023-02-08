@@ -130,6 +130,12 @@ function semverCompare(semver, other)
 endfunction
 
 
+# SemVer reverse-sort comparison func
+function semverCompareReversed(semver, other)
+    return -semverCompare(semver, other)
+endfunction
+
+
 # Parse an array of SemVer text to an array of SemVer objects
 function semverVersions(versions)
     semvers = arrayNew()

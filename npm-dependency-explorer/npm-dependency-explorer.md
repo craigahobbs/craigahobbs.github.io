@@ -18,7 +18,8 @@ async function ndeMain()
     packageData = if(packageName != null, fetch(ndePackageDataURL(packageName)))
     packages = objectNew(packageName, packageData)
     semvers = objectNew(packageName, semverVersions(objectKeys(objectGet(packageData, 'versions'))))
-    packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, ndePackageVersionLatest(packageData)))
+    packageVersionLatest = ndePackageVersionLatest(packageData)
+    packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, packageVersionLatest))
     packageJSON = if(packageData != null && packageVersion != null, ndePackageJSON(packageData, packageVersion))
     if(packageJSON != null, ndeFetchPackageData(packages, semvers, arrayNew(packageJSON), dependencyKey, objectNew()))
 
@@ -66,10 +67,35 @@ async function ndeMain()
         return
     packageOK:
 
-    # Compute the dependency statistics
+    # Load all dependencies and compute the dependency statistics
     dependencyStats = ndePackageStats(packages, semvers, packageName, packageVersion, dependencyKey)
     dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
     warnings = objectGet(dependencyStats, 'warnings')
+
+    # Render the package header
+    markdownPrint( \
+        '', \
+        '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
+        '', \
+        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + if(!vVersionSelect, ' \\', ''), \
+        if(!vVersionSelect, '**Version:** ' + markdownEscape(packageVersion), '') + \
+            ' ([select](' + ndeLink(objectNew('versionSelect', 1)) + '))' \
+    )
+
+    # Render the package version selection links, if requested
+    jumpif (!vVersionSelect) versionOK
+        markdownPrint('', '### Versions')
+        packageSemvers = arrayCopy(objectGet(semvers, packageName))
+        packageSemvers = arraySort(packageSemvers, semverCompareReversed)
+        ixSemver = 0
+        semverLoop:
+            semver = semverStringify(arrayGet(packageSemvers, ixSemver))
+            markdownPrint('', '[' + markdownEscape(semver) + '](' + ndeLink(objectNew('version', semver)) + ')' + \
+                if(semver == packageVersionLatest, ' (latest)', ''))
+            ixSemver = ixSemver + 1
+        jumpif (ixSemver < arrayLength(packageSemvers)) semverLoop
+        return
+    versionOK:
 
     # Compute the showing links
     linkAll = if(!vDirect, 'All', '[All](' + ndeLink(objectNew('direct', 0)) + ')')
@@ -85,14 +111,9 @@ async function ndeMain()
     linkOptional = if(dependencyType == 'Optional', 'Optional', '[Optional](' + ndeLink(objectNew('type', 'Optional')) + ')')
     linkPeer = if(dependencyType == 'Peer', 'Peer', '[Peer](' + ndeLink(objectNew('type', 'Peer')) + ')')
 
-    # Report the package name and dependency stats
+    # Render the package dependency stats
     dependenciesDescriptor = if(dependencyType != 'Package', '*' + stringLower(dependencyType) + '* ', '')
     markdownPrint( \
-        '', \
-        '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
-        '', \
-        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + ' \\', \
-        '**Version:** ' + markdownEscape(packageVersion), \
         '', \
         '**Direct ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'countDirect') + ' \\', \
         '**Total ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'count'), \
@@ -173,6 +194,7 @@ function ndeLink(args)
     # Arguments overrides
     name = objectGet(args, 'name')
     version = objectGet(args, 'version')
+    versionSelect = objectGet(args, 'versionSelect')
     type = objectGet(args, 'type')
     direct = objectGet(args, 'direct')
     sort = objectGet(args, 'sort')
@@ -199,6 +221,7 @@ function ndeLink(args)
     if(sort != null, arrayPush(parts, "var.vSort='" + encodeURIComponent(sort) + "'"))
     if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
     if(version != null, arrayPush(parts, "var.vVersion='" + encodeURIComponent(version) + "'"))
+    if(versionSelect != null && versionSelect, arrayPush(parts, 'var.vVersionSelect=1'))
     if(warn != null && warn, arrayPush(parts, 'var.vWarn=1'))
     return if(arrayLength(parts) != 0, '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
