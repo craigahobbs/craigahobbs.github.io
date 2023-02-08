@@ -502,7 +502,7 @@ endfunction
 function ndePackageVersion(packageData, packageSemvers, range)
     semver = semverMatch(packageSemvers, range)
     if (semver == null, debugLog('nde: Unrecognized SemVer range "' + range + '"'))
-    return if(semver != null, semverStringify(semver), ndePackageVersionLatest(packageData))
+    return if(semver != null, semver, ndePackageVersionLatest(packageData))
 endfunction
 
 

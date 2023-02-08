@@ -108,7 +108,7 @@ function semverCompare(semver, other)
         jumpif (result) resultDone
 
         # Compare the parts
-        release = if(semverReleasePart < otherReleasePart, -1, if(semverReleasePart == semverOtherPart, 0, 1))
+        result = if(semverReleasePart < otherReleasePart, -1, if(semverReleasePart == otherReleasePart, 0, 1))
         jumpif (result) resultDone
 
         ixPart = ixPart + 1
@@ -157,6 +157,8 @@ endfunction
 
 # Match a SemVer range
 function semverMatch(semvers, range)
+    result = null
+
     # Carrot range
     matchCarrot = regexMatch(semverRangeRegexCarrot, range)
     jumpif (matchCarrot == null) carrotDone
@@ -173,7 +175,8 @@ function semverMatch(semvers, range)
                     objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch)) \
             ) \
         )
-        return arrayPop(filtered)
+        result = arrayPop(filtered)
+        jump resultDone
     carrotDone:
 
     # Tilde range (major-minor)
@@ -184,10 +187,12 @@ function semverMatch(semvers, range)
         minor = numberParseInt(objectGet(groups, 'minor'))
         filtered = dataFilter(semvers, 'major == otherMajor && minor == otherMinor', \
             objectNew('otherMajor', major, 'otherMinor', minor))
-        return arrayPop(filtered)
+        result = arrayPop(filtered)
+        jump resultDone
     tildeDone:
 
-    return null
+    resultDone:
+    return if(result != null, semverStringify(result), null)
 endfunction
 
 

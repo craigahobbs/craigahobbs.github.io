@@ -10,8 +10,12 @@ testsSuccess = 0
 
 
 # Test runner
-function testValue(name, actual, expected)
+function testValue(name, testFn, expected)
+    jumpif (vTest == null || vTest == name) testOK
+        return
+    testOK:
     setGlobal('testsRun', testsRun + 1)
+    actual = testFn()
     setGlobal('testsSuccess', if(actual == expected, testsSuccess + 1, testsSuccess))
     markdownPrint( \
         '', \
@@ -21,20 +25,25 @@ function testValue(name, actual, expected)
 endfunction
 
 
+#
+# Tests
+#
+
+
 function testSemverNew()
     return jsonStringify(semverNew('1.2.3-beta.1+1234'))
 endfunction
-testValue('semverNew', testSemverNew(), '{"build":"1234","major":1,"minor":2,"patch":3,"release":["beta",1]}')
+testValue('semverNew', testSemverNew, '{"build":"1234","major":1,"minor":2,"patch":3,"release":["beta",1]}')
 
 
 function testSemverStringify()
     semver = semverNew('1.2.3-beta.1+1234')
     return semverStringify(semver)
 endfunction
-testValue('semverStringify', testSemverStringify(), '1.2.3-beta.1+1234')
+testValue('semverStringify', testSemverStringify, '1.2.3-beta.1+1234')
 
 
-function testSemverCompare()
+function testSemverCompare_release()
     semver = semverNew('1.2.3-beta.1+1234')
     other = semverNew('1.2.2-rc.2+1235')
     return jsonStringify(arrayNew( \
@@ -44,13 +53,26 @@ function testSemverCompare()
         semverCompare(other, other) \
     ))
 endfunction
-testValue('semverCompare', testSemverCompare(), '[1,-1,0,0]')
+testValue('semverCompare, release', testSemverCompare_release, '[1,-1,0,0]')
+
+
+function testSemverCompare_releaseSame()
+    semver = semverNew('1.2.3-beta.1+1234')
+    other = semverNew('1.2.3-beta.2+1235')
+    return jsonStringify(arrayNew( \
+        semverCompare(semver, other), \
+        semverCompare(other, semver), \
+        semverCompare(semver, semver), \
+        semverCompare(other, other) \
+    ))
+endfunction
+testValue('semverCompare, release same', testSemverCompare_releaseSame, '[-1,1,0,0]')
 
 
 function testSemverVersions()
     return jsonStringify(semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235')))
 endfunction
-testValue('semverVersions', testSemverVersions(), \
+testValue('semverVersions', testSemverVersions, \
     '[{"build":"1235","major":1,"minor":2,"patch":2,"release":["rc",2]},' + \
     '{"build":null,"major":1,"minor":2,"patch":2,"release":null}]' \
 )
@@ -63,7 +85,12 @@ function testSemverMatch()
         semverMatch(versions, '~1.3') \
     ))
 endfunction
-testValue('semverMatch', testSemverMatch(), '["1.2.2",null]')
+testValue('semverMatch', testSemverMatch, '["1.2.2",null]')
+
+
+#
+# End tests
+#
 
 
 # Test report
