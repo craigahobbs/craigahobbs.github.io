@@ -77,9 +77,9 @@ async function ndeMain()
         '', \
         '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
-        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + if(!vVersionSelect, ' \\', ''), \
-        if(!vVersionSelect, '**Version:** ' + markdownEscape(packageVersion), '') + \
-            ' ([select](' + ndeLink(objectNew('versionSelect', 1)) + '))' \
+        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + if(vVersionSelect, '', ' \\'), \
+        if(vVersionSelect, '', \
+            '**Version:** ' + markdownEscape(packageVersion) + ' ([select](' + ndeLink(objectNew('versionSelect', 1)) + '))') \
     )
 
     # Render the package version selection links, if requested
