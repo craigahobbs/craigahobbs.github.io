@@ -24,7 +24,7 @@ async function ndeMain()
     if(packageJSON != null, ndeFetchPackageData(packages, semvers, arrayNew(packageJSON), dependencyKey, objectNew()))
 
     # Render the menu
-    currentURL = ndeLink(objectNew())
+    currentURL = ndeURL(objectNew())
     markdownPrint(if(currentURL != '#var=', '[Home](#var=)', 'Home') + ' | [About](#url=README.md)')
 
     # Render the title
@@ -67,19 +67,14 @@ async function ndeMain()
         return
     packageOK:
 
-    # Load all dependencies and compute the dependency statistics
-    dependencyStats = ndePackageStats(packages, semvers, packageName, packageVersion, dependencyKey)
-    dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
-    warnings = objectGet(dependencyStats, 'warnings')
-
     # Render the package header
     markdownPrint( \
         '', \
         '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
         '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + if(vVersionSelect, '', ' \\'), \
-        if(vVersionSelect, '', \
-            '**Version:** ' + markdownEscape(packageVersion) + ' ([select](' + ndeLink(objectNew('versionSelect', 1)) + '))') \
+        if(vVersionSelect, '', '**Version:** ' + markdownEscape(packageVersion) + ' ([select](' + \
+            ndeCleanURL(objectNew('name', packageName, 'versionSelect', 1)) + '))') \
     )
 
     # Render the package version selection links, if requested
@@ -90,26 +85,32 @@ async function ndeMain()
         ixSemver = 0
         semverLoop:
             semver = semverStringify(arrayGet(packageSemvers, ixSemver))
-            markdownPrint('', '[' + markdownEscape(semver) + '](' + ndeLink(objectNew('version', semver)) + ')' + \
+            markdownPrint('', '[' + markdownEscape(semver) + '](' + \
+                ndeCleanURL(objectNew('name', packageName, 'version', semver)) + ')' + \
                 if(semver == packageVersionLatest, ' (latest)', ''))
             ixSemver = ixSemver + 1
         jumpif (ixSemver < arrayLength(packageSemvers)) semverLoop
         return
     versionOK:
 
+    # Load all dependencies and compute the dependency statistics
+    dependencyStats = ndePackageStats(packages, semvers, packageName, packageVersion, dependencyKey)
+    dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
+    warnings = objectGet(dependencyStats, 'warnings')
+
     # Compute the showing links
-    linkAll = if(!vDirect, 'All', '[All](' + ndeLink(objectNew('direct', 0)) + ')')
-    linkDirect = if(vDirect, 'Direct', '[Direct](' + ndeLink(objectNew('direct', 1)) + ')')
+    linkAll = if(!vDirect, 'All', '[All](' + ndeURL(objectNew('direct', 0)) + ')')
+    linkDirect = if(vDirect, 'Direct', '[Direct](' + ndeURL(objectNew('direct', 1)) + ')')
 
     # Compute the sort links
-    linkSortName = if(vSort != 'Dependencies', 'Name', '[Name](' + ndeLink(objectNew('sort', '')) + ')')
-    linkSortDependencies = if(vSort == 'Dependencies', 'Dependencies', '[Dependencies](' + ndeLink(objectNew('sort', 'Dependencies')) + ')')
+    linkSortName = if(vSort != 'Dependencies', 'Name', '[Name](' + ndeURL(objectNew('sort', '')) + ')')
+    linkSortDependencies = if(vSort == 'Dependencies', 'Dependencies', '[Dependencies](' + ndeURL(objectNew('sort', 'Dependencies')) + ')')
 
     # Compute the dependency type links
-    linkPackage = if(dependencyType == 'Package', 'Package', '[Package](' + ndeLink(objectNew('type', '')) + ')')
-    linkDevelopment = if(dependencyType == 'Development', 'Development', '[Development](' + ndeLink(objectNew('type', 'Development')) + ')')
-    linkOptional = if(dependencyType == 'Optional', 'Optional', '[Optional](' + ndeLink(objectNew('type', 'Optional')) + ')')
-    linkPeer = if(dependencyType == 'Peer', 'Peer', '[Peer](' + ndeLink(objectNew('type', 'Peer')) + ')')
+    linkPackage = if(dependencyType == 'Package', 'Package', '[Package](' + ndeURL(objectNew('type', '')) + ')')
+    linkDevelopment = if(dependencyType == 'Development', 'Development', '[Development](' + ndeURL(objectNew('type', 'Development')) + ')')
+    linkOptional = if(dependencyType == 'Optional', 'Optional', '[Optional](' + ndeURL(objectNew('type', 'Optional')) + ')')
+    linkPeer = if(dependencyType == 'Peer', 'Peer', '[Peer](' + ndeURL(objectNew('type', 'Peer')) + ')')
 
     # Render the package dependency stats
     dependenciesDescriptor = if(dependencyType != 'Package', '*' + stringLower(dependencyType) + '* ', '')
@@ -130,7 +131,7 @@ async function ndeMain()
             '### Warnings', \
             '', \
             'There are ' + arrayLength(warnings) + ' warnings.' + stringFromCharCode(160), \
-            '[' + if(vWarn, 'Hide', 'Show') + '](' + ndeLink(objectNew('warn', !vWarn)) + ')' \
+            '[' + if(vWarn, 'Hide', 'Show') + '](' + ndeURL(objectNew('warn', !vWarn)) + ')' \
         )
         jumpif (!vWarn) warningsDone
         ixWarning = 0
@@ -150,21 +151,15 @@ async function ndeMain()
             objectNew('packages', packages, 'semvers', semvers))
 
         # Sort the table data
-        sortFields = arrayNew()
-        if(vSort == 'Dependencies', arrayPush(sortFields, arrayNew('Dependencies', 1)))
-        arrayExtend(sortFields, arrayNew( \
-            arrayNew('Package'), \
-            arrayNew('Version'), \
-            arrayNew('Dependent'), \
-            arrayNew('Dependent Version') \
-        ))
+        sortFields = arrayNew(arrayNew('Package'), arrayNew('Version'), arrayNew('Dependent'), arrayNew('Dependent Version'))
+        sortFields = if(vSort != 'Dependencies', sortFields, arrayExtend(arrayNew(arrayNew('Dependencies', 1)), sortFields))
         dataSort(dependenciesTable, sortFields)
 
         # Make the name field links
         dataCalculatedField(dependenciesTable, 'Package', \
-            "'[' + markdownEscape(Package) + '](' + ndeLink(objectNew('name', Package, 'version', Version, 'type', '')) + ')'")
+            "'[' + markdownEscape(Package) + '](' + ndeCleanURL(objectNew('name', Package, 'version', Version)) + ')'")
         dataCalculatedField(dependenciesTable, 'Dependent', \
-            "'[' + markdownEscape(Dependent) + '](' + ndeLink(objectNew('name', Dependent, 'version', [Dependent Version], 'type', '')) + ')'")
+            "'[' + markdownEscape(Dependent) + '](' + ndeCleanURL(objectNew('name', Dependent, 'version', [Dependent Version])) + ')'")
 
         # Render the dependencies table
         markdownPrint('### ' + if(dependencyType != 'Package', dependencyType, '') + ' Dependencies')
@@ -190,7 +185,7 @@ ndeDependencyTypeKeys = objectNew( \
 
 
 # Helper to create application links
-function ndeLink(args)
+function ndeURL(args)
     # Arguments overrides
     name = objectGet(args, 'name')
     version = objectGet(args, 'version')
@@ -227,10 +222,25 @@ function ndeLink(args)
 endfunction
 
 
+# Helper to create package/version application links
+function ndeCleanURL(args)
+    argsClean = objectNew( \
+        'name', '', \
+        'version', '', \
+        'versionSelect', 0, \
+        'type', '', \
+        'direct', 0, \
+        'sort', '', \
+        'warn', 0 \
+     )
+    return ndeURL(objectAssign(argsClean, args))
+endfunction
+
+
 # Package name button on-click handler
 function ndePackageNameOnClick()
     packageName = stringTrim(getDocumentInputValue('package-name-text'))
-    setWindowLocation(ndeLink(objectNew('name', packageName, 'version', '', 'type', '', 'direct', 0, 'sort', '')))
+    setWindowLocation(ndeCleanURL(objectNew('name', packageName)))
 endfunction
 
 
