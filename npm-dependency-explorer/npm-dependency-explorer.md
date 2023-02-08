@@ -140,7 +140,14 @@ async function ndeMain()
 
     # Render warnings
     jumpif (arrayLength(warnings) == 0) warningsDone
-        markdownPrint('', '### Warnings')
+        markdownPrint( \
+            '', \
+            '### Warnings', \
+            '', \
+            'There are ' + arrayLength(warnings) + ' warnings.' + stringFromCharCode(160), \
+            '[' + if(vWarn, 'Hide', 'Show') + '](' + ndeLink(objectNew('warn', !vWarn)) + ')' \
+        )
+        jumpif (!vWarn) warningsDone
         ixWarning = 0
         warningLoop:
             warning = arrayGet(warnings, ixWarning)
@@ -205,6 +212,7 @@ function ndeLink(args)
     type = objectGet(args, 'type')
     direct = objectGet(args, 'direct')
     sort = objectGet(args, 'sort')
+    warn = objectGet(args, 'warn')
 
     # Variable arguments
     name = if(name != null, name, vName)
@@ -212,6 +220,7 @@ function ndeLink(args)
     type = if(type != null, type, vType)
     direct = if(direct != null, direct, vDirect)
     sort = if(sort != null, sort, vSort)
+    warn = if(warn != null, warn, vWarn)
 
     # Cleared arguments
     name = if(name != null && stringLength(name) > 0, name)
@@ -226,6 +235,7 @@ function ndeLink(args)
     if(sort != null, arrayPush(parts, "var.vSort='" + encodeURIComponent(sort) + "'"))
     if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
     if(version != null, arrayPush(parts, "var.vVersion='" + encodeURIComponent(version) + "'"))
+    if(warn != null && warn, arrayPush(parts, 'var.vWarn=1'))
     return if(arrayLength(parts) != 0, '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
 
