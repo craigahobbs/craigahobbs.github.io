@@ -100,8 +100,45 @@ async function ndeMain()
         '**Dependency type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
 
-    # Render warnings
+    # Get the filtered data
+    dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
     warnings = objectGet(dependencyStats, 'warnings')
+
+    # Multiple-dependency-version warning?
+    dependenciesTotal = dataAggregate(dependenciesFiltered, objectNew( \
+        'categories', arrayNew('Package', 'Version'), \
+        'measures', arrayNew( \
+            objectNew('field', 'Count', 'function', 'count') \
+        ) \
+    ))
+    dependenciesMultiple = dataFilter( \
+        dataAggregate(dependenciesTotal, objectNew( \
+            'categories', arrayNew('Package'), \
+            'measures', arrayNew( \
+                objectNew('field', 'Count', 'function', 'count') \
+            ) \
+        )), \
+        'Count > 1' \
+    )
+    jumpif (arrayLength(dependenciesMultiple) == 0) dependenciesMultipleOK
+        dataSort(dependenciesTotal, arrayNew(arrayNew('Package'), arrayNew('Version')))
+        dataSort(dependenciesMultiple, arrayNew(arrayNew('Package'), arrayNew('Version')))
+        ixDependency = 0
+        multipleLoop:
+            dependency = objectGet(arrayGet(dependenciesMultiple, ixDependency), 'Package')
+            dependencyVersions = dataFilter(dependenciesTotal, 'Package == dependency', objectNew('dependency', dependency))
+            versionMultiples = arrayNew()
+            ixVersion = 0
+            versionLoop:
+                arrayPush(versionMultiples, '"' + objectGet(arrayGet(dependencyVersions, ixVersion), 'Version') + '"')
+                ixVersion = ixVersion + 1
+            jumpif (ixVersion < arrayLength(dependencyVersions)) versionLoop
+            arrayPush(warnings, 'Multiple versions of package "' + dependency + '" (' + arrayJoin(versionMultiples, ', ') + ')')
+            ixDependency = ixDependency + 1
+        jumpif (ixDependency < arrayLength(dependenciesMultiple)) multipleLoop
+    dependenciesMultipleOK:
+
+    # Render warnings
     jumpif (arrayLength(warnings) == 0) warningsDone
         markdownPrint('', '### Warnings')
         ixWarning = 0
@@ -113,7 +150,6 @@ async function ndeMain()
     warningsDone:
 
     # Render the dependency table
-    dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
     dependenciesTable = arrayCopy(dependenciesFiltered)
     jumpif (arrayLength(dependenciesTable) == 0) tableDone
         # Add the dependency count field
@@ -317,7 +353,7 @@ function ndePackageStats(packages, semvers, packageName, packageVersion, depende
     dependenciesTotal = dataAggregate(dependencies, objectNew( \
         'categories', arrayNew('Package', 'Version'), \
         'measures', arrayNew( \
-            objectNew('field', 'Dependent', 'function', 'count', 'name', 'Count') \
+            objectNew('field', 'Count', 'function', 'count') \
         ) \
     ))
     return objectNew( \
