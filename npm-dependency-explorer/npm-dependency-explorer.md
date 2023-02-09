@@ -80,8 +80,7 @@ async function ndeMain()
     # Render the package version selection links, if requested
     jumpif (!vVersionSelect) versionOK
         markdownPrint('', '### Versions')
-        packageSemvers = arrayCopy(objectGet(semvers, packageName))
-        packageSemvers = arraySort(packageSemvers, semverCompareReversed)
+        packageSemvers = objectGet(semvers, packageName)
         ixSemver = 0
         semverLoop:
             semver = semverStringify(arrayGet(packageSemvers, ixSemver))

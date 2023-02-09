@@ -40,22 +40,23 @@ endfunction
 #
 
 
-function testSemverNew()
-    return jsonStringify(semverNew('1.2.3-beta.1+1234'))
+function testSemverParse()
+    semver = semverParse('1.2.3-beta.1+1234')
+    return jsonStringify(semver)
 endfunction
-testValue('testSemverNew', '{"build":"1234","major":1,"minor":2,"patch":3,"release":["beta",1]}')
+testValue('testSemverParse', '{"build":"1234","major":1,"minor":2,"patch":3,"release":["beta",1]}')
 
 
 function testSemverStringify()
-    semver = semverNew('1.2.3-beta.1+1234')
+    semver = semverParse('1.2.3-beta.1+1234')
     return semverStringify(semver)
 endfunction
 testValue('testSemverStringify', '1.2.3-beta.1+1234')
 
 
 function testSemverCompare_release()
-    semver = semverNew('1.2.3-beta.1+1234')
-    other = semverNew('1.2.2-rc.2+1235')
+    semver = semverParse('1.2.3-beta.1+1234')
+    other = semverParse('1.2.2-rc.2+1235')
     return jsonStringify(arrayNew( \
         semverCompare(semver, other), \
         semverCompare(other, semver), \
@@ -67,8 +68,8 @@ testValue('testSemverCompare_release', '[1,-1,0,0]')
 
 
 function testSemverCompare_releaseSame()
-    semver = semverNew('1.2.3-beta.1+1234')
-    other = semverNew('1.2.3-beta.2+1235')
+    semver = semverParse('1.2.3-beta.1+1234')
+    other = semverParse('1.2.3-beta.2+1235')
     return jsonStringify(arrayNew( \
         semverCompare(semver, other), \
         semverCompare(other, semver), \
@@ -80,25 +81,27 @@ testValue('testSemverCompare_releaseSame', '[-1,1,0,0]')
 
 
 function testSemverVersions()
-    return jsonStringify(semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235')))
+    versions = semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235'))
+    dataCalculatedField(versions, 'semver', 'null')
+    return jsonStringify(versions)
 endfunction
 testValue('testSemverVersions', \
-    '[{"build":"1235","major":1,"minor":2,"patch":2,"release":["rc",2]},' + \
-    '{"build":null,"major":1,"minor":2,"patch":2,"release":null}]' \
+    '[{"build":null,"major":1,"minor":2,"patch":2,"release":null,"semver":null},' + \
+    '{"build":"1235","major":1,"minor":2,"patch":2,"release":["rc",2],"semver":null}]' \
 )
 
 
-function testSemverMatch_carrot()
+function testSemverMatch_tilde()
     versions = semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235'))
     return jsonStringify(arrayNew( \
         semverMatch(versions, '~1.2'), \
         semverMatch(versions, '~1.3') \
     ))
 endfunction
-testValue('testSemverMatch_carrot', '["1.2.2",null]')
+testValue('testSemverMatch_tilde', '["1.2.2",null]')
 
 
-function testSemverMatch_tilde()
+function testSemverMatch_carrot()
     versions = semverVersions(arrayNew(\
         '0.0.1', '0.0.2', '0.0.3', '0.1.1', '0.1.2', '0.1.3', '1.0.1', '1.0.2', '1.0.3', '1.1.1', '1.1.2', '1.1.3', '2.0.0' \
     ))
@@ -119,7 +122,7 @@ function testSemverMatch_tilde()
         semverMatch(versions, '^2.0.0') \
     ))
 endfunction
-testValue('testSemverMatch_tilde', '["0.0.1","0.0.3",null,"0.1.3","0.1.3",null,"1.1.3","1.1.3","1.1.3","1.1.3","1.1.3",null,null,"2.0.0"]')
+testValue('testSemverMatch_carrot', '["0.0.1","0.0.3",null,"0.1.3","0.1.3",null,"1.1.3","1.1.3","1.1.3","1.1.3","1.1.3",null,null,"2.0.0"]')
 
 
 #

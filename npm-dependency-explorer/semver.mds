@@ -2,12 +2,25 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
+# Create a new SemVer object
+function semverNew(major, minor, patch)
+    semver = objectNew( \
+        'major', major, \
+        'minor', minor, \
+        'patch', patch, \
+        'release', null, \
+        'build', null \
+    )
+    return semver
+endfunction
+
+
 # Parse SemVer text to a SemVer object
-function semverNew(text)
+function semverParse(text)
     semver = null
 
     # Match the SemVer text
-    match = regexMatch(semverRegexSemver, text)
+    match = if(stringLength(text) != null, regexMatch(semverRegexSemver, text), text)
     jumpif (match == null) semverDone
     groups = objectGet(match, 'groups')
 
@@ -143,7 +156,8 @@ function semverVersions(versions)
         ixVersion = 0
         versionLoop:
             version = arrayGet(versions, ixVersion)
-            semver = semverNew(version)
+            semver = semverParse(version)
+            if(semver != null, objectSet(semver, 'semver', objectCopy(semver)))
             if(semver != null, \
                 arrayPush(semvers, semver), \
                 debugLog('semver: Unrecognized SemVer "' + version + '"') \
@@ -151,13 +165,13 @@ function semverVersions(versions)
             ixVersion = ixVersion + 1
         jumpif (ixVersion < arrayLength(versions)) versionLoop
     versionsDone:
-    return arraySort(semvers, semverCompare)
+    return arraySort(semvers, semverCompareReversed)
 endfunction
 
 
 # Match a SemVer range
 function semverMatch(semvers, range)
-    result = null
+    filtered = null
 
     # Carrot range
     matchCarrot = regexMatch(semverRangeRegexCarrot, range)
@@ -166,15 +180,16 @@ function semverMatch(semvers, range)
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
         patch = numberParseInt(objectGet(groups, 'patch'))
+        lower = semverParse(matchCarrot)
+        upper = semverNew( \
+            if(major >= 1, major + 1, major), \
+            if(major >= 1, 0, if(minor >= 1, minor + 1, minor)), \
+            if(major >= 1, 0, if(minor >= 1, 0, patch + 1)) \
+        )
         filtered = dataFilter(semvers, \
-            if(major >= 1, \
-                'major == otherMajor && (minor > otherMinor || (minor == otherMinor && patch >= otherPatch))', \
-                if(minor >= 1, \
-                    'major == 0 && minor == otherMinor && patch >= otherPatch', \
-                    'major == 0 && minor == 0 && patch == otherPatch')), \
-            objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch))
-        result = arrayPop(filtered)
-        jump resultDone
+            'semverCompare(semver, lower) >= 0 && semverCompare(semver, upper) < 0', \
+            objectNew('lower', lower, 'upper', upper))
+        jump done
     carrotDone:
 
     # Tilde range (major-minor)
@@ -183,15 +198,16 @@ function semverMatch(semvers, range)
         groups = objectGet(matchTilde2, 'groups')
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
+        lower = semverNew(major, minor, 0)
+        upper = semverNew(major, minor + 1, 0)
         filtered = dataFilter(semvers, \
-            'major == otherMajor && minor == otherMinor', \
-            objectNew('otherMajor', major, 'otherMinor', minor))
-        result = arrayPop(filtered)
-        jump resultDone
+            'semverCompare(semver, lower) >= 0 && semverCompare(semver, upper) < 0', \
+            objectNew('lower', lower, 'upper', upper))
+        jump done
     tildeDone:
 
-    resultDone:
-    return if(result != null, semverStringify(result), null)
+    done:
+    return if(filtered != null && arrayLength(filtered) != 0, semverStringify(arrayGet(filtered, 0)))
 endfunction
 
 
