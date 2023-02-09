@@ -82,12 +82,12 @@ testValue('testSemverCompare_releaseSame', '[-1,1,0,0]')
 
 function testSemverVersions()
     versions = semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235'))
-    dataCalculatedField(versions, 'semver', 'null')
+    dataCalculatedField(versions, 'semver', 'semver != null')
     return jsonStringify(versions)
 endfunction
 testValue('testSemverVersions', \
-    '[{"build":null,"major":1,"minor":2,"patch":2,"release":null,"semver":null},' + \
-    '{"build":"1235","major":1,"minor":2,"patch":2,"release":["rc",2],"semver":null}]' \
+    '[{"build":null,"major":1,"minor":2,"patch":2,"release":null,"semver":true},' + \
+    '{"build":"1235","major":1,"minor":2,"patch":2,"release":["rc",2],"semver":true}]' \
 )
 
 
@@ -103,7 +103,12 @@ testValue('testSemverMatch_tilde', '["1.2.2",null]')
 
 function testSemverMatch_carrot()
     versions = semverVersions(arrayNew(\
-        '0.0.1', '0.0.2', '0.0.3', '0.1.1', '0.1.2', '0.1.3', '1.0.1', '1.0.2', '1.0.3', '1.1.1', '1.1.2', '1.1.3', '2.0.0' \
+        '0.0.1', '0.0.2', '0.0.3', \
+        '0.1.1', '0.1.2', '0.1.3', \
+        '1.0.1', '1.0.2', '1.0.3', \
+        '1.1.1', '1.1.2', '1.1.3', \
+        '1.2.1-beta.1', '1.2.1-beta.2', \
+        '2.0.0' \
     ))
     return jsonStringify(arrayNew( \
         semverMatch(versions, '^0.0.1'), \
@@ -118,11 +123,13 @@ function testSemverMatch_carrot()
         semverMatch(versions, '^1.1.1'), \
         semverMatch(versions, '^1.1.3'), \
         semverMatch(versions, '^1.1.4'), \
+        semverMatch(versions, '^1.2.1-beta.1'), \
         semverMatch(versions, '^1.2.1'), \
         semverMatch(versions, '^2.0.0') \
     ))
 endfunction
-testValue('testSemverMatch_carrot', '["0.0.1","0.0.3",null,"0.1.3","0.1.3",null,"1.1.3","1.1.3","1.1.3","1.1.3","1.1.3",null,null,"2.0.0"]')
+testValue('testSemverMatch_carrot', \
+    '["0.0.1","0.0.3",null,"0.1.3","0.1.3",null,"1.1.3","1.1.3","1.1.3","1.1.3","1.1.3",null,"1.2.1-beta.2",null,"2.0.0"]')
 
 
 #

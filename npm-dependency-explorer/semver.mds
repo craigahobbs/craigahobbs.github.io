@@ -3,12 +3,12 @@
 
 
 # Create a new SemVer object
-function semverNew(major, minor, patch)
+function semverNew(major, minor, patch, release)
     semver = objectNew( \
         'major', major, \
         'minor', minor, \
         'patch', patch, \
-        'release', null, \
+        'release', release, \
         'build', null \
     )
     return semver
@@ -57,11 +57,12 @@ endfunction
 
 
 # SemVer parsing regular expressions
-semverRegexSemver = regexNew( \
-    '^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)' + \
+semverRegexStrSemver = '(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)' + \
     '(?:-(?<release>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?' + \
-    '(?:\\+(?<build>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$' \
-)
+    '(?:\\+(?<build>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?'
+semverRegexStrSemverNoMatch = stringReplace(stringReplace(stringReplace(stringReplace(stringReplace( \
+    semverRegexStrSemver, '<major>', ':'), '<minor>', ':'), '<patch>', ':'), '<release>', ':'), '<build>', ':')
+semverRegexSemver = regexNew('^' + semverRegexStrSemver + '$')
 semverRegexDigits = regexNew('^\d+$')
 
 
@@ -184,11 +185,15 @@ function semverMatch(semvers, range)
         upper = semverNew( \
             if(major >= 1, major + 1, major), \
             if(major >= 1, 0, if(minor >= 1, minor + 1, minor)), \
-            if(major >= 1, 0, if(minor >= 1, 0, patch + 1)) \
+            if(major >= 1, 0, if(minor >= 1, 0, patch + 1)), \
+            arrayNew(0) \
         )
         filtered = dataFilter(semvers, \
             'semverCompare(semver, lower) >= 0 && semverCompare(semver, upper) < 0', \
             objectNew('lower', lower, 'upper', upper))
+        filtered = dataFilter(filtered, \
+            'release == null || (major == lowerMajor && minor == lowerMinor && patch == lowerPatch)', \
+            objectNew('lower', lower, 'upper', upper, 'lowerMajor', major, 'lowerMinor', minor, 'lowerPatch', patch))
         jump done
     carrotDone:
 
@@ -199,7 +204,7 @@ function semverMatch(semvers, range)
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
         lower = semverNew(major, minor, 0)
-        upper = semverNew(major, minor + 1, 0)
+        upper = semverNew(major, minor + 1, 0, arrayNew(0))
         filtered = dataFilter(semvers, \
             'semverCompare(semver, lower) >= 0 && semverCompare(semver, upper) < 0', \
             objectNew('lower', lower, 'upper', upper))
@@ -212,5 +217,5 @@ endfunction
 
 
 # SemVer range regular expressions
-semverRangeRegexCarrot = regexNew('^\\^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)')
+semverRangeRegexCarrot = regexNew('^\\^' + semverRegexStrSemver + '$')
 semverRangeRegexTilde2 = regexNew('^~(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)')
