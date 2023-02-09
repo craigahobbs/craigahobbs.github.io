@@ -166,19 +166,13 @@ function semverMatch(semvers, range)
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
         patch = numberParseInt(objectGet(groups, 'patch'))
-        filtered = if(major >= 1, \
-            dataFilter(semvers, \
+        filtered = dataFilter(semvers, \
+            if(major >= 1, \
                 'major == otherMajor && (minor > otherMinor || (minor == otherMinor && patch >= otherPatch))', \
-                objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch)), \
-            if(minor >= 1, \
-                dataFilter(semvers, \
+                if(minor >= 1, \
                     'major == 0 && minor == otherMinor && patch >= otherPatch', \
-                    objectNew('otherMinor', minor, 'otherPatch', patch)), \
-                dataFilter(semvers, \
-                    'major == 0 && minor == 0 && patch == otherPatch', \
-                    objectNew('otherPatch', patch)) \
-            ) \
-        )
+                    'major == 0 && minor == 0 && patch == otherPatch')), \
+            objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch))
         result = arrayPop(filtered)
         jump resultDone
     carrotDone:
