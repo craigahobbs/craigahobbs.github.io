@@ -69,7 +69,7 @@ endfunction
 
 
 function skinnyStar(x, y, size)
-    drawStyle('black')
+    drawStyle('black', 1, 'none')
     drawMove(x + 0.5 * size, y)
     drawVLine(y + size)
     drawMove(x + 0.35 * size, y + 0.5 * size)
@@ -80,7 +80,7 @@ endfunction
 function chubbyStar(x, y, size)
     fillRand = mathRandom()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
-    drawStyle('black', 2, fill)
+    drawStyle('black', 1, fill)
     drawMove(x, y)
     drawLine(x + 0.5 * size, y + 0.33 * size)
     drawLine(x + size, y)
