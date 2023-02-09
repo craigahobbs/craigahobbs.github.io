@@ -5,22 +5,32 @@ include 'semver.mds'
 
 
 # Test statistics
-testsRun = 0
+testsRun = objectNew()
 testsSuccess = 0
 
 
 # Test runner
-function testValue(name, testFn, expected)
+function testValue(name, expected)
     jumpif (vTest == null || vTest == name) testOK
         return
     testOK:
-    setGlobal('testsRun', testsRun + 1)
+    jumpif (!objectHas(testsRun, name)) nameOK
+        markdownPrint('', 'Test "' + markdownEscape(name) + '" - test run multiple times')
+        return
+    nameOK:
+    objectSet(testsRun, name)
+    testFn = getGlobal(name)
+    jumpif (testFn != null) testFnOK
+        markdownPrint('', 'Test "' + markdownEscape(name) + '" - function not found')
+        return
+    testFnOK:
     actual = testFn()
     setGlobal('testsSuccess', if(actual == expected, testsSuccess + 1, testsSuccess))
     markdownPrint( \
         '', \
-        'Test "' + name + '" - ' + \
-        if(actual == expected, 'OK', 'FAIL - ' + jsonStringify(actual) + ' != ' + jsonStringify(expected)) \
+        'Test "' + markdownEscape(name) + '" - ' + \
+        if(actual == expected, 'OK', \
+            'FAIL - ' + markdownEscape(jsonStringify(actual)) + ' != ' + markdownEscape(jsonStringify(expected))) \
     )
 endfunction
 
@@ -33,14 +43,14 @@ endfunction
 function testSemverNew()
     return jsonStringify(semverNew('1.2.3-beta.1+1234'))
 endfunction
-testValue('semverNew', testSemverNew, '{"build":"1234","major":1,"minor":2,"patch":3,"release":["beta",1]}')
+testValue('testSemverNew', '{"build":"1234","major":1,"minor":2,"patch":3,"release":["beta",1]}')
 
 
 function testSemverStringify()
     semver = semverNew('1.2.3-beta.1+1234')
     return semverStringify(semver)
 endfunction
-testValue('semverStringify', testSemverStringify, '1.2.3-beta.1+1234')
+testValue('testSemverStringify', '1.2.3-beta.1+1234')
 
 
 function testSemverCompare_release()
@@ -53,7 +63,7 @@ function testSemverCompare_release()
         semverCompare(other, other) \
     ))
 endfunction
-testValue('semverCompare, release', testSemverCompare_release, '[1,-1,0,0]')
+testValue('testSemverCompare_release', '[1,-1,0,0]')
 
 
 function testSemverCompare_releaseSame()
@@ -66,26 +76,50 @@ function testSemverCompare_releaseSame()
         semverCompare(other, other) \
     ))
 endfunction
-testValue('semverCompare, release same', testSemverCompare_releaseSame, '[-1,1,0,0]')
+testValue('testSemverCompare_releaseSame', '[-1,1,0,0]')
 
 
 function testSemverVersions()
     return jsonStringify(semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235')))
 endfunction
-testValue('semverVersions', testSemverVersions, \
+testValue('testSemverVersions', \
     '[{"build":"1235","major":1,"minor":2,"patch":2,"release":["rc",2]},' + \
     '{"build":null,"major":1,"minor":2,"patch":2,"release":null}]' \
 )
 
 
-function testSemverMatch()
+function testSemverMatch_carrot()
     versions = semverVersions(arrayNew('1.2.2', '1.2.2-rc.2+1235'))
     return jsonStringify(arrayNew( \
         semverMatch(versions, '~1.2'), \
         semverMatch(versions, '~1.3') \
     ))
 endfunction
-testValue('semverMatch', testSemverMatch, '["1.2.2",null]')
+testValue('testSemverMatch_carrot', '["1.2.2",null]')
+
+
+function testSemverMatch_tilde()
+    versions = semverVersions(arrayNew(\
+        '0.0.1', '0.0.2', '0.0.3', '0.1.1', '0.1.2', '0.1.3', '1.0.1', '1.0.2', '1.0.3', '1.1.1', '1.1.2', '1.1.3', '2.0.0' \
+    ))
+    return jsonStringify(arrayNew( \
+        semverMatch(versions, '^0.0.1'), \
+        semverMatch(versions, '^0.0.3'), \
+        semverMatch(versions, '^0.0.4'), \
+        semverMatch(versions, '^0.1.1'), \
+        semverMatch(versions, '^0.1.3'), \
+        semverMatch(versions, '^0.1.4'), \
+        semverMatch(versions, '^1.0.1'), \
+        semverMatch(versions, '^1.0.3'), \
+        semverMatch(versions, '^1.0.4'), \
+        semverMatch(versions, '^1.1.1'), \
+        semverMatch(versions, '^1.1.3'), \
+        semverMatch(versions, '^1.1.4'), \
+        semverMatch(versions, '^1.2.1'), \
+        semverMatch(versions, '^2.0.0') \
+    ))
+endfunction
+testValue('testSemverMatch_tilde', '["0.0.1","0.0.3",null,"0.1.3","0.1.3",null,"1.1.3","1.1.3","1.1.3","1.1.3","1.1.3",null,null,"2.0.0"]')
 
 
 #
@@ -94,10 +128,11 @@ testValue('semverMatch', testSemverMatch, '["1.2.2",null]')
 
 
 # Test report
+runCount = arrayLength(objectKeys(testsRun))
 markdownPrint( \
     '', \
     '---', \
     '', \
-    'Ran ' + testsRun + ' tests, ' + testsSuccess + ' succeeded, ' + (testsRun - testsSuccess) + ' failed' \
+    'Ran ' + runCount + ' tests, ' + testsSuccess + ' succeeded, ' + (runCount - testsSuccess) + ' failed' \
 )
 ~~~

@@ -166,15 +166,21 @@ function semverMatch(semvers, range)
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
         patch = numberParseInt(objectGet(groups, 'patch'))
+        debugLog('*** ' + major + ', ' + minor)
         filtered = if(major >= 1, \
-            dataFilter(semvers, 'major == otherMajor', objectNew('otherMajor', major)), \
+            dataFilter(semvers, \
+                'major == otherMajor && (minor > otherMinor || (minor == otherMinor && patch >= otherPatch))', \
+                objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch)), \
             if(minor >= 1, \
-                dataFilter(semvers, 'major == otherMajor && minor == otherMinor', \
-                    objectNew('otherMajor', major, 'otherMinor', minor)), \
-                dataFilter(semvers, 'major == otherMajor && minor == otherMinor && patch == otherPatch', \
-                    objectNew('otherMajor', major, 'otherMinor', minor, 'otherPatch', patch)) \
+                dataFilter(semvers, \
+                    'major == 0 && minor == otherMinor && patch >= otherPatch', \
+                    objectNew('otherMinor', minor, 'otherPatch', patch)), \
+                dataFilter(semvers, \
+                    'major == 0 && minor == 0 && patch == otherPatch', \
+                    objectNew('otherPatch', patch)) \
             ) \
         )
+        debugLog('    *** ' + jsonStringify(filtered))
         result = arrayPop(filtered)
         jump resultDone
     carrotDone:
@@ -185,7 +191,8 @@ function semverMatch(semvers, range)
         groups = objectGet(matchTilde2, 'groups')
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
-        filtered = dataFilter(semvers, 'major == otherMajor && minor == otherMinor', \
+        filtered = dataFilter(semvers, \
+            'major == otherMajor && minor == otherMinor', \
             objectNew('otherMajor', major, 'otherMinor', minor))
         result = arrayPop(filtered)
         jump resultDone
