@@ -20,23 +20,24 @@ function main()
     width = getWindowWidth() - 3 * getDocumentFontSize()
     height = getWindowHeight() - if(vFullScreen, 3, 6) * getDocumentFontSize()
 
+    # Measure the title box height
+    titleBoxWidth = 0.8 * width
+    titleTextWidth = 0.9 * titleBoxWidth
+    titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * height)
+    titleBoxHeight = 3 * titleTextHeight
+
     # Set the drawing width/height
     setDrawingSize(width, height)
     drawStyle('none', 0, 'white')
     drawRect(0, 0, width, height)
 
     # Draw the stars
-    shapes(skinnyStar, 20, 0.2, 0.3)
-    shapes(chubbyStar, 50, 0.05, 0.12)
-    shapes(grayBall, 30, 0.02, 0.07)
-    shapes(purpleBall, 30, 0.02, 0.07)
-    shapes(blueEllipse, 30, 0.02, 0.05)
-
-    # Measure the title box height
-    titleBoxWidth = 0.8 * width
-    titleTextWidth = 0.9 * titleBoxWidth
-    titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * height)
-    titleBoxHeight = 3 * titleTextHeight
+    baseSize = titleBoxHeight
+    shapes(skinnyStar, baseSize, 20, 0.2, 0.3)
+    shapes(chubbyStar, baseSize, 50, 0.1, 0.2)
+    shapes(grayBall, baseSize, 30, 0.06, 0.12)
+    shapes(purpleBall, baseSize, 30, 0.06, 0.12)
+    shapes(blueEllipse, baseSize, 30, 0.06, 0.1)
 
     # Draw the title
     drawStyle('black', 5, '#ff0000f0')
@@ -49,13 +50,12 @@ function main()
 endfunction
 
 
-function shapes(shapeFn, count, minSize, maxSize)
+function shapes(shapeFn, baseSize, count, minSize, maxSize)
     width = getDrawingWidth()
     height = getDrawingHeight()
-    widthHeight = mathMin(width, height)
     ix = 0
     loop:
-        size = widthHeight * (minSize + mathRandom() * (maxSize - minSize))
+        size = baseSize * (minSize + mathRandom() * (maxSize - minSize))
         minX = size
         maxX = width - size
         minY = size
