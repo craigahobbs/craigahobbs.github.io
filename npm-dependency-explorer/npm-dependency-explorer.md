@@ -240,8 +240,6 @@ function ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
     packageSemvers = objectGet(semvers, packageName)
     packageSemverCount = arrayLength(packageSemvers)
     ixSemver = 0
-    totalCount = 0
-    maxCount = 12000
     semverLoop:
         semver = semverStringify(arrayGet(packageSemvers, ixSemver))
         count = ndePackageDependencyCount(packages, semvers, packageName, semver)
@@ -250,17 +248,18 @@ function ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
             'Version', semver, \
             'Dependencies', count \
         ))
-
-        # Don't exceed the maximum total dependencies
-        totalCount = totalCount + count
-        jumpif (totalCount > maxCount) semverDone
-
         ixSemver = ixSemver + 1
     jumpif (ixSemver < packageSemverCount) semverLoop
-    semverDone:
 
     # Render the version dependency data as a line chart and as a table
-    dataLineChart(versionDependencies, objectNew('x', 'Version Index', 'y', arrayNew('Dependencies')))
+    dataLineChart(versionDependencies, objectNew( \
+        'width', 800, \
+        'height', 300, \
+        'x', 'Version Index', \
+        'y', arrayNew('Dependencies'), \
+        'xTicks', objectNew('count', 5), \
+        'yTicks', objectNew('count', 5) \
+    ))
     dataSort(versionDependencies, arrayNew(arrayNew('Version Index', 1)))
     dataTable(versionDependencies)
 endfunction
