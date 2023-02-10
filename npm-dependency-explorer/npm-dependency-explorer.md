@@ -72,25 +72,24 @@ async function ndeMain()
         '', \
         '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
-        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + if(vVersionSelect, '', ' \\'), \
-        if(vVersionSelect, '', '**Version:** ' + markdownEscape(packageVersion) + ' ([select](' + \
-            ndeCleanURL(objectNew('name', packageName, 'versionSelect', 1)) + '))') \
+        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + \
+            if(vVersionSelect || vVersionChart, '', ' \\'), \
+        if(vVersionSelect || vVersionChart, '', '**Version:** ' + markdownEscape(packageVersion) + ' (' + \
+            '[versions](' + ndeCleanURL(objectNew('name', packageName, 'versionSelect', 1)) + ') | ' + \
+            '[chart](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion, 'versionChart', 1)) + '))') \
     )
 
     # Render the package version selection links, if requested
-    jumpif (!vVersionSelect) versionOK
-        markdownPrint('', '### Versions')
-        packageSemvers = objectGet(semvers, packageName)
-        ixSemver = 0
-        semverLoop:
-            semver = semverStringify(arrayGet(packageSemvers, ixSemver))
-            markdownPrint('', '[' + markdownEscape(semver) + '](' + \
-                ndeCleanURL(objectNew('name', packageName, 'version', semver)) + ')' + \
-                if(semver == packageVersionLatest, ' (latest)', ''))
-            ixSemver = ixSemver + 1
-        jumpif (ixSemver < arrayLength(packageSemvers)) semverLoop
+    jumpif (!vVersionSelect) versionLinksDone
+        ndeRenderVersionLinks(semvers, packageName)
         return
-    versionOK:
+    versionLinksDone:
+
+    # Render the package version dependency chart, if requested
+    jumpif (!vVersionChart) versionChartDone
+        ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
+        return
+    versionChartDone:
 
     # Load all dependencies and compute the dependency statistics
     dependencyStats = ndePackageStats(packages, semvers, packageName, packageVersion, dependencyKey)
@@ -174,6 +173,61 @@ async function ndeMain()
 endfunction
 
 
+# Render the package version links
+function ndeRenderVersionLinks(semvers, packageName)
+    markdownPrint('', '### Versions')
+    packageSemvers = objectGet(semvers, packageName)
+    ixSemver = 0
+    semverLoop:
+        semver = semverStringify(arrayGet(packageSemvers, ixSemver))
+        markdownPrint('', '[' + markdownEscape(semver) + '](' + \
+            ndeCleanURL(objectNew('name', packageName, 'version', semver)) + ')' + \
+            if(semver == packageVersionLatest, ' (latest)', ''))
+        ixSemver = ixSemver + 1
+    jumpif (ixSemver < arrayLength(packageSemvers)) semverLoop
+endfunction
+
+
+# Render the package dependencies by version chart
+function ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
+    markdownPrint( \
+        '', \
+        '[Back to package](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion)) + ')', \
+        '', \
+        '### Version Dependency Chart' \
+    )
+
+    # Compute the version dependency data table
+    versionDependencies = arrayNew()
+    packageSemvers = objectGet(semvers, packageName)
+    packageSemverCount = arrayLength(packageSemvers)
+    ixSemver = 0
+    totalCount = 0
+    maxCount = 12000
+    semverLoop:
+        semver = semverStringify(arrayGet(packageSemvers, ixSemver))
+        count = ndePackageDependencyCount(packages, semvers, packageName, semver)
+        arrayPush(versionDependencies, objectNew( \
+            'Version Index', packageSemverCount - ixSemver - 1, \
+            'Version', semver, \
+            'Dependencies', count \
+        ))
+
+        # Don't exceed the maximum total dependencies
+        totalCount = totalCount + count
+        jumpif (totalCount > maxCount) semverDone
+
+        ixSemver = ixSemver + 1
+    jumpif (ixSemver < packageSemverCount) semverLoop
+    semverDone:
+
+    # Render the version dependency data as a line chart and as a table
+    dataLineChart(versionDependencies, objectNew('x', 'Version Index', 'y', arrayNew('Dependencies')))
+    dataSort(versionDependencies, arrayNew(arrayNew('Version Index', 1)))
+    dataTable(versionDependencies)
+endfunction
+
+
 # Map of type argument string to npm package JSON dependency map key
 ndeDependencyTypeKeys = objectNew( \
     'Development', 'devDependencies', \
@@ -188,6 +242,7 @@ function ndeURL(args)
     # Arguments overrides
     name = objectGet(args, 'name')
     version = objectGet(args, 'version')
+    versionChart = objectGet(args, 'versionChart')
     versionSelect = objectGet(args, 'versionSelect')
     type = objectGet(args, 'type')
     direct = objectGet(args, 'direct')
@@ -215,6 +270,7 @@ function ndeURL(args)
     if(sort != null, arrayPush(parts, "var.vSort='" + encodeURIComponent(sort) + "'"))
     if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
     if(version != null, arrayPush(parts, "var.vVersion='" + encodeURIComponent(version) + "'"))
+    if(versionChart != null && versionChart, arrayPush(parts, 'var.vVersionChart=1'))
     if(versionSelect != null && versionSelect, arrayPush(parts, 'var.vVersionSelect=1'))
     if(warn != null && warn, arrayPush(parts, 'var.vWarn=1'))
     return if(arrayLength(parts) != 0, '#' + arrayJoin(parts, '&'), '#var=')
@@ -500,7 +556,7 @@ endfunction
 # Helper to compute a package's version from a SemVer range
 function ndePackageVersion(packageData, packageSemvers, range)
     semver = semverMatch(packageSemvers, range)
-    if (semver == null, debugLog('nde: Unrecognized SemVer range "' + range + '"'))
+    #if (semver == null, debugLog('nde: Unrecognized SemVer range "' + range + '"'))
     return if(semver != null, semver, ndePackageVersionLatest(packageData))
 endfunction
 
