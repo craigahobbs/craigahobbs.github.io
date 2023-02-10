@@ -449,15 +449,8 @@ function lifeDraw(life, args)
     yLoop:
         x = 0
         xLoop:
-            jumpif (!arrayGet(cells, y * width + x)) skipCell
-                px = border + gap + x * (size + gap)
-                py = border + gap + y * (size + gap)
-                drawMove(px, py)
-                drawHLine(px + size)
-                drawVLine(py + size)
-                drawHLine(px)
-                drawClose()
-            skipCell:
+            if(arrayGet(cells, y * width + x), \
+                drawPathRect(border + gap + x * (size + gap), border + gap + y * (size + gap), size, size))
             x = x + 1
         jumpif (x < width) xLoop
         y = y + 1
