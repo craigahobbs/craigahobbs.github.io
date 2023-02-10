@@ -18,8 +18,7 @@ async function ndeMain()
     packageData = if(packageName != null, fetch(ndePackageDataURL(packageName)))
     packages = objectNew(packageName, packageData)
     semvers = objectNew(packageName, semverVersions(objectKeys(objectGet(packageData, 'versions'))))
-    packageVersionLatest = ndePackageVersionLatest(packageData)
-    packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, packageVersionLatest))
+    packageVersion = if(packageVersion != null, packageVersion, if(packageData != null, ndePackageVersionLatest(packageData)))
     packageJSON = if(packageData != null && packageVersion != null, ndePackageJSON(packageData, packageVersion))
     if(packageJSON != null, ndeFetchPackageData(packages, semvers, arrayNew(packageJSON), dependencyKey, objectNew()))
 
@@ -81,7 +80,7 @@ async function ndeMain()
 
     # Render the package version selection links, if requested
     jumpif (!vVersionSelect) versionLinksDone
-        ndeRenderVersionLinks(semvers, packageName)
+        ndeRenderVersionLinks(packages, semvers, packageName)
         return
     versionLinksDone:
 
@@ -174,9 +173,11 @@ endfunction
 
 
 # Render the package version links
-function ndeRenderVersionLinks(semvers, packageName)
+function ndeRenderVersionLinks(packages, semvers, packageName)
     markdownPrint('', '### Versions')
+    packageData = objectGet(packages, packageName)
     packageSemvers = objectGet(semvers, packageName)
+    packageVersionLatest = ndePackageVersionLatest(packageData)
     ixSemver = 0
     semverLoop:
         semver = semverStringify(arrayGet(packageSemvers, ixSemver))
