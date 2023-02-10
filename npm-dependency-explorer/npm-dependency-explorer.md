@@ -33,54 +33,27 @@ async function ndeMain()
 
     # If no package is loaded, render the package selection form
     jumpif (packageJSON != null) packageOK
-        # Render the search form
-        elementModelRender(arrayNew( \
-            objectNew('html', 'p', 'elem', objectNew('html', 'b', 'elem', objectNew('text', 'Package Name:'))), \
-            objectNew('html', 'p', 'elem', objectNew( \
-                'html', 'input', \
-                'attr', objectNew( \
-                    'autocomplete', 'off', \
-                    'id', 'package-name-text', \
-                    'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
-                    'type', 'text', \
-                    'value', if(packageName != null, packageName, ''), \
-                    'size', '32' \
-                ), \
-                'callback', objectNew('keyup', ndePackageNameOnKeyup) \
-            )), \
-            objectNew('html', 'p', 'elem', objectNew( \
-                'html', 'a', \
-                'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
-                'elem', objectNew('text', 'Explore Dependencies'), \
-                'callback', objectNew('click', ndePackageNameOnClick) \
-            )) \
-        ))
-        setDocumentFocus('package-name-text')
-
-        # Render error messages
-        if(packageName != null && packageData == null, \
-            markdownPrint('', '**Error:** Unknown package "' + packageName + '"'))
-        if(packageName != null && packageData != null && packageJSON == null, \
-            markdownPrint('', '**Error:** Unknown version "' + packageVersion + '" of package "' + packageName + '"'))
-
+        ndeRenderForm(packageName, packageVersion, packageData, packageJSON)
         return
     packageOK:
 
     # Render the package header
+    isPackageView = !(vVersionSelect || vVersionChart)
     markdownPrint( \
         '', \
         '## [' + markdownEscape(packageName) + '](' + ndePackagePageURL(packageName) + ')', \
         '', \
-        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + \
-            if(vVersionSelect || vVersionChart, '', ' \\'), \
-        if(vVersionSelect || vVersionChart, '', '**Version:** ' + markdownEscape(packageVersion) + ' (' + \
-            '[versions](' + ndeCleanURL(objectNew('name', packageName, 'versionSelect', 1)) + ') | ' + \
-            '[chart](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion, 'versionChart', 1)) + '))') \
+        '**Description:** ' + markdownEscape(objectGet(packageJSON, 'description')) + if(isPackageView, ' \\', ''), \
+        if(isPackageView, \
+            '**Version:** ' + markdownEscape(packageVersion) + ' (' + \
+                '[versions](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion, 'versionSelect', 1)) + ') | ' + \
+                '[chart](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion, 'versionChart', 1)) + '))', \
+            '') \
     )
 
     # Render the package version selection links, if requested
     jumpif (!vVersionSelect) versionLinksDone
-        ndeRenderVersionLinks(packages, semvers, packageName)
+        ndeRenderVersionLinks(packages, semvers, packageName, packageVersion)
         return
     versionLinksDone:
 
@@ -124,12 +97,12 @@ async function ndeMain()
         '**Direct ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'countDirect') + ' \\', \
         '**Total ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'count'), \
         '', \
-        '**Showing:** ' + linkDirectAll + ' | ' + linkDirect + ' \\' \
+        '**Direct:** ' + linkDirectAll + ' | ' + linkDirect + ' \\' \
     )
     if(hasLatest, markdownPrint('**Latest:** ' + linkLatestAll + ' | ' + linkLatest + ' \\'))
     markdownPrint( \
         '**Sort:** ' + linkSortName + ' | ' + linkSortDependencies + ' \\', \
-        '**Dependency type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
+        '**Type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
 
     # Render warnings
@@ -145,7 +118,7 @@ async function ndeMain()
         ixWarning = 0
         warningLoop:
             warning = arrayGet(warnings, ixWarning)
-            markdownPrint('', '- ' + warning)
+            markdownPrint('', '- ' + markdownEscape(warning))
             ixWarning = ixWarning + 1
         jumpif (ixWarning < arrayLength(warnings)) warningLoop
     warningsDone:
@@ -183,9 +156,62 @@ async function ndeMain()
 endfunction
 
 
+# Render the package selection form
+function ndeRenderForm(packageName, packageVersion, packageData, packageJSON)
+    # Render the search form
+    elementModelRender(arrayNew( \
+        objectNew('html', 'p', 'elem', objectNew('html', 'b', 'elem', objectNew('text', 'Package Name:'))), \
+        objectNew('html', 'p', 'elem', objectNew( \
+            'html', 'input', \
+            'attr', objectNew( \
+                'autocomplete', 'off', \
+                'id', 'package-name-text', \
+                'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
+                'type', 'text', \
+                'value', if(packageName != null, packageName, ''), \
+                'size', '32' \
+            ), \
+            'callback', objectNew('keyup', ndePackageNameOnKeyup) \
+        )), \
+        objectNew('html', 'p', 'elem', objectNew( \
+            'html', 'a', \
+            'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+            'elem', objectNew('text', 'Explore Dependencies'), \
+            'callback', objectNew('click', ndePackageNameOnClick) \
+        )) \
+    ))
+    setDocumentFocus('package-name-text')
+
+    # Render error messages
+    if(packageName != null && packageData == null, \
+        markdownPrint('', '**Error:** Unknown package "' + markdownEscape(packageName) + '"'))
+    if(packageName != null && packageData != null && packageJSON == null, \
+        markdownPrint('', '**Error:** Unknown version "' + markdownEscape(packageVersion) + '" of package "' + \
+            markdownEscape(packageName) + '"'))
+endfunction
+
+
+# Package name button on-click handler
+function ndePackageNameOnClick()
+    packageName = stringTrim(getDocumentInputValue('package-name-text'))
+    setWindowLocation(ndeCleanURL(objectNew('name', packageName)))
+endfunction
+
+
+# Package name text input on-keyup handler
+function ndePackageNameOnKeyup(keyCode)
+    if(keyCode == 13, ndePackageNameOnClick())
+endfunction
+
+
 # Render the package version links
-function ndeRenderVersionLinks(packages, semvers, packageName)
-    markdownPrint('', '### Versions')
+function ndeRenderVersionLinks(packages, semvers, packageName, packageVersion)
+    markdownPrint( \
+        '', \
+        '[Back to package](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion)) + ')', \
+        '', \
+        '### Versions' \
+    )
     packageData = objectGet(packages, packageName)
     packageSemvers = objectGet(semvers, packageName)
     packageVersionLatest = ndePackageVersionLatest(packageData)
@@ -297,6 +323,7 @@ function ndeCleanURL(args)
     argsClean = objectNew( \
         'name', '', \
         'version', '', \
+        'versionChart', 0, \
         'versionSelect', 0, \
         'type', '', \
         'direct', 0, \
@@ -305,19 +332,6 @@ function ndeCleanURL(args)
         'warn', 0 \
      )
     return ndeURL(objectAssign(argsClean, args))
-endfunction
-
-
-# Package name button on-click handler
-function ndePackageNameOnClick()
-    packageName = stringTrim(getDocumentInputValue('package-name-text'))
-    setWindowLocation(ndeCleanURL(objectNew('name', packageName)))
-endfunction
-
-
-# Package name text input on-keyup handler
-function ndePackageNameOnKeyup(keyCode)
-    if(keyCode == 13, ndePackageNameOnClick())
 endfunction
 
 
@@ -442,7 +456,8 @@ function ndePackageStats(packages, semvers, packageName, packageVersion, depende
     ndePackageDependencies(packages, semvers, dependencies, warnings, packageName, packageVersion, dependencyKey, objectNew())
 
     # Compute the dependency statistics
-    dependenciesDirect = dataFilter(dependencies, 'Direct')
+    dependenciesDirect = dataFilter(dependencies, 'Dependent == packageName && [Dependent Version] == packageVersion', \
+        objectNew('packageName', packageName, 'packageVersion', packageVersion))
     dependenciesTotal = dataAggregate(dependencies, objectNew( \
         'categories', arrayNew('Package', 'Version'), \
         'measures', arrayNew( \
@@ -491,8 +506,6 @@ endfunction
 
 # Helper to compute an npm package's dependency data table
 function ndePackageDependencies(packages, semvers, dependencies, warnings, packageName, packageVersion, dependencyKey, completed)
-    isDirect = arrayLength(objectKeys(completed)) == 0
-
     # Package and version already loaded?
     if(!objectHas(completed, packageName), objectSet(completed, packageName, objectNew()))
     completedVersions = objectGet(completed, packageName)
@@ -532,8 +545,7 @@ function ndePackageDependencies(packages, semvers, dependencies, warnings, packa
                 'Latest', if(dependencyVersion == dependencyLatest, '', dependencyLatest), \
                 'Range', dependencyRange, \
                 'Dependent', packageName, \
-                'Dependent Version', packageVersion, \
-                'Direct', isDirect \
+                'Dependent Version', packageVersion \
             ))
 
             # Add the dependency's dependencies
