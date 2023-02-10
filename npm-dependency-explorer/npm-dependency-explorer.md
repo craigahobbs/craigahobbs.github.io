@@ -95,9 +95,17 @@ async function ndeMain()
     dependenciesFiltered = objectGet(dependencyStats, if(vDirect, 'dependenciesDirect', 'dependencies'))
     warnings = objectGet(dependencyStats, 'warnings')
 
-    # Compute the showing links
-    linkAll = if(!vDirect, 'All', '[All](' + ndeURL(objectNew('direct', 0)) + ')')
+    # Filter to dependencies that have a newer version?
+    hasLatest = arrayLength(dataFilter(dependenciesFiltered, 'Latest != ""')) > 0
+    dependenciesFiltered = if(hasLatest && vLatest, dataFilter(dependenciesFiltered, 'Latest != ""'), dependenciesFiltered)
+
+    # Compute the direct filter links
+    linkDirectAll = if(!vDirect, 'All', '[All](' + ndeURL(objectNew('direct', 0)) + ')')
     linkDirect = if(vDirect, 'Direct', '[Direct](' + ndeURL(objectNew('direct', 1)) + ')')
+
+    # Compute the latest filter links
+    linkLatestAll = if(!vLatest, 'All', '[All](' + ndeURL(objectNew('latest', 0)) + ')')
+    linkLatest = if(vLatest, 'Latest', '[Latest](' + ndeURL(objectNew('latest', 1)) + ')')
 
     # Compute the sort links
     linkSortName = if(vSort != 'Dependencies', 'Name', '[Name](' + ndeURL(objectNew('sort', '')) + ')')
@@ -116,7 +124,10 @@ async function ndeMain()
         '**Direct ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'countDirect') + ' \\', \
         '**Total ' + dependenciesDescriptor + 'dependencies:** ' + objectGet(dependencyStats, 'count'), \
         '', \
-        '**Showing:** ' + linkAll + ' | ' + linkDirect + ' \\',  \
+        '**Showing:** ' + linkDirectAll + ' | ' + linkDirect + ' \\' \
+    )
+    if(hasLatest, markdownPrint('**Latest:** ' + linkLatestAll + ' | ' + linkLatest + ' \\'))
+    markdownPrint( \
         '**Sort:** ' + linkSortName + ' | ' + linkSortDependencies + ' \\', \
         '**Dependency type:** ' + linkPackage + ' | ' + linkDevelopment + ' | ' + linkOptional + ' | ' + linkPeer \
     )
@@ -162,7 +173,7 @@ async function ndeMain()
         markdownPrint('### ' + if(dependencyType != 'Package', dependencyType, '') + ' Dependencies')
         dataTable(dependenciesTable, objectNew( \
             'categories', arrayNew('Package', 'Version'), \
-            'fields', if(arrayLength(dataFilter(dependenciesTable, 'Latest != ""')) > 0, \
+            'fields', if(hasLatest, \
                 arrayNew('Latest', 'Range', 'Dependent', 'Dependent Version', 'Dependencies'), \
                 arrayNew('Range', 'Dependent', 'Dependent Version', 'Dependencies') \
             ), \
@@ -247,6 +258,7 @@ function ndeURL(args)
     versionSelect = objectGet(args, 'versionSelect')
     type = objectGet(args, 'type')
     direct = objectGet(args, 'direct')
+    latest = objectGet(args, 'latest')
     sort = objectGet(args, 'sort')
     warn = objectGet(args, 'warn')
 
@@ -255,6 +267,7 @@ function ndeURL(args)
     version = if(version != null, version, vVersion)
     type = if(type != null, type, vType)
     direct = if(direct != null, direct, vDirect)
+    latest = if(latest != null, latest, vLatest)
     sort = if(sort != null, sort, vSort)
     warn = if(warn != null, warn, vWarn)
 
@@ -267,6 +280,7 @@ function ndeURL(args)
     # Create the link
     parts = arrayNew()
     if(direct != null && direct, arrayPush(parts, 'var.vDirect=1'))
+    if(latest != null && latest, arrayPush(parts, 'var.vLatest=1'))
     if(name != null, arrayPush(parts, "var.vName='" + encodeURIComponent(name) + "'"))
     if(sort != null, arrayPush(parts, "var.vSort='" + encodeURIComponent(sort) + "'"))
     if(type != null, arrayPush(parts, "var.vType='" + encodeURIComponent(type) + "'"))
@@ -286,6 +300,7 @@ function ndeCleanURL(args)
         'versionSelect', 0, \
         'type', '', \
         'direct', 0, \
+        'latest', 0, \
         'sort', '', \
         'warn', 0 \
      )
