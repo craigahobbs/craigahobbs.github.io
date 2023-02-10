@@ -90,7 +90,7 @@ function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRang
         loopY:
             n = mandelbrotValue(xMin + (x / (width - 1)) * xRange, yMin + (y / (height - 1)) * yRange, iter)
             drawStyle('none', 0, if(n == 0, 'black', arrayGet(colors, (n + colorCycle) % arrayLength(colors))))
-            drawRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
+            drawPathRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
             y = y + 1
         jumpif (y < height) loopY
 
