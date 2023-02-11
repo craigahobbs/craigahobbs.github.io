@@ -227,7 +227,7 @@ endfunction
 
 
 # Render the package dependencies by version chart
-function ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
+async function ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
     markdownPrint( \
         '', \
         '[Back to package](' + ndeCleanURL(objectNew('name', packageName, 'version', packageVersion)) + ')', \
@@ -237,11 +237,19 @@ function ndeRenderVersionChart(packages, semvers, packageName, packageVersion)
 
     # Compute the version dependency data table
     versionDependencies = arrayNew()
+    packageData = objectGet(packages, packageName)
     packageSemvers = objectGet(semvers, packageName)
     packageSemverCount = arrayLength(packageSemvers)
+    completed = objectNew()
     ixSemver = 0
     semverLoop:
         semver = semverStringify(arrayGet(packageSemvers, ixSemver))
+
+        # Update packages for this version
+        packageJSON = ndePackageJSON(packageData, semver)
+        ndeFetchPackageData(packages, semvers, arrayNew(packageJSON), 'dependencies', completed)
+
+        # Compute version dependencies
         count = ndePackageDependencyCount(packages, semvers, packageName, semver)
         arrayPush(versionDependencies, objectNew( \
             'Version Index', packageSemverCount - ixSemver - 1, \
