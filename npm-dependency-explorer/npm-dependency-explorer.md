@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include 'forms.mds'
 include 'semver.mds'
 
 
@@ -161,24 +162,8 @@ function ndeRenderForm(packageName, packageVersion, packageData, packageJSON)
     # Render the search form
     elementModelRender(arrayNew( \
         objectNew('html', 'p', 'elem', objectNew('html', 'b', 'elem', objectNew('text', 'Package Name:'))), \
-        objectNew('html', 'p', 'elem', objectNew( \
-            'html', 'input', \
-            'attr', objectNew( \
-                'autocomplete', 'off', \
-                'id', 'package-name-text', \
-                'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
-                'type', 'text', \
-                'value', if(packageName != null, packageName, ''), \
-                'size', '32' \
-            ), \
-            'callback', objectNew('keyup', ndePackageNameOnKeyup) \
-        )), \
-        objectNew('html', 'p', 'elem', objectNew( \
-            'html', 'a', \
-            'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
-            'elem', objectNew('text', 'Explore Dependencies'), \
-            'callback', objectNew('click', ndePackageNameOnClick) \
-        )) \
+        objectNew('html', 'p', 'elem', formsTextElements('package-name-text', packageName, 32, ndePackageNameOnClick)), \
+        objectNew('html', 'p', 'elem', formsLinkButtonElements('Explore Dependencies', ndePackageNameOnClick)) \
     ))
     setDocumentFocus('package-name-text')
 
@@ -197,11 +182,6 @@ function ndePackageNameOnClick()
     setWindowLocation(ndeCleanURL(objectNew('name', packageName)))
 endfunction
 
-
-# Package name text input on-keyup handler
-function ndePackageNameOnKeyup(keyCode)
-    if(keyCode == 13, ndePackageNameOnClick())
-endfunction
 
 
 # Render the package version links

@@ -1,0 +1,34 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+
+function formsTextElements(id, text, size, onEnter)
+    return objectNew( \
+        'html', 'input', \
+        'attr', objectNew( \
+            'autocomplete', 'off', \
+            'id', id, \
+            'style', 'font-size: inherit; border: thin solid black; padding: 0.4em;', \
+            'type', 'text', \
+            'value', text, \
+            'size', size \
+        ), \
+        'callback', if(onEnter != null, objectNew('keyup', formsTextOnKeyup)), \
+        'callbackData', if(onEnter != null, onEnter) \
+    )
+endfunction
+
+
+function formsTextOnKeyup(keyCode, onEnter)
+    if(keyCode == 13, onEnter())
+endfunction
+
+
+function formsLinkButtonElements(text, onClick)
+    return objectNew( \
+        'html', 'a', \
+        'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
+        'elem', objectNew('text', text), \
+        'callback', objectNew('click', onClick) \
+    )
+endfunction
