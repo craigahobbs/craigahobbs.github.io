@@ -54,7 +54,7 @@ function shapes(shapeFn, baseSize, count, minSize, maxSize)
     width = getDrawingWidth()
     height = getDrawingHeight()
     ix = 0
-    loop:
+    while ix < count do
         size = baseSize * (minSize + mathRandom() * (maxSize - minSize))
         minX = size
         maxX = width - size
@@ -63,8 +63,8 @@ function shapes(shapeFn, baseSize, count, minSize, maxSize)
         x = minX + mathRandom() * (maxX - minX)
         y = minY + mathRandom() * (maxY - minY)
         shapeFn(x, y, size)
-    ix = ix + 1
-    jumpif (ix < count) loop
+        ix = ix + 1
+    endwhile
 endfunction
 
 
