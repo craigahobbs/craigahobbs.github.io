@@ -85,17 +85,16 @@ function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRang
 
     # Draw each pixel in the set
     x = 0
-    loopX:
+    while x < width do
         y = 0
-        loopY:
+        while y < height do
             n = mandelbrotValue(xMin + (x / (width - 1)) * xRange, yMin + (y / (height - 1)) * yRange, iter)
             drawStyle('none', 0, if(n == 0, 'black', arrayGet(colors, (n + colorCycle) % arrayLength(colors))))
             drawPathRect(x * pixelSize, (height - y - 1) * pixelSize, pixelSize, pixelSize)
             y = y + 1
-        jumpif (y < height) loopY
-
+        endwhile
         x = x + 1
-    jumpif (x < width) loopX
+    endwhile
 endfunction
 
 
@@ -109,9 +108,11 @@ function mandelbrotValue(x, y, maxIterations)
 
     # Iteratively compute the next c2 value
     n = 1
-    loop:
+    while n <= maxIterations do
         # Done?
-        jumpif (mathSqrt(c2r * c2r + c2i * c2i) > 2) loopDone
+        if (mathSqrt(c2r * c2r + c2i * c2i) > 2) then
+            return n
+        endif
 
         # c2 = c2 * c2 + c1
         c2rNew = c2r * c2r - c2i * c2i + c1r
@@ -119,13 +120,10 @@ function mandelbrotValue(x, y, maxIterations)
         c2r = c2rNew
 
         n = n + 1
-        jumpif (n <= maxIterations) loop
+    endwhile
 
     # Hit max iterations - the point is in the Mandelbrot set
     return 0
-
-    loopDone:
-    return n
 endfunction
 
 
