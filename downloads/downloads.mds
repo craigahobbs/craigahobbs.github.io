@@ -3,10 +3,12 @@
 
 
 async function downloadsMain(javascriptPackages, pythonPackages)
-    if(vName != null, markdownPrint('[Rankings](#var=)'))
-    title = if(vName != null, \
-        downloadsDashboard(vName, vType), \
-        downloadsRankings(javascriptPackages, pythonPackages))
+    if vName != null then
+        markdownPrint('[Rankings](#var=)', '')
+        downloadsDashboard(vName, vType)
+    else then
+        downloadsRankings(javascriptPackages, pythonPackages)
+    endif
 endfunction
 
 
@@ -18,44 +20,38 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
 
     # Compute the list of package raw data URLs
     dataURLs = arrayNew()
-    dataInfo = arrayNew()
+    packages = arrayNew()
     packageLists = arrayNew(javascriptPackages, pythonPackages)
     packageTypes = arrayNew('JavaScript', 'Python')
-    ixPackageList = 0
-    packageListLoop:
-        packageList = arrayGet(packageLists, ixPackageList)
-        packageType = arrayGet(packageTypes, ixPackageList)
-        ixPackage = 0
-        packageLoop:
-            packageName = arrayGet(packageList, ixPackage)
-
-            # Add the package URL, etc.
-            arrayPush(dataURLs, \
-                if(packageType == 'Python', downloadsPythonDataURL(packageName), downloadsJavascriptDataURL(packageName)))
-            arrayPush(dataInfo, objectNew('packageName', packageName, 'packageType', packageType))
-
-            ixPackage = ixPackage + 1
-        jumpif (ixPackage < arrayLength(packageList)) packageLoop
-        ixPackageList = ixPackageList + 1
-    jumpif (ixPackageList < arrayLength(packageLists)) packageListLoop
+    foreach packageType, ixPackageType in packageTypes do
+        packageList = arrayGet(packageLists, ixPackageType)
+        foreach packageName in packageList do
+            if packageType == 'Python' then
+                arrayPush(dataURLs, downloadsPythonDataURL(packageName))
+            else then
+                arrayPush(dataURLs, downloadsJavascriptDataURL(packageName))
+            endif
+            arrayPush(packages, objectNew('name', packageName, 'type', packageType))
+        endforeach
+    endforeach
 
     # Fetch the package raw data and validate
     dataRaw = fetch(dataURLs)
     packageData = arrayNew()
-    ixPackage = 0
-    dataLoop:
-        packageName = objectGet(arrayGet(dataInfo, ixPackage), 'packageName')
-        packageType = objectGet(arrayGet(dataInfo, ixPackage), 'packageType')
-        packageURL = if(packageType == 'Python', \
-            'https://pypi.org/project/' + encodeURIComponent(packageName) + '/', \
-            'https://www.npmjs.com/package/' + encodeURIComponent(packageName))
+    foreach package, ixPackage in packages do
+        packageName = objectGet(package, 'name')
+        packageType = objectGet(package, 'type')
 
         # Validate the data
-        data = if(packageType == 'Python', \
-            downloadsPythonDataValidate(arrayGet(dataRaw, ixPackage), packageName), \
-            downloadsJavascriptDataValidate(arrayGet(dataRaw, ixPackage), packageName))
+        if packageType == 'Python' then
+            data = downloadsPythonDataValidate(arrayGet(dataRaw, ixPackage))
+            packageURL = 'https://pypi.org/project/' + encodeURIComponent(packageName) + '/'
+        else then
+            data = downloadsJavascriptDataValidate(arrayGet(dataRaw, ixPackage))
+            packageURL = 'https://www.npmjs.com/package/' + encodeURIComponent(packageName)
+        endif
 
-        # Filter to only "with_mirrors"
+        # Filter to only 'with_mirrors'
         data = dataFilter(data, 'category == "with_mirrors"')
 
         # Compute the average monthly downloads
@@ -72,13 +68,12 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
             ) \
         ))
         arrayPush(packageData, objectNew( \
-            'Package', '[' + packageName + '](' + downloadsLink(packageName, packageType) + ')', \
-            'Language', '[' + packageType + '](' + packageURL + ')', \
+            'Package', '[' + markdownEscape(packageName) + "](#var.vName='" + encodeURIComponent(packageName) + \
+                "'&var.vType='" + encodeURIComponent(packageType) + "')", \
+            'Language', '[' + markdownEscape(packageType) + '](' + packageURL + ')', \
             'Downloads', objectGet(arrayGet(monthlyAverage, 0), 'downloads') \
         ))
-
-        ixPackage = ixPackage + 1
-    jumpif (ixPackage < arrayLength(dataURLs)) dataLoop
+    endforeach
 
     # Render the rankings table
     dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
@@ -92,14 +87,16 @@ endfunction
 
 async function downloadsDashboard(packageName, packageType)
     # Document title
-    title = packageName + ' Downloads'
-    markdownPrint('', '# ' + title)
+    title = packageName + ' (' + packageType + ') Downloads'
+    markdownPrint('', '# ' + markdownEscape(title))
     setDocumentTitle(title)
 
     # Load and validate the package data
-    data = if(packageType == 'Python', \
-        downloadsPythonDataValidate(fetch(downloadsPythonDataURL(packageName)), packageName), \
-        downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)), packageName))
+    if packageType == 'Python' then
+        data = downloadsPythonDataValidate(fetch(downloadsPythonDataURL(packageName)))
+    else then
+        data = downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)))
+    endif
 
     # Aggregate by month
     dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
@@ -165,18 +162,6 @@ async function downloadsDashboard(packageName, packageType)
 endfunction
 
 
-function downloadsLink(name, type, window)
-    name = if(name != null, name, vName)
-    type = if(type != null, type, vType)
-    window = if(window != null, window, vWindow)
-    parts = arrayNew()
-    if(name != null, arrayPush(parts, "var.vName='" + name + "'"))
-    if(type != null, arrayPush(parts, "var.vType='" + type + "'"))
-    if(window != null, arrayPush(parts, 'var.vWindow=' + window))
-    return if(arrayLength(parts) == 0, '#var=', '#' + arrayJoin(parts, '&'))
-endfunction
-
-
 function downloadsJavascriptDataURL(packageName)
     today = datetimeToday()
     yearAgo = datetimeNew(datetimeYear(today), datetimeMonth(today) - 12, datetimeDay(today))
@@ -185,22 +170,17 @@ function downloadsJavascriptDataURL(packageName)
 endfunction
 
 
-function downloadsJavascriptDataValidate(dataRaw, packageName)
+function downloadsJavascriptDataValidate(dataRaw)
     # Reshape the data
     data = arrayNew()
     downloads = objectGet(dataRaw, 'downloads')
-    jumpif (arrayLength(downloads) == 0) dataDone
-    ixDownload = 0
-    downloadLoop:
-        download = arrayGet(downloads, ixDownload)
+    foreach download in downloads do
         arrayPush(data, objectNew( \
             'date', objectGet(download, 'day'), \
             'downloads', objectGet(download, 'downloads'), \
             'category', 'with_mirrors' \
         ))
-        ixDownload = ixDownload + 1
-    jumpif (ixDownload < arrayLength(downloads)) downloadLoop
-    dataDone:
+    endforeach
 
     # Validate the data
     return dataValidate(data)
