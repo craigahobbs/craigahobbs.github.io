@@ -15,7 +15,7 @@ endfunction
 async function downloadsRankings(javascriptPackages, pythonPackages)
     # Document title
     title = 'Package Downloads'
-    markdownPrint('', '# ' + title)
+    markdownPrint('', '# ' + markdownEscape(title))
     setDocumentTitle(title)
 
     # Compute the list of package raw data URLs
