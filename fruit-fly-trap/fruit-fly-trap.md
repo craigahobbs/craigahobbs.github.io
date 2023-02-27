@@ -23,7 +23,7 @@ function main()
     setDocumentTitle(title)
 
     # Print the cone form?
-    jumpif (!vPrint) printNot
+    if vPrint then
         # Print close link
         elementModelRender(objectNew( \
             'html', 'p', \
@@ -43,7 +43,7 @@ function main()
         coneForm(diameter * pixelsPerUnit, bottom * pixelsPerUnit, coneHeight * pixelsPerUnit, \
             flapLength * pixelsPerUnit, 1, coneExtraLength * pixelsPerUnit)
         return
-    printNot:
+    endif
 
     # Introduction
     markdownPrint( \
@@ -175,35 +175,27 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     flapOuterX = formRadiusOuter * mathSin(flapTheta)
     flapOuterY = formRadiusOuter * mathCos(flapTheta)
 
-    jumpif (flapTheta > 0.5 * mathPi()) formMinMax1
+    if flapTheta < 0.5 * mathPi() then
         formMinX = 0
         formMinY = flapInnerY
         formMaxX = flapOuterX
         formMaxY = formRadiusOuter
-        jump formMinMaxDone
-
-    formMinMax1:
-    jumpif (flapTheta > mathPi()) formMinMax2
+    else if flapTheta < mathPi() then
         formMinX = 0
         formMinY = flapOuterY
         formMaxX = formRadiusOuter
         formMaxY = formRadiusOuter
-        jump formMinMaxDone
-
-    formMinMax2:
-    jumpif (flapTheta > 1.5 * mathPi()) formMinMax3
+    else if flapTheta < 1.5 * mathPi() then
         formMinX = flapOuterX
         formMinY = -formRadiusOuter
         formMaxX = formRadiusOuter
         formMaxY = formRadiusOuter
-        jump formMinMaxDone
-
-    formMinMax3:
+    else then
         formMinX = -formRadiusOuter
         formMinY = -formRadiusOuter
         formMaxX = formRadiusOuter
         formMaxY = formRadiusOuter
-    formMinMaxDone:
+    endif
 
     # Expand the form bounding box by one line width (to accomodate lines)
     formMinX = formMinX - lineWidth
