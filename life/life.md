@@ -414,6 +414,7 @@ endfunction
 function lifeLoad()
     # Parse and validate the session storage
     lifeJSON = sessionStorageGet('life')
+    life = null
     if lifeJSON != null then
         life = jsonParse(lifeJSON)
         if life != null then
@@ -424,7 +425,7 @@ function lifeLoad()
         endif
     endif
 
-    # If no valid session storage exists create new life
+    # If there is no session, create a default session
     if life == null then
         life = lifeNew()
         lifeSave(life)
