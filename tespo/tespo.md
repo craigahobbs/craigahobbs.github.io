@@ -5,23 +5,24 @@
 
 async function main()
     # Input schema documentation?
-    jumpif (!vDocInput) noInputDoc
+    if vDocInput then
         markdownPrint('[Home](#var=)', '')
         elementModelRender(schemaElements(tespoTypes, 'TespoInput'))
         return
-    noInputDoc:
 
     # Output schema documentation?
-    jumpif (!vDocOutput) noOutputDoc
+    else if vDocOutput then
         markdownPrint('[Home](#var=)', '')
         elementModelRender(schemaElements(tespoTypes, 'TespoOutput'))
         return
-    noOutputDoc:
+    endif
 
     # Determine the scenario input URL
     scenarioName = if(vScenario != null, vScenario, defaultScenarioName)
     inputURL = objectGet(scenarios, scenarioName)
-    inputURL = if(inputURL != null, inputURL, objectGet(scenarios, defaultScenarioName))
+    if inputURL == null then
+        inputURL = objectGet(scenarios, defaultScenarioName)
+    endif
 
     # Fetch the TESPO input
     input = schemaValidate(tespoTypes, 'TespoInput', fetch(inputURL))
@@ -31,14 +32,10 @@ async function main()
 
     # Create the scenario links markdown
     scenarioLinks = ''
-    ixScenario = 0
-    ixScenarioMax = arrayLength(scenarioNames)
-    scenarioLinksLoop:
-        scenarioLinkName = arrayGet(scenarioNames, ixScenario)
+    foreach scenarioLinkName, ixScenario in scenarioNames do
         scenarioLinks = scenarioLinks + if(ixScenario != 0, ' | ', '') + \
             if(scenarioLinkName == scenarioName, scenarioLinkName, '[' + scenarioLinkName + "](#var.vScenario='" + scenarioLinkName + "')")
-        ixScenario = ixScenario + 1
-    jumpif (ixScenario < ixScenarioMax) scenarioLinksLoop
+    endforeach
 
     # Main display
     markdownPrint( \
@@ -100,14 +97,11 @@ function tespo(input)
 
     # Compute the available solar power (remove current vehicle charging power)
     availableSolar = solarPower - homePower
-    ixVehicle = 0
-    availableSolarLoop:
-        vehicle = arrayGet(vehicles, ixVehicle)
+    foreach vehicle in vehicles do
         # P = V * I
         chargingPower = objectGet(vehicle, 'chargingRate') * objectGet(vehicle, 'chargingVoltage') / 1000
         availableSolar = availableSolar + if(objectGet(vehicle, 'chargingEnabled'), chargingPower, 0)
-        ixVehicle = ixVehicle + 1
-    jumpif (ixVehicle < vehiclesLenght) availableSolarLoop
+    endforeach
 
     # Is the home battery charged?
     isHomeBatteryCharged = homeBattery >= homeLimit
@@ -116,9 +110,7 @@ function tespo(input)
     # Add the charging action for each vehicle
     vehicleChargings = arrayNew()
     output = objectNew('vehicles', vehicleChargings)
-    ixVehicle = 0
-    vehicleLoop:
-        vehicle = arrayGet(vehicles, ixVehicle)
+    foreach vehicle in vehicles do
         battery = objectGet(vehicle, 'battery')
         minChargingRate = objectGet(vehicle, 'minChargingRate')
         maxChargingRate = objectGet(vehicle, 'maxChargingRate')
@@ -129,42 +121,43 @@ function tespo(input)
         actionChargingLimit = minChargingLimit
 
         # Home battery not yet fully charged?
-        jumpif (!isHomeBatteryCharged) vehicleDone
+        if isHomeBatteryCharged then
 
-        # Vehicle fully charged?
-        isVehicleCharged = battery >= maxChargingLimit
-        allBatteriesCharged = allBatteriesCharged && isVehicleCharged
-        jumpif (isVehicleCharged) vehicleDone
+            # Vehicle fully charged?
+            isVehicleCharged = battery >= maxChargingLimit
+            allBatteriesCharged = allBatteriesCharged && isVehicleCharged
+            if !isVehicleCharged then
 
-        # Enough solar power to charge the vehicle?
-        # I = P / V
-        availableSolarRate = (availableSolar * 1000) / objectGet(vehicle, 'chargingVoltage')
-        bestChargingRate = 0
-        chargingRateTest = minChargingRate
-        chargingRateLoop:
-            bestChargingRate = if(chargingRateTest <= availableSolarRate, mathMax(bestChargingRate, chargingRateTest), bestChargingRate)
-            chargingRateTest = chargingRateTest + 1
-        jumpif (chargingRateTest <= maxChargingRate) chargingRateLoop
-        jumpif (bestChargingRate == 0) vehicleDone
+                # Enough solar power to charge the vehicle?
+                # I = P / V
+                availableSolarRate = (availableSolar * 1000) / objectGet(vehicle, 'chargingVoltage')
+                bestChargingRate = 0
+                chargingRateTest = minChargingRate
+                while chargingRateTest <= maxChargingRate do
+                    bestChargingRate = if(chargingRateTest <= availableSolarRate, mathMax(bestChargingRate, chargingRateTest), bestChargingRate)
+                    chargingRateTest = chargingRateTest + 1
+                endwhile
+                if bestChargingRate != 0 then
+                    # Charge the vehicle
+                    actionCharging = true
+                    actionChargingRate = bestChargingRate
+                    actionChargingLimit = maxChargingLimit
 
-        # Charge the vehicle
-        actionCharging = true
-        actionChargingRate = bestChargingRate
-        actionChargingLimit = maxChargingLimit
+                    # Reduce the available solar power
+                    chargingPower = actionChargingRate * chargingVoltage / 1000
+                    availableSolar = availableSolar - chargingPower
+                endif
+            endif
+        endif
 
-        # Reduce the available solar power
-        chargingPower = actionChargingRate * chargingVoltage / 1000
-        availableSolar = availableSolar - chargingPower
-
-        vehicleDone:
+        # Add the vehicle model
         arrayPush(vehicleChargings, objectNew( \
             'id', objectGet(vehicle, 'id'), \
             'chargingEnabled', actionCharging, \
             'chargingRate', actionChargingRate, \
             'chargingLimit', actionChargingLimit \
         ))
-        ixVehicle = ixVehicle + 1
-    jumpif (ixVehicle < arrayLength(vehicles)) vehicleLoop
+    endforeach
 
     # Set the excess solar power
     excessSolar = if(allBatteriesCharged && availableSolar > minSolarExcess, availableSolar, 0)
