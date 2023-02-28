@@ -134,7 +134,8 @@ function tespo(input)
                 bestChargingRate = 0
                 chargingRateTest = minChargingRate
                 while chargingRateTest <= maxChargingRate do
-                    bestChargingRate = if(chargingRateTest <= availableSolarRate, mathMax(bestChargingRate, chargingRateTest), bestChargingRate)
+                    bestChargingRate = if(chargingRateTest <= availableSolarRate, mathMax(bestChargingRate, \
+                        chargingRateTest), bestChargingRate)
                     chargingRateTest = chargingRateTest + 1
                 endwhile
                 if bestChargingRate != 0 then
