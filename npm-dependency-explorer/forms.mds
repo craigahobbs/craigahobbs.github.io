@@ -20,7 +20,9 @@ endfunction
 
 
 function formsTextOnKeyup(keyCode, onEnter)
-    if(keyCode == 13, onEnter())
+    if keyCode == 13 then
+        onEnter()
+    endif
 endfunction
 
 

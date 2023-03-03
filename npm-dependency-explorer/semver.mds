@@ -21,37 +21,31 @@ function semverParse(text)
 
     # Match the SemVer text
     match = if(stringLength(text) != null, regexMatch(semverRegexSemver, text), text)
-    jumpif (match == null) semverDone
-    groups = objectGet(match, 'groups')
+    if match != null then
+        groups = objectGet(match, 'groups')
 
-    # Parse the release text
-    release = null
-    releaseText = objectGet(groups, 'release')
-    jumpif (releaseText == null) releaseDone
-        release = arrayNew()
-        parts = stringSplit(releaseText, '.')
-        ixPart = 0
-        partLoop:
-            part = arrayGet(parts, ixPart)
+        # Parse the release text
+        release = null
+        releaseText = objectGet(groups, 'release')
+        if releaseText != null then
+            release = arrayNew()
+            foreach part in stringSplit(releaseText, '.') do
+                # Parse all-digits parts as integers
+                part = if(regexMatch(semverRegexDigits, part) != null, numberParseInt(part), part)
+                arrayPush(release, part)
+            endforeach
+        endif
 
-            # Parse all-digits parts as integers
-            part = if(regexMatch(semverRegexDigits, part) != null, numberParseInt(part), part)
-            arrayPush(release, part)
+        # Return the SemVer object
+        semver = objectNew( \
+            'major', numberParseInt(objectGet(groups, 'major')), \
+            'minor', numberParseInt(objectGet(groups, 'minor')), \
+            'patch', numberParseInt(objectGet(groups, 'patch')), \
+            'release', release, \
+            'build', objectGet(groups, 'build') \
+        )
+    endif
 
-            ixPart = ixPart + 1
-        jumpif (ixPart < arrayLength(parts)) partLoop
-    releaseDone:
-
-    # Return the SemVer object
-    semver = if(groups != null, objectNew( \
-        'major', numberParseInt(objectGet(groups, 'major')), \
-        'minor', numberParseInt(objectGet(groups, 'minor')), \
-        'patch', numberParseInt(objectGet(groups, 'patch')), \
-        'release', release, \
-        'build', objectGet(groups, 'build') \
-    ))
-
-    semverDone:
     return semver
 endfunction
 
@@ -86,60 +80,71 @@ function semverCompare(semver, other)
     semverMajor = objectGet(semver, 'major')
     otherMajor = objectGet(other, 'major')
     result = if(semverMajor < otherMajor, -1, if(semverMajor == otherMajor, 0, 1))
-    jumpif (result) resultDone
 
     # Compare the minor version
-    semverMinor = objectGet(semver, 'minor')
-    otherMinor = objectGet(other, 'minor')
-    result = if(semverMinor < otherMinor, -1, if(semverMinor == otherMinor, 0, 1))
-    jumpif (result) resultDone
+    if !result then
+        semverMinor = objectGet(semver, 'minor')
+        otherMinor = objectGet(other, 'minor')
+        result = if(semverMinor < otherMinor, -1, if(semverMinor == otherMinor, 0, 1))
+    endif
 
     # Compare the patch version
-    semverPatch = objectGet(semver, 'patch')
-    otherPatch = objectGet(other, 'patch')
-    result = if(semverPatch < otherPatch, -1, if(semverPatch == otherPatch, 0, 1))
-    jumpif (result) resultDone
+    if !result then
+        semverPatch = objectGet(semver, 'patch')
+        otherPatch = objectGet(other, 'patch')
+        result = if(semverPatch < otherPatch, -1, if(semverPatch == otherPatch, 0, 1))
+    endif
 
     # Compare the release
-    semverRelease = objectGet(semver, 'release')
-    otherRelease = objectGet(other, 'release')
-    result = if(semverRelease != null, if(otherRelease != null, 0, -1), if(otherRelease != null, 1, 0))
-    jumpif (result) resultDone
+    if !result then
+        semverRelease = objectGet(semver, 'release')
+        otherRelease = objectGet(other, 'release')
+        result = if(semverRelease != null, if(otherRelease != null, 0, -1), if(otherRelease != null, 1, 0))
+    endif
 
     # Compare the release parts
-    semverReleaseLength = arrayLength(semverRelease)
-    otherReleaseLength = arrayLength(otherRelease)
-    releaseLength = mathMax(semverReleaseLength, otherReleaseLength)
-    ixPart = 0
-    partLoop:
-        semverReleasePart = arrayGet(semverRelease, ixPart)
-        otherReleasePart = arrayGet(otherRelease, ixPart)
+    if !result then
+        semverReleaseLength = arrayLength(semverRelease)
+        otherReleaseLength = arrayLength(otherRelease)
+        releaseLength = mathMax(semverReleaseLength, otherReleaseLength)
+        ixPart = 0
+        while ixPart < releaseLength do
+            semverReleasePart = arrayGet(semverRelease, ixPart)
+            otherReleasePart = arrayGet(otherRelease, ixPart)
 
-        # Numeric parts are less-than non-numeric parts
-        semverPartNumeric = (stringLength(semverReleasePart) == null)
-        otherPartNumeric = (stringLength(otherReleasePart) == null)
-        result = if(semverPartNumeric && !otherPartNumeric, -1, if(!semverPartNumeric && otherPartNumeric, 1, 0))
-        jumpif (result) resultDone
+            # Numeric parts are less-than non-numeric parts
+            semverPartNumeric = (stringLength(semverReleasePart) == null)
+            otherPartNumeric = (stringLength(otherReleasePart) == null)
+            result = if(semverPartNumeric && !otherPartNumeric, -1, if(!semverPartNumeric && otherPartNumeric, 1, 0))
+            if result then
+                break
+            endif
 
-        # Compare the parts
-        result = if(semverReleasePart < otherReleasePart, -1, if(semverReleasePart == otherReleasePart, 0, 1))
-        jumpif (result) resultDone
+            # Compare the parts
+            result = if(semverReleasePart < otherReleasePart, -1, if(semverReleasePart == otherReleasePart, 0, 1))
+            if result then
+                break
+            endif
 
-        ixPart = ixPart + 1
-    jumpif (ixPart < releaseLength) partLoop
+            ixPart = ixPart + 1
+        endwhile
+    endif
 
     # Compare the release parts lengths
-    result = if(semverReleaseLength < otherReleaseLength, -1, if(semverReleaseLength == otherReleaseLength, 0, 1))
-    jumpif (result) resultDone
+    if !result then
+        result = if(semverReleaseLength < otherReleaseLength, -1, if(semverReleaseLength == otherReleaseLength, 0, 1))
+    endif
 
     # Compare the build
-    semverBuild = objectGet(semver, 'build')
-    otherBuild = objectGet(other, 'build')
-    result = if(semverBuild != null, if(otherBuild != null, 0, 1), if(otherBuild != null, -1, 0))
-    jumpif (result) resultDone
-    result = if(semverBuild < otherBuild, -1, if(semverBuild == otherBuild, 0, 1))
+    if !result then
+        semverBuild = objectGet(semver, 'build')
+        otherBuild = objectGet(other, 'build')
+        result = if(semverBuild != null, if(otherBuild != null, 0, 1), if(otherBuild != null, -1, 0))
+        if !result then
+            result = if(semverBuild < otherBuild, -1, if(semverBuild == otherBuild, 0, 1))
+        endif
+    endif
 
-    resultDone:
     return result
 endfunction
 
@@ -153,19 +158,15 @@ endfunction
 # Parse an array of SemVer text to an array of SemVer objects
 function semverVersions(versions)
     semvers = arrayNew()
-    jumpif (!arrayLength(versions)) versionsDone
-        ixVersion = 0
-        versionLoop:
-            version = arrayGet(versions, ixVersion)
-            semver = semverParse(version)
-            if(semver != null, objectSet(semver, 'semver', objectCopy(semver)))
-            if(semver != null, \
-                arrayPush(semvers, semver), \
-                debugLog('semver: Unrecognized SemVer "' + version + '"') \
-            )
-            ixVersion = ixVersion + 1
-        jumpif (ixVersion < arrayLength(versions)) versionLoop
-    versionsDone:
+    foreach version in versions do
+        semver = semverParse(version)
+        if semver != null then
+            objectSet(semver, 'semver', objectCopy(semver))
+            arrayPush(semvers, semver)
+        else then
+            debugLog('semver: Unrecognized SemVer "' + version + '"')
+        endif
+    endforeach
     return arraySort(semvers, semverCompareReversed)
 endfunction
 
@@ -176,7 +177,7 @@ function semverMatch(semvers, range)
 
     # Carrot range
     matchCarrot = regexMatch(semverRangeRegexCarrot, range)
-    jumpif (matchCarrot == null) carrotDone
+    if matchCarrot != null then
         groups = objectGet(matchCarrot, 'groups')
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
@@ -194,12 +195,12 @@ function semverMatch(semvers, range)
         filtered = dataFilter(filtered, \
             'release == null || (major == lowerMajor && minor == lowerMinor && patch == lowerPatch)', \
             objectNew('lower', lower, 'upper', upper, 'lowerMajor', major, 'lowerMinor', minor, 'lowerPatch', patch))
-        jump done
-    carrotDone:
+        return if(arrayLength(filtered), semverStringify(arrayGet(filtered, 0)))
+    endif
 
     # Tilde range (major-minor)
     matchTilde2 = regexMatch(semverRangeRegexTilde2, range)
-    jumpif (matchTilde2 == null) tildeDone
+    if matchTilde2 != null then
         groups = objectGet(matchTilde2, 'groups')
         major = numberParseInt(objectGet(groups, 'major'))
         minor = numberParseInt(objectGet(groups, 'minor'))
@@ -208,11 +209,10 @@ function semverMatch(semvers, range)
         filtered = dataFilter(semvers, \
             'semverCompare(semver, lower) >= 0 && semverCompare(semver, upper) < 0', \
             objectNew('lower', lower, 'upper', upper))
-        jump done
-    tildeDone:
+        return if(arrayLength(filtered), semverStringify(arrayGet(filtered, 0)))
+    endif
 
-    done:
-    return if(filtered != null && arrayLength(filtered) != 0, semverStringify(arrayGet(filtered, 0)))
+    return null
 endfunction
 
 

@@ -11,26 +11,37 @@ testsSuccess = 0
 
 # Test runner
 function testValue(name, expected)
-    jumpif (vTest == null || vTest == name) testOK
+    # Single test?
+    if vTest != null && vTest != name then
         return
-    testOK:
-    jumpif (!objectHas(testsRun, name)) nameOK
-        markdownPrint('', 'Test "' + markdownEscape(name) + '" - test run multiple times')
+    endif
+
+    # Multiple runs of the same test?
+    if objectHas(testsRun, name) then
+        markdownPrint('', 'Test "' + markdownEscape(name) + '" run multiple times')
         return
-    nameOK:
+    endif
     objectSet(testsRun, name)
+
+    # Get the test func
     testFn = getGlobal(name)
-    jumpif (testFn != null) testFnOK
-        markdownPrint('', 'Test "' + markdownEscape(name) + '" - function not found')
+    if testFn == null then
+        markdownPrint('', 'Test "' + markdownEscape(name) + '" not found')
         return
-    testFnOK:
+    endif
+
+    # Run the test
     actual = testFn()
-    setGlobal('testsSuccess', if(actual == expected, testsSuccess + 1, testsSuccess))
+    isSuccess = (actual == expected)
+    if isSuccess then
+        setGlobal('testsSuccess', testsSuccess + 1)
+    endif
+
+    # Report
     markdownPrint( \
         '', \
-        'Test "' + markdownEscape(name) + '" - ' + \
-        if(actual == expected, 'OK', \
-            'FAIL - ' + markdownEscape(jsonStringify(actual)) + ' != ' + markdownEscape(jsonStringify(expected))) \
+        'Test "' + markdownEscape(name) + '" - ', \
+        if(isSuccess, 'OK', 'FAIL - ' + markdownEscape(jsonStringify(actual)) + ' != ' + markdownEscape(jsonStringify(expected))) \
     )
 endfunction
 
