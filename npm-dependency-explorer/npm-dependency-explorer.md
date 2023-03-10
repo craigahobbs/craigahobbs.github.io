@@ -19,27 +19,13 @@ async function ndeMain()
         dependencyKey = objectGet(ndeDependencyTypeKeys, dependencyType)
     endif
 
-    # Fetch the package data
-    packageData = null
-    if packageName != null then
-        packageData = fetch(npmPackageURL(packageName))
-        if packageVersion == null && packageData != null then
-            packageVersion = npmPackageVersionLatest(packageData)
-        endif
-    endif
-
-    # Compute the package dependencies
+    # Load the package version dependency data
     cache = npmCacheNew()
-    npmCacheAddPackage(cache, packageName, packageData)
-
-    # Get the package JSON
     packageJSON = null
-    if packageData != null && packageVersion != null then
-        packageJSON = npmPackageJSON(packageData, packageVersion)
-
-        # Load the dependency package data
-        if packageJSON != null then
-            npmLoadPackage(cache, arrayNew(packageJSON), dependencyKey)
+    if packageName != null then
+        packageJSON = npmLoadPackage(cache, packageName, packageVersion, dependencyKey)
+        if packageJSON != null && packageVersion == null then
+            packageVersion = objectGet(packageJSON, 'version')
         endif
     endif
 
@@ -54,7 +40,7 @@ async function ndeMain()
 
     # If no package is loaded, render the package selection form
     if packageJSON == null then
-        ndeRenderForm(packageName, packageVersion, packageData, packageJSON)
+        ndeRenderForm(cache, packageName, packageVersion, packageJSON)
         return
     endif
 
@@ -182,7 +168,7 @@ endfunction
 
 
 # Render the package selection form
-function ndeRenderForm(packageName, packageVersion, packageData, packageJSON)
+function ndeRenderForm(cache, packageName, packageVersion, packageJSON)
     # Render the search form
     elementModelRender(arrayNew( \
         objectNew('html', 'p', 'elem', objectNew('html', 'b', 'elem', objectNew('text', 'Package Name:'))), \
@@ -193,7 +179,7 @@ function ndeRenderForm(packageName, packageVersion, packageData, packageJSON)
 
     # Render error messages
     if packageName != null then
-        if packageData == null then
+        if npmCacheGetPackage(cache, packageName) == null then
             markdownPrint('', '**Error:** Unknown package "' + markdownEscape(packageName) + '"')
         else if packageJSON == null then
             markdownPrint('', '**Error:** Unknown version "' + markdownEscape(packageVersion) + '" of package "' + \
@@ -219,14 +205,13 @@ function ndeRenderVersionLinks(cache, packageName, packageVersion)
         '', \
         '### Versions' \
     )
-    packageData = npmCacheGetPackage(cache, packageName)
-    packageVersions = npmCacheGetPackageVersions(cache, packageName)
-    packageVersionLatest = npmPackageVersionLatest(packageData)
-    foreach packageVersion in packageVersions do
-        version = semverStringify(packageVersion)
-        markdownPrint('', '[' + markdownEscape(version) + '](' + \
-            ndeCleanURL(objectNew('name', packageName, 'version', version)) + ')' + \
-            if(version == packageVersionLatest, ' (latest)', ''))
+    packageSemvers = npmCacheGetPackageVersions(cache, packageName)
+    packageVersionLatest = npmPackageVersionLatest(npmCacheGetPackage(cache, packageName))
+    foreach packageSemver in packageSemvers do
+        packageVersion = semverStringify(packageSemver)
+        markdownPrint('', '[' + markdownEscape(packageVersion) + '](' + \
+            ndeCleanURL(objectNew('name', packageName, 'version', packageVersion)) + ')' + \
+            if(packageVersion == packageVersionLatest, ' (latest)', ''))
     endforeach
 endfunction
 
@@ -240,23 +225,19 @@ async function ndeRenderVersionChart(cache, packageName, packageVersion)
         '### Version Dependency Chart' \
     )
 
+    # Load all package version dependencies
+    npmLoadPackageAllVersions(cache, packageName, 'dependencies')
+
     # Compute the version dependency data table
     versionDependencies = arrayNew()
-    packageData = npmCacheGetPackage(cache, packageName)
-    packageVersions = npmCacheGetPackageVersions(cache, packageName)
-    packageVersionCount = arrayLength(packageVersions)
-    foreach packageVersion, ixVersion in packageVersions do
-        version = semverStringify(packageVersion)
-
-        # Fetch any unloaded packages for this version
-        packageJSON = npmPackageJSON(packageData, version)
-        npmLoadPackage(cache, arrayNew(packageJSON), 'dependencies')
-
-        # Compute version dependency counts
+    packageSemvers = npmCacheGetPackageVersions(cache, packageName)
+    packageSemverCount = arrayLength(packageSemvers)
+    foreach packageSemver, ixSemver in packageSemvers do
+        packageVersion = semverStringify(packageSemver)
         arrayPush(versionDependencies, objectNew( \
-            'Version Index', packageVersionCount - ixVersion - 1, \
-            'Version', version, \
-            'Dependencies', npmPackageDependencyCount(cache, packageName, version) \
+            'Version Index', packageSemverCount - ixSemver - 1, \
+            'Version', packageVersion, \
+            'Dependencies', npmPackageDependencyCount(cache, packageName, packageVersion) \
         ))
     endforeach
 

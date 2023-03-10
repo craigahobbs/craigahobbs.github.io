@@ -4,15 +4,27 @@
 include 'semver.mds'
 
 
-# Initialize the package data cache
-function npmCacheNew()
-    return objectNew('packages', objectNew(), 'versions', objectNew(), 'ranges', objectNew())
+# Create an npm package page URL
+function npmPackagePageURL(packageName)
+    return 'https://www.npmjs.com/package/' + encodeURIComponent(packageName)
 endfunction
 
 
-# Test that the cache contains a package's data
-function npmCacheHasPackage(cache, packageName)
-    return objectHas(objectGet(cache, 'packages'), packageName)
+# Create an npm package data URL
+function npmPackageURL(packageName)
+    return 'https://registry.npmjs.org/' + encodeURIComponent(packageName)
+endfunction
+
+
+# Initialize the package data cache
+function npmCacheNew()
+    return objectNew( \
+        'packages', objectNew(), \
+        'versions', objectNew(), \
+        'ranges', objectNew(), \
+        'dependencies', objectNew(), \
+        'dependenciesContained', objectNew() \
+    )
 endfunction
 
 
@@ -25,6 +37,95 @@ endfunction
 # Get package versions from the cache
 function npmCacheGetPackageVersions(cache, packageName)
     return objectGet(objectGet(cache, 'versions'), packageName)
+endfunction
+
+
+# Get a package version's JSON
+function npmPackageJSON(packageData, packageVersion)
+    return objectGet(objectGet(packageData, 'versions'), packageVersion)
+endfunction
+
+
+# Get a package's latest version
+function npmPackageVersionLatest(packageData)
+    return objectGet(objectGet(packageData, 'dist-tags'), 'latest')
+endfunction
+
+
+# Get a package version from a semver range
+function npmCacheGetPackageVersion(cache, packageName, packageRange)
+    # Has the semver range already been matched?
+    packageRanges = objectGet(objectGet(cache, 'ranges'), packageName)
+    if objectHas(packageRanges, packageRange) then
+        packageVersion = objectGet(packageRanges, packageRange)
+    else then
+        # Compute the version for the semver range
+        packageVersions = objectGet(objectGet(cache, 'versions'), packageName)
+        packageVersion = semverMatch(packageVersions, packageRange)
+
+        #!! SemVer matching is incomplete, so fall back to the latest version
+        if packageVersion == null then
+            packageVersion = npmPackageVersionLatest(npmCacheGetPackage(cache, packageName))
+        endif
+
+        # Warn about unmatched SemVer ranges
+        if packageVersion == null then
+            debugLog('npm: Unrecognized SemVer range "' + packageRange + '" for package "' + packageName + '"')
+        endif
+
+        # Update the range cache
+        objectSet(packageRanges, packageRange, packageVersion)
+    endif
+    return packageVersion
+endfunction
+
+
+# Load a package version and its dependencies into the cache
+async function npmLoadPackage(cache, packageName, packageVersion, dependencyKey)
+    # Package already loaded?
+    cachePackages = objectGet(cache, 'packages')
+    if objectHas(cachePackages, packageName) then
+        packageData = objectGet(cachePackages, packageName)
+    else then
+        # Fetch the package data
+        packageData = fetch(npmPackageURL(packageName))
+
+        # Update the package cache
+        npmCacheAddPackage(cache, packageName, packageData)
+    endif
+
+    # Get the package version JSON
+    if packageVersion == null then
+        packageVersion = if(packageData != null, npmPackageVersionLatest(packageData))
+    endif
+    packageJSON = if(packageData != null && packageVersion != null, npmPackageJSON(packageData, packageVersion))
+
+    # Load the package JSON's dependencies
+    if packageJSON != null then
+        npmLoadPackage2(cache, arrayNew(packageJSON), dependencyKey)
+    endif
+
+    return packageJSON
+endfunction
+
+
+# Load a package version and its dependencies into the cache
+async function npmLoadPackageAllVersions(cache, packageName, dependencyKey)
+    # Package must be already loaded?
+    packageData = objectGet(objectGet(cache, 'packages'), packageName)
+    if packageData != null then
+        # Get the package version JSONs
+        packageJSONs = arrayNew()
+        packageVersions = objectGet(packageData, 'versions')
+        foreach packageVersion in objectKeys(packageVersions) do
+            arrayPush(packageJSONs, objectGet(packageVersions, packageVersion))
+        endforeach
+
+        # Load the package JSON's dependencies
+        if arrayLength(packageJSONs) then
+            npmLoadPackage2(cache, packageJSONs, dependencyKey)
+        endif
+    endif
 endfunction
 
 
@@ -43,35 +144,11 @@ function npmCacheAddPackage(cache, packageName, packageData)
 endfunction
 
 
-# Test that the cache contains a package semver range's version
-function npmCacheHasPackageVersion(cache, packageName, range)
-    return objectHas(objectGet(objectGet(cache, 'ranges'), packageName), range)
-endfunction
-
-
-# Get a package version from a semver range
-function npmCacheGetPackageVersion(cache, packageName, range)
-    # Has the semver range already been matched?
-    packageRanges = objectGet(objectGet(cache, 'ranges'), packageName)
-    version = objectGet(packageRanges, range)
-    if !objectHas(packageRanges, range) then
-        # Compute the semver range version
-        packageVersions = objectGet(objectGet(cache, 'versions'), packageName)
-        version = npmPackageVersion(packageData, packageVersions, range)
-
-        #!! Remove next line once semver matching is commplete
-        if version == null then
-            version = npmPackageVersionLatest(npmCacheGetPackage(cache, packageName))
-        endif
-
-        objectSet(packageVersions, version)
-    endif
-    return version
-endfunction
-
-
 # Recursively load a package's data
-async function npmLoadPackage(cache, packageJSONs, dependencyKey)
+async function npmLoadPackage2(cache, packageJSONs, dependencyKey)
+    cachePackages = objectGet(cache, 'packages')
+    cacheRanges = objectGet(cache, 'ranges')
+
     # Compute the unloaded dependencies for the given package JSON
     unloadedNames = objectNew()
     unloadedRanges = arrayNew()
@@ -91,12 +168,13 @@ async function npmLoadPackage(cache, packageJSONs, dependencyKey)
             dependencyRange = objectGet(packageDependencies, dependencyName)
 
             # Add the unloaded dependency package
-            if !npmCacheHasPackage(cache, dependencyName) then
+            if !objectHas(cachePackages, dependencyName) then
                 objectSet(unloadedNames, dependencyName)
             endif
 
             # Add the unloaded dependency range
-            if !npmCacheHasPackageVersion(cache, dependencyName, dependencyRange) then
+            dependencyRanges = objectGet(cacheRanges, dependencyName)
+            if !objectHas(dependencyRanges, dependencyRange) then
                 arrayPush(unloadedRanges, arrayNew(dependencyName, dependencyRange))
             endif
         endforeach
@@ -129,7 +207,8 @@ async function npmLoadPackage(cache, packageJSONs, dependencyKey)
         unloadedRange = arrayGet(unloadedNameRange, 1)
 
         # Has the package range already been computed?
-        if npmCacheHasPackageVersion(cache, unloadedName, unloadedRange) then
+        unloadedRanges = objectGet(cacheRanges, unloadedName)
+        if objectHas(unloadedRanges, unloadedRange) then
             continue
         endif
 
@@ -148,7 +227,7 @@ async function npmLoadPackage(cache, packageJSONs, dependencyKey)
 
     # Compute the dependencies' dependencies
     if arrayLength(unloadedJSONs) then
-        npmLoadPackage(cache, unloadedJSONs, 'dependencies')
+        npmLoadPackage2(cache, unloadedJSONs, 'dependencies')
     endif
 endfunction
 
@@ -271,42 +350,4 @@ function npmPackageDependencies(cache, dependencies, warnings, packageName, pack
             npmPackageDependencies(cache, dependencies, warnings, dependencyName, dependencyVersion, 'dependencies', completed)
         endif
     endforeach
-endfunction
-
-
-# Create an npm package page URL
-function npmPackagePageURL(packageName)
-    return 'https://www.npmjs.com/package/' + packageName
-endfunction
-
-
-# Create an npm package data URL
-function npmPackageURL(packageName)
-    return 'https://registry.npmjs.org/' + encodeURIComponent(packageName)
-endfunction
-
-
-# Get a package version's JSON
-function npmPackageJSON(packageData, packageVersion)
-    return objectGet(objectGet(packageData, 'versions'), packageVersion)
-endfunction
-
-
-# Get a package's latest version
-function npmPackageVersionLatest(packageData)
-    return objectGet(objectGet(packageData, 'dist-tags'), 'latest')
-endfunction
-
-
-# Compute a package's version
-function npmPackageVersion(packageData, packageVersions, range)
-    semver = semverMatch(packageVersions, range)
-
-    #!! When SemVer matching is complete remove the following lines
-    if semver == null then
-        semver = npmPackageVersionLatest(packageData)
-        #!! debugLog('nde: Unrecognized SemVer range "' + range + '"')
-    endif
-
-    return semver
 endfunction
