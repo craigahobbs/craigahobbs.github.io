@@ -51,27 +51,12 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
             packageURL = 'https://www.npmjs.com/package/' + encodeURIComponent(packageName)
         endif
 
-        # Filter to only 'with_mirrors'
-        data = dataFilter(data, 'category == "with_mirrors"')
-
-        # Compute the average monthly downloads
-        dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
-        monthly = dataAggregate(data, objectNew( \
-            'categories', arrayNew('month'), \
-            'measures', arrayNew( \
-                objectNew('field', 'downloads', 'function', 'sum') \
-            ) \
-        ))
-        monthlyAverage = dataAggregate(monthly, objectNew( \
-            'measures', arrayNew( \
-                objectNew('field', 'downloads', 'function', 'average') \
-            ) \
-        ))
+        # Add the rankings data row
         arrayPush(packageData, objectNew( \
             'Package', '[' + markdownEscape(packageName) + "](#var.vName='" + encodeURIComponent(packageName) + \
                 "'&var.vType='" + encodeURIComponent(packageType) + "')", \
             'Language', '[' + markdownEscape(packageType) + '](' + packageURL + ')', \
-            'Downloads', objectGet(arrayGet(monthlyAverage, 0), 'downloads') \
+            'Downloads', objectGet(downloadsMonthlyData(data), 'monthlyAverage') \
         ))
     endforeach
 
@@ -98,33 +83,16 @@ async function downloadsDashboard(packageName, packageType)
         data = downloadsJavascriptDataValidate(fetch(downloadsJavascriptDataURL(packageName)))
     endif
 
-    # Aggregate by month
-    dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
-    monthly = dataAggregate(data, objectNew( \
-        'categories', arrayNew('month', 'category'), \
-        'measures', arrayNew( \
-            objectNew('field', 'downloads', 'function', 'sum') \
-        ) \
-    ))
-    today = datetimeToday()
-    currentMonth = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
-    monthlyComplete = dataFilter(monthly, 'month < currentMonth', objectNew('currentMonth', currentMonth))
-
-    # Compute the average monthly downloads
-    monthlyWithMirrors = dataFilter(monthly, 'category == "with_mirrors"')
-    monthlyAverageData = dataAggregate(monthlyWithMirrors, objectNew( \
-        'measures', arrayNew( \
-            objectNew('field', 'downloads', 'function', 'average') \
-        ) \
-    ))
-    monthlyAverage = mathRound(objectGet(arrayGet(monthlyAverageData, 0), 'downloads'))
+    # Compute the monthly data and averages
+    monthly = downloadsMonthlyData(data)
+    dataMonthly = objectGet(monthly, 'dataMonthly')
 
     # Chart constants
     chartWidth = 1000
     chartHeight = 250
 
     # Render the monthly line chart
-    dataLineChart(monthlyComplete, objectNew( \
+    dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
@@ -133,7 +101,7 @@ async function downloadsDashboard(packageName, packageType)
         'color', 'category', \
         'yTicks', objectNew('start', 0), \
         'yLines', arrayNew( \
-            objectNew('value', monthlyAverage) \
+            objectNew('value', objectGet(monthly, 'monthlyAverage')) \
         ), \
         'datetime', 'day', \
         'precision', 0 \
@@ -153,12 +121,44 @@ async function downloadsDashboard(packageName, packageType)
     ))
 
     # Render the monthly table by most recent
-    dataSort(monthly, arrayNew(arrayNew('month', true), arrayNew('category')))
-    dataTable(monthly, objectNew( \
+    dataSort(dataMonthly, arrayNew(arrayNew('month', true), arrayNew('category')))
+    dataTable(dataMonthly, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'fields', arrayNew('downloads'), \
         'datetime', 'month' \
     ))
+endfunction
+
+
+function downloadsMonthlyData(data)
+    # Add month/year calculated field
+    dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
+
+    # Compute the average monthly download data
+    dataMonthly = dataAggregate(data, objectNew( \
+        'categories', arrayNew('month', 'category'), \
+        'measures', arrayNew( \
+            objectNew('field', 'downloads', 'function', 'sum') \
+        ) \
+    ))
+
+    # Create montly average data set without current month
+    dataMonthlyNonCurrent = dataFilter(dataMonthly, 'datetimeYear(month) != currentYear || datetimeMonth(month) != currentMonth', \
+        objectNew('currentMonth', datetimeMonth(datetimeNow()), 'currentYear', datetimeYear(datetimeNow())))
+
+    # Compute the monthly average (excluding current month)
+    dataWithMirrors = dataFilter(dataMonthlyNonCurrent, "category == 'with_mirrors'")
+    dataAverage = dataAggregate(dataWithMirrors, objectNew( \
+        'measures', arrayNew( \
+            objectNew('field', 'downloads', 'function', 'average') \
+        ) \
+    ))
+    monthlyAverage = objectGet(arrayGet(dataAverage, 0), 'downloads')
+
+    return objectNew( \
+        'dataMonthly', dataMonthly, \
+        'monthlyAverage', monthlyAverage \
+    )
 endfunction
 
 
