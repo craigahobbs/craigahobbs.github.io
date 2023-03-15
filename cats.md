@@ -1,39 +1,33 @@
 # Cats!
 
-Leo
+## Morning
 
-- One large can in divider dish and two scoops of dry food in other side
+- Top-off each cats' food dishes. If the food in the dish looks old and chewed-up consider dumping
+  it first.
 
-- The button to open/close without changing settings is the first one on the right if you’re
-  facing the dish like the cat would. He might struggle a bit but eventually he will trigger it to
-  open
+  - The food and scoop are on the basement kitchen counter.
 
-- Refresh the brown toy/puzzle box with a few treats & fresh ‘nip a couple times - does not need
-  to be every day
+  - Extra food is under the basement kitchen sink.
 
-- It’s up to you if you want to let him out around house or outside
+- Scoop the litter box. Give the floor a vacuum if there's a lot of litter on it.
 
-- Please make sure to lock bedroom door when you leave (with Leo in it!)
+- Give Leo some outside time. About 5 minutes or so before you are ready to go, call him from the
+  front door. If he doesn't come back, don't worry, you can let him in when you visit in the
+  evening.
+
+## Evening
+
+- Top-off each cats' food dishes.
+
+- Give Choco his pill. His pills are on the kitchen counter.
+
+- One large can of ***wet food*** split three ways, equally.
+
+- Give Leo some outside time. If he doesn't come back, he'll have an exciting night out!
 
 
-All Cats, evening (or just when you’re able to make it by, evening not important) wet food - ideally
-together but ok to feed Leo upstairs
+## Other
 
-- One large can split three ways, equally
+- Play with those critters! Rough 'em and tell 'em what good kitties they are!
 
-- Throw away leftover dry food after a full day and refill with fresh (basement, main, and
-  upstairs levels - Leo should not get more than two scoops per day)
-
-Leo outside time - only if convenient for you (Leo’s favorite thing in life😻)
-
-----
-
-All of the above are general guidelines, if you find other ways that work better, go for it. The
-goal is to meet basic needs. I appreciate your help!
-
-----
-
-Also, please bring in the mail. Your dad might appreciate getting the trash out but he may also do
-it before he leaves.
-
-Thanks!
+- Bring in the mail
