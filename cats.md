@@ -1,33 +1,45 @@
 # Cats!
 
-## Morning
 
-- Top-off each cats' food dishes. If the food in the dish looks old and chewed-up consider dumping
-  it first.
+## First Visit
 
-  - The food and scoop are on the basement kitchen counter.
+- Dump food from day before
 
-  - Extra food is under the basement kitchen sink.
+- Reset scale
 
-- Scoop the litter box. Give the floor a vacuum if there's a lot of litter on it.
+- Give each cat 1 1/2 scoop, Leo’s 1/2 should be a little generous
 
-- Give Leo some outside time. About 5 minutes or so before you are ready to go, call him from the
-  front door. If he doesn't come back, don't worry, you can let him in when you visit in the
-  evening.
+- Top off water if getting low (dump and refill if nasty)
 
-## Evening
+- Give Leo bathroom escort if needed
 
-- Top-off each cats' food dishes.
+- Scoop litter boxes
 
-- Give Choco his pill. His pills are on the kitchen counter.
+- Let Leo out
 
-- One large can of ***wet food*** split three ways, equally.
+  - You can let Leo out right when you get here or any time while you’re here
 
-- Give Leo some outside time. If he doesn't come back, he'll have an exciting night out!
+
+## Second Visit
+
+If Leo is out, give him a call and shake some dry food so he can get on his way back while your
+here. If Leo has not returned you can do the downstairs stuff first.
+
+- Pill Chip
+
+- Commence wet food ritual
+
+- Top off dry food with 1- 1 1/2 scoops depending on what’s left
+
+- Top off water if getting low (dump and refill if nasty)
+
+- Give Leo bathroom escort if needed
+
+- Check litter box to make sure it’s not overloaded - no one will use it if there are too many stinky poops
 
 
 ## Other
 
-- Play with those critters! Rough 'em and tell 'em what good kitties they are!
+- Check mail
 
-- Bring in the mail
+- Extra dry food is under downstairs sink
