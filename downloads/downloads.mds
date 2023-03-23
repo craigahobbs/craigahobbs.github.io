@@ -171,8 +171,12 @@ function downloadsMonthlyData(data)
     monthlyAverage = objectGet(arrayGet(dataAverage, 0), 'downloads')
 
     # Add the percentage-of-average field
-    dataCalculatedField(dataMonthly, '%avg', "numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%'", \
-        objectNew('monthlyAverage', monthlyAverage))
+    dataCalculatedField( \
+        dataMonthly, \
+        '%avg', \
+        "if(category == 'with_mirrors', numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%', '')", \
+        objectNew('monthlyAverage', monthlyAverage) \
+    )
 
     return objectNew( \
         'dataMonthly', dataMonthly, \
