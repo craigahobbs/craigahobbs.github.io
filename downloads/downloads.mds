@@ -86,13 +86,14 @@ async function downloadsDashboard(packageName, packageType)
     # Compute the monthly data and averages
     monthly = downloadsMonthlyData(data)
     dataMonthly = objectGet(monthly, 'dataMonthly')
+    dataMonthlyComplete = objectGet(monthly, 'dataMonthlyComplete')
 
     # Chart constants
     chartWidth = 1000
     chartHeight = 250
 
     # Render the monthly line chart
-    dataLineChart(dataMonthly, objectNew( \
+    dataLineChart(dataMonthlyComplete, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
@@ -142,12 +143,26 @@ function downloadsMonthlyData(data)
         ) \
     ))
 
-    # Create montly average data set without current month
-    dataMonthlyNonCurrent = dataFilter(dataMonthly, 'datetimeYear(month) != currentYear || datetimeMonth(month) != currentMonth', \
-        objectNew('currentMonth', datetimeMonth(datetimeNow()), 'currentYear', datetimeYear(datetimeNow())))
+    # Exclude the first month of data if its incomplete
+    dataMinDate = dataAggregate(data, objectNew( \
+        'measures', arrayNew( \
+            objectNew('field', 'date', 'function', 'min') \
+        ) \
+    ))
+    minDate = objectGet(arrayGet(dataMinDate, 0), 'date')
+    if datetimeDay(minDate) != 1 then
+        dataMonthlyComplete = dataFilter(dataMonthly, 'datetimeYear(month) != minYear || datetimeMonth(month) != minMonth', \
+            objectNew('minMonth', datetimeMonth(minDate), 'minYear', datetimeYear(minDate)))
+    else then
+        dataMonthlyComplete = dataMonthly
+    endif
+
+    # Exclude the current month of data
+    dataMonthlyComplete = dataFilter(dataMonthlyComplete, 'datetimeYear(month) != curYear || datetimeMonth(month) != curMonth', \
+        objectNew('curMonth', datetimeMonth(datetimeNow()), 'curYear', datetimeYear(datetimeNow())))
 
     # Compute the monthly average (excluding current month)
-    dataWithMirrors = dataFilter(dataMonthlyNonCurrent, "category == 'with_mirrors'")
+    dataWithMirrors = dataFilter(dataMonthlyComplete, "category == 'with_mirrors'")
     dataAverage = dataAggregate(dataWithMirrors, objectNew( \
         'measures', arrayNew( \
             objectNew('field', 'downloads', 'function', 'average') \
@@ -157,6 +172,7 @@ function downloadsMonthlyData(data)
 
     return objectNew( \
         'dataMonthly', dataMonthly, \
+        'dataMonthlyComplete', dataMonthlyComplete, \
         'monthlyAverage', monthlyAverage \
     )
 endfunction
