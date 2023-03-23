@@ -125,7 +125,7 @@ async function downloadsDashboard(packageName, packageType)
     dataSort(dataMonthly, arrayNew(arrayNew('month', true), arrayNew('category')))
     dataTable(dataMonthly, objectNew( \
         'categories', arrayNew('month', 'category'), \
-        'fields', arrayNew('downloads'), \
+        'fields', arrayNew('downloads', '%avg'), \
         'datetime', 'month' \
     ))
 endfunction
@@ -169,6 +169,10 @@ function downloadsMonthlyData(data)
         ) \
     ))
     monthlyAverage = objectGet(arrayGet(dataAverage, 0), 'downloads')
+
+    # Add the percentage-of-average field
+    dataCalculatedField(dataMonthly, '%avg', "numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%'", \
+        objectNew('monthlyAverage', monthlyAverage))
 
     return objectNew( \
         'dataMonthly', dataMonthly, \
