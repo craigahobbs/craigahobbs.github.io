@@ -9,6 +9,8 @@
 
 [MarkdownUp Applications](https://craigahobbs.github.io/#url=MarkdownUpApplications.md)
 
+[npm Dependency Explorer](https://craigahobbs.github.io/npm-dependency-explorer/)
+
 
 ## JavaScript Packages
 
