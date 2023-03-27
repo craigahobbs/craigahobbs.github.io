@@ -56,14 +56,14 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
             'Package', '[' + markdownEscape(packageName) + "](#var.vName='" + encodeURIComponent(packageName) + \
                 "'&var.vType='" + encodeURIComponent(packageType) + "')", \
             'Language', '[' + markdownEscape(packageType) + '](' + packageURL + ')', \
-            'Downloads', objectGet(downloadsMonthlyData(data), 'monthlyAverage') \
+            'Monthly Downloads', objectGet(downloadsMonthlyData(data), 'monthlyAverage') \
         ))
     endforeach
 
     # Render the rankings table
-    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
+    dataSort(packageData, arrayNew(arrayNew('Monthly Downloads', true)))
     dataTable(packageData, objectNew( \
-        'fields', arrayNew('Package', 'Language', 'Downloads'), \
+        'fields', arrayNew('Package', 'Language', 'Monthly Downloads'), \
         'markdown', arrayNew('Package', 'Language'), \
         'precision', 0 \
     ))
