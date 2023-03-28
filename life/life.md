@@ -2,6 +2,8 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include 'https://craigahobbs.github.io/markdown-up/include/forms.mds'
+
 
 # Life application main entry point
 function lifeMain()
@@ -145,54 +147,54 @@ function lifeMenuElements(life, args)
     nextBackground = (background + 1) % arrayLength(lifeColors)
     nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
     colorElements = arrayNew( \
-        lifeLinkElements('Ground', lifeURL(argsRaw, objectNew('background', nextBackground))), \
+        formsLinkElements('Ground', lifeURL(argsRaw, objectNew('background', nextBackground))), \
         linkSeparator, \
-        lifeLinkElements('Cell', lifeURL(argsRaw, objectNew('color', nextColor))), \
+        formsLinkElements('Cell', lifeURL(argsRaw, objectNew('color', nextColor))), \
         linkSeparator, \
-        lifeLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, 5)))), \
+        formsLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, 5)))), \
         linkSection, \
-        lifeLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))) \
+        formsLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))) \
     )
 
     # Which menu? (play, save, or pause)
     if objectGet(args, 'play') then
         rate = objectGet(args, 'rate')
         return arrayNew( \
-            lifeLinkElements('Pause', lifeURL(argsRaw, objectNew('play', 0))), \
+            formsLinkElements('Pause', lifeURL(argsRaw, objectNew('play', 0))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            lifeLinkElements('<<', if(rate > 0, lifeURL(argsRaw, objectNew('rate', rate - 1)))), \
+            formsLinkElements('<<', if(rate > 0, lifeURL(argsRaw, objectNew('rate', rate - 1)))), \
             arrayNew(objectNew('text', nbsp + arrayGet(lifeRates, rate) + nbsp + 'Hz' + nbsp)), \
-            lifeLinkElements('>>', if(rate < arrayLength(lifeRates) - 1, lifeURL(argsRaw, objectNew('rate', rate + 1)))) \
+            formsLinkElements('>>', if(rate < arrayLength(lifeRates) - 1, lifeURL(argsRaw, objectNew('rate', rate + 1)))) \
         )
     else if objectGet(args, 'save') then
         return arrayNew( \
             objectNew('text', 'Save: '), \
-            lifeLinkElements('Load', lifeURL(argsRaw, objectNew('load', lifeEncode(life)))) \
+            formsLinkElements('Load', lifeURL(argsRaw, objectNew('load', lifeEncode(life)))) \
         )
     else then
         # Pause menu
         return arrayNew( \
-            lifeLinkElements('Play', lifeURL(argsRaw, objectNew('play', 1))), \
+            formsLinkElements('Play', lifeURL(argsRaw, objectNew('play', 1))), \
             linkSection, \
-            lifeButtonElements('Step', lifeClickStep), \
+            formsLinkButtonElements('Step', lifeClickStep), \
             linkSeparator, \
-            lifeButtonElements('Random', lifeClickRandom), \
+            formsLinkButtonElements('Random', lifeClickRandom), \
             linkSeparator, \
-            lifeButtonElements('Reset', lifeClickReset), \
+            formsLinkButtonElements('Reset', lifeClickReset), \
             linkSeparator, \
-            lifeLinkElements('Save', lifeURL(argsRaw, objectNew('play', 0, 'save', 1))), \
+            formsLinkElements('Save', lifeURL(argsRaw, objectNew('play', 0, 'save', 1))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            lifeButtonElements('<<', lifeClickWidthLess), \
+            formsLinkButtonElements('<<', lifeClickWidthLess), \
             arrayNew(objectNew('text', nbsp + 'Width' + nbsp)), \
-            lifeButtonElements('>>', lifeClickWidthMore), \
+            formsLinkButtonElements('>>', lifeClickWidthMore), \
             linkSection, \
-            lifeButtonElements('<<', lifeClickHeightLess), \
+            formsLinkButtonElements('<<', lifeClickHeightLess), \
             arrayNew(objectNew('text', nbsp + 'Height' + nbsp)), \
-            lifeButtonElements('>>', lifeClickHeightMore) \
+            formsLinkButtonElements('>>', lifeClickHeightMore) \
         )
     endif
 endfunction
@@ -247,35 +249,6 @@ function lifeURL(argsRaw, args)
     if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
     if(save, arrayPush(parts, 'var.vSave=1'))
     return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
-endfunction
-
-
-# Helper to create a link element model
-function lifeLinkElements(text, url)
-    if url == null then
-        return objectNew( \
-            'html', 'span', \
-            'attr', objectNew('style', 'user-select: none;'), \
-            'elem', objectNew('text', text) \
-        )
-    endif
-
-    return objectNew( \
-        'html', 'a', \
-        'attr', objectNew('href', documentURL(url)), \
-        'elem', objectNew('text', text) \
-    )
-endfunction
-
-
-# Helper to create a link-button element model
-function lifeButtonElements(text, onclick)
-    return objectNew( \
-        'html', 'a', \
-        'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
-        'elem', objectNew('text', text), \
-        'callback', objectNew('click', onclick) \
-    )
 endfunction
 
 

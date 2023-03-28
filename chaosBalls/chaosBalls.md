@@ -2,6 +2,8 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include 'https://craigahobbs.github.io/markdown-up/include/forms.mds'
+
 
 # Chaos Balls application main entry point
 async function chaosBallsMain()
@@ -133,20 +135,20 @@ function chaosBallsMenuElements(args)
     play = objectGet(args, 'play')
     rate = objectGet(args, 'rate')
     return arrayNew( \
-        if(play, chaosBallsLinkElements('Pause', chaosBallsURL(argsRaw, objectNew('play', 0)))), \
-        if(!play, chaosBallsLinkElements('Play', chaosBallsURL(argsRaw, objectNew('play', 1)))), \
+        if(play, formsLinkElements('Pause', chaosBallsURL(argsRaw, objectNew('play', 0)))), \
+        if(!play, formsLinkElements('Play', chaosBallsURL(argsRaw, objectNew('play', 1)))), \
         linkSection, \
-        chaosBallsButtonElements('Step', chaosBallsStep), \
+        formsLinkButtonElements('Step', chaosBallsStep), \
         linkSeparator, \
-        chaosBallsButtonElements('Reset', chaosBallsReset), \
+        formsLinkButtonElements('Reset', chaosBallsReset), \
         linkSection, \
-        chaosBallsLinkElements('<<', if(rate > 0, chaosBallsURL(argsRaw, objectNew('rate', rate - 1)))), \
+        formsLinkElements('<<', if(rate > 0, chaosBallsURL(argsRaw, objectNew('rate', rate - 1)))), \
         objectNew('text', nbsp + arrayGet(chaosBallsRates, rate) + nbsp + 'Hz' + nbsp), \
-        chaosBallsLinkElements('>>', if(rate < arrayLength(chaosBallsRates) - 1, chaosBallsURL(argsRaw, objectNew('rate', rate + 1)))), \
+        formsLinkElements('>>', if(rate < arrayLength(chaosBallsRates) - 1, chaosBallsURL(argsRaw, objectNew('rate', rate + 1)))), \
         linkSection, \
-        chaosBallsLinkElements('Full', chaosBallsURL(argsRaw, objectNew('fullScreen', true))), \
+        formsLinkElements('Full', chaosBallsURL(argsRaw, objectNew('fullScreen', true))), \
         linkSection, \
-        chaosBallsLinkElements('About', '#url=README.md') \
+        formsLinkElements('About', '#url=README.md') \
     )
 endfunction
 
@@ -179,35 +181,6 @@ function chaosBallsURL(argsRaw, args)
     if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
     if(vURL != null, arrayPush(parts, "var.vURL='" + encodeURIComponent(vURL) + "'"))
     return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
-endfunction
-
-
-# Helper to create a link element model
-function chaosBallsLinkElements(text, url)
-    if url == null then
-        return objectNew( \
-            'html', 'span', \
-            'attr', objectNew('style', 'user-select: none;'), \
-            'elem', objectNew('text', text) \
-        )
-    endif
-
-    return objectNew( \
-        'html', 'a', \
-        'attr', objectNew('href', documentURL(url)), \
-        'elem', objectNew('text', text) \
-    )
-endfunction
-
-
-# Helper to create a link-button element model
-function chaosBallsButtonElements(text, callback)
-    return objectNew( \
-        'html', 'a', \
-        'attr', objectNew('style', 'cursor: pointer; user-select: none;'), \
-        'elem', objectNew('text', text), \
-        'callback', objectNew('click', callback) \
-    )
 endfunction
 
 
