@@ -138,3 +138,4 @@ $(eval $(call PROJECT_RULES, other, hobbs-family-cookbook, 'git@github.com:craig
 $(eval $(call PROJECT_RULES, other, npm-dependency-explorer, 'git@github.com:craigahobbs/npm-dependency-explorer.git'))
 $(eval $(call PROJECT_RULES, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
 $(eval $(call PROJECT_RULES, other, solar, 'git@github.com:craigahobbs/solar.git'))
+$(eval $(call PROJECT_RULES, other, tespo, 'git@github.com:craigahobbs/tespo.git'))
