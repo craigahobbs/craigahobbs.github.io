@@ -30,6 +30,7 @@
     (url-copy-file "https://craigahobbs.github.io/schema-markdown-js/language/schema-markdown-mode.el" mode-file t)
     (package-install-file mode-file)
     (delete-file mode-file)))
+(add-to-list 'auto-mode-alist '("\\.smd\\'" . schema-markdown-mode))
 
 ;; Activate Savehist mode
 (savehist-mode 1)
@@ -67,7 +68,6 @@
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
  '(make-backup-files nil)
- '(package-selected-packages '(calcscript-mode js2-mode schema-markdown-mode))
  '(scroll-conservatively 10000)
  '(sentence-end-double-space nil)
  '(sgml-basic-offset 4)
