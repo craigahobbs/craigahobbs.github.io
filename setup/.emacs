@@ -22,7 +22,7 @@
     (url-copy-file "https://craigahobbs.github.io/calc-script/language/calcscript-mode.el" mode-file t)
     (package-install-file mode-file)
     (delete-file mode-file)))
-(add-to-list 'auto-mode-alist '("\\.\\([Cc]alc-?[Ss]cript\\|mds?\\)\\'" . calcscript-mode))
+(add-to-list 'auto-mode-alist '("\\.\\([Cc]alc-?[Ss]cript\\|mds\\)\\'" . calcscript-mode))
 
 ;; schema-markdown-mode
 (unless (package-installed-p 'schema-markdown-mode)
