@@ -27,5 +27,3 @@
 [Solar Dashboard](https://craigahobbs.github.io/solar/)
 
 [Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
-
-[Tesla Energy Self-Powered Optimizer](https://craigahobbs.github.io/tespo/)
