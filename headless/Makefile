@@ -47,7 +47,7 @@ lint: build/npm.build
 
 
 .PHONY: run
-run:
+run: build/npm.build
 	$(NODE_DOCKER) node headless.js
 
 
