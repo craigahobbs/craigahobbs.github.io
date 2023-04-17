@@ -55,7 +55,6 @@ build/npm.build:
 ifeq '$(NO_DOCKER)' ''
 	if [ "$$(docker images -q $(NODE_IMAGE))" = "" ]; then docker pull -q $(NODE_IMAGE); fi
 endif
-	$(NODE_DOCKER) npm install -g npm@latest
 	$(NODE_DOCKER) npm install
 	mkdir -p $(dir $@)
 	touch $@
