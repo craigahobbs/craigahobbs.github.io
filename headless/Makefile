@@ -41,6 +41,10 @@ endif
 commit: lint
 
 
+.PHONY: gh-pages
+gh-pages:
+
+
 .PHONY: lint
 lint: build/npm.build
 	$(NODE_DOCKER) npx eslint -c .eslintrc.cjs -f unix .eslintrc.cjs *.js
