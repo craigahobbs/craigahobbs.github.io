@@ -22,12 +22,12 @@ NODE_DOCKER := $(if $(NO_DOCKER),,docker run -i --rm -u `id -u`:`id -g` -v `pwd`
 
 .PHONY: help
 help:
-	@echo "usage: make [clean|commit|lint|superclean]"
+	@echo "usage: make [clean|commit|lint|run|superclean]"
 
 
 .PHONY: clean
 clean:
-	rm -rf build package-lock.json .eslintrc.cjs
+	rm -rf build node_modules package-lock.json .eslintrc.cjs
 
 
 .PHONY: superclean
@@ -43,14 +43,19 @@ commit: lint
 
 .PHONY: lint
 lint: build/npm.build
-	$(NODE_DOCKER) npx --prefix ./build/ eslint -c .eslintrc.cjs -f unix .eslintrc.cjs$(if $(ESLINT_ARGS), $(ESLINT_ARGS))
+	$(NODE_DOCKER) npx eslint -c .eslintrc.cjs -f unix .eslintrc.cjs *.js
+
+
+.PHONY: run
+run:
+	$(NODE_DOCKER) node headless.js
 
 
 build/npm.build:
 ifeq '$(NO_DOCKER)' ''
 	if [ "$$(docker images -q $(NODE_IMAGE))" = "" ]; then docker pull -q $(NODE_IMAGE); fi
 endif
+	$(NODE_DOCKER) npm install -g npm@latest
+	$(NODE_DOCKER) npm install
 	mkdir -p $(dir $@)
-	cd build && ln -s ../package.json .
-	$(NODE_DOCKER) npm install --prefix ./build/
 	touch $@

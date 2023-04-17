@@ -1,14 +1,17 @@
 // Licensed under the MIT License
 // https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+/* eslint-disable no-console */
+
 import http from 'http';
-import {parse as urlParse} from 'url';
 import puppeteer from 'puppeteer';
+import {parse as urlParse} from 'url';
 
 
 // Main entry point
 async function main() {
     // Environment variables
+    // eslint-disable-next-line no-undef
     const port = process.env.PORT || 3000;
 
     // Launch a new headless browser instance
@@ -21,7 +24,7 @@ async function main() {
 
         // Handle requests
         if (pathname === '/render') {
-            render(req, res, query, browser);
+            await render(req, res, query, browser);
         } else {
             res.writeHead(404, {'Content-Type': 'text/plain'});
             res.end('Not Found');
@@ -34,6 +37,7 @@ async function main() {
     });
 
     // Add an event listener to close the browser instance when the application exits
+    // eslint-disable-next-line no-undef
     process.on('exit', async () => {
         console.log('Closing headless browser');
         await browser.close();
@@ -69,4 +73,4 @@ async function render(req, res, query, browser) {
 
 
 // Start the application
-await main();
+main();
