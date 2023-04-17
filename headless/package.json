@@ -3,5 +3,8 @@
     "dependencies": {
         "express": "*",
         "puppeteer": "*"
+    },
+    "devDependencies": {
+        "eslint": "*"
     }
 }

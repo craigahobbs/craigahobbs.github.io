@@ -17,7 +17,7 @@ $(eval $(call WGET, https://raw.githubusercontent.com/craigahobbs/javascript-bui
 
 # Node
 NODE_IMAGE ?= node:current-slim
-NODE_DOCKER := $(if $(NO_DOCKER),,docker run -i --rm -u `id -u`:`id -g` -v `pwd`:`pwd` -w `pwd` -e HOME=`pwd`/build $(NODE_IMAGE))
+NODE_DOCKER := $(if $(NO_DOCKER),,docker run -i --rm -u `id -u`:`id -g` -v `pwd`:`pwd` -w `pwd` $(NODE_IMAGE))
 
 
 .PHONY: help
@@ -27,7 +27,7 @@ help:
 
 .PHONY: clean
 clean:
-	rm -rf node_modules package-lock.json .eslintrc.cjs
+	rm -rf build package-lock.json .eslintrc.cjs
 
 
 .PHONY: superclean
@@ -43,7 +43,7 @@ commit: lint
 
 .PHONY: lint
 lint: build/npm.build
-	$(NODE_DOCKER) npx eslint -c .eslintrc.cjs -f unix .eslintrc.cjs$(if $(ESLINT_ARGS), $(ESLINT_ARGS))
+	$(NODE_DOCKER) npx --prefix ./build/ eslint -c .eslintrc.cjs -f unix .eslintrc.cjs$(if $(ESLINT_ARGS), $(ESLINT_ARGS))
 
 
 build/npm.build:
@@ -51,5 +51,6 @@ ifeq '$(NO_DOCKER)' ''
 	if [ "$$(docker images -q $(NODE_IMAGE))" = "" ]; then docker pull -q $(NODE_IMAGE); fi
 endif
 	mkdir -p $(dir $@)
-	$(NODE_DOCKER) npm install
+	cd build && ln -s ../package.json .
+	$(NODE_DOCKER) npm install --prefix ./build/
 	touch $@
