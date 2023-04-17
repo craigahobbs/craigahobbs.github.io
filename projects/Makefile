@@ -2,13 +2,10 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-MAKEJ ?= -j
-
-
 .PHONY: changed clean commit gh-pages gh-pages-check help list pull superclean
 help:
 	@echo 'usage: make [changed|clean|commit|gh-pages|gh-pages-check|help|list|pull|superclean]'
-	@echo '            TYPE=[python|javascript|makefile|other]'
+	@echo '            TYPE=[python|javascript|build|other]'
 
 
 # Project rule header function - args are (project_type, project_name, rule)
@@ -21,7 +18,7 @@ _$(strip $(3))-$(strip $(2)):
 endef
 
 
-# Project rules function - args are (project_type, project_name, git_repository)
+# Project rules function - args are (project_type, project_name, git_repository, no_parallel)
 define PROJECT_RULES
 
 # changed
@@ -38,36 +35,27 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), changed)
 
 # clean
 $(call PROJECT_RULE_HEADER, $(1), $(2), clean)
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
-endif
+	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
+		$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean; \
+	fi
 
 
 # commit
 $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
-ifeq '$(strip $(1))' 'makefile'
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) commit
-endif
-ifneq '$(strip $(1))' 'makefile'
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(2)) commit
-endif
-endif
+	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
+		$(MAKE)$(if $(4),, -j) -C $$$$HOME/src/$(strip $(2)) commit; \
+	fi
 
 
 # gh-pages
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
-ifneq '$(strip $(1))' 'makefile'
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) $(MAKEJ) -C $$$$HOME/src/$(strip $(2)) gh-pages
-endif
-endif
+	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
+		$(MAKE)$(if $(4),, -j) -C $$$$HOME/src/$(strip $(2)) gh-pages; \
+	fi
 
 
 # gh-pages-check
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages-check)
-ifneq '$(strip $(1))' 'makefile'
-ifneq '$(strip $(1))' 'other'
 	@if [ -d $$$$HOME/src/$(strip $(2)).gh-pages ]; then \
 		FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)).gh-pages && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 		if [ "$$$$FAIL" != "" ]; then \
@@ -76,8 +64,6 @@ ifneq '$(strip $(1))' 'other'
 			rm -rf $$$$HOME/src/$(strip $(2)).gh-pages; \
 		fi; \
 	fi
-endif
-endif
 
 
 # list
@@ -93,17 +79,17 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
 		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
 		exit 1; \
 	fi
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean
-endif
+	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
+		$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean; \
+	fi
 	cd $$$$HOME/src/$(strip $(2)) && git pull
 
 
 # superclean
 $(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
-ifneq '$(strip $(1))' 'other'
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) superclean
-endif
+	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
+		$(MAKE) -C $$$$HOME/src/$(strip $(2)) superclean; \
+	fi
 
 endef # PROJECT_RULES
 
@@ -124,12 +110,11 @@ $(eval $(call PROJECT_RULES, python, simple-git-changelog, 'git@github.com:craig
 $(eval $(call PROJECT_RULES, python, template-specialize, 'git@github.com:craigahobbs/template-specialize.git'))
 $(eval $(call PROJECT_RULES, python, unittest-parallel, 'git@github.com:craigahobbs/unittest-parallel.git'))
 
-# Makefile projects
-$(eval $(call PROJECT_RULES, makefile, javascript-build, 'git@github.com:craigahobbs/javascript-build.git'))
-$(eval $(call PROJECT_RULES, makefile, javascript-template, 'git@github.com:craigahobbs/javascript-template.git'))
-$(eval $(call PROJECT_RULES, makefile, python-build, 'git@github.com:craigahobbs/python-build.git'))
-$(eval $(call PROJECT_RULES, makefile, python-template, 'git@github.com:craigahobbs/python-template.git'))
-$(eval $(call PROJECT_RULES, makefile, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
+# Build projects
+$(eval $(call PROJECT_RULES, build, javascript-build, 'git@github.com:craigahobbs/javascript-build.git', 1))
+$(eval $(call PROJECT_RULES, build, javascript-template, 'git@github.com:craigahobbs/javascript-template.git', 1))
+$(eval $(call PROJECT_RULES, build, python-build, 'git@github.com:craigahobbs/python-build.git', 1))
+$(eval $(call PROJECT_RULES, build, python-template, 'git@github.com:craigahobbs/python-template.git', 1))
 
 # Other projects
 $(eval $(call PROJECT_RULES, other, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git'))
@@ -138,4 +123,5 @@ $(eval $(call PROJECT_RULES, other, hobbs-family-cookbook, 'git@github.com:craig
 $(eval $(call PROJECT_RULES, other, npm-dependency-explorer, 'git@github.com:craigahobbs/npm-dependency-explorer.git'))
 $(eval $(call PROJECT_RULES, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
 $(eval $(call PROJECT_RULES, other, solar, 'git@github.com:craigahobbs/solar.git'))
+$(eval $(call PROJECT_RULES, other, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
 $(eval $(call PROJECT_RULES, other, tespo, 'git@github.com:craigahobbs/tespo.git'))
