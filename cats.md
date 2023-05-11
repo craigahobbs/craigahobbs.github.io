@@ -3,17 +3,23 @@
 
 ## First Visit
 
-- Dump food from day before
+- Basement food dishes
 
-- Reset scale
+  - Dump food from day before
 
-- Give each cat 1 1/2 scoop, Leo’s 1/2 should be a little generous
+  - Reset scale
 
-- Top off water if getting low (dump and refill if nasty)
+  - Give each cat 1 1/2 scoop, Leo’s 1/2 should be a little generous
 
-- Give Leo bathroom escort if needed
+- Water fountains (basement and main level)
 
-- Scoop litter boxes
+  - Top off water if getting low (dump and refill if nasty)
+
+- Litter boxes (basement and master bath)
+
+  - Give Leo bathroom escort if needed
+
+  - Scoop litter boxes
 
 - Let Leo out
 
