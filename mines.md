@@ -1,7 +1,7 @@
 # Colorado School of Mines Trip!
 
 
-# TODO
+# Todo
 
 - Fill in the TBD's below
 - Buy ticket to Convocation
