@@ -1,14 +1,14 @@
 # Colorado School of Mines Trip!
 
 
-# Todo
+## Todo
 
 - Fill in the TBD's below
 - Buy ticket to Convocation
 - Buy ticket to Family BBQ
 
 
-# June Launch Trip
+## June Launch Trip
 
 - Thu 6/29 - Flight to Denver
   - Details TBD
