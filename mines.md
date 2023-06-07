@@ -27,13 +27,13 @@
 
 ## August Road Trip
 
-[Seattle - Golden](https://www.google.com/maps/dir/Seattle,+WA/Missoula,+MT/Golden,+CO/@43.2425387,-124.1600154,5z/data=!3m1!4b1!4m20!4m19!1m5!1m1!1s0x5490102c93e83355:0x102565466944d59a!2m2!1d-122.3320708!2d47.6062095!1m5!1m1!1s0x535dcc2a50f367cb:0xe9e31277ca94802e!2m2!1d-113.9940314!2d46.8721284!1m5!1m1!1s0x876b981287686cf7:0x14c64654208055dc!2m2!1d-105.2210997!2d39.755543!3e0?entry=ttu)
+[Seattle - Golden](https://www.google.com/maps/dir/Seattle,+WA/Billings,+MT/Golden,+CO/)
 
-- Wed 8/10 - Day 1: Seattle to Missoula, MT
-  - 7 hr 19 min (476 mi)
+- Wed 8/10 - Day 1: Seattle to Billings, MT
+  - 12 hr 19 min (822 mi)
 
-- Thu 8/11 - Day 2: Missoula, MT to Golden, CO
-  - 13 hr (903 mi)
+- Thu 8/11 - Day 2: Billings, MT to Golden, CO
+  - 8 hr 4 min (559 mi)
 
 
 ## August Schedule
