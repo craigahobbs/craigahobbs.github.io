@@ -1,4 +1,4 @@
-# Colorado School of Mines Trip!
+# Colorado School of Mines
 
 
 ## Todo
