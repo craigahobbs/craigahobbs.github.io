@@ -7,7 +7,7 @@ Install applications, configure docker, and reboot:
 
 ~~~
 su -c "apt install docker.io emacs git git-gui make python3-venv rsync xsel"
-su -c "usermod -aG docker $USER && reboot"
+su -l -c "usermod -aG docker $USER && reboot"
 ~~~
 
 
@@ -29,7 +29,11 @@ git config --global user.email "Craig A. Hobbs"
 git config --global user.name "craigahobbs@gmail.com"
 ~~~
 
-Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys).
+Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys):
+
+~~~
+cat ~/.ssh/id_ed25519.pub | xsel -ib
+~~~
 
 
 ### Git Bash Prompt
