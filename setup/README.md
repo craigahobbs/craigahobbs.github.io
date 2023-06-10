@@ -29,6 +29,8 @@ git config --global user.email "Craig A. Hobbs"
 git config --global user.name "craigahobbs@gmail.com"
 ~~~
 
+Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys).
+
 
 ### Git Bash Prompt
 
