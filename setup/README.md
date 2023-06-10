@@ -32,20 +32,6 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 ~~~
 
 
-## Debian: Dell XPS 13 7390 Laptop Wifi Drivers
-
-1. Install Debian 11 on a **wired connection**:
-
-2. Add "non-free-firmware" in the "Software & Updates" application
-
-3. Install the wifi drivers using the following commands:
-
-~~~
-sudo apt update && sudo apt install firmware-iwlwifi
-sudo modprobe -r iwlwifi ; sudo modprobe iwlwifi
-~~~
-
-
 ### Trimming Log Files
 
 To reduce disk log file disk usage, periodically execute the following command:
