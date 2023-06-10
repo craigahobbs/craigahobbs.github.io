@@ -1,12 +1,22 @@
-# Computer Setup
+# Debian Linux Setup
 
 
-## Git configuration
+## Initial Setup
+
+Install applications, configure docker, and reboot:
+
+~~~
+su -c "apt install docker.io emacs git git-gui make python3-venv rsync xsel"
+su -c "usermod -aG docker $USER && reboot"
+~~~
+
+
+## Git Setup
 
 To generate a git key, execute the following:
 
 ~~~
-ssh-keygen -t ed25519 -C <key-name>
+ssh-keygen -t ed25519 -C "debian-laptop"
 ~~~
 
 To set the git global configuration, execute the following:
@@ -19,9 +29,12 @@ git config --global user.email "Craig A. Hobbs"
 git config --global user.name "craigahobbs@gmail.com"
 ~~~
 
-To add a git bash command line prompt, add the following to the end of your .bashrc:
 
-~~~ sh
+### Git Bash Prompt
+
+Add the following to the end of your .bashrc:
+
+~~~
 # git-prompt.sh
 if [ ! -f ~/.git-prompt.sh ]; then
     echo Downloading git-prompt.sh ...
@@ -32,7 +45,7 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 ~~~
 
 
-### Trimming Log Files
+## Trim Log Files
 
 To reduce disk log file disk usage, periodically execute the following command:
 
