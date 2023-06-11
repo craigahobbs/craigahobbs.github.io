@@ -1,6 +1,29 @@
 # Debian Linux Setup
 
 
+## Create a Debian Linux USB Drive
+
+1. [Download Debian Stable ISO](https://www.debian.org/distrib/netinst)
+
+2. Write the ISO to the USB drive:
+
+   **Linux**
+
+   ~~~
+   su -l -c "fdisk -l"
+   su -c "umount /dev/sdX"
+   sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/sdX
+   ~~~
+
+   **MacOS**
+
+   ~~~
+   diskutil list
+   diskutil unmountDisk /dev/diskN
+   sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/rdiskN
+   ~~~
+
+
 ## Initial Setup
 
 Install applications, configure docker, and reboot:
