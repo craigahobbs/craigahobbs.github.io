@@ -53,7 +53,8 @@ git config --global user.email "Craig A. Hobbs"
 git config --global user.name "craigahobbs@gmail.com"
 ~~~
 
-Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys):
+Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys). The following
+command copies your public SSH key to the clipboard.
 
 ~~~
 cat ~/.ssh/id_ed25519.pub | xsel -ib
