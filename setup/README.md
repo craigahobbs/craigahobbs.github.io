@@ -76,6 +76,16 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 ~~~
 
 
+## Clone Source Code
+
+~~~
+mkdir ~/src
+cd ~/src
+git clone git@github.com:craigahobbs/craigahobbs.github.io.git
+make -C ~/src/craigahobbs.github.io/projects/ pull -j; echo $?
+~~~
+
+
 ## Trim Log Files
 
 To reduce disk log file disk usage, periodically execute the following command:
