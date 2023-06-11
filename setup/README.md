@@ -10,9 +10,10 @@
    **Linux**
 
    ~~~
-   su -l -c "fdisk -l"
-   su -c "umount /dev/sdX"
-   sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/sdX
+   su -l
+   fdisk -l
+   umount /dev/sdX
+   dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/sdX
    ~~~
 
    **MacOS**
@@ -79,5 +80,6 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 To reduce disk log file disk usage, periodically execute the following command:
 
 ~~~
-sudo journalctl --vacuum-time=2d
+su -l
+journalctl --vacuum-time=2d
 ~~~
