@@ -80,6 +80,5 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 To reduce disk log file disk usage, periodically execute the following command:
 
 ~~~
-su -l
-journalctl --vacuum-time=2d
+su -c "journalctl --vacuum-time=2d"
 ~~~
