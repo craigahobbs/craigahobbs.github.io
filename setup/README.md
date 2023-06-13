@@ -12,7 +12,7 @@
    ~~~
    sudo fdisk -l
    sudo umount /dev/sdX
-   sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/sdX
+   sudo dd bs=4M status=progress oflag=sync if=/path/to/iso of=/dev/sdX
    ~~~
 
    **MacOS**
