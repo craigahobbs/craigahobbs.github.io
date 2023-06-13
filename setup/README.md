@@ -10,10 +10,9 @@
    **Linux**
 
    ~~~
-   su -l
-   fdisk -l
-   umount /dev/sdX
-   dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/sdX
+   sudo fdisk -l
+   sudo umount /dev/sdX
+   sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/sdX
    ~~~
 
    **MacOS**
@@ -27,11 +26,18 @@
 
 ## Initial Setup
 
+First, add yourself to the sudoers:
+
+~~~
+su -l -c "usermod -aG sudo $USER && reboot"
+~~~
+
 Install applications, configure docker, and reboot:
 
 ~~~
-su -c "apt install docker.io emacs git git-gui make python3-venv rsync xsel"
-su -l -c "usermod -aG docker $USER && reboot"
+sudo apt install docker.io emacs git git-gui make python3-venv rsync xsel
+sudo usermod -aG docker $USER
+sudo reboot
 ~~~
 
 
@@ -91,5 +97,5 @@ make -C ~/src/craigahobbs.github.io/projects/ pull -j; echo $?
 To reduce disk log file disk usage, periodically execute the following command:
 
 ~~~
-su -c "journalctl --vacuum-time=2d"
+sudo journalctl --vacuum-time=2d
 ~~~
