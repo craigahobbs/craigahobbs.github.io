@@ -32,11 +32,13 @@ First, add yourself to the sudoers:
 su -l -c "usermod -aG sudo $USER && reboot"
 ~~~
 
-Install applications, configure docker, and reboot:
+Next, install applications, configure docker, remove the grub delay, and reboot:
 
 ~~~
 sudo apt install docker.io emacs git git-gui make python3-venv rsync xsel
 sudo usermod -aG docker $USER
+sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
+sudo update-grub
 sudo reboot
 ~~~
 
