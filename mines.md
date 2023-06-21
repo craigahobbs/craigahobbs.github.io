@@ -4,8 +4,8 @@
 ## Todo
 
 - Fill in the TBD's below
-- Buy ticket to Convocation
-- Buy ticket to Family BBQ
+- Reserve Convocation tickets
+- Reserve Family BBQ tickets
 
 
 ## June Launch Trip
