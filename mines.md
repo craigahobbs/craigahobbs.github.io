@@ -3,7 +3,6 @@
 
 ## Todo
 
-- Fill in the TBD's below
 - Reserve Convocation tickets
 - Reserve Family BBQ tickets
 
@@ -40,8 +39,6 @@
 
 - Sat 8/12
   - On-Campus Housing Move-In
-    - Time TBD
-    - Location TBD
 
   - [Convocation](https://mines.universitytickets.com/w/event.aspx?id=1881)
     - Time: 5:00 PM - 6:00 PM
@@ -66,8 +63,6 @@
 
 - Thu 8/17
   - [Fall Kickoff](https://www.mines.edu/new-student-transition-services/orientation/kickoff/)
-    - Time: Evening (TBD)
-    - Location: TBD
     - finalized Fall Kickoff schedule will be available on this website in July
     - check-in for Fall Kickoff during their move-in process at their residence hall on their assigned move-in day
 
