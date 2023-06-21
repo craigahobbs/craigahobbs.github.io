@@ -80,4 +80,4 @@
 
 - [Orientation](https://www.mines.edu/new-student-transition-services/orientation/)
 
-- [2023-2024 Acedemic Calendar](https://www.mines.edu/registrar/wp-content/uploads/sites/51/2023/04/Academic-Calendar-23-24-EDITS-4.19.23-1.pdf)
+- [2023-2024 Acedemic Calendar](https://www.mines.edu/registrar/academic-calendar/)
