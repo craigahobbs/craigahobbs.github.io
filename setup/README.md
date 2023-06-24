@@ -3,14 +3,27 @@
 
 ## Create a Debian Linux USB Drive
 
-1. [Download Debian Stable ISO](https://www.debian.org/distrib/netinst)
+1. Download the [Debian Stable ISO](https://www.debian.org/distrib/netinst).
 
-2. Write the ISO to the USB drive:
+2. Insert the USB drive and determine its device name:
 
    **Linux**
 
    ~~~
    sudo fdisk -l
+   ~~~
+
+   **MacOS**
+
+   ~~~
+   diskutil list
+   ~~~
+
+3. Write it to the USB drive:
+
+   **Linux**
+
+   ~~~
    sudo umount /dev/sdX
    sudo dd bs=4M status=progress oflag=sync if=/path/to/iso of=/dev/sdX
    ~~~
@@ -18,7 +31,6 @@
    **MacOS**
 
    ~~~
-   diskutil list
    diskutil unmountDisk /dev/diskN
    sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/rdiskN
    ~~~
