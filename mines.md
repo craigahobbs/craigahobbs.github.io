@@ -1,12 +1,6 @@
 # Colorado School of Mines
 
 
-## Todo
-
-- Reserve Convocation tickets
-- Reserve Family BBQ tickets
-
-
 ## June Launch Trip
 
 - Thu 6/29 - Flight to Denver
