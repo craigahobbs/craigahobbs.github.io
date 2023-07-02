@@ -1,19 +1,6 @@
 # Colorado School of Mines
 
 
-## June Launch Trip
-
-- Thu 6/29 - Flight to Denver
-  - [Alaska 710](https://flightaware.com/live/flight/ASA710) - depart 4:50 PM, arrive 8:38 PM
-
-- Fri 6/30 - [Lauch](https://apply.mines.edu/register/?id=a16298be-a8bc-42ff-a756-4fc5d39e90cf)
-  - Time: 8:00 AM - 4:30 PM
-  - Location: [Colorado School of Mines, Green Center](https://maps.apple.com/?address=924%2016th%20St,%20Golden,%20CO%20%2080401&auid=10006007241486687851)
-
-- Sat 7/1 - Return flight to Seattle
-  - [Alaska 681](https://flightaware.com/live/flight/ASA681) - depart 10:42 AM, arrive 12:39 PM
-
-
 ## August Road Trip
 
 [Seattle - Golden](https://www.google.com/maps/dir/Seattle,+WA/Billings,+MT/Golden,+CO/)
@@ -45,6 +32,7 @@
     - busses will depart for camp at 9:30 AM
     - bring all your luggage with you to check-in
 
+- Mon 8/14
   - Dad Departs
 
 - Tue 8/15
@@ -66,3 +54,19 @@
 - [Orientation](https://www.mines.edu/new-student-transition-services/orientation/)
 
 - [2023-2024 Acedemic Calendar](https://www.mines.edu/registrar/academic-calendar/)
+
+
+-----
+
+
+## June Launch Trip
+
+- Thu 6/29 - Flight to Denver
+  - [Alaska 710](https://flightaware.com/live/flight/ASA710) - depart 4:50 PM, arrive 8:38 PM
+
+- Fri 6/30 - [Lauch](https://apply.mines.edu/register/?id=a16298be-a8bc-42ff-a756-4fc5d39e90cf)
+  - Time: 8:00 AM - 4:30 PM
+  - Location: [Colorado School of Mines, Green Center](https://maps.apple.com/?address=924%2016th%20St,%20Golden,%20CO%20%2080401&auid=10006007241486687851)
+
+- Sat 7/1 - Return flight to Seattle
+  - [Alaska 681](https://flightaware.com/live/flight/ASA681) - depart 10:42 AM, arrive 12:39 PM
