@@ -54,6 +54,14 @@ sudo update-grub
 sudo reboot
 ~~~
 
+To disable the GNU Make print directories behavior, add the following to the end of your .bashrc
+file:
+
+~~~
+# Disable GNU Make print directories
+export MAKEFLAGS="--no-print-directory"
+~~~
+
 
 ## Git Setup
 
