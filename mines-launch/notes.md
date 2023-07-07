@@ -1,11 +1,5 @@
 # Mines Launch Notes
 
-## Immediate TODOs
-
-- Send AP scores to Mines
-
-- Trailhead proxy access for Mom and me
-
 
 ## Mechanical Engineering (ME) Tracks
 
