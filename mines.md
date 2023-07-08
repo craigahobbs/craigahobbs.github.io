@@ -20,6 +20,7 @@
   - [Convocation](https://mines.universitytickets.com/w/event.aspx?id=1881)
     - Time: 5:00 PM - 6:00 PM
     - Location: [Bunker Auditorium, Green Center](https://maps.apple.com/?address=924%2016th%20St,%20Golden,%20CO%20%2080401&auid=10006007241486687851)
+    - Doors open at 4:00 PM (incoming students will assemble on Stratton Commons at 4:30 PM for the processional)
 
   - [New Student & Family Welcome BBQ](https://mines.universitytickets.com/w/event.aspx?id=1882)
     - Time: 6:00 PM - 8:00 PM
