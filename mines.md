@@ -16,6 +16,8 @@
 
 - Sat 8/12
   - On-Campus Housing Move-In
+    - Time: 10:45 AM
+    - Location: [Randall Hall](https://maps.apple.com/?address=1224%20W%20Campus%20Rd,%20Golden,%20CO%20%2080401&auid=9824417898152302424)
 
   - [Convocation](https://mines.universitytickets.com/w/event.aspx?id=1881)
     - Time: 5:00 PM - 6:00 PM
