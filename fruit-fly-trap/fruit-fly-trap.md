@@ -20,10 +20,10 @@ function main()
 
     # Set the title
     title = 'The Fruit Fly Trap Maker'
-    setDocumentTitle(title)
+    documentSetTitle(title)
 
     # Print the cone form?
-    if vPrint then
+    if vPrint:
         # Print close link
         elementModelRender(objectNew( \
             'html', 'p', \
@@ -175,22 +175,22 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     flapOuterX = formRadiusOuter * mathSin(flapTheta)
     flapOuterY = formRadiusOuter * mathCos(flapTheta)
 
-    if flapTheta < 0.5 * mathPi() then
+    if flapTheta < 0.5 * mathPi():
         formMinX = 0
         formMinY = flapInnerY
         formMaxX = flapOuterX
         formMaxY = formRadiusOuter
-    else if flapTheta < mathPi() then
+    elif flapTheta < mathPi():
         formMinX = 0
         formMinY = flapOuterY
         formMaxX = formRadiusOuter
         formMaxY = formRadiusOuter
-    else if flapTheta < 1.5 * mathPi() then
+    elif flapTheta < 1.5 * mathPi():
         formMinX = flapOuterX
         formMinY = -formRadiusOuter
         formMaxX = formRadiusOuter
         formMaxY = formRadiusOuter
-    else then
+    else:
         formMinX = -formRadiusOuter
         formMinY = -formRadiusOuter
         formMaxX = formRadiusOuter
@@ -211,9 +211,9 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
 
     # Draw the cone form
     edge = 5 * lineWidth
-    setDrawingSize(2 * edge + formMaxX - formMinX, 2 * edge + formMaxY - formMinY)
+    drawNew(2 * edge + formMaxX - formMinX, 2 * edge + formMaxY - formMinY)
     drawStyle('none', 0, 'white')
-    drawRect(0, 0, getDrawingWidth(), getDrawingHeight())
+    drawRect(0, 0, drawWidth(), drawHeight())
     drawStyle('black', lineWidth, 'none', 3 * lineWidth + ' ' + 3 * lineWidth)
     drawMove(edge - formMinX, edge)
     drawArc(formRadiusOuter, formRadiusOuter, 0, flapTheta > mathPi(), 1, edge + flapOuterX - formMinX, edge + formMaxY - flapOuterY)
@@ -227,7 +227,7 @@ endfunction
 
 
 function fruitFlyTrapDiagram()
-    annotationTextSize = getDocumentFontSize()
+    annotationTextSize = documentFontSize()
     width = 16 * annotationTextSize
     height = 14  * annotationTextSize
 
@@ -257,7 +257,7 @@ function fruitFlyTrapDiagram()
     coneTopRight = width - coneTopLeft
 
     # Draw the fruit fly trap diagram
-    setDrawingSize(width, height)
+    drawNew(width, height)
     drawStyle('none', 0, 'white')
     drawRect(0, 0, width, height)
 

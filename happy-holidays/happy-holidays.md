@@ -6,28 +6,28 @@
 function main()
     # Set the title
     titleText = if(vMessage, vMessage, 'Happy Holidays!')
-    setDocumentTitle(titleText)
+    documentSetTitle(titleText)
 
     # Menu
     if (!vFullScreen, markdownPrint( \
         '**Happy Holidays**  ', \
         '[Reset](#var=) |', \
         "[Custom](#var.vMessage='Edit%20Message%20in%20URL') |", \
-        '[Full](#var.vFullScreen=1' + if(vMessage, "&var.vMessage='" + encodeURIComponent(vMessage) + "'", '') + ')' \
+        '[Full](#var.vFullScreen=1' + if(vMessage, "&var.vMessage='" + urlEncodeComponent(vMessage) + "'", '') + ')' \
     ))
 
     # Compute the drawing width/height
-    width = getWindowWidth() - 3 * getDocumentFontSize()
-    height = getWindowHeight() - if(vFullScreen, 3, 6) * getDocumentFontSize()
+    width = windowWidth() - 3 * documentFontSize()
+    height = windowHeight() - if(vFullScreen, 3, 6) * documentFontSize()
 
     # Measure the title box height
     titleBoxWidth = 0.8 * width
     titleTextWidth = 0.9 * titleBoxWidth
-    titleTextHeight = mathMin(getTextHeight(titleText, titleTextWidth), 0.2 * height)
+    titleTextHeight = mathMin(drawTextHeight(titleText, titleTextWidth), 0.2 * height)
     titleBoxHeight = 3 * titleTextHeight
 
     # Set the drawing width/height
-    setDrawingSize(width, height)
+    drawNew(width, height)
     drawStyle('none', 0, 'white')
     drawRect(0, 0, width, height)
 
@@ -46,15 +46,15 @@ function main()
     drawText(titleText, 0.5 * width, 0.5 * height)
 
     # Set the resize handler
-    setWindowResize(main)
+    windowSetResize(main)
 endfunction
 
 
 function shapes(shapeFn, baseSize, count, minSize, maxSize)
-    width = getDrawingWidth()
-    height = getDrawingHeight()
+    width = drawWidth()
+    height = drawHeight()
     ix = 0
-    while ix < count do
+    while ix < count:
         size = baseSize * (minSize + mathRandom() * (maxSize - minSize))
         minX = size
         maxX = width - size

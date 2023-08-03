@@ -2,21 +2,21 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
-include 'https://craigahobbs.github.io/markdown-up/include/forms.mds'
+include <forms.mds>
 
 
 # Chaos Balls application main entry point
 async function chaosBallsMain()
     # Display Chaos Ball model documentation?
-    if vDoc then
-        setDocumentTitle('Chaos Balls JSON Format')
+    if vDoc:
+        documentSetTitle('Chaos Balls JSON Format')
         markdownPrint('[Home](#url=README.md)', '')
         elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
         return
     endif
 
     # Set the title
-    setDocumentTitle('Chaos Balls')
+    documentSetTitle('Chaos Balls')
 
     # Load the session
     session = chaosBallsGetSession()
@@ -24,22 +24,22 @@ async function chaosBallsMain()
 
     # Set the Chaos Balls model, if requested
     url = objectGet(args, 'url')
-    if url != null then
+    if url != null:
         # Set the default model?
-        if url == '' then
+        if url == '':
             model = chaosBallsDefaultModel
-        else then
+        else:
             # Fetch and validate the Chaos Balls JSON model
-            modelJSON = fetch(url)
+            modelJSON = httpFetch(url)
             model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
-            if model == null then
+            if model == null:
                 markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + url + '"')
                 return
             endif
         endif
 
         # Create a new, random session from the model (unless its the same as the session's model)
-        if jsonStringify(model) != jsonStringify(objectGet(session, 'model')) then
+        if jsonStringify(model) != jsonStringify(objectGet(session, 'model')):
             session = chaosBallsNewSession(model)
             chaosBallsSetSession(session)
         endif
@@ -49,7 +49,7 @@ async function chaosBallsMain()
     chaosBallsRender(session, args)
 
     # Set the window resize handler
-    setWindowResize(chaosBallsResize)
+    windowSetResize(chaosBallsResize)
 endfunction
 
 
@@ -79,8 +79,8 @@ endfunction
 function chaosBallsSetTimeout(args, startTime, endTime)
     ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
     periodMs = mathMax(0, 1000 / arrayGet(chaosBallsRates, objectGet(args, 'rate')) - ellapsedMs)
-    if objectGet(args, 'play') then
-        setWindowTimeout(chaosBallsTimeout, periodMs)
+    if objectGet(args, 'play'):
+        windowSetTimeout(chaosBallsTimeout, periodMs)
     endif
 endfunction
 
@@ -103,7 +103,7 @@ function chaosBallsTimeout()
     chaosBallsMove(session, args)
 
     # Render the balls
-    setDocumentReset(chaosBallsDocumentResetID)
+    documentSetReset(chaosBallsDocumentResetID)
     chaosBallsDraw(session, args)
 
     # Set the timeout handler
@@ -179,7 +179,7 @@ function chaosBallsURL(argsRaw, args)
     if(fullScreen, arrayPush(parts, 'var.vFullScreen=1'))
     if(play != null, arrayPush(parts, 'var.vPlay=' + play))
     if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
-    if(vURL != null, arrayPush(parts, "var.vURL='" + encodeURIComponent(vURL) + "'"))
+    if(vURL != null, arrayPush(parts, "var.vURL='" + urlEncodeComponent(vURL) + "'"))
     return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
 endfunction
 
@@ -189,9 +189,9 @@ function chaosBallsStep()
     session = chaosBallsGetSession()
     args = chaosBallsArgs()
     chaosBallsMove(session, args)
-    if objectGet(args, 'play') then
-        setWindowLocation(chaosBallsURL(chaosBallsArgs(true), objectNew('play', 0)))
-    else then
+    if objectGet(args, 'play'):
+        windowSetLocation(chaosBallsURL(chaosBallsArgs(true), objectNew('play', 0)))
+    else:
         chaosBallsRender(session, args)
     endif
 endfunction
@@ -213,7 +213,7 @@ function chaosBallsNewSession(model)
     session = objectNew('model', model, 'balls', balls)
 
     # Iterate the ball groups
-    foreach group in objectGet(model, 'groups') do
+    for group in objectGet(model, 'groups'):
         groupCount = objectGet(group, 'count')
         groupColor = objectGet(group, 'color')
         groupMinSize = objectGet(group, 'minSize')
@@ -223,7 +223,7 @@ function chaosBallsNewSession(model)
 
         # Create the group's balls
         ixBall = 0
-        while ixBall < groupCount do
+        while ixBall < groupCount:
             # Compute a random size
             size = groupMinSize + mathRandom() * (groupMaxSize - groupMinSize)
 
@@ -246,7 +246,7 @@ function chaosBallsNewSession(model)
 
             ixBall = ixBall + 1
         endwhile
-    endforeach
+    endfor
 
     return session
 endfunction
@@ -257,15 +257,15 @@ function chaosBallsGetSession()
     # Parse and validate the session object
     sessionJSON = sessionStorageGet('chaosBalls')
     session = null
-    if sessionJSON != null then
+    if sessionJSON != null:
         session = jsonParse(sessionJSON)
-        if session != null then
+        if session != null:
             session = schemaValidate(chaosBallsTypes, 'ChaosBallsSession', session)
         endif
     endif
 
     # If there is no session, create a default session
-    if session == null then
+    if session == null:
         session = chaosBallsNewSession(chaosBallsDefaultModel)
         sessionStorageSet('chaosBalls', jsonStringify(session))
     endif
@@ -289,27 +289,27 @@ function chaosBallsDraw(session, args)
 
     # Render the background
     model = objectGet(session, 'model')
-    setDrawingSize(width, height)
+    drawNew(width, height)
     drawStyle('none', 0, objectGet(model, 'backgroundColor'))
     drawRect(0, 0, width, height)
 
     # Render the balls
-    foreach ball in objectGet(session, 'balls') do
+    for ball in objectGet(session, 'balls'):
         drawStyle(null, 0, objectGet(ball, 'color'))
         drawCircle(objectGet(ball, 'x') * width, objectGet(ball, 'y') * height, 0.5 * objectGet(ball, 'size') * widthHeight)
-    endforeach
+    endfor
 endfunction
 
 
 # Get the Chaos Balls drawing width
 function chaosBallsWidth()
-    return getWindowWidth() - 3 * getDocumentFontSize()
+    return windowWidth() - 3 * documentFontSize()
 endfunction
 
 
 # Get the Chaos Balls drawing height
 function chaosBallsHeight(args)
-    return getWindowHeight(args) - if(objectGet(args, 'fullScreen'), 3, 6) * getDocumentFontSize()
+    return windowHeight(args) - if(objectGet(args, 'fullScreen'), 3, 6) * documentFontSize()
 endfunction
 
 
@@ -322,7 +322,7 @@ function chaosBallsMove(session, args)
 
     # Move each ball
     period = 1 / arrayGet(chaosBallsRates, objectGet(args, 'rate'))
-    foreach ball in objectGet(session, 'balls') do
+    for ball in objectGet(session, 'balls'):
         # Compute the ball size, position, and direction
         size = objectGet(ball, 'size') * widthHeight
         x = objectGet(ball, 'x') * width
@@ -340,20 +340,20 @@ function chaosBallsMove(session, args)
 
         # Compute the new X coordinate - adjust if out of bounds
         x = x + dx
-        if x < xMin then
+        if x < xMin:
             dxParam = -dxParam
             x = xMin + (xMin - x)
-        else if x > xMax then
+        elif x > xMax:
             dxParam = -dxParam
             x = xMax - (x - xMax)
         endif
 
         # Compute the new Y coordinate - adjust if out of bounds
         y = y + dy
-        if y < yMin then
+        if y < yMin:
             dyParam = -dyParam
             y = yMin + (yMin - y)
-        else if y > yMax then
+        elif y > yMax:
             dyParam = -dyParam
             y = yMax - (y - yMax)
         endif
@@ -363,7 +363,7 @@ function chaosBallsMove(session, args)
         objectSet(ball, 'y', y / height)
         objectSet(ball, 'dx', dxParam)
         objectSet(ball, 'dy', dyParam)
-    endforeach
+    endfor
 
     # Update the session storage
     chaosBallsSetSession(session)
