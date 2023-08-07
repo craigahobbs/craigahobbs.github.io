@@ -16,7 +16,7 @@
   (package-install `js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
-;; calcscript-mode
+;; barescript-mode
 (unless (package-installed-p 'barescript-mode)
   (let ((mode-file (make-temp-file "barescript-mode")))
     (url-copy-file "https://craigahobbs.github.io/bare-script/language/barescript-mode.el" mode-file t)
