@@ -95,7 +95,7 @@ endef # PROJECT_RULES
 
 
 # Javascript projects
-$(eval $(call PROJECT_RULES, javascript, calc-script, 'git@github.com:craigahobbs/calc-script.git'))
+$(eval $(call PROJECT_RULES, javascript, bare-script, 'git@github.com:craigahobbs/bare-script.git'))
 $(eval $(call PROJECT_RULES, javascript, element-model, 'git@github.com:craigahobbs/element-model.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-model, 'git@github.com:craigahobbs/markdown-model.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-up, 'git@github.com:craigahobbs/markdown-up.git'))
