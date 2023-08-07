@@ -16,13 +16,13 @@
   (package-install `js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
-;; calcscript-mode
-(unless (package-installed-p 'calcscript-mode)
-  (let ((mode-file (make-temp-file "calcscript-mode")))
-    (url-copy-file "https://craigahobbs.github.io/calc-script/language/calcscript-mode.el" mode-file t)
+;; barescript-mode
+(unless (package-installed-p 'barescript-mode)
+  (let ((mode-file (make-temp-file "barescript-mode")))
+    (url-copy-file "https://craigahobbs.github.io/bare-script/language/barescript-mode.el" mode-file t)
     (package-install-file mode-file)
     (delete-file mode-file)))
-(add-to-list 'auto-mode-alist '("\\.\\([Cc]alc-?[Ss]cript\\|mds\\)\\'" . calcscript-mode))
+(add-to-list 'auto-mode-alist '("\\.\\([Cc]alc-?[Ss]cript\\|mds\\)\\'" . barescript-mode))
 
 ;; schema-markdown-mode
 (unless (package-installed-p 'schema-markdown-mode)

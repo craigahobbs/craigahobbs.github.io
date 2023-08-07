@@ -14,7 +14,7 @@
 
 ## JavaScript Packages
 
-[calc-script](https://github.com/craigahobbs/calc-script#readme)
+[bare-script](https://github.com/craigahobbs/bare-script#readme)
 
 [element-model](https://github.com/craigahobbs/element-model#readme)
 

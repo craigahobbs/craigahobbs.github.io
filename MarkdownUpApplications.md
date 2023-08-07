@@ -1,6 +1,6 @@
 # MarkdownUp Applications
 
-[CalcSript Library Documentation Viewer](https://craigahobbs.github.io/calc-script/library/)
+[BareSript Library Documentation Viewer](https://craigahobbs.github.io/bare-script/library/)
 
 [Chaos Balls](https://craigahobbs.github.io/chaosBalls/)
 
