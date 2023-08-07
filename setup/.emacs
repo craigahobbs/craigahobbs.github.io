@@ -16,13 +16,13 @@
   (package-install `js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
-;; barescript-mode
+;; calcscript-mode
 (unless (package-installed-p 'barescript-mode)
   (let ((mode-file (make-temp-file "barescript-mode")))
     (url-copy-file "https://craigahobbs.github.io/bare-script/language/barescript-mode.el" mode-file t)
     (package-install-file mode-file)
     (delete-file mode-file)))
-(add-to-list 'auto-mode-alist '("\\.\\([Cc]alc-?[Ss]cript\\|mds\\)\\'" . barescript-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(?:bare\\|mds\\)\\'" . barescript-mode))
 
 ;; schema-markdown-mode
 (unless (package-installed-p 'schema-markdown-mode)
@@ -57,11 +57,11 @@
  '(compilation-scroll-output t)
  '(compile-command "make ")
  '(default-frame-alist
-    '((width . 120)
-      (height . 55)
-      (tool-bar-lines . 0)
-      (foreground-color . "white")
-      (background-color . "black")))
+   '((width . 120)
+     (height . 55)
+     (tool-bar-lines . 0)
+     (foreground-color . "white")
+     (background-color . "black")))
  '(fill-column 100)
  '(global-auto-revert-mode t nil (autorevert))
  '(global-whitespace-mode t)
