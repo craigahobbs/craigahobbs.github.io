@@ -57,7 +57,9 @@
  '(compilation-scroll-output t)
  '(compile-command "make ")
  '(default-frame-alist
-   '((width . 120)
+   '((top . 0)
+     (left . 75)
+     (width . 120)
      (height . 55)
      (tool-bar-lines . 0)
      (foreground-color . "white")
