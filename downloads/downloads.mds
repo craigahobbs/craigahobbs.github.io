@@ -174,7 +174,7 @@ function downloadsMonthlyData(data)
     dataCalculatedField( \
         dataMonthly, \
         '%avg', \
-        "if(category == 'with_mirrors', numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%', '')", \
+        "if(category == 'with_mirrors' && monthlyAverage, numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%', '')", \
         objectNew('monthlyAverage', monthlyAverage) \
     )
 
