@@ -48,6 +48,8 @@ Next, install applications, configure docker, remove the grub delay, and reboot:
 
 ~~~
 sudo apt install docker.io emacs git git-gui make python3-venv rsync xsel
+sudo apt purge gnome-games
+sudo apt autoremove
 sudo usermod -aG docker $USER
 sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
 sudo update-grub
