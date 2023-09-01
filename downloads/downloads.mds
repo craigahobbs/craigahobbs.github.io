@@ -64,7 +64,10 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
     dataSort(packageData, arrayNew(arrayNew('Monthly Downloads', true)))
     dataTable(packageData, objectNew( \
         'fields', arrayNew('Package', 'Language', 'Monthly Downloads'), \
-        'markdown', arrayNew('Package', 'Language'), \
+        'formats', objectNew( \
+            'Package', objectNew('markdown', true), \
+            'Language', objectNew('markdown', true) \
+        ), \
         'precision', 0 \
     ))
 endfunction
@@ -126,6 +129,9 @@ async function downloadsDashboard(packageName, packageType)
     dataTable(dataMonthly, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'fields', arrayNew('downloads', '%avg'), \
+        'formats', objectNew( \
+            'downloads', objectNew('align', 'right') \
+        ), \
         'datetime', 'month' \
     ))
 endfunction
