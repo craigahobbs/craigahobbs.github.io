@@ -36,7 +36,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
     endfor
 
     # Fetch the package raw data and validate
-    dataRaw = httpFetch(dataURLs)
+    dataRaw = systemFetch(dataURLs)
     packageData = arrayNew()
     for package, ixPackage in packages:
         packageName = objectGet(package, 'name')
@@ -78,9 +78,9 @@ async function downloadsDashboard(packageName, packageType)
 
     # Load and validate the package data
     if packageType == 'Python':
-        data = downloadsPythonDataValidate(httpFetch(downloadsPythonDataURL(packageName)))
+        data = downloadsPythonDataValidate(systemFetch(downloadsPythonDataURL(packageName)))
     else:
-        data = downloadsJavascriptDataValidate(httpFetch(downloadsJavascriptDataURL(packageName)))
+        data = downloadsJavascriptDataValidate(systemFetch(downloadsJavascriptDataURL(packageName)))
     endif
 
     # Compute the monthly data and averages
