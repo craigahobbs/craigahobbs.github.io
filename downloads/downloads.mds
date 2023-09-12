@@ -3,8 +3,7 @@
 
 
 async function downloadsMain(javascriptPackages, pythonPackages)
-    if vName != null:
-        markdownPrint('[Rankings](#var=)', '')
+    if vName != null && vType != null:
         downloadsDashboard(vName, vType)
     else:
         downloadsRankings(javascriptPackages, pythonPackages)
@@ -15,7 +14,7 @@ endfunction
 async function downloadsRankings(javascriptPackages, pythonPackages)
     # Document title
     title = 'Package Downloads'
-    markdownPrint('', '# ' + markdownEscape(title))
+    markdownPrint('# ' + markdownEscape(title))
     documentSetTitle(title)
 
     # Compute the list of package raw data URLs
@@ -76,7 +75,7 @@ endfunction
 async function downloadsDashboard(packageName, packageType)
     # Document title
     title = packageName + ' (' + packageType + ') Downloads'
-    markdownPrint('', '# ' + markdownEscape(title))
+    markdownPrint('[Rankings](#var=)', '', '# ' + markdownEscape(title))
     documentSetTitle(title)
 
     # Load and validate the package data
