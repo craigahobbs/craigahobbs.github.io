@@ -6,7 +6,7 @@ include <forms.mds>
 
 
 # Life application main entry point
-function lifeMain()
+function lifeMain():
     # Set the title
     documentSetTitle("Conway's Game of Life")
 
@@ -36,7 +36,7 @@ endfunction
 
 
 # Render the Life application
-function lifeRender(life, args)
+function lifeRender(life, args):
     # Render the menu
     elementModelRender(arrayNew( \
         if(!objectGet(args, 'fullScreen'), \
@@ -58,7 +58,7 @@ endfunction
 
 
 # Helper to set the timeout handler
-function lifeSetTimeout(args, startTime, endTime)
+function lifeSetTimeout(args, startTime, endTime):
     ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
     periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - ellapsedMs)
     if objectGet(args, 'play'):
@@ -68,7 +68,7 @@ endfunction
 
 
 # Life application window resize handler
-function lifeResize()
+function lifeResize():
     life = lifeLoad()
     args = lifeArgs()
     lifeRender(life, args)
@@ -76,7 +76,7 @@ endfunction
 
 
 # Life application timeout handler
-function lifeTimeout()
+function lifeTimeout():
     startTime = datetimeNow()
     life = lifeLoad()
     args = lifeArgs()
@@ -112,7 +112,7 @@ endfunction
 
 
 # Create the Life application variable-arguments object
-function lifeArgs(raw)
+function lifeArgs(raw):
     args = objectNew()
     objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), if(!raw, 1)))
     objectSet(args, 'border', if(vBorder != null, mathMax(minBorder, vBorder), if(!raw, 0)))
@@ -131,7 +131,7 @@ endfunction
 
 
 # Create the Life application menu element model
-function lifeMenuElements(life, args)
+function lifeMenuElements(life, args):
     # Menu separators
     nbsp = stringFromCharCode(160)
     linkSeparator = objectNew('text', ' ')
@@ -211,7 +211,7 @@ lifeDocumentResetID = 'lifeReset'
 
 
 # Helper to create an application URL
-function lifeURL(argsRaw, args)
+function lifeURL(argsRaw, args):
     # URL arguments
     play = objectGet(args, 'play')
     rate = objectGet(args, 'rate')
@@ -253,7 +253,7 @@ endfunction
 
 
 # Life application step click handler
-function lifeClickStep()
+function lifeClickStep():
     life = lifeLoad()
     life = lifeNext(life)
     args = lifeArgs()
@@ -263,7 +263,7 @@ endfunction
 
 
 # Life application random click handler
-function lifeClickRandom()
+function lifeClickRandom():
     life = lifeLoad()
     life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
     args = lifeArgs()
@@ -273,7 +273,7 @@ endfunction
 
 
 # Life application reset click handler
-function lifeClickReset()
+function lifeClickReset():
     life = lifeNew()
     args = lifeArgs()
     lifeSave(life)
@@ -291,31 +291,31 @@ endfunction
 
 
 # Life application width-less click handler
-function lifeClickWidthLess()
+function lifeClickWidthLess():
     lifeRenderWidthHeight(-5, 0)
 endfunction
 
 
 # Life application width-more click handler
-function lifeClickWidthMore()
+function lifeClickWidthMore():
     lifeRenderWidthHeight(5, 0)
 endfunction
 
 
 # Life application height-less click handler
-function lifeClickHeightLess()
+function lifeClickHeightLess():
     lifeRenderWidthHeight(0, -5)
 endfunction
 
 
 # Life application height-more click handler
-function lifeClickHeightMore()
+function lifeClickHeightMore():
     lifeRenderWidthHeight(0, 5)
 endfunction
 
 
 # Helper for width/height less/more click handlers
-function lifeRenderWidthHeight(widthDelta, heightDelta)
+function lifeRenderWidthHeight(widthDelta, heightDelta):
     life = lifeLoad()
     args = lifeArgs()
     width = mathMax(10, mathCeil(widthDelta + objectGet(life, 'width')))
@@ -327,7 +327,7 @@ endfunction
 
 
 # Life application cell click handler
-function lifeClickCell(px, py)
+function lifeClickCell(px, py):
     life = lifeLoad()
     args = lifeArgs()
     size = lifeSize(life, args)
@@ -350,7 +350,7 @@ endfunction
 
 
 # Create a new Life object
-function lifeNew(width, height, initial, noInit)
+function lifeNew(width, height, initial, noInit):
     width = if(width != null, width, 50)
     height = if(height != null, height, 50)
     cells = arrayNewSize(width * height)
@@ -384,7 +384,7 @@ endfunction
 
 
 # Load and validate the Life object from session storage, or create a new one
-function lifeLoad()
+function lifeLoad():
     # Parse and validate the session storage
     lifeJSON = sessionStorageGet('life')
     life = null
@@ -409,13 +409,13 @@ endfunction
 
 
 # Save the Life object to session storage
-function lifeSave(life)
+function lifeSave(life):
     sessionStorageSet('life', jsonStringify(life))
 endfunction
 
 
 # Draw the life board
-function lifeDraw(life, args)
+function lifeDraw(life, args):
     # Set the drawing size
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
@@ -451,7 +451,7 @@ endfunction
 
 
 # Compute the Life board cell size
-function lifeSize(life, args)
+function lifeSize(life, args):
     totalWidth = windowWidth() - 3 * documentFontSize()
     totalHeight = windowHeight() - if(objectGet(args, 'fullScreen'), 3, 6) * documentFontSize()
     lifeWidth = objectGet(life, 'width')
@@ -465,7 +465,7 @@ endfunction
 
 
 # Compute the next Life object state
-function lifeNext(life)
+function lifeNext(life):
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
@@ -497,7 +497,7 @@ endfunction
 
 
 # Encode the Life object
-function lifeEncode(life)
+function lifeEncode(life):
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
@@ -532,7 +532,7 @@ endfunction
 
 
 # Decode the Life object
-function lifeDecode(lifeStr)
+function lifeDecode(lifeStr):
     # Split the encoded life string into width, height, and cell string
     parts = stringSplit(lifeStr, '-')
     width = numberParseInt(arrayGet(parts, 0))

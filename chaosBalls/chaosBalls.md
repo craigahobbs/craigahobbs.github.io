@@ -6,7 +6,7 @@ include <forms.mds>
 
 
 # Chaos Balls application main entry point
-async function chaosBallsMain()
+async function chaosBallsMain():
     # Display Chaos Ball model documentation?
     if vDoc:
         documentSetTitle('Chaos Balls JSON Format')
@@ -54,7 +54,7 @@ endfunction
 
 
 # Render the Chaos Balls application
-function chaosBallsRender(session, args)
+function chaosBallsRender(session, args):
     # Render the menu
     elementModelRender(arrayNew( \
         if(!objectGet(args, 'fullScreen'), \
@@ -76,7 +76,7 @@ endfunction
 
 
 # Helper to set the timeout handler
-function chaosBallsSetTimeout(args, startTime, endTime)
+function chaosBallsSetTimeout(args, startTime, endTime):
     ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
     periodMs = mathMax(0, 1000 / arrayGet(chaosBallsRates, objectGet(args, 'rate')) - ellapsedMs)
     if objectGet(args, 'play'):
@@ -86,7 +86,7 @@ endfunction
 
 
 # Chaos Balls window resize handler
-function chaosBallsResize()
+function chaosBallsResize():
     session = chaosBallsGetSession()
     args = chaosBallsArgs()
     chaosBallsRender(session, args)
@@ -94,7 +94,7 @@ endfunction
 
 
 # Chaos Balls timeout handler
-function chaosBallsTimeout()
+function chaosBallsTimeout():
     startTime = datetimeNow()
     session = chaosBallsGetSession()
     args = chaosBallsArgs()
@@ -113,7 +113,7 @@ endfunction
 
 
 # Create the Chaos Balls application variable-arguments object
-function chaosBallsArgs(raw)
+function chaosBallsArgs(raw):
     args = objectNew()
     objectSet(args, 'fullScreen', if(vFullScreen != null, if(vFullScreen, 1, 0), if(!raw, 0)))
     objectSet(args, 'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 1)))
@@ -124,7 +124,7 @@ endfunction
 
 
 # Create the Chaos Balls application menu element model
-function chaosBallsMenuElements(args)
+function chaosBallsMenuElements(args):
     # Menu separators
     nbsp = stringFromCharCode(160)
     linkSeparator = objectNew('text', ' ')
@@ -161,7 +161,7 @@ chaosBallsDocumentResetID = 'chaosBallsMenu'
 
 
 # Helper to create an application URL
-function chaosBallsURL(argsRaw, args)
+function chaosBallsURL(argsRaw, args):
     # URL arguments
     fullScreen = objectGet(args, 'fullScreen')
     play = objectGet(args, 'play')
@@ -185,7 +185,7 @@ endfunction
 
 
 # Chaos Balls step click handler
-function chaosBallsStep()
+function chaosBallsStep():
     session = chaosBallsGetSession()
     args = chaosBallsArgs()
     chaosBallsMove(session, args)
@@ -198,7 +198,7 @@ endfunction
 
 
 # Chaos Balls reset click handler
-function chaosBallsReset()
+function chaosBallsReset():
     session = chaosBallsGetSession()
     session = chaosBallsNewSession(objectGet(session, 'model'))
     args = chaosBallsArgs()
@@ -208,7 +208,7 @@ endfunction
 
 
 # Create a new Chaos Balls session object
-function chaosBallsNewSession(model)
+function chaosBallsNewSession(model):
     balls = arrayNew()
     session = objectNew('model', model, 'balls', balls)
 
@@ -253,7 +253,7 @@ endfunction
 
 
 # Get the Chaos Balls session object
-function chaosBallsGetSession()
+function chaosBallsGetSession():
     # Parse and validate the session object
     sessionJSON = sessionStorageGet('chaosBalls')
     session = null
@@ -275,13 +275,13 @@ endfunction
 
 
 # Set the Chaos= Balls session object
-function chaosBallsSetSession(session)
+function chaosBallsSetSession(session):
     sessionStorageSet('chaosBalls', jsonStringify(session))
 endfunction
 
 
 # Draw the Chaos Balls
-function chaosBallsDraw(session, args)
+function chaosBallsDraw(session, args):
     # Compute the width/height
     width = chaosBallsWidth()
     height = chaosBallsHeight(args)
@@ -302,19 +302,19 @@ endfunction
 
 
 # Get the Chaos Balls drawing width
-function chaosBallsWidth()
+function chaosBallsWidth():
     return windowWidth() - 3 * documentFontSize()
 endfunction
 
 
 # Get the Chaos Balls drawing height
-function chaosBallsHeight(args)
+function chaosBallsHeight(args):
     return windowHeight(args) - if(objectGet(args, 'fullScreen'), 3, 6) * documentFontSize()
 endfunction
 
 
 # Move the Chaos Balls
-function chaosBallsMove(session, args)
+function chaosBallsMove(session, args):
     # Compute the width/height
     width = chaosBallsWidth()
     height = chaosBallsHeight(args)

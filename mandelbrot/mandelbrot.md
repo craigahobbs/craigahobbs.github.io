@@ -5,7 +5,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-function main()
+function main():
     # Image size
     width = if(vWidth, vWidth, 150)
     height = if(vHeight, vHeight, 100)
@@ -56,7 +56,7 @@ function main()
 endfunction
 
 
-function menuLink(text, w, h, s, i, x, y, xr, vc)
+function menuLink(text, w, h, s, i, x, y, xr, vc):
     args = if(w, '&var.vWidth=' + w, '') + \
         if(h != null, '&var.vHeight=' + h, '') + \
         if(s != null, '&var.vSize=' + s, '') + \
@@ -69,12 +69,12 @@ function menuLink(text, w, h, s, i, x, y, xr, vc)
 endfunction
 
 
-function menuLinkPair(text, link1, link2)
+function menuLinkPair(text, link1, link2):
     return '**' + text + '** (' + link1 + ' | ' + link2 + ')'
 endfunction
 
 
-function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRange, iter)
+function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRange, iter):
     # Set the drawing size
     drawNew(width * pixelSize, height * pixelSize)
 
@@ -98,7 +98,7 @@ function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRang
 endfunction
 
 
-function mandelbrotValue(x, y, maxIterations)
+function mandelbrotValue(x, y, maxIterations):
     # c1 = complex(x, y)
     # c2 = complex(0, 0)
     c1r = x

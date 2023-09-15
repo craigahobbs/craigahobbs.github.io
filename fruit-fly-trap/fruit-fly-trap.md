@@ -3,7 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-function main()
+function main():
     # Application inputs
     isMetric = if(vMetric, vMetric, 0)
     height = if(vHeight, vHeight, if(isMetric, 11.5, 4.5))
@@ -114,12 +114,12 @@ function main()
 endfunction
 
 
-function coneLink(text, args)
+function coneLink(text, args):
     return '[' + text + '](' + coneURL(args) + ')'
 endfunction
 
 
-function coneURL(args)
+function coneURL(args):
     # Argument overrides
     bottom = objectGet(args, 'bottom')
     diameter = objectGet(args, 'diameter')
@@ -148,7 +148,7 @@ function coneURL(args)
 endfunction
 
 
-function isValidConeForm(diameterTop, diameterBottom, height, flapLength)
+function isValidConeForm(diameterTop, diameterBottom, height, flapLength):
     formRadius = (height * diameterBottom) / (diameterTop - diameterBottom)
     formTheta = mathPi() * (diameterBottom / formRadius)
     flapTheta = formTheta + (flapLength / formRadius)
@@ -156,7 +156,7 @@ function isValidConeForm(diameterTop, diameterBottom, height, flapLength)
 endfunction
 
 
-function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, extraLength)
+function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, extraLength):
     # Compute the cone form's radii and theta
     formRadius = height * diameterBottom / (diameterTop - diameterBottom)
     formRadiusOuter = formRadius + height + extraLength
@@ -226,7 +226,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
 endfunction
 
 
-function fruitFlyTrapDiagram()
+function fruitFlyTrapDiagram():
     annotationTextSize = documentFontSize()
     width = 16 * annotationTextSize
     height = 14  * annotationTextSize
@@ -292,7 +292,7 @@ function fruitFlyTrapDiagram()
 endfunction
 
 
-function verticalAnnotation(text, xcoord, top, bottom, annotationBarWidth, annotationTextHeight, annotationTextSize)
+function verticalAnnotation(text, xcoord, top, bottom, annotationBarWidth, annotationTextHeight, annotationTextSize):
     drawMove(xcoord - 0.5 * annotationBarWidth, top)
     drawHLine(xcoord + 0.5 * annotationBarWidth)
     drawMove(xcoord, top)
@@ -306,7 +306,7 @@ function verticalAnnotation(text, xcoord, top, bottom, annotationBarWidth, annot
 endfunction
 
 
-function horizontalAnnotation(text, ycoord, left, right, annotationBarWidth, annotationTextHeight, annotationTextSize)
+function horizontalAnnotation(text, ycoord, left, right, annotationBarWidth, annotationTextHeight, annotationTextSize):
     drawStyle('black', lineWidth)
     drawMove(left, ycoord - 0.5 * annotationBarWidth)
     drawVLine(ycoord + 0.5 * annotationBarWidth)

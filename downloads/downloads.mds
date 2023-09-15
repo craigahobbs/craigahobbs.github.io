@@ -2,7 +2,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-async function downloadsMain(javascriptPackages, pythonPackages)
+async function downloadsMain(javascriptPackages, pythonPackages):
     if vName != null && vType != null:
         downloadsDashboard(vName, vType)
     else:
@@ -11,7 +11,7 @@ async function downloadsMain(javascriptPackages, pythonPackages)
 endfunction
 
 
-async function downloadsRankings(javascriptPackages, pythonPackages)
+async function downloadsRankings(javascriptPackages, pythonPackages):
     # Document title
     title = 'Package Downloads'
     markdownPrint('# ' + markdownEscape(title))
@@ -72,7 +72,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages)
 endfunction
 
 
-async function downloadsDashboard(packageName, packageType)
+async function downloadsDashboard(packageName, packageType):
     # Document title
     title = packageName + ' (' + packageType + ') Downloads'
     markdownPrint('[Rankings](#var=)', '', '# ' + markdownEscape(title))
@@ -136,7 +136,7 @@ async function downloadsDashboard(packageName, packageType)
 endfunction
 
 
-function downloadsMonthlyData(data)
+function downloadsMonthlyData(data):
     # Add month/year calculated field
     dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
 
@@ -191,7 +191,7 @@ function downloadsMonthlyData(data)
 endfunction
 
 
-function downloadsJavascriptDataURL(packageName)
+function downloadsJavascriptDataURL(packageName):
     today = datetimeToday()
     yearAgo = datetimeNew(datetimeYear(today), datetimeMonth(today) - 12, 1)
     return 'https://api.npmjs.org/downloads/range/' + \
@@ -199,7 +199,7 @@ function downloadsJavascriptDataURL(packageName)
 endfunction
 
 
-function downloadsJavascriptDataValidate(dataRaw)
+function downloadsJavascriptDataValidate(dataRaw):
     # Reshape the data
     data = arrayNew()
     downloads = objectGet(dataRaw, 'downloads')
@@ -216,12 +216,12 @@ function downloadsJavascriptDataValidate(dataRaw)
 endfunction
 
 
-function downloadsPythonDataURL(packageName)
+function downloadsPythonDataURL(packageName):
     #return 'https://pypistats.org/api/packages/' + packageName + '/overall'
     return 'data/python-' + packageName + '.json'
 endfunction
 
 
-function downloadsPythonDataValidate(dataRaw)
+function downloadsPythonDataValidate(dataRaw):
     return dataValidate(objectGet(dataRaw, 'data'))
 endfunction

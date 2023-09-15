@@ -3,7 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-function main()
+function main():
     # Set the title
     titleText = if(vMessage, vMessage, 'Happy Holidays!')
     documentSetTitle(titleText)
@@ -50,7 +50,7 @@ function main()
 endfunction
 
 
-function shapes(shapeFn, baseSize, count, minSize, maxSize)
+function shapes(shapeFn, baseSize, count, minSize, maxSize):
     width = drawWidth()
     height = drawHeight()
     ix = 0
@@ -68,7 +68,7 @@ function shapes(shapeFn, baseSize, count, minSize, maxSize)
 endfunction
 
 
-function skinnyStar(x, y, size)
+function skinnyStar(x, y, size):
     drawStyle('black', 1, 'none')
     drawMove(x + 0.5 * size, y)
     drawVLine(y + size)
@@ -77,7 +77,7 @@ function skinnyStar(x, y, size)
 endfunction
 
 
-function chubbyStar(x, y, size)
+function chubbyStar(x, y, size):
     fillRand = mathRandom()
     fill = if(fillRand < 0.33, '#ff0000', if(fillRand < 0.67, '#00ff00', '#0060ff'))
     drawStyle('black', 1, fill)
@@ -93,7 +93,7 @@ function chubbyStar(x, y, size)
 endfunction
 
 
-function grayBall(x, y, size)
+function grayBall(x, y, size):
     fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c0c0c0', '#e0e0e0')
     drawStyle('black', 2, fill)
@@ -101,7 +101,7 @@ function grayBall(x, y, size)
 endfunction
 
 
-function purpleBall(x, y, size)
+function purpleBall(x, y, size):
     fillRand = mathRandom()
     fill = if(fillRand < 0.5, '#c000c0', '#e000e0')
     drawStyle('black', 2, fill)
@@ -109,7 +109,7 @@ function purpleBall(x, y, size)
 endfunction
 
 
-function blueEllipse(x, y, size)
+function blueEllipse(x, y, size):
     drawStyle('black', 2, '#00c0f0')
     drawEllipse(x, y, size, 0.5 * size)
 endfunction
