@@ -5,7 +5,11 @@
                             "[ \t\n]*$" ""
                             (shell-command-to-string "$SHELL --login -i -c 'echo $PATH'"))))
       (setenv "PATH" path-from-shell)
-      (setq exec-path (split-string path-from-shell path-separator)))
+      (setq exec-path (split-string path-from-shell path-separator))
+
+      ;; set focus
+      (do-applescript "tell application \"emacs\" to activate")
+      )
   )
 
 ;; Activate packages
