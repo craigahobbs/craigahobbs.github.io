@@ -1,5 +1,5 @@
 # Licensed under the MIT License
-# https://github.com/craigahobbs/sunrise/blob/main/LICENSE
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 .DEFAULT_GOAL := help
 
