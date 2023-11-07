@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include <args.mds>
 include <forms.mds>
 
 
@@ -11,8 +12,8 @@ function lifeMain():
     documentSetTitle("Conway's Game of Life")
 
     # Load the life state
-    life = lifeLoad()
     args = lifeArgs()
+    life = lifeLoad(args)
 
     # Load argument provided?
     load = objectGet(args, 'load')
@@ -31,7 +32,7 @@ function lifeMain():
     lifeRender(life, args)
 
     # Set the window resize handler
-    windowSetResize(lifeResize)
+    windowSetResize(systemPartial(lifeResize, life, args))
 endfunction
 
 
@@ -53,33 +54,29 @@ function lifeRender(life, args):
     lifeDraw(life, args)
 
     # Set the timeout handler
-    lifeSetTimeout(args)
+    lifeSetTimeout(life, args)
 endfunction
 
 
 # Helper to set the timeout handler
-function lifeSetTimeout(args, startTime, endTime):
+function lifeSetTimeout(life, args, startTime, endTime):
     ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
     periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - ellapsedMs)
     if objectGet(args, 'play'):
-        windowSetTimeout(lifeTimeout, periodMs)
+        windowSetTimeout(systemPartial(lifeTimeout, life, args), periodMs)
     endif
 endfunction
 
 
 # Life application window resize handler
-function lifeResize():
-    life = lifeLoad()
-    args = lifeArgs()
+function lifeResize(life, args):
     lifeRender(life, args)
 endfunction
 
 
 # Life application timeout handler
-function lifeTimeout():
+function lifeTimeout(life, args):
     startTime = datetimeNow()
-    life = lifeLoad()
-    args = lifeArgs()
 
     # Compute the next life state
     lifeJSON = jsonStringify(objectGet(life, 'cells'))
@@ -91,7 +88,7 @@ function lifeTimeout():
     iCycle = 0
     while iCycle < depth:
         if lifeJSON == jsonStringify(objectGet(lifeCycle, 'cells')):
-            life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
+            life = lifeNew(args, objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
             break
         endif
         lifeCycle = lifeNext(lifeCycle)
@@ -107,25 +104,40 @@ function lifeTimeout():
 
     # Set the timeout handler
     endTime = datetimeNow()
-    lifeSetTimeout(args, startTime, endTime)
+    lifeSetTimeout(life, args, startTime, endTime)
 endfunction
 
 
-# Create the Life application variable-arguments object
-function lifeArgs(raw):
-    args = objectNew()
-    objectSet(args, 'background', if(vBackground != null, vBackground % arrayLength(lifeColors), if(!raw, 1)))
-    objectSet(args, 'border', if(vBorder != null, mathMax(minBorder, vBorder), if(!raw, 0)))
-    objectSet(args, 'borderRatio', if(vBorderRatio != null, mathMax(0, mathMin(1, vBorderRatio)), if(!raw, 0.1)))
-    objectSet(args, 'color', if(vColor != null, vColor % arrayLength(lifeColors), if(!raw, 0)))
-    objectSet(args, 'depth', if(vDepth != null, vDepth, if(!raw, 6)))
-    objectSet(args, 'fullScreen', if(vFullScreen != null, if(vFullScreen, 1, 0), if(!raw, 0)))
-    objectSet(args, 'gap', if(vGap != null, mathMax(1, vGap), if(!raw,  1)))
-    objectSet(args, 'initRatio', if(vInitRatio != null, mathMax(0, mathMin(1, vInitRatio)), if(!raw, 0.2)))
-    objectSet(args, 'load', vLoad)
-    objectSet(args, 'play', if(vPlay != null, if(vPlay, 1, 0), if(!raw, 1)))
-    objectSet(args, 'rate', if(vRate != null, mathMax(0, mathMin(arrayLength(lifeRates) - 1, vRate)), if(!raw, 1)))
-    objectSet(args, 'save', if(vSave != null, if(vSave, 1, 0), if(!raw, 0)))
+# The Life application arguments
+lifeArguments = argsValidate(arrayNew( \
+    objectNew('name', 'background', 'type', 'int', 'default', 1), \
+    objectNew('name', 'border', 'type', 'int', 'default', 0), \
+    objectNew('name', 'borderRatio', 'type', 'float', 'default', 0.1), \
+    objectNew('name', 'color', 'type', 'int', 'default', 0), \
+    objectNew('name', 'depth', 'type', 'int', 'default', 6), \
+    objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
+    objectNew('name', 'gap', 'type', 'int', 'default', 1), \
+    objectNew('name', 'initRatio', 'type', 'float', 'default', 0.2), \
+    objectNew('name', 'load', 'explicit', true), \
+    objectNew('name', 'play', 'type', 'bool', 'default', true), \
+    objectNew('name', 'rate', 'type', 'int', 'default', 2), \
+    objectNew('name', 'save', 'type', 'bool', 'default', false, 'explicit', true) \
+))
+
+
+# Helper to parse the Life application arguments
+function lifeArgs():
+    # Parse arguments
+    args = argsParse(lifeArguments)
+
+    # Constrain arguments
+    objectSet(args, 'background', objectGet(args, 'background') % arrayLength(lifeColors))
+    objectSet(args, 'border', mathMax(minBorder, objectGet(args, 'border')))
+    objectSet(args, 'borderRatio', mathMax(0, mathMin(0.4, objectGet(args, 'borderRatio'))))
+    objectSet(args, 'color', objectGet(args, 'color') % arrayLength(lifeColors))
+    objectSet(args, 'gap', mathMax(1, objectGet(args, 'gap')))
+    objectSet(args, 'initRatio', mathMax(0, mathMin(1, objectGet(args, 'initRatio'))))
+    objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(lifeRates) - 1, objectGet(args, 'rate'))))
     return args
 endfunction
 
@@ -138,63 +150,62 @@ function lifeMenuElements(life, args):
     linkSection = objectNew('text', nbsp + '| ')
 
     # Color menu part
-    argsRaw = lifeArgs(true)
     background = objectGet(args, 'background')
-    borderRaw = objectGet(argsRaw, 'border')
+    border = objectGet(args, 'border')
     color = objectGet(args, 'color')
     nextColor = (color + 1) % arrayLength(lifeColors)
     nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
     nextBackground = (background + 1) % arrayLength(lifeColors)
     nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
     colorElements = arrayNew( \
-        formsLinkElements('Ground', lifeURL(argsRaw, objectNew('background', nextBackground))), \
+        formsLinkElements('Ground', argsURL(lifeArguments, objectNew('background', nextBackground))), \
         linkSeparator, \
-        formsLinkElements('Cell', lifeURL(argsRaw, objectNew('color', nextColor))), \
+        formsLinkElements('Cell', argsURL(lifeArguments, objectNew('color', nextColor))), \
         linkSeparator, \
-        formsLinkElements('Border', lifeURL(argsRaw, objectNew('border', if(borderRaw != null, 0, 5)))), \
+        formsLinkElements('Border', argsURL(lifeArguments, objectNew('border', if(border == 0, 5, 0)))), \
         linkSection, \
-        formsLinkElements('Full', lifeURL(argsRaw, objectNew('fullScreen', 1))) \
+        formsLinkElements('Full', argsURL(lifeArguments, objectNew('fullScreen', 1))) \
     )
 
     # Which menu? (play, save, or pause)
     if objectGet(args, 'play'):
         rate = objectGet(args, 'rate')
         return arrayNew( \
-            formsLinkElements('Pause', lifeURL(argsRaw, objectNew('play', 0))), \
+            formsLinkElements('Pause', argsURL(lifeArguments, objectNew('play', 0))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            formsLinkElements('<<', if(rate > 0, lifeURL(argsRaw, objectNew('rate', rate - 1)))), \
+            formsLinkElements('<<', if(rate > 0, argsURL(lifeArguments, objectNew('rate', rate - 1)))), \
             arrayNew(objectNew('text', nbsp + arrayGet(lifeRates, rate) + nbsp + 'Hz' + nbsp)), \
-            formsLinkElements('>>', if(rate < arrayLength(lifeRates) - 1, lifeURL(argsRaw, objectNew('rate', rate + 1)))) \
+            formsLinkElements('>>', if(rate < arrayLength(lifeRates) - 1, argsURL(lifeArguments, objectNew('rate', rate + 1)))) \
         )
     elif objectGet(args, 'save'):
         return arrayNew( \
             objectNew('text', 'Save: '), \
-            formsLinkElements('Load', lifeURL(argsRaw, objectNew('load', lifeEncode(life)))) \
+            formsLinkElements('Load', argsURL(lifeArguments, objectNew('load', lifeEncode(life)))) \
         )
     else:
         # Pause menu
         return arrayNew( \
-            formsLinkElements('Play', lifeURL(argsRaw, objectNew('play', 1))), \
+            formsLinkElements('Play', argsURL(lifeArguments, objectNew('play', 1))), \
             linkSection, \
-            formsLinkButtonElements('Step', lifeClickStep), \
+            formsLinkButtonElements('Step', systemPartial(lifeClickStep, life, args)), \
             linkSeparator, \
-            formsLinkButtonElements('Random', lifeClickRandom), \
+            formsLinkButtonElements('Random', systemPartial(lifeClickRandom, life, args)), \
             linkSeparator, \
-            formsLinkButtonElements('Reset', lifeClickReset), \
+            formsLinkButtonElements('Reset', systemPartial(lifeClickReset, args)), \
             linkSeparator, \
-            formsLinkElements('Save', lifeURL(argsRaw, objectNew('play', 0, 'save', 1))), \
+            formsLinkElements('Save', argsURL(lifeArguments, objectNew('play', 0, 'save', 1))), \
             linkSection, \
             colorElements, \
             linkSection, \
-            formsLinkButtonElements('<<', lifeClickWidthLess), \
+            formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, -5, 0)), \
             arrayNew(objectNew('text', nbsp + 'Width' + nbsp)), \
-            formsLinkButtonElements('>>', lifeClickWidthMore), \
+            formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 5, 0)), \
             linkSection, \
-            formsLinkButtonElements('<<', lifeClickHeightLess), \
+            formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, 0, -5)), \
             arrayNew(objectNew('text', nbsp + 'Height' + nbsp)), \
-            formsLinkButtonElements('>>', lifeClickHeightMore) \
+            formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 0, 5)) \
         )
     endif
 endfunction
@@ -210,78 +221,31 @@ lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold
 lifeDocumentResetID = 'lifeReset'
 
 
-# Helper to create an application URL
-function lifeURL(argsRaw, args):
-    # URL arguments
-    play = objectGet(args, 'play')
-    rate = objectGet(args, 'rate')
-    color = objectGet(args, 'color')
-    background = objectGet(args, 'background')
-    border = objectGet(args, 'border')
-    save = objectGet(args, 'save')
-    load = objectGet(args, 'load')
-    fullScreen = objectGet(args, 'fullScreen')
-
-    # Variable arguments
-    play = if(play != null, play, objectGet(argsRaw, 'play'))
-    rate = if(rate != null, rate, objectGet(argsRaw, 'rate'))
-    color = if(color != null, color, objectGet(argsRaw, 'color'))
-    background = if(background != null, background, objectGet(argsRaw, 'background'))
-    border = if(border != null, if(border, border, null), objectGet(argsRaw, 'border'))
-    fullScreen = if(fullScreen != null, fullScreen, objectGet(argsRaw, 'fullScreen'))
-    gap = objectGet(argsRaw, 'gap')
-    depth = objectGet(argsRaw, 'depth')
-    initRatio = objectGet(argsRaw, 'initRatio')
-    borderRatio = objectGet(argsRaw, 'borderRatio')
-
-    # Return the URL
-    parts = arrayNew()
-    if(background != null, arrayPush(parts, 'var.vBackground=' + background))
-    if(border != null, arrayPush(parts, 'var.vBorder=' + border))
-    if(borderRatio != null, arrayPush(parts, 'var.vBorderRatio=' + borderRatio))
-    if(color != null, arrayPush(parts, 'var.vColor=' + color))
-    if(depth != null, arrayPush(parts, 'var.vDepth=' + depth))
-    if(fullScreen != null, arrayPush(parts, 'var.vFullScreen=' + fullScreen))
-    if(gap != null, arrayPush(parts, 'var.vGap=' + gap))
-    if(initRatio != null, arrayPush(parts, 'var.vInitRatio=' + initRatio))
-    if(load != null, arrayPush(parts, "var.vLoad='" + load + "'"))
-    if(play != null, arrayPush(parts, 'var.vPlay=' + play))
-    if(rate != null, arrayPush(parts, 'var.vRate=' + rate))
-    if(save, arrayPush(parts, 'var.vSave=1'))
-    return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
-endfunction
-
-
 # Life application step click handler
-function lifeClickStep():
-    life = lifeLoad()
+function lifeClickStep(life, args):
     life = lifeNext(life)
-    args = lifeArgs()
     lifeSave(life)
     lifeRender(life, args)
 endfunction
 
 
 # Life application random click handler
-function lifeClickRandom():
-    life = lifeLoad()
-    life = lifeNew(objectGet(life, 'width'), objectGet(life, 'height'))
-    args = lifeArgs()
+function lifeClickRandom(life, args):
+    life = lifeNew(args, objectGet(life, 'width'), objectGet(life, 'height'))
     lifeSave(life)
     lifeRender(life, args)
 endfunction
 
 
 # Life application reset click handler
-function lifeClickReset():
-    life = lifeNew()
-    args = lifeArgs()
+function lifeClickReset(args):
+    # Create a default life
+    life = lifeNew(args)
     lifeSave(life)
 
     # If we're already at the reset location, just update
-    resetLocation = '#var.vPlay=0'
-    argsRaw = lifeArgs(true)
-    if lifeURL(argsRaw) == resetLocation:
+    resetLocation = argsURL(lifeArguments, objectNew('play', false), true)
+    if resetLocation == argsURL(lifeArguments):
         lifeRender(life, args)
         return
     endif
@@ -290,46 +254,18 @@ function lifeClickReset():
 endfunction
 
 
-# Life application width-less click handler
-function lifeClickWidthLess():
-    lifeRenderWidthHeight(-5, 0)
-endfunction
-
-
-# Life application width-more click handler
-function lifeClickWidthMore():
-    lifeRenderWidthHeight(5, 0)
-endfunction
-
-
-# Life application height-less click handler
-function lifeClickHeightLess():
-    lifeRenderWidthHeight(0, -5)
-endfunction
-
-
-# Life application height-more click handler
-function lifeClickHeightMore():
-    lifeRenderWidthHeight(0, 5)
-endfunction
-
-
 # Helper for width/height less/more click handlers
-function lifeRenderWidthHeight(widthDelta, heightDelta):
-    life = lifeLoad()
-    args = lifeArgs()
-    width = mathMax(10, mathCeil(widthDelta + objectGet(life, 'width')))
-    height = mathMax(10, mathCeil(heightDelta + objectGet(life, 'height')))
-    life = lifeNew(width, height)
+function lifeClickWidthHeight(life, args, widthDelta, heightDelta):
+    width = mathMax(10, widthDelta + objectGet(life, 'width'))
+    height = mathMax(10, heightDelta + objectGet(life, 'height'))
+    life = lifeNew(args, width, height)
     lifeSave(life)
     lifeRender(life, args)
 endfunction
 
 
 # Life application cell click handler
-function lifeClickCell(px, py):
-    life = lifeLoad()
-    args = lifeArgs()
+function lifeClickCell(life, args, px, py):
     size = lifeSize(life, args)
     gap = objectGet(args, 'gap')
     border = objectGet(args, 'border')
@@ -350,15 +286,14 @@ endfunction
 
 
 # Create a new Life object
-function lifeNew(width, height, initial, noInit):
+function lifeNew(args, width, height, initial):
     width = if(width != null, width, 50)
     height = if(height != null, height, 50)
     cells = arrayNewSize(width * height)
 
     # Initialize the life
-    args = lifeArgs()
-    initRatio = objectGet(args, 'initRatio')
-    if !noInit && initRatio:
+    if args != null:
+        initRatio = objectGet(args, 'initRatio')
         borderRatio = objectGet(args, 'borderRatio')
         border = mathCeil(borderRatio * mathMin(width, height))
         y = 0
@@ -384,7 +319,7 @@ endfunction
 
 
 # Load and validate the Life object from session storage, or create a new one
-function lifeLoad():
+function lifeLoad(args):
     # Parse and validate the session storage
     lifeJSON = sessionStorageGet('life')
     life = null
@@ -400,7 +335,7 @@ function lifeLoad():
 
     # If there is no session, create a default session
     if life == null:
-        life = lifeNew()
+        life = lifeNew(args)
         lifeSave(life)
     endif
 
@@ -426,7 +361,7 @@ function lifeDraw(life, args):
 
     # Set the cell click handler
     if !objectGet(args, 'play'):
-        drawOnClick(lifeClickCell)
+        drawOnClick(systemPartial(lifeClickCell, life, args))
     endif
 
     # Draw the background
@@ -471,7 +406,7 @@ function lifeNext(life):
     cells = objectGet(life, 'cells')
 
     # Compute the next life generation
-    lifeNext = lifeNew(width, height, objectGet(life, 'initial'), true)
+    lifeNext = lifeNew(null, width, height, objectGet(life, 'initial'))
     nextCells = objectGet(lifeNext, 'cells')
     y = 0
     while y < height:
@@ -540,7 +475,7 @@ function lifeDecode(lifeStr):
     cellsStr = arrayGet(parts, 2)
 
     # Decode the cell string
-    life = lifeNew(width, height, lifeStr, true)
+    life = lifeNew(null, width, height, lifeStr)
     cells = objectGet(life, 'cells')
     iCell = 0
     iChar = 0
