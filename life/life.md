@@ -11,8 +11,17 @@ function lifeMain():
     # Set the title
     documentSetTitle("Conway's Game of Life")
 
+    # Parse arguments
+    args = argsParse(lifeArguments)
+    objectSet(args, 'background', objectGet(args, 'background') % arrayLength(lifeColors))
+    objectSet(args, 'border', mathMax(minBorder, objectGet(args, 'border')))
+    objectSet(args, 'borderRatio', mathMax(0, mathMin(0.4, objectGet(args, 'borderRatio'))))
+    objectSet(args, 'color', objectGet(args, 'color') % arrayLength(lifeColors))
+    objectSet(args, 'gap', mathMax(1, objectGet(args, 'gap')))
+    objectSet(args, 'initRatio', mathMax(0, mathMin(1, objectGet(args, 'initRatio'))))
+    objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(lifeRates) - 1, objectGet(args, 'rate'))))
+
     # Load the life state
-    args = lifeArgs()
     life = lifeLoad(args)
 
     # Load argument provided?
@@ -34,6 +43,23 @@ function lifeMain():
     # Set the window resize handler
     windowSetResize(systemPartial(lifeRender, life, args))
 endfunction
+
+
+# The Life application arguments
+lifeArguments = argsValidate(arrayNew( \
+    objectNew('name', 'background', 'type', 'int', 'default', 1), \
+    objectNew('name', 'border', 'type', 'int', 'default', 0), \
+    objectNew('name', 'borderRatio', 'type', 'float', 'default', 0.1), \
+    objectNew('name', 'color', 'type', 'int', 'default', 0), \
+    objectNew('name', 'depth', 'type', 'int', 'default', 6), \
+    objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
+    objectNew('name', 'gap', 'type', 'int', 'default', 1), \
+    objectNew('name', 'initRatio', 'type', 'float', 'default', 0.2), \
+    objectNew('name', 'load', 'explicit', true), \
+    objectNew('name', 'play', 'type', 'bool', 'default', true), \
+    objectNew('name', 'rate', 'type', 'int', 'default', 2), \
+    objectNew('name', 'save', 'type', 'bool', 'default', false, 'explicit', true) \
+))
 
 
 # Render the Life application
@@ -99,41 +125,6 @@ function lifeTimeout(life, args):
     # Set the timeout handler
     endTime = datetimeNow()
     lifeSetTimeout(life, args, startTime, endTime)
-endfunction
-
-
-# The Life application arguments
-lifeArguments = argsValidate(arrayNew( \
-    objectNew('name', 'background', 'type', 'int', 'default', 1), \
-    objectNew('name', 'border', 'type', 'int', 'default', 0), \
-    objectNew('name', 'borderRatio', 'type', 'float', 'default', 0.1), \
-    objectNew('name', 'color', 'type', 'int', 'default', 0), \
-    objectNew('name', 'depth', 'type', 'int', 'default', 6), \
-    objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
-    objectNew('name', 'gap', 'type', 'int', 'default', 1), \
-    objectNew('name', 'initRatio', 'type', 'float', 'default', 0.2), \
-    objectNew('name', 'load', 'explicit', true), \
-    objectNew('name', 'play', 'type', 'bool', 'default', true), \
-    objectNew('name', 'rate', 'type', 'int', 'default', 2), \
-    objectNew('name', 'save', 'type', 'bool', 'default', false, 'explicit', true) \
-))
-
-
-# Helper to parse the Life application arguments
-function lifeArgs():
-    # Parse arguments
-    args = argsParse(lifeArguments)
-
-    # Constrain arguments
-    objectSet(args, 'background', objectGet(args, 'background') % arrayLength(lifeColors))
-    objectSet(args, 'border', mathMax(minBorder, objectGet(args, 'border')))
-    objectSet(args, 'borderRatio', mathMax(0, mathMin(0.4, objectGet(args, 'borderRatio'))))
-    objectSet(args, 'color', objectGet(args, 'color') % arrayLength(lifeColors))
-    objectSet(args, 'gap', mathMax(1, objectGet(args, 'gap')))
-    objectSet(args, 'initRatio', mathMax(0, mathMin(1, objectGet(args, 'initRatio'))))
-    objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(lifeRates) - 1, objectGet(args, 'rate'))))
-
-    return args
 endfunction
 
 
