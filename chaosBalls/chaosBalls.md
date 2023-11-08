@@ -62,7 +62,7 @@ chaosBallsArguments = argsValidate(arrayNew( \
     objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
     objectNew('name', 'play', 'type', 'bool', 'default', true), \
     objectNew('name', 'rate', 'type', 'int', 'default', 3), \
-    objectNew('name', 'url') \
+    objectNew('name', 'url', 'global', 'vURL') \
 ))
 
 
