@@ -32,7 +32,7 @@ function lifeMain():
     lifeRender(life, args)
 
     # Set the window resize handler
-    windowSetResize(systemPartial(lifeResize, life, args))
+    windowSetResize(systemPartial(lifeRender, life, args))
 endfunction
 
 
@@ -65,12 +65,6 @@ function lifeSetTimeout(life, args, startTime, endTime):
     if objectGet(args, 'play'):
         windowSetTimeout(systemPartial(lifeTimeout, life, args), periodMs)
     endif
-endfunction
-
-
-# Life application window resize handler
-function lifeResize(life, args):
-    lifeRender(life, args)
 endfunction
 
 
@@ -138,6 +132,7 @@ function lifeArgs():
     objectSet(args, 'gap', mathMax(1, objectGet(args, 'gap')))
     objectSet(args, 'initRatio', mathMax(0, mathMin(1, objectGet(args, 'initRatio'))))
     objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(lifeRates) - 1, objectGet(args, 'rate'))))
+
     return args
 endfunction
 
@@ -254,7 +249,7 @@ function lifeClickReset(args):
 endfunction
 
 
-# Helper for width/height less/more click handlers
+# Life application width/height click handler
 function lifeClickWidthHeight(life, args, widthDelta, heightDelta):
     width = mathMax(10, widthDelta + objectGet(life, 'width'))
     height = mathMax(10, heightDelta + objectGet(life, 'height'))
