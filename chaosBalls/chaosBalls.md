@@ -8,8 +8,12 @@ include <forms.mds>
 
 # Chaos Balls application main entry point
 async function chaosBallsMain():
+    # Parse arguments
+    args = argsParse(chaosBallsArguments)
+    objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(chaosBallsRates) - 1, objectGet(args, 'rate'))))
+
     # Display Chaos Ball model documentation?
-    if vDoc:
+    if objectGet(args, 'doc'):
         documentSetTitle('Chaos Balls JSON Format')
         markdownPrint('[Home](#url=README.md)', '')
         elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
@@ -18,10 +22,6 @@ async function chaosBallsMain():
 
     # Set the title
     documentSetTitle('Chaos Balls')
-
-    # Parse arguments
-    args = argsParse(chaosBallsArguments)
-    objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(chaosBallsRates) - 1, objectGet(args, 'rate'))))
 
     # Load the session
     session = chaosBallsGetSession()
@@ -59,6 +59,7 @@ endfunction
 
 # The Chaos Balls application arguments
 chaosBallsArguments = argsValidate(arrayNew( \
+    objectNew('name', 'doc', 'type', 'bool'), \
     objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
     objectNew('name', 'play', 'type', 'bool', 'default', true), \
     objectNew('name', 'rate', 'type', 'int', 'default', 3), \
