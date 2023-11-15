@@ -4,77 +4,90 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include <args.mds>
 
-function main():
-    # Image size
-    width = if(vWidth, vWidth, 150)
-    height = if(vHeight, vHeight, 100)
-    pixelSize = if(vSize, vSize, 4)
 
-    # Maximum Mandelbrot set computation iterations
-    iter = if(vIter, vIter, 60)
-
-    # Mandelbrot point extents
-    x = if(vX, vX, -0.5)
-    y = if(vY, vY, 0)
-    xRange = if(vXR, vXR, 2.6)
-
-    # Mandelbrot color cycle
-    cycle = if(vCycle, vCycle, 0) % 4
+function mandelbrotMain():
+    # Parse arguments
+    args = argsParse(mandelbrotArguments)
+    width = objectGet(args, 'width')
+    height = objectGet(args, 'height')
+    pixelSize = objectGet(args, 'size')
+    iter = objectGet(args, 'iter')
+    x = objectGet(args, 'x')
+    y = objectGet(args, 'y')
+    xRange = objectGet(args, 'xRange')
+    cycle = objectGet(args, 'cycle')
 
     # Menu
     menuXYDelta = 0.1 * xRange
     menuIterDelta = 10
     menuWHDelta = 20
     markdownPrint( \
-        menuLinkPair('X', menuLink('Left', vWidth, vHeight, vSize, vIter, x - menuXYDelta, vY, vXR, vCycle), \
-            menuLink('Right', vWidth, vHeight, vSize, vIter, x + menuXYDelta, vY, vXR, vCycle)) + \
-            ': ' + x + '  ', \
-        menuLinkPair('Y', menuLink('Up', vWidth, vHeight, vSize, vIter, vX, y + menuXYDelta, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, vSize, vIter, vX, y - menuXYDelta, vXR, vCycle)) + \
-            ': ' + y + '  ', \
-        menuLinkPair('Zoom', menuLink('In', vWidth, vHeight, vSize, vIter, vX, vY, xRange - menuXYDelta, vCycle), \
-            menuLink('Out', vWidth, vHeight, vSize, vIter, vX, vY, xRange + menuXYDelta, vCycle)) + \
-            ': ' + xRange + '  ', \
-        menuLinkPair('Iter', menuLink('Up', vWidth, vHeight, vSize, iter + menuIterDelta, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, vSize, mathMax(20, iter - menuIterDelta), vX, vY, vXR, vCycle)) + \
-            ': ' + iter, \
+        mandelbrotMenuPair( \
+            'X', \
+            argsLink(mandelbrotArguments, 'Left', objectNew('x', x - menuXYDelta)), \
+            argsLink(mandelbrotArguments, 'Right', objectNew('x', x + menuXYDelta)) \
+        ) + ': ' + x + '  ', \
+        mandelbrotMenuPair( \
+            'Y', \
+            argsLink(mandelbrotArguments, 'Up', objectNew('y', y + menuXYDelta)), \
+            argsLink(mandelbrotArguments, 'Down', objectNew('y', y - menuXYDelta)) \
+        ) + ': ' + y + '  ', \
+        mandelbrotMenuPair( \
+            'Zoom', \
+            argsLink(mandelbrotArguments, 'In', objectNew('xRange', xRange - menuXYDelta)), \
+            argsLink(mandelbrotArguments, 'Out', objectNew('xRange', xRange + menuXYDelta)) \
+        ) + ': ' + xRange + '  ', \
+        mandelbrotMenuPair( \
+            'Iter', \
+            argsLink(mandelbrotArguments, 'Up', objectNew('iter', iter - menuIterDelta)), \
+            argsLink(mandelbrotArguments, 'Down', objectNew('iter', iter + menuIterDelta)) \
+        ) + ': ' + iter, \
         '', \
-        menuLink('Cycle', vWidth, vHeight, vSize, vIter, vX, vY, vXR, cycle + 1) + ' |', \
-        '[Reset](#var=) | ', \
-        menuLinkPair('Width', menuLink('Up', width + menuWHDelta, vHeight, vSize, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', mathMax(menuWHDelta, width - menuWHDelta), vHeight, vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
-        menuLinkPair('Height', menuLink('Up', vWidth, height + menuWHDelta, vSize, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, mathMax(menuWHDelta, height - menuWHDelta), vSize, vIter, vX, vY, vXR, vCycle)) + ' |', \
-        menuLinkPair('Size', menuLink('Up', vWidth, vHeight, pixelSize + 1, vIter, vX, vY, vXR, vCycle), \
-            menuLink('Down', vWidth, vHeight, mathMax(1, pixelSize - 1), vIter, vX, vY, vXR, vCycle)) \
+        argsLink(mandelbrotArguments, 'Cycle', objectNew('cycle', cycle + 1)) + ' |', \
+        argsLink(mandelbrotArguments, 'Reset', null, true) + ' | ', \
+        mandelbrotMenuPair( \
+            'Width', \
+            argsLink(mandelbrotArguments, 'Up', objectNew('width', width + menuWHDelta)), \
+            argsLink(mandelbrotArguments, 'Down', objectNew('width', mathMax(menuWHDelta, width - menuWHDelta))) \
+        ) + ' |', \
+        mandelbrotMenuPair( \
+            'Height', \
+            argsLink(mandelbrotArguments, 'Up', objectNew('height', height + menuWHDelta)), \
+            argsLink(mandelbrotArguments, 'Down', objectNew('height', mathMax(menuWHDelta, height - menuWHDelta))) \
+        ) + ' |', \
+        mandelbrotMenuPair( \
+            'Size', \
+            argsLink(mandelbrotArguments, 'Up', objectNew('size', pixelSize + 1)), \
+            argsLink(mandelbrotArguments, 'Down', objectNew('size', mathMax(1, pixelSize - 1))) \
+        ) \
     )
 
     # Draw the Mandelbrot set
     colors = arrayNew('#17becf', '#2ca02c', '#98df8a', '#1f77b4')
-    mandelbrotSet(width, height, pixelSize, colors, cycle, x, y, xRange, iter)
+    mandelbrotDraw(width, height, pixelSize, colors, cycle, x, y, xRange, iter)
 endfunction
 
 
-function menuLink(text, w, h, s, i, x, y, xr, vc):
-    args = if(w, '&var.vWidth=' + w, '') + \
-        if(h != null, '&var.vHeight=' + h, '') + \
-        if(s != null, '&var.vSize=' + s, '') + \
-        if(i != null, '&var.vIter=' + i, '') + \
-        if(x != null, '&var.vX=' + x, '') + \
-        if(y != null, '&var.vY=' + y, '') + \
-        if(xr != null, '&var.vXR=' + xr, '') + \
-        if(vc != null, '&var.vCycle=' + vc, '')
-    return '[' + text + '](#' + stringSlice(args, 1) + ')'
-endfunction
+mandelbrotArguments = argsValidate(arrayNew( \
+    objectNew('name', 'cycle', 'type', 'int', 'default', 0), \
+    objectNew('name', 'height', 'type', 'int', 'default', 100), \
+    objectNew('name', 'iter', 'type', 'int', 'default', 60), \
+    objectNew('name', 'size', 'type', 'int', 'default', 4), \
+    objectNew('name', 'width', 'type', 'int', 'default', 150), \
+    objectNew('name', 'x', 'type', 'float', 'default', -0.5), \
+    objectNew('name', 'xRange', 'global', 'vXR', 'type', 'float', 'default', 2.6), \
+    objectNew('name', 'y', 'type', 'float', 'default', 0) \
+))
 
 
-function menuLinkPair(text, link1, link2):
+function mandelbrotMenuPair(text, link1, link2):
     return '**' + text + '** (' + link1 + ' | ' + link2 + ')'
 endfunction
 
 
-function mandelbrotSet(width, height, pixelSize, colors, colorCycle, x, y, xRange, iter):
+function mandelbrotDraw(width, height, pixelSize, colors, colorCycle, x, y, xRange, iter):
     # Set the drawing size
     drawNew(width * pixelSize, height * pixelSize)
 
@@ -128,5 +141,5 @@ endfunction
 
 
 # Execute main
-main()
+mandelbrotMain()
 ~~~
