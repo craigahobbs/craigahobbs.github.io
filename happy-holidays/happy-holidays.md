@@ -2,23 +2,34 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include <args.mds>
+
 
 function main():
+    # Parse arguments
+    arguments = argsValidate(arrayNew( \
+        objectNew('name', 'message', 'default', 'Happy Holidays!'), \
+        objectNew('name', 'fullScreen', 'type', 'bool', 'default', false) \
+    ))
+    args = argsParse(arguments)
+
     # Set the title
-    titleText = if(vMessage, vMessage, 'Happy Holidays!')
+    titleText = objectGet(args, 'message')
     documentSetTitle(titleText)
 
     # Menu
-    if (!vFullScreen, markdownPrint( \
-        '**Happy Holidays**  ', \
-        '[Reset](#var=) |', \
-        "[Custom](#var.vMessage='Edit%20Message%20in%20URL') |", \
-        '[Full](#var.vFullScreen=1' + if(vMessage, "&var.vMessage='" + urlEncodeComponent(vMessage) + "'", '') + ')' \
-    ))
+    isFullScreen = objectGet(args, 'fullScreen')
+    if !isFullScreen:
+        markdownPrint( \
+            argsLink(arguments, 'Reset', null, true) + ' |', \
+            argsLink(arguments, 'Custom', objectNew('message', 'Edit Message in URL')) + ' |', \
+            argsLink(arguments, 'Full', objectNew('fullScreen', true)) \
+        )
+    endif
 
     # Compute the drawing width/height
     width = windowWidth() - 3 * documentFontSize()
-    height = windowHeight() - if(vFullScreen, 3, 6) * documentFontSize()
+    height = windowHeight() - if(isFullScreen, 3, 6) * documentFontSize()
 
     # Measure the title box height
     titleBoxWidth = 0.8 * width
