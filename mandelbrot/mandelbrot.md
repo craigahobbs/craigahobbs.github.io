@@ -10,63 +10,38 @@ include <args.mds>
 function mandelbrotMain():
     # Parse arguments
     args = argsParse(mandelbrotArguments)
-    width = objectGet(args, 'width')
-    height = objectGet(args, 'height')
-    pixelSize = objectGet(args, 'size')
-    iter = objectGet(args, 'iter')
-    x = objectGet(args, 'x')
-    y = objectGet(args, 'y')
-    xRange = objectGet(args, 'xRange')
     cycle = objectGet(args, 'cycle')
+    xRange = objectGet(args, 'xRange')
 
     # Menu
     menuXYDelta = 0.1 * xRange
     menuIterDelta = 10
     menuWHDelta = 20
     markdownPrint( \
-        mandelbrotMenuPair( \
-            'X', \
-            argsLink(mandelbrotArguments, 'Left', objectNew('x', x - menuXYDelta)), \
-            argsLink(mandelbrotArguments, 'Right', objectNew('x', x + menuXYDelta)) \
-        ) + ': ' + x + '  ', \
-        mandelbrotMenuPair( \
-            'Y', \
-            argsLink(mandelbrotArguments, 'Up', objectNew('y', y + menuXYDelta)), \
-            argsLink(mandelbrotArguments, 'Down', objectNew('y', y - menuXYDelta)) \
-        ) + ': ' + y + '  ', \
-        mandelbrotMenuPair( \
-            'Zoom', \
-            argsLink(mandelbrotArguments, 'In', objectNew('xRange', xRange - menuXYDelta)), \
-            argsLink(mandelbrotArguments, 'Out', objectNew('xRange', xRange + menuXYDelta)) \
-        ) + ': ' + xRange + '  ', \
-        mandelbrotMenuPair( \
-            'Iter', \
-            argsLink(mandelbrotArguments, 'Up', objectNew('iter', iter - menuIterDelta)), \
-            argsLink(mandelbrotArguments, 'Down', objectNew('iter', iter + menuIterDelta)) \
-        ) + ': ' + iter, \
+        mandelbrotUpDown(args, 'X', 'Left', 'Right', 'x', -menuXYDelta) + ' \\', \
+        mandelbrotUpDown(args, 'Y', 'Up', 'Down', 'y', menuXYDelta) + ' \\', \
+        mandelbrotUpDown(args, 'Zoom', 'In', 'Out', 'xRange', -menuXYDelta, menuXYDelta) + ' \\', \
+        mandelbrotUpDown(args, 'Iter', 'Up', 'Down', 'iter', menuIterDelta, menuIterDelta), \
         '', \
         argsLink(mandelbrotArguments, 'Cycle', objectNew('cycle', cycle + 1)) + ' |', \
         argsLink(mandelbrotArguments, 'Reset', null, true) + ' | ', \
-        mandelbrotMenuPair( \
-            'Width', \
-            argsLink(mandelbrotArguments, 'Up', objectNew('width', width + menuWHDelta)), \
-            argsLink(mandelbrotArguments, 'Down', objectNew('width', mathMax(menuWHDelta, width - menuWHDelta))) \
-        ) + ' |', \
-        mandelbrotMenuPair( \
-            'Height', \
-            argsLink(mandelbrotArguments, 'Up', objectNew('height', height + menuWHDelta)), \
-            argsLink(mandelbrotArguments, 'Down', objectNew('height', mathMax(menuWHDelta, height - menuWHDelta))) \
-        ) + ' |', \
-        mandelbrotMenuPair( \
-            'Size', \
-            argsLink(mandelbrotArguments, 'Up', objectNew('size', pixelSize + 1)), \
-            argsLink(mandelbrotArguments, 'Down', objectNew('size', mathMax(1, pixelSize - 1))) \
-        ) \
+        mandelbrotUpDown(args, 'Width', 'Up', 'Down', 'width', menuWHDelta, menuWHDelta, true) + ' |', \
+        mandelbrotUpDown(args, 'Height', 'Up', 'Down', 'height', menuWHDelta, menuWHDelta, true) + ' |', \
+        mandelbrotUpDown(args, 'Size', 'Up', 'Down', 'size', 1, 1, true) \
     )
 
     # Draw the Mandelbrot set
-    colors = arrayNew('#17becf', '#2ca02c', '#98df8a', '#1f77b4')
-    mandelbrotDraw(width, height, pixelSize, colors, cycle, x, y, xRange, iter)
+    mandelbrotDraw( \
+        objectGet(args, 'width'), \
+        objectGet(args, 'height'), \
+        objectGet(args, 'size'), \
+        arrayNew('#17becf', '#2ca02c', '#98df8a', '#1f77b4'), \
+        cycle, \
+        objectGet(args, 'x'), \
+        objectGet(args, 'y'), \
+        xRange, \
+        objectGet(args, 'iter') \
+    )
 endfunction
 
 
@@ -82,8 +57,24 @@ mandelbrotArguments = argsValidate(arrayNew( \
 ))
 
 
-function mandelbrotMenuPair(text, link1, link2):
-    return '**' + text + '** (' + link1 + ' | ' + link2 + ')'
+function mandelbrotUpDown(args, label, labelUp, labelDown, argName, argDelta, argMin, noValue):
+    # Get the argument value
+    argValue = objectGet(args, argName)
+    if argMin != null:
+        argValue = mathMax(argMin, argValue)
+    endif
+
+    # Compute the up/down links
+    linkUp = argsLink(mandelbrotArguments, labelUp, objectNew(argName, argValue + argDelta))
+    valueDown = argValue - argDelta
+    if argMin == null || valueDown >= argMin:
+        linkDown = argsLink(mandelbrotArguments, labelDown, objectNew(argName, valueDown))
+    else:
+        linkDown = labelDown
+    endif
+
+    return '**' + markdownEscape(label) + '**&nbsp;(' + linkUp + '&nbsp;|&nbsp;' + linkDown + ')' + \
+        if(noValue, '', ':&nbsp;' + argValue)
 endfunction
 
 
