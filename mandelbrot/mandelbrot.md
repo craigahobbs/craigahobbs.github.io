@@ -52,7 +52,7 @@ mandelbrotArguments = argsValidate(arrayNew( \
     objectNew('name', 'size', 'type', 'int', 'default', 4), \
     objectNew('name', 'width', 'type', 'int', 'default', 150), \
     objectNew('name', 'x', 'type', 'float', 'default', -0.5), \
-    objectNew('name', 'xRange', 'global', 'vXR', 'type', 'float', 'default', 2.6), \
+    objectNew('name', 'xRange', 'type', 'float', 'default', 2.6), \
     objectNew('name', 'y', 'type', 'float', 'default', 0) \
 ))
 
