@@ -17,8 +17,8 @@ endfunction
 
 
 downloadsArguments = argsValidate(arrayNew( \
-    objectNew('name', 'name'), \
-    objectNew('name', 'type') \
+    objectNew('name', 'name', 'explicit', true), \
+    objectNew('name', 'type', 'explicit', true) \
 ))
 
 
@@ -86,7 +86,7 @@ async function downloadsDashboard(packageName, packageType):
     # Document title
     title = packageName + ' (' + packageType + ') Downloads'
     markdownPrint( \
-        argsLink(downloadsArguments, 'Rankings', objectNew('name', null, 'type', null)), \
+        argsLink(downloadsArguments, 'Rankings'), \
         '', \
         '# ' + markdownEscape(title) \
     )
