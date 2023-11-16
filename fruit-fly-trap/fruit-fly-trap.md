@@ -2,16 +2,20 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include <args.mds>
+
 
 function main():
-    # Application inputs
-    isMetric = if(vMetric, vMetric, 0)
-    height = if(vHeight, vHeight, if(isMetric, 11.5, 4.5))
-    diameter = if(vDiameter, vDiameter, if(isMetric, 7.5, 3))
-    bottom = if(vBottom, vBottom, if(isMetric, 2, 0.75))
-    offset = if(vOffset, vOffset, if(isMetric, 2.5, 1))
+    # Parse arguments
+    args = argsParse(lifeArguments)
+    isMetric = objectGet(args, 'metric')
+    height = objectGet(args, 'height', if(isMetric, 11.5, 4.5))
+    diameter = objectGet(args, 'diameter', if(isMetric, 7.5, 3))
+    bottom = objectGet(args, 'bottom', if(isMetric, 2, 0.75))
+    offset = objectGet(args, 'offset', if(isMetric, 2.5, 1))
 
     # Computed values
+    precision = 3
     units = if(isMetric, 'cm', 'in')
     delta = if(isMetric, 0.1, 0.125)
     flapLength = if(isMetric, 0.5, 0.2)
@@ -23,14 +27,14 @@ function main():
     documentSetTitle(title)
 
     # Print the cone form?
-    if vPrint:
+    if objectGet(args, 'print'):
         # Print close link
         elementModelRender(objectNew( \
             'html', 'p', \
             'attr', objectNew('class', 'markdown-model-no-print'), \
             'elem', objectNew( \
                 'html', 'a', \
-                'attr', objectNew('href', documentURL(coneURL(objectNew('print', 0)))), \
+                'attr', objectNew('href', documentURL(argsURL(lifeArguments))), \
                 'elem', objectNew('text', 'Close') \
             ) \
         ))
@@ -64,47 +68,48 @@ function main():
     markdownPrint( \
         '## Instructions', \
         '', \
-        '[Reset](' + if(vMetric, '#var.vMetric=1', '#var=') + ')', \
-        '| [' + if(vMetric, 'Imperial', 'Metric') + '](' + if(vMetric, '#var=', '#var.vMetric=1') + ')', \
+        argsLink(lifeArguments, 'Reset', objectNew('metric', isMetric), true), \
+        ' | ', \
+        argsLink(lifeArguments, if(isMetric, 'Imperial', 'Metric'), objectNew('metric', !isMetric), true), \
         '', \
         '1. Take the following measurements from a drinking glass (see diagram above).', \
         '', \
         '    **Top diameter (d)** (' + \
             if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), \
-                coneLink('Less', objectNew('diameter', diameter - delta)), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', objectNew('diameter', mathRound(diameter - delta, precision))), 'Less') + ' | ' + \
             if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), \
-                coneLink('More', objectNew('diameter', diameter + delta)), 'More') + \
+                argsLink(lifeArguments, 'More', objectNew('diameter', mathRound(diameter + delta, precision))), 'More') + \
             '): ' + diameter + ' ' + units, \
         '', \
         '    **Height (h)** (' + \
             if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), \
-                coneLink('Less', objectNew('height', height - delta)), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', objectNew('height', mathRound(height - delta, precision))), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), \
-                coneLink('More', objectNew('height', height + delta)), 'More') + \
+                argsLink(lifeArguments, 'More', objectNew('height', mathRound(height + delta, precision))), 'More') + \
             '): ' + height + ' ' + units, \
         '', \
         '    **Bottom offset (o)** (' + \
             if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), \
-                coneLink('Less', objectNew('offset', offset - delta)), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', objectNew('offset', mathRound(offset - delta, precision))), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), \
-                coneLink('More', objectNew('offset', offset + delta)), 'More') + \
+                argsLink(lifeArguments, 'More', objectNew('offset', mathRound(offset + delta, precision))), 'More') + \
             '): ' + offset + ' ' + units, \
         '', \
         '    **Bottom diameter (b)** (' + \
             if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), \
-                coneLink('Less', objectNew('bottom', bottom - delta)), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', objectNew('bottom', mathRound(bottom - delta, precision))), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), \
-                coneLink('More', objectNew('bottom', bottom + delta)), 'More') + \
+                argsLink(lifeArguments, 'More', objectNew('bottom', mathRound(bottom + delta, precision))), 'More') + \
             '): ' + bottom + ' ' + units, \
         '', \
         '2. Print the cone form using the link below.', \
         '', \
-        '   ' + coneLink('Print Cone Form', objectNew('print', 1)), \
+        '   ' + argsLink(lifeArguments, 'Print Cone Form', objectNew('print', true)), \
         '', \
         "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
         '', \
         '4. Pour a small amount of fruit-fly-attracting liquid (e.g., apple cider vinegar) into the glass. Be', \
-        '   sure the liquid level is at least ' + if(vMetric, '1/2 cm.', '1/4 in.') + ' below the cone-bottom.', \
+        '   sure the liquid level is at least ' + if(isMetric, '1/2 cm.', '1/4 in.') + ' below the cone-bottom.', \
         '', \
         '5. Place the cone form in the glass. It may help to rub some water around the top rim of the glass', \
         '   to form a seal.', \
@@ -114,38 +119,14 @@ function main():
 endfunction
 
 
-function coneLink(text, args):
-    return '[' + text + '](' + coneURL(args) + ')'
-endfunction
-
-
-function coneURL(args):
-    # Argument overrides
-    bottom = objectGet(args, 'bottom')
-    diameter = objectGet(args, 'diameter')
-    height = objectGet(args, 'height')
-    metric = objectGet(args, 'metric')
-    offset = objectGet(args, 'offset')
-    print = objectGet(args, 'print')
-
-    # Variable arguments
-    bottom = if(bottom != null, bottom, vBottom)
-    diameter = if(diameter != null, diameter, vDiameter)
-    height = if(height != null, height, vHeight)
-    metric = if(metric != null, metric, vMetric)
-    offset = if(offset != null, offset, vOffset)
-    print = if(print != null, print, vPrint)
-
-    # Create the URL
-    parts = arrayNew()
-    if(bottom != null, arrayPush(parts, 'var.vBottom=' + mathRound(bottom, 3)))
-    if(diameter != null, arrayPush(parts, 'var.vDiameter=' + mathRound(diameter, 3)))
-    if(height != null, arrayPush(parts, 'var.vHeight=' + mathRound(height, 3)))
-    if(metric != null, arrayPush(parts, 'var.vMetric=' + metric))
-    if(offset != null, arrayPush(parts, 'var.vOffset=' + mathRound(offset, 3)))
-    if(print != null, arrayPush(parts, 'var.vPrint=' + print))
-    return if(arrayLength(parts), '#' + arrayJoin(parts, '&'), '#var=')
-endfunction
+lifeArguments = argsValidate(arrayNew( \
+    objectNew('name', 'bottom', 'type', 'float'), \
+    objectNew('name', 'diameter', 'type', 'float'), \
+    objectNew('name', 'height', 'type', 'float'), \
+    objectNew('name', 'metric', 'type', 'bool', 'default', false), \
+    objectNew('name', 'offset', 'type', 'float'), \
+    objectNew('name', 'print', 'type', 'bool', 'default', false, 'explicit', true) \
+))
 
 
 function isValidConeForm(diameterTop, diameterBottom, height, flapLength):
