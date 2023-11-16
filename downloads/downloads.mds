@@ -1,14 +1,25 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
+include <args.mds>
+
 
 async function downloadsMain(javascriptPackages, pythonPackages):
-    if vName != null && vType != null:
-        downloadsDashboard(vName, vType)
+    args = argsParse(downloadsArguments)
+    name = objectGet(args, 'name')
+    type = objectGet(args, 'type')
+    if name != null && type != null:
+        downloadsDashboard(name, type)
     else:
         downloadsRankings(javascriptPackages, pythonPackages)
     endif
 endfunction
+
+
+downloadsArguments = argsValidate(arrayNew( \
+    objectNew('name', 'name'), \
+    objectNew('name', 'type') \
+))
 
 
 async function downloadsRankings(javascriptPackages, pythonPackages):
@@ -52,8 +63,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
 
         # Add the rankings data row
         arrayPush(packageData, objectNew( \
-            'Package', '[' + markdownEscape(packageName) + "](#var.vName='" + urlEncodeComponent(packageName) + \
-                "'&var.vType='" + urlEncodeComponent(packageType) + "')", \
+            'Package', argsLink(downloadsArguments, packageName, objectNew('name', packageName, 'type', packageType)), \
             'Language', '[' + markdownEscape(packageType) + '](' + packageURL + ')', \
             'Monthly Downloads', objectGet(downloadsMonthlyData(data), 'monthlyAverage') \
         ))
@@ -75,7 +85,11 @@ endfunction
 async function downloadsDashboard(packageName, packageType):
     # Document title
     title = packageName + ' (' + packageType + ') Downloads'
-    markdownPrint('[Rankings](#var=)', '', '# ' + markdownEscape(title))
+    markdownPrint( \
+        argsLink(downloadsArguments, 'Rankings', objectNew('name', null, 'type', null)), \
+        '', \
+        '# ' + markdownEscape(title) \
+    )
     documentSetTitle(title)
 
     # Load and validate the package data
