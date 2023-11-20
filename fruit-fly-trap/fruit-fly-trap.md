@@ -104,7 +104,7 @@ function main():
         '', \
         '2. Print the cone form using the link below.', \
         '', \
-        '   ' + argsLink(lifeArguments, 'Print Cone Form', objectNew('print', true)), \
+        '   ' + argsLink(lifeArguments, 'Print Cone Form', objectNew('print', true), false, argsTopHeaderId), \
         '', \
         "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
         '', \
