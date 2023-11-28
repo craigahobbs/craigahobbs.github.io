@@ -101,15 +101,16 @@ async function downloadsDashboard(packageName, packageType):
 
     # Compute the monthly data and averages
     monthly = downloadsMonthlyData(data)
+    dataClean = objectGet(monthly, 'dataClean')
     dataMonthly = objectGet(monthly, 'dataMonthly')
-    dataMonthlyComplete = objectGet(monthly, 'dataMonthlyComplete')
+    monthlyAverage = objectGet(monthly, 'monthlyAverage')
 
     # Chart constants
     chartWidth = 1000
     chartHeight = 250
 
     # Render the monthly line chart
-    dataLineChart(dataMonthlyComplete, objectNew( \
+    dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
@@ -120,6 +121,19 @@ async function downloadsDashboard(packageName, packageType):
         'yLines', arrayNew( \
             objectNew('value', objectGet(monthly, 'monthlyAverage')) \
         ), \
+        'datetime', 'day', \
+        'precision', 0 \
+    ))
+
+    # Render the clean daily line chart
+    dataLineChart(dataClean, objectNew( \
+        'title', 'Daily Downloads (clean) - ' + packageName, \
+        'width', chartWidth, \
+        'height', chartHeight, \
+        'x', 'date', \
+        'y', arrayNew('downloads'), \
+        'color', 'category', \
+        'yTicks', objectNew('start', 0), \
         'datetime', 'day', \
         'precision', 0 \
     ))
@@ -141,7 +155,7 @@ async function downloadsDashboard(packageName, packageType):
     dataSort(dataMonthly, arrayNew(arrayNew('month', true), arrayNew('category')))
     dataTable(dataMonthly, objectNew( \
         'categories', arrayNew('month', 'category'), \
-        'fields', arrayNew('downloads', '%avg'), \
+        'fields', arrayNew('downloads', '%avg', 'partial'), \
         'formats', objectNew( \
             'downloads', objectNew('align', 'right') \
         ), \
@@ -151,37 +165,93 @@ endfunction
 
 
 function downloadsMonthlyData(data):
-    # Add month/year calculated field
-    dataCalculatedField(data, 'month', 'datetimeNew(year(date), month(date), 1)')
+    # Replace extreme outliers with a filtered average
+    dataStddev = dataAggregate(data, objectNew( \
+        'categories', arrayNew('category'), \
+        'measures', arrayNew( \
+            objectNew('field', 'downloads', 'name', 'downloadsStddev', 'function', 'stddev') \
+        ) \
+    ))
+    dataClean = arrayNew()
+    for rowStddev in dataStddev:
+        categoryStddev = objectGet(rowStddev, 'category')
+        downloadsMax = 4 * objectGet(rowStddev, 'downloadsStddev')
+        for row in data:
+            if categoryStddev == objectGet(row, 'category'):
+                rowClean = objectCopy(row)
+                if objectGet(row, 'downloads') > downloadsMax:
+                    objectSet(rowClean, 'downloads', null)
+                endif
+                arrayPush(dataClean, rowClean)
+            endif
+        endfor
+    endfor
+    dataAvg = dataAggregate(dataClean, objectNew( \
+        'categories', arrayNew('category'), \
+        'measures', arrayNew( \
+            objectNew('field', 'downloads', 'name', 'downloadsAvg', 'function', 'average') \
+        ) \
+    ))
+    for rowAvg in dataAvg:
+        categoryAvg = objectGet(rowAvg, 'category')
+        downloadsAvg = mathRound(objectGet(rowAvg, 'downloadsAvg'), 0)
+        for rowClean in dataClean:
+            if categoryAvg == objectGet(rowClean, 'category'):
+                if objectGet(rowClean, 'downloads') == null:
+                    objectSet(rowClean, 'downloads', downloadsAvg)
+                endif
+            endif
+        endfor
+    endfor
 
-    # Compute the average monthly download data
-    dataMonthly = dataAggregate(data, objectNew( \
+    # Compute the monthly download data
+    dataCalculatedField(dataClean, 'month', 'datetimeNew(year(date), month(date), 1)')
+    dataCalculatedField(dataClean, 'monthDay', 'datetimeDay(date)')
+    dataMonthly = dataAggregate(dataClean, objectNew( \
         'categories', arrayNew('month', 'category'), \
         'measures', arrayNew( \
-            objectNew('field', 'downloads', 'function', 'sum') \
+            objectNew('field', 'downloads', 'function', 'sum'), \
+            objectNew('field', 'monthDay', 'name', 'monthDayMin', 'function', 'min'), \
+            objectNew('field', 'monthDay', 'name', 'monthDayMax', 'function', 'max') \
         ) \
     ))
+    dataCalculatedField(dataMonthly, 'monthCount', 'monthDayMax - monthDayMin + 1')
 
-    # Exclude the first month of data if its incomplete
-    dataMinDate = dataAggregate(data, objectNew( \
+    # Adjust downloads for partial months
+    dataMinMax = dataAggregate(dataClean, objectNew( \
         'measures', arrayNew( \
-            objectNew('field', 'date', 'function', 'min') \
+            objectNew('field', 'month', 'name', 'monthMin', 'function', 'min'), \
+            objectNew('field', 'month', 'name', 'monthMax', 'function', 'max') \
         ) \
     ))
-    minDate = objectGet(arrayGet(dataMinDate, 0), 'date')
-    if datetimeDay(minDate) != 1:
-        dataMonthlyComplete = dataFilter(dataMonthly, 'datetimeYear(month) != minYear || datetimeMonth(month) != minMonth', \
-            objectNew('minMonth', datetimeMonth(minDate), 'minYear', datetimeYear(minDate)))
-    else:
-        dataMonthlyComplete = dataMonthly
-    endif
+    dataMonthly = dataFilter(dataMonthly, \
+        '(month - monthMin != 0 && month - monthMax != 0) || monthCount >= 5', \
+        arrayGet(dataMinMax, 0) \
+    )
+    dataCalculatedField(dataMonthly, 'monthDays', 'arrayGet(monthDays, datetimeMonth(month) - 1)', objectNew( \
+        'monthDays', arrayNew(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) \
+    ))
+    dataCalculatedField(dataMonthly, 'partial', \
+        "if((month - monthMin == 0 || month - monthMax == 0) && monthCount < monthDays, '*', '')", \
+        arrayGet(dataMinMax, 0) \
+    )
+    dataCalculatedField(dataMonthly, 'downloads', \
+        "if(partial == '', downloads, round(downloads * monthDays / monthCount, 0))", \
+        arrayGet(dataMinMax, 0) \
+    )
 
-    # Exclude the current month of data
-    dataMonthlyComplete = dataFilter(dataMonthlyComplete, 'datetimeYear(month) != curYear || datetimeMonth(month) != curMonth', \
-        objectNew('curMonth', datetimeMonth(datetimeNow()), 'curYear', datetimeYear(datetimeNow())))
+    # Filter leading zero-months and months with insufficient data
+    dataSort(dataMonthly, arrayNew(arrayNew('month'), arrayNew('category')))
+    dataWithMirrors = dataFilter(dataMonthly, "category == 'with_mirrors'")
+    for row, ixRow in dataWithMirrors:
+        if objectGet(row, 'downloads') != 0:
+            dataMonthly = dataFilter(dataMonthly, 'month >= monthMin', objectNew('monthMin', objectGet(row, 'month')))
+            dataWithMirrors = dataFilter(dataWithMirrors, 'month >= monthMin', objectNew('monthMin', objectGet(row, 'month')))
+            break
+        endif
+    endfor
 
     # Compute the monthly average (excluding current month)
-    dataWithMirrors = dataFilter(dataMonthlyComplete, "category == 'with_mirrors'")
     dataAverage = dataAggregate(dataWithMirrors, objectNew( \
         'measures', arrayNew( \
             objectNew('field', 'downloads', 'function', 'average') \
@@ -198,8 +268,8 @@ function downloadsMonthlyData(data):
     )
 
     return objectNew( \
+        'dataClean', dataClean, \
         'dataMonthly', dataMonthly, \
-        'dataMonthlyComplete', dataMonthlyComplete, \
         'monthlyAverage', monthlyAverage \
     )
 endfunction
