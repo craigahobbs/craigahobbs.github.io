@@ -5,35 +5,35 @@ Wifi Password: Exitsign1!
 
 ## Thursday
 
-- **9AM** Breakfast at [Cascade Academy]
+- **9AM** - Breakfast at [Cascade Academy]
 
-- **10AM** Conference at [Homestead Resort] 700 Homestead Drive, Midway UT 84049 in the **Wasatch 2 Conference Room**
+- **10AM** - Conference at [Homestead Resort] 700 Homestead Drive, Midway UT 84049 in the **Wasatch 2 Conference Room**
 
-- **10AM** Welcome-Introductions (Leadership Team & Parents only)
+- **10AM** - Welcome-Introductions (Leadership Team & Parents only)
 
-- **11AM** Anxiety cycles education thinking errors
+- **11AM** - Anxiety cycles education thinking errors
 
-- **12:30** PM Lunch catered by The Heirloom Commons followed by a Wellness Walk (students will join us)
+- **12:30PM** - Lunch catered by The Heirloom Commons followed by a Wellness Walk (students will join us)
 
-- **2PM** Quadrants, students and parent goals
+- **2PM** - Quadrants, students and parent goals
 
-- **3PM** Intro to Recreation Therapy
+- **3PM** - Intro to Recreation Therapy
 
-- **3:30** PM Improv with Cascade Therapist Amy Griffin
+- **3:30** - PM Improv with Cascade Therapist Amy Griffin
 
-- **5PM** Wrap up and review plans for tomorrow
+- **5PM** - Wrap up and review plans for tomorrow
 
 
 ## Friday
 
-- **9AM** Meet at [Wasatch County Parks & Rec] 345 W. 600 S. Heber City for an Adventure Therapy
+- **9AM** - Meet at [Wasatch County Parks & Rec] 345 W. 600 S. Heber City for an Adventure Therapy
   experience with your child and our Recreational Therapist Spencer Ott
 
-- **12:30PM** Lunch at [Cascade Academy] provided by Chef Jerry with your student
+- **12:30PM** - Lunch at [Cascade Academy] provided by Chef Jerry with your student
 
-- **1PM** Breakout sessions with Academics, Residential, Nursing, & Art
+- **1PM** - Breakout sessions with Academics, Residential, Nursing, & Art
 
-- **4:15PM** to 5PM Closing session and goodbyes with Caleb Cottle
+- **4:15PM** - to 5PM Closing session and goodbyes with Caleb Cottle
 
 
 ## Adventure Therapy
