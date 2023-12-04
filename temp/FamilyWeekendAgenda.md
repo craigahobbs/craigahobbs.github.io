@@ -13,7 +13,7 @@ Wifi Password: Exitsign1!
 
 - **11AM** Anxiety cycles education thinking errors
 
-- **12:30 PM Lunch catered by The Heirloom Commons followed by a Wellness Walk (students will join us)
+- **12:30** PM Lunch catered by The Heirloom Commons followed by a Wellness Walk (students will join us)
 
 - **2PM** Quadrants, students and parent goals
 
