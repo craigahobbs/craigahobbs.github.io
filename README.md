@@ -1,7 +1,5 @@
 # craigahobbs.github.io
 
-[GitHub](https://github.com/craigahobbs)
-
 
 ## Applications
 
