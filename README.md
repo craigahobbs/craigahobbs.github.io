@@ -7,8 +7,6 @@
 
 [MarkdownUp](https://github.com/craigahobbs/markdown-up#readme)
 
-[MarkdownUp Applications](https://craigahobbs.github.io/#url=MarkdownUpApplications.md)
-
 [npm Dependency Explorer](https://craigahobbs.github.io/npm-dependency-explorer/)
 
 
