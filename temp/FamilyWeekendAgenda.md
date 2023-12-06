@@ -1,6 +1,9 @@
 # Growth Zone Parent Weekend
 
-Wifi Password: Exitsign1!
+
+## House
+
+[620 W Augusta Dr Midway, UT 84049]
 
 
 ## Thursday
@@ -36,6 +39,11 @@ Wifi Password: Exitsign1!
 - **4:15PM** - to 5PM Closing session and goodbyes with Caleb Cottle
 
 
+## Miscellaneous
+
+Wifi Password: Exitsign1!
+
+
 ## Adventure Therapy
 
 **When:**
@@ -62,7 +70,7 @@ anxiety, how experiences can build self-efficacy and reduce anxiety symptoms and
 like many other activities can be a powerful tool for therapy. You do not need to have any
 experience in climbing. All levels of skill are considered in this experience.
 
-
+[620 W Augusta Dr Midway, UT 84049]: https://maps.apple.com/?address=620%20W%20Augusta%20Dr,%20Midway,%20UT%20%2084049,%20United%20States&ll=40.525798,-111.484890&q=620%20W%20Augusta%20Dr
 [Cascade Academy]: https://maps.apple.com/?address=430%20W%20200%20N,%20Midway,%20UT%20%2084049,%20United%20States&auid=6430017262638845334&ll=40.516788,-111.481495&lsp=9902&q=Cascade%20Academy
 [Fit Stop Health Club]: https://maps.apple.com/?address=345%20W%20600%20S,%20Heber%20City,%20UT%2084032,%20United%20States&auid=804705269332540380&ll=40.499259,-111.419743&lsp=9902&q=The%20Fit%20Stop%20Health%20Club
 [Homestead Resort]: https://maps.apple.com/?address=700%20N%20Homestead%20Dr,%20Midway,%20UT%2084049,%20United%20States&auid=16918804290958853939&ll=40.523306,-111.484404&lsp=9902&q=Homestead%20Resort
