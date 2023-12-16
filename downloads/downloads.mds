@@ -116,7 +116,6 @@ async function downloadsDashboard(packageName, packageType):
         'height', chartHeight, \
         'x', 'month', \
         'y', arrayNew('downloads'), \
-        'color', 'category', \
         'yTicks', objectNew('start', 0), \
         'yLines', arrayNew( \
             objectNew('value', objectGet(monthly, 'monthlyAverage')) \
@@ -132,7 +131,6 @@ async function downloadsDashboard(packageName, packageType):
         'height', chartHeight, \
         'x', 'date', \
         'y', arrayNew('downloads'), \
-        'color', 'category', \
         'yTicks', objectNew('start', 0), \
         'datetime', 'day', \
         'precision', 0 \
@@ -145,17 +143,15 @@ async function downloadsDashboard(packageName, packageType):
         'height', chartHeight, \
         'x', 'date', \
         'y', arrayNew('downloads'), \
-        'color', 'category', \
         'yTicks', objectNew('start', 0), \
         'datetime', 'day', \
         'precision', 0 \
     ))
 
     # Render the monthly table by most recent
-    dataSort(dataMonthly, arrayNew(arrayNew('month', true), arrayNew('category')))
+    dataSort(dataMonthly, arrayNew(arrayNew('month', true)))
     dataTable(dataMonthly, objectNew( \
-        'categories', arrayNew('month', 'category'), \
-        'fields', arrayNew('downloads', '%avg', 'partial'), \
+        'fields', arrayNew('month', 'downloads', '%avg', 'partial'), \
         'formats', objectNew( \
             'downloads', objectNew('align', 'right') \
         ), \
@@ -167,48 +163,36 @@ endfunction
 function downloadsMonthlyData(data):
     # Replace extreme outliers with a filtered average
     dataStddev = dataAggregate(data, objectNew( \
-        'categories', arrayNew('category'), \
         'measures', arrayNew( \
             objectNew('field', 'downloads', 'name', 'downloadsStddev', 'function', 'stddev') \
         ) \
     ))
     dataClean = arrayNew()
-    for rowStddev in dataStddev:
-        categoryStddev = objectGet(rowStddev, 'category')
-        downloadsMax = 4 * objectGet(rowStddev, 'downloadsStddev')
-        for row in data:
-            if categoryStddev == objectGet(row, 'category'):
-                rowClean = objectCopy(row)
-                if objectGet(row, 'downloads') > downloadsMax:
-                    objectSet(rowClean, 'downloads', null)
-                endif
-                arrayPush(dataClean, rowClean)
-            endif
-        endfor
+    downloadsMax = 4 * objectGet(arrayGet(dataStddev, 0), 'downloadsStddev')
+    for row in data:
+        rowClean = objectCopy(row)
+        if objectGet(row, 'downloads') > downloadsMax:
+            objectSet(rowClean, 'downloads', null)
+        endif
+        arrayPush(dataClean, rowClean)
     endfor
     dataAvg = dataAggregate(dataClean, objectNew( \
-        'categories', arrayNew('category'), \
         'measures', arrayNew( \
             objectNew('field', 'downloads', 'name', 'downloadsAvg', 'function', 'average') \
         ) \
     ))
-    for rowAvg in dataAvg:
-        categoryAvg = objectGet(rowAvg, 'category')
-        downloadsAvg = mathRound(objectGet(rowAvg, 'downloadsAvg'), 0)
-        for rowClean in dataClean:
-            if categoryAvg == objectGet(rowClean, 'category'):
-                if objectGet(rowClean, 'downloads') == null:
-                    objectSet(rowClean, 'downloads', downloadsAvg)
-                endif
-            endif
-        endfor
+    downloadsAvg = mathRound(objectGet(arrayGet(dataAvg, 0), 'downloadsAvg'), 0)
+    for rowClean in dataClean:
+        if objectGet(rowClean, 'downloads') == null:
+            objectSet(rowClean, 'downloads', downloadsAvg)
+        endif
     endfor
 
     # Compute the monthly download data
     dataCalculatedField(dataClean, 'month', 'datetimeNew(year(date), month(date), 1)')
     dataCalculatedField(dataClean, 'monthDay', 'datetimeDay(date)')
     dataMonthly = dataAggregate(dataClean, objectNew( \
-        'categories', arrayNew('month', 'category'), \
+        'categories', arrayNew('month'), \
         'measures', arrayNew( \
             objectNew('field', 'downloads', 'function', 'sum'), \
             objectNew('field', 'monthDay', 'name', 'monthDayMin', 'function', 'min'), \
@@ -241,18 +225,16 @@ function downloadsMonthlyData(data):
     )
 
     # Filter leading zero-months and months with insufficient data
-    dataSort(dataMonthly, arrayNew(arrayNew('month'), arrayNew('category')))
-    dataWithMirrors = dataFilter(dataMonthly, "category == 'with_mirrors'")
-    for row, ixRow in dataWithMirrors:
+    dataSort(dataMonthly, arrayNew(arrayNew('month')))
+    for row, ixRow in dataMonthly:
         if objectGet(row, 'downloads') != 0:
             dataMonthly = dataFilter(dataMonthly, 'month >= monthMin', objectNew('monthMin', objectGet(row, 'month')))
-            dataWithMirrors = dataFilter(dataWithMirrors, 'month >= monthMin', objectNew('monthMin', objectGet(row, 'month')))
             break
         endif
     endfor
 
     # Compute the monthly average (excluding current month)
-    dataAverage = dataAggregate(dataWithMirrors, objectNew( \
+    dataAverage = dataAggregate(dataMonthly, objectNew( \
         'measures', arrayNew( \
             objectNew('field', 'downloads', 'function', 'average') \
         ) \
@@ -263,7 +245,7 @@ function downloadsMonthlyData(data):
     dataCalculatedField( \
         dataMonthly, \
         '%avg', \
-        "if(category == 'with_mirrors' && monthlyAverage, numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%', '')", \
+        "if(monthlyAverage, numberToFixed(100 * (downloads - monthlyAverage) / monthlyAverage, 1) + '%', '')", \
         objectNew('monthlyAverage', monthlyAverage) \
     )
 
@@ -286,12 +268,10 @@ endfunction
 function downloadsJavascriptDataValidate(dataRaw):
     # Reshape the data
     data = arrayNew()
-    downloads = objectGet(dataRaw, 'downloads')
-    for download in downloads:
+    for row in objectGet(dataRaw, 'downloads'):
         arrayPush(data, objectNew( \
-            'date', objectGet(download, 'day'), \
-            'downloads', objectGet(download, 'downloads'), \
-            'category', 'with_mirrors' \
+            'date', objectGet(row, 'day'), \
+            'downloads', objectGet(row, 'downloads') \
         ))
     endfor
 
@@ -307,5 +287,17 @@ endfunction
 
 
 function downloadsPythonDataValidate(dataRaw):
-    return dataValidate(objectGet(dataRaw, 'data'))
+    # Reshape the data
+    data = arrayNew()
+    for row in objectGet(dataRaw, 'data'):
+        if objectGet(row, 'category') == 'without_mirrors':
+            arrayPush(data, objectNew( \
+                'date', objectGet(row, 'date'), \
+                'downloads', objectGet(row, 'downloads') \
+            ))
+        endif
+    endfor
+
+    # Validate the data
+    return dataValidate(data)
 endfunction
