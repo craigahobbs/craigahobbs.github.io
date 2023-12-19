@@ -8,6 +8,9 @@ include <pager.mds>
 async function moneyMain(options):
     pagerModel = objectNew( \
         'pages', arrayNew( \
+            objectNew('name', 'About', 'type', objectNew('markdown', objectNew( \
+                'url', 'https://craigahobbs.github.io/money/README.md' \
+            ))), \
             objectNew('name', 'Report', 'type', objectNew('function', objectNew( \
                 'function', systemPartial(moneyPageReport, options), 'title', 'Money' \
             ))), \
