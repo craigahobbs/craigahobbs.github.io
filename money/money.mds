@@ -1,0 +1,242 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/markdown-up/blob/main/LICENSE
+
+include <pager.mds>
+
+
+# The money application main entry point
+async function moneyMain(options):
+    pagerModel = objectNew( \
+        'pages', arrayNew( \
+            objectNew('name', 'Report', 'type', objectNew('function', objectNew( \
+                'function', systemPartial(moneyPageReport, options), 'title', 'Money' \
+            ))), \
+            objectNew('name', 'Schema', 'type', objectNew('function', objectNew( \
+                'function', moneyPageSchema \
+            ))) \
+        ) \
+    )
+    pagerMain(pagerModel, objectNew('hideNav', true, 'start', 'Report'))
+endfunction
+
+
+async function moneyPageReport(options):
+    endDate = objectGet(options, 'endDate', datetimeNew(datetimeYear(datetimeNow()) + 3, 1, 1))
+    url = objectGet(options, 'url', 'money.json')
+
+    # Load the money model
+    moneyText = systemFetch(url, null, true)
+    moneyText = stringReplace(moneyText, regexNew('$\\s+//.*$', 'mg'), '')
+    moneyModel = schemaValidate(moneyTypes, "Money", jsonParse(moneyText))
+    if moneyModel == null:
+        markdownPrint('**Error:** Failed to load "' + url + '"')
+        return
+    endif
+
+    # Generate the money data
+    data = moneyData(moneyModel, endDate)
+
+    # Render the money report
+    moneyReport(data)
+endfunction
+
+
+function moneyPageSchema():
+    documentSetTitle('Money Schema')
+    elementModelRender(schemaElements(moneyTypes, 'Money'))
+endfunction
+
+
+# Generate the money transaction data
+function moneyData(moneyModel, endDate):
+    beginDate = objectGet(moneyModel, 'beginDate')
+
+    # Create the initial account balances
+    accountNames = arrayNew()
+    initialRow = objectNew('Date', beginDate, 'Amount', 0, 'Description', '')
+    data = arrayNew(initialRow)
+    for account in objectGet(moneyModel, 'accounts'):
+        accountName = objectGet(account, 'name')
+        arrayPush(accountNames, accountName)
+        objectSet(initialRow, accountName, objectGet(account, 'balance'))
+    endfor
+
+    # Add the transaction rows
+    for txn in objectGet(moneyModel, 'transactions'):
+        txnDate = objectGet(txn, 'date')
+        txnAmount = objectGet(txn, 'amount')
+        txnDesc = objectGet(txn, 'description')
+        txnAccount = objectGet(txn, 'account')
+        txnDest = objectGet(txn, 'destination')
+        txnRecur = objectGet(txn, 'recurs')
+        txnRecurUnit = objectGet(txnRecur, 'unit')
+        txnRecurPeriod = objectGet(txnRecur, 'period', 1)
+        txnRecurCount = if(txnRecur != null, objectGet(txnRecur, 'count'), 1)
+
+        # Add the transaction rows (as account deltas)
+        recurCount = 0
+        while (txnRecurCount == null || recurCount < txnRecurCount) && txnDate - endDate <= 0:
+            if txnDate - beginDate >= 0:
+                # Add the transaction delta row
+                txnRow = objectNew('Date', txnDate, txnAccount, txnAmount, 'Amount', txnAmount, 'Description', txnDesc)
+                if txnDest != null:
+                    objectSet(txnRow, txnDest, -txnAmount)
+                endif
+                arrayPush(data, txnRow)
+            endif
+
+            # Compute the next transaction date
+            if txnRecurUnit == 'year':
+                txnDate = datetimeNew(datetimeYear(txnDate) + txnRecurPeriod, datetimeMonth(txnDate), datetimeDay(txnDate))
+            elif txnRecurUnit == 'month':
+                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate) + txnRecurPeriod, datetimeDay(txnDate))
+            elif txnRecurUnit == 'week':
+                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + 7 * txnRecurPeriod)
+            else:
+                # txnRecurUnit == 'day'
+                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + txnRecurPeriod)
+            endif
+
+            recurCount = recurCount + 1
+        endwhile
+    endfor
+
+    # Resolve the transaction rows
+    dataSort(data, arrayNew(arrayNew('Date')))
+    for txnRow, ixTxnRow in data:
+        if ixTxnRow != 0:
+            for txnAccount in accountNames:
+                if txnAccount != 'Date':
+                    balance = objectGet(arrayGet(data, ixTxnRow - 1), txnAccount) + objectGet(txnRow, txnAccount, 0)
+                    objectSet(txnRow, txnAccount, balance)
+                endif
+            endfor
+        endif
+    endfor
+
+    return data
+endfunction
+
+
+# Render the money report
+function moneyReport(data):
+    # Compute the account names
+    accountNames = arrayNew()
+    for fieldName in objectKeys(arrayGet(data, 0)):
+        if fieldName != 'Date' && fieldName != 'Amount' && fieldName != 'Description':
+            arrayPush(accountNames, fieldName)
+        endif
+    endfor
+
+    # Render the line chart
+    lineData = arrayNew()
+    for row in data:
+        for accountName in accountNames:
+            arrayPush(lineData, objectNew( \
+                'Date', objectGet(row, 'Date'), \
+                'Account', accountName, \
+                'Balance', objectGet(row, accountName) \
+            ))
+        endfor
+    endfor
+    dataLineChart(lineData, objectNew( \
+        'width', 900, \
+        'height', 300, \
+        'precision', 2, \
+        'datetime', 'day', \
+        'x', 'Date', \
+        'y', arrayNew('Balance'), \
+        'color', 'Account', \
+        'xTicks', objectNew('count', 5), \
+        'yTicks', objectNew('count', 5), \
+        'yLines', arrayNew(objectNew('value', 0)) \
+    ))
+
+    # Render the table
+    fields = arrayNew('Date')
+    formats = objectNew('Amount', objectNew('align', 'right'))
+    for accountName in accountNames:
+        arrayPush(fields, accountName)
+        objectSet(formats, accountName, objectNew('align', 'right'))
+    endfor
+    arrayPush(fields, 'Amount', 'Description')
+    dataTable(data, objectNew( \
+        'datetime', 'day', \
+        'fields', fields, \
+        'formats', formats, \
+        'precision', 2, \
+        'trim', false \
+    ))
+endfunction
+
+
+# The money schema
+moneyTypes = schemaParse( \
+    'group "Money"', \
+    '', \
+    '', \
+    '# A money projection model', \
+    'struct Money', \
+    '', \
+    '    # The starting date', \
+    '    date beginDate', \
+    '', \
+    '    # The account list', \
+    '    Account[len > 0] accounts', \
+    '', \
+    '    # The scheduled transactions', \
+    '    Transaction[len > 0] transactions', \
+    '', \
+    '', \
+    '# An account model', \
+    'struct Account', \
+    '', \
+    '    # The account name', \
+    '    string name', \
+    '', \
+    '    # The starting balance', \
+    '    float balance', \
+    '', \
+    '', \
+    '# A transaction model', \
+    'struct Transaction', \
+    '', \
+    '    # The transfer date', \
+    '    date date', \
+    '', \
+    '    # The transfer amount', \
+    '    float amount', \
+    '', \
+    '    # The transfer description', \
+    '    string description', \
+    '', \
+    '    # The source account name', \
+    '    string account', \
+    '', \
+    '    # The destination account name', \
+    '    optional string destination', \
+    '', \
+    '    # Recurrence', \
+    '    optional Recurrence recurs', \
+    '', \
+    '', \
+    '# A recurrence model', \
+    'struct Recurrence', \
+    '', \
+    '    # The recurrence unit', \
+    '    RecurrenceUnit unit', \
+    '', \
+    '    # The number of units between recurrence', \
+    '    optional int(> 0) period', \
+    '', \
+    '    # The number of recurrences', \
+    '    optional int(>= 0) count', \
+    '', \
+    '', \
+    '# A recurrance unit', \
+    'enum RecurrenceUnit', \
+    '    year', \
+    '    month', \
+    '    week', \
+    '    day' \
+)
