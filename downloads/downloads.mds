@@ -121,10 +121,10 @@ async function downloadsDashboard(packageName, packageType):
             objectNew('value', objectGet(monthly, 'monthlyAverage')) \
         ), \
         'datetime', 'day', \
-        'precision', 0 \
+        'precision', 1 \
     ))
 
-    # Render the clean daily line chart
+    # Render the daily line chart (clean)
     dataLineChart(dataClean, objectNew( \
         'title', 'Daily Downloads (clean) - ' + packageName, \
         'width', chartWidth, \
@@ -132,8 +132,11 @@ async function downloadsDashboard(packageName, packageType):
         'x', 'date', \
         'y', arrayNew('downloads'), \
         'yTicks', objectNew('start', 0), \
+        'yLines', arrayNew( \
+            objectNew('value', objectGet(monthly, 'dailyAverageClean')) \
+        ), \
         'datetime', 'day', \
-        'precision', 0 \
+        'precision', 1 \
     ))
 
     # Render the daily line chart
@@ -144,8 +147,11 @@ async function downloadsDashboard(packageName, packageType):
         'x', 'date', \
         'y', arrayNew('downloads'), \
         'yTicks', objectNew('start', 0), \
+        'yLines', arrayNew( \
+            objectNew('value', objectGet(monthly, 'dailyAverage')) \
+        ), \
         'datetime', 'day', \
-        'precision', 0 \
+        'precision', 1 \
     ))
 
     # Render the monthly table by most recent
@@ -164,11 +170,13 @@ function downloadsMonthlyData(data):
     # Replace extreme outliers with a filtered average
     dataStddev = dataAggregate(data, objectNew( \
         'measures', arrayNew( \
-            objectNew('field', 'downloads', 'name', 'downloadsStddev', 'function', 'stddev') \
+            objectNew('field', 'downloads', 'name', 'downloadsStddev', 'function', 'stddev'), \
+            objectNew('field', 'downloads', 'name', 'downloadsAverage', 'function', 'average') \
         ) \
     ))
+    dailyAverage = objectGet(arrayGet(dataStddev, 0), 'downloadsAverage')
+    downloadsMax = dailyAverage + 4 * objectGet(arrayGet(dataStddev, 0), 'downloadsStddev')
     dataClean = arrayNew()
-    downloadsMax = 4 * objectGet(arrayGet(dataStddev, 0), 'downloadsStddev')
     for row in data:
         rowClean = objectCopy(row)
         if objectGet(row, 'downloads') > downloadsMax:
@@ -176,15 +184,15 @@ function downloadsMonthlyData(data):
         endif
         arrayPush(dataClean, rowClean)
     endfor
-    dataAvg = dataAggregate(dataClean, objectNew( \
+    dataCleanAverage = dataAggregate(dataClean, objectNew( \
         'measures', arrayNew( \
-            objectNew('field', 'downloads', 'name', 'downloadsAvg', 'function', 'average') \
+            objectNew('field', 'downloads', 'name', 'downloadsAverage', 'function', 'average') \
         ) \
     ))
-    downloadsAvg = mathRound(objectGet(arrayGet(dataAvg, 0), 'downloadsAvg'), 0)
+    dailyAverageClean = objectGet(arrayGet(dataCleanAverage, 0), 'downloadsAverage')
     for rowClean in dataClean:
         if objectGet(rowClean, 'downloads') == null:
-            objectSet(rowClean, 'downloads', downloadsAvg)
+            objectSet(rowClean, 'downloads', dailyAverageClean)
         endif
     endfor
 
@@ -252,7 +260,9 @@ function downloadsMonthlyData(data):
     return objectNew( \
         'dataClean', dataClean, \
         'dataMonthly', dataMonthly, \
-        'monthlyAverage', monthlyAverage \
+        'monthlyAverage', monthlyAverage, \
+        'dailyAverage', dailyAverage, \
+        'dailyAverageClean', dailyAverageClean \
     )
 endfunction
 
