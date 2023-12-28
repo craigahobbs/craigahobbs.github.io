@@ -1,0 +1,73 @@
+{
+    "name": "Example",
+    "beginDate": "2023-12-28",
+    "accounts": [
+        {"name": "Checking", "balance": 500},
+        {"name": "Savings", "balance": 1500}
+    ],
+    "transactions": [
+        // Monthly income/expenses
+        {
+            "date": "2024-01-01",
+            "amount": 6000,
+            "description": "Salary",
+            "account": "Checking",
+            "recurs": {"unit": "month"}
+        },
+        {
+            "date": "2024-01-10",
+            "amount": -3000,
+            "description": "Rent",
+            "account": "Checking",
+            "recurs": {"unit": "month"}
+        },
+        {
+            "date": "2024-01-15",
+            "amount": -2000,
+            "description": "Credit card payment",
+            "account": "Checking",
+            "recurs": {"unit": "month"}
+        },
+
+        // Saving
+        {
+            "date": "2024-01-02",
+            "amount": -1000,
+            "description": "Transfer to savings",
+            "account": "Checking",
+            "destination": "Savings",
+            "recurs": {"unit": "month", "count": 16}
+        },
+        {
+            "date": "2025-05-02",
+            "amount": -250,
+            "description": "Transfer to savings",
+            "account": "Checking",
+            "destination": "Savings",
+            "recurs": {"unit": "month"}
+        },
+
+        // Vacation
+        {
+            "date": "2024-05-15",
+            "amount": -3500,
+            "description": "Vacation",
+            "account": "Savings"
+        },
+
+        // Car
+        {
+            "date": "2025-04-01",
+            "amount": -10000,
+            "description": "Car purchase down payment",
+            "account": "Savings"
+        },
+        {
+            "date": "2025-05-20",
+            "amount": -750,
+            "description": "Car payment",
+            "account": "Checking",
+            "recurs": {"unit": "month"}
+        }
+    ]
+}

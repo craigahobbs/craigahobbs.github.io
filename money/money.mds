@@ -12,41 +12,112 @@ async function moneyMain(options):
                 'url', 'https://craigahobbs.github.io/money/README.md' \
             ))), \
             objectNew('name', 'Report', 'type', objectNew('function', objectNew( \
-                'function', systemPartial(moneyPageReport, options), 'title', 'Money' \
+                'function', systemPartial(moneyPageReport, options) \
             ))), \
             objectNew('name', 'Schema', 'type', objectNew('function', objectNew( \
                 'function', moneyPageSchema \
             ))) \
         ) \
     )
-    pagerMain(pagerModel, objectNew('hideNav', true, 'start', 'Report'))
+    pagerMain(pagerModel, objectNew('arguments', moneyArguments, 'hideNav', true, 'start', 'Report'))
 endfunction
 
 
-async function moneyPageReport(options):
+moneyArguments = argsValidate(arrayNew( \
+    objectNew('name', 'page', 'default', 'Report'), \
+    objectNew('name', 'model', 'type', 'bool', 'default', false, 'explicit', true) \
+))
+
+
+async function moneyPageReport(options, args):
     endDate = objectGet(options, 'endDate', datetimeNew(datetimeYear(datetimeNow()) + 3, 1, 1))
     url = objectGet(options, 'url', 'money.json')
 
     # Load the money model
-    moneyText = systemFetch(url, null, true)
-    moneyText = stringReplace(moneyText, regexNew('$\\s+//.*$', 'mg'), '')
+    moneyTextOrig = systemFetch(url, null, true)
+    moneyText = stringReplace(moneyTextOrig, regexNew('$\\s+//.*$', 'mg'), '')
     moneyModel = schemaValidate(moneyTypes, "Money", jsonParse(moneyText))
+
+    # Render the page title
+    moneyName = objectGet(moneyModel, 'name')
+    documentSetTitle('Money' + if(moneyName != null, ' - ' + moneyName, ''))
+    markdownPrint('# ' + if(moneyName != null, moneyName, 'Money'), '')
+
+    # Model loading error?
     if moneyModel == null:
         markdownPrint('**Error:** Failed to load "' + url + '"')
         return
     endif
 
-    # Generate the money data
-    data = moneyData(moneyModel, endDate)
+    # Display the money model?
+    if objectGet(args, 'model'):
+        markdownPrint(argsLink(moneyArguments, "Hide Model"), '', '~~~', moneyTextOrig, '~~~')
+        return
+    else:
+        markdownPrint(argsLink(moneyArguments, "Show Model", objectNew('model', true)))
+    endif
 
     # Render the money report
-    moneyReport(data)
+    moneyReport(moneyModel, endDate)
 endfunction
 
 
 function moneyPageSchema():
     documentSetTitle('Money Schema')
     elementModelRender(schemaElements(moneyTypes, 'Money'))
+endfunction
+
+
+# Render the money report
+function moneyReport(moneyModel, endDate):
+    # Compute the scenario data
+    data = moneyData(moneyModel, endDate)
+
+    # Compute the account names
+    accountNames = arrayNew()
+    for account in objectGet(moneyModel, 'accounts'):
+        arrayPush(accountNames, objectGet(account, 'name'))
+    endfor
+
+    # Render the line chart
+    lineData = arrayNew()
+    for row in data:
+        for accountName in accountNames:
+            arrayPush(lineData, objectNew( \
+                'Date', objectGet(row, 'Date'), \
+                'Account', accountName, \
+                'Balance', objectGet(row, accountName) \
+            ))
+        endfor
+    endfor
+    dataLineChart(lineData, objectNew( \
+        'width', 900, \
+        'height', 300, \
+        'precision', 2, \
+        'datetime', 'day', \
+        'x', 'Date', \
+        'y', arrayNew('Balance'), \
+        'color', 'Account', \
+        'xTicks', objectNew('count', 5), \
+        'yTicks', objectNew('count', 5), \
+        'yLines', arrayNew(objectNew('value', 0)) \
+    ))
+
+    # Render the table
+    fields = arrayNew('Date')
+    formats = objectNew('Amount', objectNew('align', 'right'))
+    for accountName in accountNames:
+        arrayPush(fields, accountName)
+        objectSet(formats, accountName, objectNew('align', 'right'))
+    endfor
+    arrayPush(fields, 'Amount', 'Description')
+    dataTable(data, objectNew( \
+        'datetime', 'day', \
+        'fields', fields, \
+        'formats', formats, \
+        'precision', 2, \
+        'trim', false \
+    ))
 endfunction
 
 
@@ -121,58 +192,6 @@ function moneyData(moneyModel, endDate):
 endfunction
 
 
-# Render the money report
-function moneyReport(data):
-    # Compute the account names
-    accountNames = arrayNew()
-    for fieldName in objectKeys(arrayGet(data, 0)):
-        if fieldName != 'Date' && fieldName != 'Amount' && fieldName != 'Description':
-            arrayPush(accountNames, fieldName)
-        endif
-    endfor
-
-    # Render the line chart
-    lineData = arrayNew()
-    for row in data:
-        for accountName in accountNames:
-            arrayPush(lineData, objectNew( \
-                'Date', objectGet(row, 'Date'), \
-                'Account', accountName, \
-                'Balance', objectGet(row, accountName) \
-            ))
-        endfor
-    endfor
-    dataLineChart(lineData, objectNew( \
-        'width', 900, \
-        'height', 300, \
-        'precision', 2, \
-        'datetime', 'day', \
-        'x', 'Date', \
-        'y', arrayNew('Balance'), \
-        'color', 'Account', \
-        'xTicks', objectNew('count', 5), \
-        'yTicks', objectNew('count', 5), \
-        'yLines', arrayNew(objectNew('value', 0)) \
-    ))
-
-    # Render the table
-    fields = arrayNew('Date')
-    formats = objectNew('Amount', objectNew('align', 'right'))
-    for accountName in accountNames:
-        arrayPush(fields, accountName)
-        objectSet(formats, accountName, objectNew('align', 'right'))
-    endfor
-    arrayPush(fields, 'Amount', 'Description')
-    dataTable(data, objectNew( \
-        'datetime', 'day', \
-        'fields', fields, \
-        'formats', formats, \
-        'precision', 2, \
-        'trim', false \
-    ))
-endfunction
-
-
 # The money schema
 moneyTypes = schemaParse( \
     'group "Money"', \
@@ -180,6 +199,9 @@ moneyTypes = schemaParse( \
     '', \
     '# A money projection model', \
     'struct Money', \
+    '', \
+    '    # The scenario name', \
+    '    optional string name', \
     '', \
     '    # The starting date', \
     '    date beginDate', \
