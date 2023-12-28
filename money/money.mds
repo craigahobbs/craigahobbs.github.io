@@ -207,7 +207,7 @@ moneyTypes = schemaParse( \
     '    date beginDate', \
     '', \
     '    # The end date', \
-    '    optional date endDate', \
+    '    date endDate', \
     '', \
     '    # The account list', \
     '    Account[len > 0] accounts', \
