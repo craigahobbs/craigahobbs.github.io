@@ -159,7 +159,8 @@ async function downloadsDashboard(packageName, packageType):
     dataTable(dataMonthly, objectNew( \
         'fields', arrayNew('Month', 'Downloads', '% Average', 'Projected'), \
         'formats', objectNew( \
-            'Downloads', objectNew('align', 'right') \
+            'Downloads', objectNew('align', 'right'), \
+            '% Average', objectNew('align', 'right') \
         ), \
         'datetime', 'month' \
     ))
