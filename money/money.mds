@@ -159,7 +159,9 @@ function moneyData(moneyModel, endDate):
             endif
 
             # Compute the next transaction date
-            if txnRepeatPeriod == 'year':
+            if txnRepeat == null:
+                break
+            elif txnRepeatPeriod == 'year':
                 txnDate = datetimeNew(datetimeYear(txnDate) + txnRepeatMultiple, datetimeMonth(txnDate), datetimeDay(txnDate))
             elif txnRepeatPeriod == 'month':
                 txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate) + txnRepeatMultiple, datetimeDay(txnDate))
@@ -168,10 +170,6 @@ function moneyData(moneyModel, endDate):
             else:
                 # txnRepeatPeriod == 'day'
                 txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + txnRepeatMultiple)
-            endif
-
-            if txnRepeat == null:
-                break
             endif
         endwhile
     endfor
