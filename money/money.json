@@ -1,6 +1,7 @@
 {
     "name": "Example",
     "beginDate": "2023-12-28",
+    "endDate": "2026-01-01",
     "accounts": [
         {"name": "Checking", "balance": 500},
         {"name": "Savings", "balance": 1500}

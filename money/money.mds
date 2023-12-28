@@ -5,14 +5,14 @@ include <pager.mds>
 
 
 # The money application main entry point
-async function moneyMain(options):
+async function moneyMain(url):
     pagerModel = objectNew( \
         'pages', arrayNew( \
             objectNew('name', 'About', 'type', objectNew('markdown', objectNew( \
                 'url', 'https://craigahobbs.github.io/money/README.md' \
             ))), \
             objectNew('name', 'Report', 'type', objectNew('function', objectNew( \
-                'function', systemPartial(moneyPageReport, options) \
+                'function', systemPartial(moneyPageReport, url) \
             ))), \
             objectNew('name', 'Schema', 'type', objectNew('function', objectNew( \
                 'function', moneyPageSchema \
@@ -25,13 +25,13 @@ endfunction
 
 moneyArguments = argsValidate(arrayNew( \
     objectNew('name', 'page', 'default', 'Report'), \
+    objectNew('name', 'url', 'global', 'vURL', 'default', 'money.json'), \
     objectNew('name', 'model', 'type', 'bool', 'default', false, 'explicit', true) \
 ))
 
 
-async function moneyPageReport(options, args):
-    endDate = objectGet(options, 'endDate', datetimeNew(datetimeYear(datetimeNow()) + 3, 1, 1))
-    url = objectGet(options, 'url', 'money.json')
+async function moneyPageReport(url, args):
+    url = if(url != null, url, objectGet(args, 'url'))
 
     # Load the money model
     moneyTextOrig = systemFetch(url, null, true)
@@ -58,7 +58,7 @@ async function moneyPageReport(options, args):
     endif
 
     # Render the money report
-    moneyReport(moneyModel, endDate)
+    moneyReport(moneyModel)
 endfunction
 
 
@@ -69,9 +69,9 @@ endfunction
 
 
 # Render the money report
-function moneyReport(moneyModel, endDate):
+function moneyReport(moneyModel):
     # Compute the scenario data
-    data = moneyData(moneyModel, endDate)
+    data = moneyData(moneyModel)
 
     # Compute the account names
     accountNames = arrayNew()
@@ -122,8 +122,9 @@ endfunction
 
 
 # Generate the money transaction data
-function moneyData(moneyModel, endDate):
+function moneyData(moneyModel):
     beginDate = objectGet(moneyModel, 'beginDate')
+    endDate = objectGet(moneyModel, 'endDate')
 
     # Create the initial account balances
     accountNames = arrayNew()
@@ -204,6 +205,9 @@ moneyTypes = schemaParse( \
     '', \
     '    # The start date', \
     '    date beginDate', \
+    '', \
+    '    # The end date', \
+    '    optional date endDate', \
     '', \
     '    # The account list', \
     '    Account[len > 0] accounts', \
