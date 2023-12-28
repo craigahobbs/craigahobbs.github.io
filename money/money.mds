@@ -142,14 +142,13 @@ function moneyData(moneyModel, endDate):
         txnDesc = objectGet(txn, 'description')
         txnAccount = objectGet(txn, 'account')
         txnDest = objectGet(txn, 'destination')
-        txnRecur = objectGet(txn, 'recurs')
-        txnRecurUnit = objectGet(txnRecur, 'unit')
-        txnRecurPeriod = objectGet(txnRecur, 'period', 1)
-        txnRecurCount = if(txnRecur != null, objectGet(txnRecur, 'count'), 1)
+        txnRepeat = objectGet(txn, 'repeat')
+        txnRepeatPeriod = objectGet(txnRepeat, 'period')
+        txnRepeatMultiple = objectGet(txnRepeat, 'multiple', 1)
+        txnRepeatEndDate = objectGet(txnRepeat, 'endDate')
 
         # Add the transaction rows (as account deltas)
-        recurCount = 0
-        while (txnRecurCount == null || recurCount < txnRecurCount) && txnDate - endDate <= 0:
+        while (txnRepeatEndDate == null || txnDate - txnRepeatEndDate <= 0) && txnDate - endDate <= 0:
             if txnDate - beginDate >= 0:
                 # Add the transaction delta row
                 txnRow = objectNew('Date', txnDate, txnAccount, txnAmount, 'Amount', txnAmount, 'Description', txnDesc)
@@ -160,18 +159,20 @@ function moneyData(moneyModel, endDate):
             endif
 
             # Compute the next transaction date
-            if txnRecurUnit == 'year':
-                txnDate = datetimeNew(datetimeYear(txnDate) + txnRecurPeriod, datetimeMonth(txnDate), datetimeDay(txnDate))
-            elif txnRecurUnit == 'month':
-                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate) + txnRecurPeriod, datetimeDay(txnDate))
-            elif txnRecurUnit == 'week':
-                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + 7 * txnRecurPeriod)
+            if txnRepeatPeriod == 'year':
+                txnDate = datetimeNew(datetimeYear(txnDate) + txnRepeatMultiple, datetimeMonth(txnDate), datetimeDay(txnDate))
+            elif txnRepeatPeriod == 'month':
+                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate) + txnRepeatMultiple, datetimeDay(txnDate))
+            elif txnRepeatPeriod == 'week':
+                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + 7 * txnRepeatMultiple)
             else:
-                # txnRecurUnit == 'day'
-                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + txnRecurPeriod)
+                # txnRepeatPeriod == 'day'
+                txnDate = datetimeNew(datetimeYear(txnDate), datetimeMonth(txnDate), datetimeDay(txnDate) + txnRepeatMultiple)
             endif
 
-            recurCount = recurCount + 1
+            if txnRepeat == null:
+                break
+            endif
         endwhile
     endfor
 
@@ -197,13 +198,13 @@ moneyTypes = schemaParse( \
     'group "Money"', \
     '', \
     '', \
-    '# A money projection model', \
+    '# A money simulation model', \
     'struct Money', \
     '', \
     '    # The scenario name', \
     '    optional string name', \
     '', \
-    '    # The starting date', \
+    '    # The start date', \
     '    date beginDate', \
     '', \
     '    # The account list', \
@@ -219,7 +220,7 @@ moneyTypes = schemaParse( \
     '    # The account name', \
     '    string name', \
     '', \
-    '    # The starting balance', \
+    '    # The start balance', \
     '    float balance', \
     '', \
     '', \
@@ -241,25 +242,25 @@ moneyTypes = schemaParse( \
     '    # The destination account name', \
     '    optional string destination', \
     '', \
-    '    # Recurrence', \
-    '    optional Recurrence recurs', \
+    '    # The repeat model', \
+    '    optional Repeat repeat', \
     '', \
     '', \
-    '# A recurrence model', \
-    'struct Recurrence', \
+    '# A repeat model', \
+    'struct Repeat', \
     '', \
-    '    # The recurrence unit', \
-    '    RecurrenceUnit unit', \
+    '    # The repeat period', \
+    '    RepeatPeriod period', \
     '', \
-    '    # The number of units between recurrence', \
-    '    optional int(> 0) period', \
+    '    # The repeat period multiple (e.g. 2 months)', \
+    '    optional int(> 0) multiple', \
     '', \
-    '    # The number of recurrences', \
-    '    optional int(>= 0) count', \
+    '    # The end date', \
+    '    optional date endDate', \
     '', \
     '', \
-    '# A recurrance unit', \
-    'enum RecurrenceUnit', \
+    '# A repeat period', \
+    'enum RepeatPeriod', \
     '    year', \
     '    month', \
     '    week', \

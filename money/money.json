@@ -12,21 +12,21 @@
             "amount": 6000,
             "description": "Salary",
             "account": "Checking",
-            "recurs": {"unit": "month"}
+            "repeat": {"period": "month"}
         },
         {
             "date": "2024-01-10",
             "amount": -3000,
             "description": "Rent",
             "account": "Checking",
-            "recurs": {"unit": "month"}
+            "repeat": {"period": "month"}
         },
         {
             "date": "2024-01-15",
             "amount": -2000,
             "description": "Credit card payment",
             "account": "Checking",
-            "recurs": {"unit": "month"}
+            "repeat": {"period": "month"}
         },
 
         // Saving
@@ -36,7 +36,7 @@
             "description": "Transfer to savings",
             "account": "Checking",
             "destination": "Savings",
-            "recurs": {"unit": "month", "count": 16}
+            "repeat": {"period": "month", "endDate": "2025-04-02"}
         },
         {
             "date": "2025-05-02",
@@ -44,7 +44,7 @@
             "description": "Transfer to savings",
             "account": "Checking",
             "destination": "Savings",
-            "recurs": {"unit": "month"}
+            "repeat": {"period": "month"}
         },
 
         // Vacation
@@ -55,7 +55,7 @@
             "account": "Savings"
         },
 
-        // Car
+        // Car purchase
         {
             "date": "2025-04-01",
             "amount": -10000,
@@ -67,7 +67,7 @@
             "amount": -750,
             "description": "Car payment",
             "account": "Checking",
-            "recurs": {"unit": "month"}
+            "repeat": {"period": "month"}
         }
     ]
 }
