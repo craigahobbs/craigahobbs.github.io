@@ -18,6 +18,8 @@
 
 [Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
 
+[Money](https://craigahobbs.github.io/money/)
+
 [npm Dependency Explorer](https://craigahobbs.github.io/npm-dependency-explorer/)
 
 [Package Downloads Dashboard](https://craigahobbs.github.io/downloads/)
