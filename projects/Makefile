@@ -2,6 +2,12 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
+# Windows support
+ifeq '$(OS)' 'Windows_NT'
+HOME := $(subst \,/,$(USERPROFILE))
+endif
+
+
 .PHONY: changed clean commit gh-pages gh-pages-check help list pull superclean
 help:
 	@echo 'usage: make [changed|clean|commit|gh-pages|gh-pages-check|help|list|pull|superclean]'
