@@ -112,11 +112,22 @@ If you ever need to unistall Homebrew for any reason:
 
 # Windows Setup
 
-Install [MSYS2](https://www.msys2.org/) and enter the following commands using the MSYS shell:
+Install the following:
+
+- [Python for Windows](https://www.python.org/downloads/windows/)
+- [Node for Windows](https://nodejs.org/en/download/)
+- [MSYS2](https://www.msys2.org/)
+
+Install MSYS packages using the MSYS shell:
 
 ~~~
 pacman -Suy
 pacman -S diffutils git make mingw-w64-x86_64-emacs
+~~~
+
+Add the following to the end of your MSYS .bashrc file:
+
+~~~ sh
 ~~~
 
 
