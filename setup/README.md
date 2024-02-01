@@ -128,6 +128,14 @@ pacman -S diffutils git make mingw-w64-x86_64-emacs
 Add the following to the end of your MSYS .bashrc file:
 
 ~~~ sh
+# Windows Node
+export PATH=$PATH:/c/'Program Files'/nodejs
+
+# Windows Python
+export PATH=$PATH:/c/Users/craig/AppData/Local/Microsoft/WindowsApps
+
+# python-build: no-docker
+export NO_DOCKER=1
 ~~~
 
 
