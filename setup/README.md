@@ -110,6 +110,16 @@ If you ever need to unistall Homebrew for any reason:
 ~~~
 
 
+# Windows Setup
+
+Install [MSYS2](https://www.msys2.org/) and enter the following commands using the MSYS shell:
+
+~~~
+pacman -Suy
+pacman -S diffutils git make mingw-w64-x86_64-emacs
+~~~
+
+
 # Git Setup
 
 To generate a git key, execute the following:
