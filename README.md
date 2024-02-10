@@ -23,6 +23,8 @@
 
 ## Python Packages
 
+[bare-script-py](https://github.com/craigahobbs/bare-script-py#readme)
+
 [chisel](https://github.com/craigahobbs/chisel#readme)
 
 [schema-markdown](https://github.com/craigahobbs/schema-markdown#readme)
