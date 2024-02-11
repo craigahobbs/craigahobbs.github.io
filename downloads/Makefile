@@ -28,6 +28,7 @@ endef
 
 
 # Python package download rules
+$(eval $(call PYTHON_DATA_RULE, bare-script))
 $(eval $(call PYTHON_DATA_RULE, chisel))
 $(eval $(call PYTHON_DATA_RULE, markdown-up))
 $(eval $(call PYTHON_DATA_RULE, schema-markdown))
