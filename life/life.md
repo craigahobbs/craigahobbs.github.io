@@ -14,7 +14,7 @@ function lifeMain():
     # Parse arguments
     args = argsParse(lifeArguments)
     objectSet(args, 'background', objectGet(args, 'background') % arrayLength(lifeColors))
-    objectSet(args, 'border', mathMax(minBorder, objectGet(args, 'border')))
+    objectSet(args, 'border', mathMax(0, objectGet(args, 'border')))
     objectSet(args, 'borderRatio', mathMax(0, mathMin(0.4, objectGet(args, 'borderRatio'))))
     objectSet(args, 'color', objectGet(args, 'color') % arrayLength(lifeColors))
     objectSet(args, 'gap', mathMax(1, objectGet(args, 'gap')))
