@@ -35,7 +35,7 @@ async function moneyPageReport(url, args):
 
     # Load the money model
     moneyTextOrig = systemFetch(url, null, true)
-    moneyText = stringReplace(moneyTextOrig, regexNew('$\\s+//.*$', 'mg'), '')
+    moneyText = regexReplace(regexNew('$\\s+//.*$', 'm'), moneyTextOrig, '')
     moneyModel = schemaValidate(moneyTypes, "Money", jsonParse(moneyText))
 
     # Render the page title
