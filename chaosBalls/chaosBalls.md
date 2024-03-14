@@ -34,7 +34,7 @@ async function chaosBallsMain():
             model = chaosBallsDefaultModel
         else:
             # Fetch and validate the Chaos Balls JSON model
-            modelJSON = systemFetch(url)
+            modelJSON = jsonParse(systemFetch(url))
             model = if(modelJSON != null, schemaValidate(chaosBallsTypes, 'ChaosBalls', modelJSON))
             if model == null:
                 markdownPrint('Error: Could not fetch/validate Chaos Balls model, "' + url + '"')

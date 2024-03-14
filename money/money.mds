@@ -34,7 +34,7 @@ async function moneyPageReport(url, args):
     url = if(url != null, url, objectGet(args, 'url'))
 
     # Load the money model
-    moneyTextOrig = systemFetch(url, null, true)
+    moneyTextOrig = systemFetch(url)
     moneyText = regexReplace(regexNew('$\\s+//.*$', 'm'), moneyTextOrig, '')
     moneyModel = schemaValidate(moneyTypes, "Money", jsonParse(moneyText))
 

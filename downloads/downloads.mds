@@ -46,18 +46,19 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
     endfor
 
     # Fetch the package raw data and validate
-    dataRaw = systemFetch(dataURLs)
+    dataText = systemFetch(dataURLs)
     packageData = arrayNew()
     for package, ixPackage in packages:
         packageName = objectGet(package, 'name')
         packageType = objectGet(package, 'type')
 
         # Validate the data
+        dataRaw = jsonParse(arrayGet(dataText, ixPackage))
         if packageType == 'Python':
-            data = downloadsPythonDataValidate(arrayGet(dataRaw, ixPackage))
+            data = downloadsPythonDataValidate(dataRaw)
             packageURL = 'https://pypi.org/project/' + urlEncodeComponent(packageName) + '/'
         else:
-            data = downloadsJavascriptDataValidate(arrayGet(dataRaw, ixPackage))
+            data = downloadsJavascriptDataValidate(dataRaw)
             packageURL = 'https://www.npmjs.com/package/' + urlEncodeComponent(packageName)
         endif
 
@@ -94,9 +95,9 @@ async function downloadsDashboard(packageName, packageType):
 
     # Load and validate the package data
     if packageType == 'Python':
-        data = downloadsPythonDataValidate(systemFetch(downloadsPythonDataURL(packageName)))
+        data = downloadsPythonDataValidate(jsonParse(systemFetch(downloadsPythonDataURL(packageName))))
     else:
-        data = downloadsJavascriptDataValidate(systemFetch(downloadsJavascriptDataURL(packageName)))
+        data = downloadsJavascriptDataValidate(jsonParse(systemFetch(downloadsJavascriptDataURL(packageName))))
     endif
 
     # Compute the monthly data and averages
@@ -288,7 +289,7 @@ function downloadsJavascriptDataValidate(dataRaw):
     endfor
 
     # Validate the data
-    return dataValidate(data)
+    return dataValidate(data, true)
 endfunction
 
 
@@ -311,5 +312,5 @@ function downloadsPythonDataValidate(dataRaw):
     endfor
 
     # Validate the data
-    return dataValidate(data)
+    return dataValidate(data, true)
 endfunction
