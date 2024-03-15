@@ -56,14 +56,6 @@ sudo update-grub
 sudo reboot
 ~~~
 
-To disable the GNU Make print directories behavior, add the following to the end of your .bashrc
-file:
-
-~~~
-# Disable GNU Make print directories
-export MAKEFLAGS="--no-print-directory"
-~~~
-
 
 ## Git Bash Prompt
 
@@ -122,7 +114,7 @@ Install MSYS packages using the MSYS shell:
 
 ~~~
 pacman -Suy
-pacman -S diffutils git make mingw-w64-x86_64-emacs
+pacman -S diffutils git make mingw-w64-x86_64-emacs rsync
 ~~~
 
 Add the following to the end of your MSYS .bashrc file:
