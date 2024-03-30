@@ -288,7 +288,7 @@ endfunction
 
 
 function horizontalAnnotation(text, ycoord, left, right, annotationBarWidth, annotationTextHeight, annotationTextSize):
-    drawStyle('black', lineWidth)
+    drawStyle('black', 1)
     drawMove(left, ycoord - 0.5 * annotationBarWidth)
     drawVLine(ycoord + 0.5 * annotationBarWidth)
     drawMove(left, ycoord)
