@@ -259,7 +259,7 @@ function chaosBallsDraw(session, args):
 
     # Render the balls
     for ball in objectGet(session, 'balls'):
-        drawStyle(null, 0, objectGet(ball, 'color'))
+        drawStyle('black', 0, objectGet(ball, 'color'))
         drawCircle(objectGet(ball, 'x') * width, objectGet(ball, 'y') * height, 0.5 * objectGet(ball, 'size') * widthHeight)
     endfor
 endfunction
