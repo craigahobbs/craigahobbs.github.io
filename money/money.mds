@@ -144,9 +144,9 @@ function moneyData(moneyModel):
         txnAccount = objectGet(txn, 'account')
         txnDest = objectGet(txn, 'destination')
         txnRepeat = objectGet(txn, 'repeat')
-        txnRepeatPeriod = objectGet(txnRepeat, 'period')
-        txnRepeatMultiple = objectGet(txnRepeat, 'multiple', 1)
-        txnRepeatEndDate = objectGet(txnRepeat, 'endDate')
+        txnRepeatPeriod = if(txnRepeat != null, objectGet(txnRepeat, 'period'))
+        txnRepeatMultiple = if(txnRepeat != null, objectGet(txnRepeat, 'multiple', 1))
+        txnRepeatEndDate = if(txnRepeat != null, objectGet(txnRepeat, 'endDate'))
 
         # Add the transaction rows (as account deltas)
         while (txnRepeatEndDate == null || txnDate - txnRepeatEndDate <= 0) && txnDate - endDate <= 0:
