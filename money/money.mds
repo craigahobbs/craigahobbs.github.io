@@ -180,10 +180,8 @@ function moneyData(moneyModel):
     for txnRow, ixTxnRow in data:
         if ixTxnRow != 0:
             for txnAccount in accountNames:
-                if txnAccount != 'Date':
-                    balance = objectGet(arrayGet(data, ixTxnRow - 1), txnAccount) + objectGet(txnRow, txnAccount, 0)
-                    objectSet(txnRow, txnAccount, balance)
-                endif
+                balance = objectGet(arrayGet(data, ixTxnRow - 1), txnAccount) + objectGet(txnRow, txnAccount, 0)
+                objectSet(txnRow, txnAccount, balance)
             endfor
         endif
     endfor
