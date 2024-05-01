@@ -47,7 +47,7 @@ These are just a few examples of what I can do. If you have specific tasks in mi
 
 -----
 
-## Give me an interesting mathematical fact or idea. FYI, I have a BS in Electrical and Computer Engineering and an MBA in Technology Management. My advanced math is rusty.**
+## Give me an interesting mathematical fact or idea. FYI, I have a BS in Electrical and Computer Engineering and an MBA in Technology Management. My advanced math is rusty.
 
 A fellow tech enthusiast! Here's an interesting mathematical fact that combines some advanced concepts:
 
