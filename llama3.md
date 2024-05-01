@@ -19,6 +19,8 @@ others.
 These are just a few examples of what I know. If you have specific questions or topics in mind, feel free to ask me anything!
 
 
+-----
+
 ## What can you do?
 
 I'm a highly capable AI language model, and I can assist with many tasks. Here's a list of some things I can do:
@@ -42,6 +44,8 @@ others.
 
 These are just a few examples of what I can do. If you have specific tasks in mind, feel free to ask me anything!
 
+
+-----
 
 ## Give me an interesting mathematical fact or idea. FYI, I have a BS in Electrical and Computer Engineering and an MBA in Technology Management. My advanced math is rusty.**
 
@@ -70,6 +74,8 @@ mathematical tools.
 * The Collatz Conjecture has connections to other famous problems in mathematics, such as the Riemann Hypothesis and the P versus NP problem.
 
 I hope this sparks some curiosity and nostalgia for your advanced math courses!
+
+-----
 
 ## Why did you choose *that* fact?
 
