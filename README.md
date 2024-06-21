@@ -7,6 +7,8 @@
 
 [npm Dependency Explorer](https://craigahobbs.github.io/npm-dependency-explorer/)
 
+[Ollama Chat](https://craigahobbs.github.io/ollama-chat/)
+
 
 ## JavaScript Packages
 
