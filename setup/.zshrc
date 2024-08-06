@@ -18,3 +18,6 @@ zstyle ':vcs_info:git:*' formats '%b'
 
 # Disable the use of Docker until they fix VirtioFS
 export NO_DOCKER=1
+
+# Enable GNU Make print directories
+export MAKEFLAGS="--print-directory"
