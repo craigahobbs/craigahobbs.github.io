@@ -38,6 +38,9 @@ import os
 import sys
 import urllib.request
 
+# Maximum days of download data to keep
+max_days = 365
+
 # Report the data file name
 package_name = sys.argv[1]
 package_file = os.path.join('data', f'python-{package_name}.json')
@@ -56,17 +59,19 @@ with urllib.request.urlopen(package_url) as response:
 	package_updated = json.load(response)
 
 # Update the package data
-package_dates = set(row['date'] for row in package_data['data'])
-for row in package_updated['data']:
-	if row['date'] not in package_dates:
-		package_data['data'].append(row)
-
-# Filter rows by date
-date_min = (datetime.date.today() - datetime.timedelta(days=366)).isoformat()
-package_data['data'] = [row for row in package_data['data'] if row['date'] >= date_min]
+package_rows = []
+row_keys = set()
+date_min = (datetime.date.today() - datetime.timedelta(days=max_days + 1)).isoformat()
+for data in (package_updated, package_data):
+	for row in data['data']:
+		row_key = (row['date'], row['category'])
+		if row_key not in row_keys and row['date'] >= date_min:
+			package_rows.append(row)
+			row_keys.add(row_key)
+package_rows.sort(key=lambda row: (row['date'], row['category']))
+package_data['data'] = package_rows
 
 # Update the data file
-package_data['data'].sort(key=lambda row: row['date'])
 with open(package_file, 'w', encoding='utf-8') as fh:
 	json.dump(package_data, fh)
 endef
