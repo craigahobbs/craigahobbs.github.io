@@ -31,6 +31,7 @@ $(eval $(call PYTHON_DATA_RULE, template-specialize))
 $(eval $(call PYTHON_DATA_RULE, unittest-parallel))
 
 
+# Python script to download and combine pypistats data
 define DATA_UPDATE_PY
 import datetime
 import json
