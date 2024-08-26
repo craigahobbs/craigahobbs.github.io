@@ -9,15 +9,11 @@ help:
 	@echo "usage: make [data|help]"
 
 
-# Download command function
-WGET_CMD = if which wget; then wget -q -c -O - $(1) > $(2); else curl -f -s -o $(2) $(1); fi
-
-
 # Python package download rule
 define PYTHON_DATA_RULE
 .PHONY: python-$(strip $1)
 python-$(strip $1):
-	python -c "$$$$DATA_UPDATE_PY" $(strip $1)
+	python3 -c "$$$$DATA_UPDATE_PY" $(strip $1)
 
 .PHONY: data
 data: python-$(strip $1)
