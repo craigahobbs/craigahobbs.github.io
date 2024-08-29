@@ -42,12 +42,11 @@ import urllib.request
 # Maximum days of download data to keep
 max_days = 365
 
-# Report the data file name
+# Command-line arguments
 package_name = sys.argv[1]
-package_file = os.path.join('data', f'python-{package_name}.json')
-print(f'Downloading data/{package_file}.json')
 
 # Read the data file
+package_file = os.path.join('data', f'python-{package_name}.json')
 if os.path.isfile(package_file):
 	with open(package_file, 'r', encoding='utf-8') as fh:
 		package_data = json.load(fh)
