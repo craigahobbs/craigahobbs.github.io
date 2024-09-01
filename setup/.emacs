@@ -8,7 +8,9 @@
       (setq exec-path (split-string path-from-shell path-separator))
 
       ;; set focus
-      (do-applescript "tell application \"emacs\" to activate")
+      (when (display-graphic-p)
+        (do-applescript "tell application \"emacs\" to activate")
+        )
       )
   )
 
