@@ -9,13 +9,13 @@
 
    **Linux**
 
-   ~~~
+   ~~~sh
    sudo fdisk -l
    ~~~
 
    **macOS**
 
-   ~~~
+   ~~~sh
    diskutil list
    ~~~
 
@@ -23,14 +23,14 @@
 
    **Linux**
 
-   ~~~
+   ~~~sh
    sudo umount /dev/sdX
    sudo dd bs=4M status=progress oflag=sync if=/path/to/iso of=/dev/sdX
    ~~~
 
    **macOS**
 
-   ~~~
+   ~~~sh
    diskutil unmountDisk /dev/diskN
    sudo dd bs=4m status=progress oflag=sync if=/path/to/iso of=/dev/rdiskN
    ~~~
@@ -40,13 +40,13 @@
 
 First, add yourself to the sudoers:
 
-~~~
+~~~sh
 su -l -c "usermod -aG sudo $USER && reboot"
 ~~~
 
 Next, install applications, configure docker, remove the grub delay, and reboot:
 
-~~~
+~~~sh
 sudo apt install docker.io emacs git git-gui make python3-venv rsync xsel
 sudo usermod -aG docker $USER
 sudo apt purge evolution gnome-calendar gnome-contacts gnome-games gnome-music shotwell simple-scan
@@ -61,7 +61,7 @@ sudo reboot
 
 Add the following to the end of your .bashrc:
 
-~~~
+~~~sh
 # git-prompt.sh
 if [ ! -f ~/.git-prompt.sh ]; then
     echo Downloading git-prompt.sh ...
@@ -76,7 +76,7 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 
 To reduce disk log file disk usage, periodically execute the following command:
 
-~~~
+~~~sh
 sudo journalctl --vacuum-time=2d
 ~~~
 
@@ -86,7 +86,7 @@ sudo journalctl --vacuum-time=2d
 
 ## Install Homebrew
 
-~~~
+~~~sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install aspell cloc git git-gui grep node python screen tree
 brew install --cask emacs firefox
@@ -97,7 +97,7 @@ brew install --cask emacs firefox
 
 If you ever need to unistall Homebrew for any reason:
 
-~~~
+~~~sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
 ~~~
 
@@ -112,7 +112,7 @@ Install the following:
 
 Install MSYS packages using the MSYS shell:
 
-~~~
+~~~sh
 pacman -Suy
 pacman -S diffutils git make mingw-w64-x86_64-emacs rsync
 ~~~
@@ -135,13 +135,13 @@ export NO_DOCKER=1
 
 To generate a git key, execute the following:
 
-~~~
+~~~sh
 ssh-keygen -t ed25519 -C "debian-laptop"
 ~~~
 
 To set the git global configuration, execute the following:
 
-~~~
+~~~sh
 git config --global init.defaultBranch main
 git config --global pull.rebase false
 git config --global core.editor emacs
@@ -152,14 +152,14 @@ git config --global user.name "craigahobbs@gmail.com"
 Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys). The following
 command copies your public SSH key to the clipboard.
 
-~~~
+~~~sh
 cat ~/.ssh/id_ed25519.pub | xsel -ib
 ~~~
 
 
 # Clone Source Code
 
-~~~
+~~~sh
 mkdir ~/src
 cd ~/src
 git clone git@github.com:craigahobbs/craigahobbs.github.io.git
