@@ -48,6 +48,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
     # Fetch the package raw data and validate
     dataText = systemFetch(dataURLs)
     packageData = arrayNew()
+    totalDownloads = 0
     for package, ixPackage in packages:
         packageName = objectGet(package, 'name')
         packageType = objectGet(package, 'type')
@@ -63,15 +64,18 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
         endif
 
         # Add the rankings data row
+        packageDownloads = objectGet(downloadsMonthlyData(data), 'monthlyAverage')
+        totalDownloads = totalDownloads + packageDownloads
         arrayPush(packageData, objectNew( \
             'Package', argsLink(downloadsArguments, packageName, objectNew('name', packageName, 'type', packageType)), \
             'Language', '[' + markdownEscape(packageType) + '](' + packageURL + ')', \
-            'Downloads', objectGet(downloadsMonthlyData(data), 'monthlyAverage') \
+            'Downloads', packageDownloads \
         ))
     endfor
+    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
+    arrayPush(packageData, objectNew('Package', '**Total**', 'Language', '', 'Downloads', totalDownloads))
 
     # Render the rankings table
-    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
     dataTable(packageData, objectNew( \
         'fields', arrayNew('Package', 'Language', 'Downloads'), \
         'formats', objectNew( \
