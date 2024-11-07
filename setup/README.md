@@ -145,8 +145,8 @@ To set the git global configuration, execute the following:
 git config --global init.defaultBranch main
 git config --global pull.rebase false
 git config --global core.editor emacs
-git config --global user.email "Craig A. Hobbs"
-git config --global user.name "craigahobbs@gmail.com"
+git config --global user.email "craigahobbs@gmail.com"
+git config --global user.name "Craig A. Hobbs"
 ~~~
 
 Finally, add the key to your [GitHub SSH Keys](https://github.com/settings/keys). The following
