@@ -165,5 +165,3 @@ cd ~/src
 git clone git@github.com:craigahobbs/craigahobbs.github.io.git
 make -C ~/src/craigahobbs.github.io/projects/ pull -j; echo $?
 ~~~
-
-Test
