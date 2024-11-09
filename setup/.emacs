@@ -38,6 +38,9 @@
     (delete-file mode-file)))
 (add-to-list 'auto-mode-alist '("\\.smd\\'" . schema-markdown-mode))
 
+;; Markdown
+(add-to-list 'auto-mode-alist '("\\.md\\'" . text-mode))
+
 ;; Activate Savehist mode
 (savehist-mode 1)
 
