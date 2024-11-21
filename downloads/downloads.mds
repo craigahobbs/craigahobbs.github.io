@@ -22,6 +22,11 @@ downloadsArguments = argsValidate(arrayNew( \
 ))
 
 
+function downloadsDataURL(packageLanguage, packageName):
+    return 'data/' + stringLower(packageLanguage) + '-' + packageName + '.json'
+endfunction
+
+
 async function downloadsRankings(javascriptPackages, pythonPackages):
     # Document title
     title = 'Package Downloads'
@@ -36,11 +41,7 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
     for packageType, ixPackageType in packageTypes:
         packageList = arrayGet(packageLists, ixPackageType)
         for packageName in packageList:
-            if packageType == 'Python':
-                arrayPush(dataURLs, downloadsPythonDataURL(packageName))
-            else:
-                arrayPush(dataURLs, downloadsJavascriptDataURL(packageName))
-            endif
+            arrayPush(dataURLs, downloadsDataURL(packageType, packageName))
             arrayPush(packages, objectNew('name', packageName, 'type', packageType))
         endfor
     endfor
@@ -54,12 +55,10 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
         packageType = objectGet(package, 'type')
 
         # Validate the data
-        dataRaw = jsonParse(arrayGet(dataText, ixPackage))
+        data = dataValidate(jsonParse(arrayGet(dataText, ixPackage)), true)
         if packageType == 'Python':
-            data = downloadsPythonDataValidate(dataRaw)
             packageURL = 'https://pypi.org/project/' + urlEncodeComponent(packageName) + '/'
         else:
-            data = downloadsJavascriptDataValidate(dataRaw)
             packageURL = 'https://www.npmjs.com/package/' + urlEncodeComponent(packageName)
         endif
 
@@ -98,11 +97,7 @@ async function downloadsDashboard(packageName, packageType):
     documentSetTitle(title)
 
     # Load and validate the package data
-    if packageType == 'Python':
-        data = downloadsPythonDataValidate(jsonParse(systemFetch(downloadsPythonDataURL(packageName))))
-    else:
-        data = downloadsJavascriptDataValidate(jsonParse(systemFetch(downloadsJavascriptDataURL(packageName))))
-    endif
+    data = dataValidate(jsonParse(systemFetch(downloadsDataURL(packageType, packageName))), true)
 
     # Compute the monthly data and averages
     monthly = downloadsMonthlyData(data)
@@ -271,50 +266,4 @@ function downloadsMonthlyData(data):
         'dailyAverage', dailyAverage, \
         'dailyAverageClean', dailyAverageClean \
     )
-endfunction
-
-
-function downloadsJavascriptDataURL(packageName):
-    today = datetimeToday()
-    yearAgo = datetimeNew(datetimeYear(today), datetimeMonth(today) - 12, 1)
-    return 'https://api.npmjs.org/downloads/range/' + \
-        datetimeISOFormat(yearAgo, true) + ':' + datetimeISOFormat(today, true) + '/' + packageName
-endfunction
-
-
-function downloadsJavascriptDataValidate(dataRaw):
-    # Reshape the data
-    data = arrayNew()
-    for row in objectGet(dataRaw, 'downloads'):
-        arrayPush(data, objectNew( \
-            'Date', objectGet(row, 'day'), \
-            'Downloads', objectGet(row, 'downloads') \
-        ))
-    endfor
-
-    # Validate the data
-    return dataValidate(data, true)
-endfunction
-
-
-function downloadsPythonDataURL(packageName):
-    #return 'https://pypistats.org/api/packages/' + packageName + '/overall'
-    return 'data/python-' + packageName + '.json'
-endfunction
-
-
-function downloadsPythonDataValidate(dataRaw):
-    # Reshape the data
-    data = arrayNew()
-    for row in objectGet(dataRaw, 'data'):
-        if objectGet(row, 'category') == 'without_mirrors':
-            arrayPush(data, objectNew( \
-                'Date', objectGet(row, 'date'), \
-                'Downloads', objectGet(row, 'downloads') \
-            ))
-        endif
-    endfor
-
-    # Validate the data
-    return dataValidate(data, true)
 endfunction
