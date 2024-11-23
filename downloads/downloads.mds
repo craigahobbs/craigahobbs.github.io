@@ -4,78 +4,72 @@
 include <args.mds>
 
 
-async function downloadsMain(javascriptPackages, pythonPackages):
+async function downloadsMain():
     args = argsParse(downloadsArguments)
+    page = objectGet(args, 'page')
     name = objectGet(args, 'name')
-    type = objectGet(args, 'type')
-    if name != null && type != null:
-        downloadsDashboard(name, type)
-    else:
-        downloadsRankings(javascriptPackages, pythonPackages)
+    language = objectGet(args, 'language')
+
+    # Report page?
+    if page == 'chart':
+        return downloadsChartPage()
     endif
+
+    # Package dashboard?
+    if name != null && language != null:
+        return downloadsDashboard(name, language)
+    endif
+
+    # Render the index page
+    downloadsIndex()
 endfunction
 
 
 downloadsArguments = argsValidate(arrayNew( \
-    objectNew('name', 'name', 'explicit', true), \
-    objectNew('name', 'type', 'explicit', true) \
+    objectNew('name', 'page'), \
+    objectNew('name', 'name'), \
+    objectNew('name', 'language') \
 ))
 
 
-function downloadsDataURL(packageLanguage, packageName):
-    return 'data/' + stringLower(packageLanguage) + '-' + packageName + '.json'
-endfunction
-
-
-async function downloadsRankings(javascriptPackages, pythonPackages):
+async function downloadsIndex():
     # Document title
     title = 'Package Downloads'
-    markdownPrint('# ' + markdownEscape(title))
+    markdownPrint( \
+        '# ' + markdownEscape(title), \
+        '', \
+        argsLink(downloadsArguments, 'Time Chart', objectNew('page', 'chart')) \
+    )
     documentSetTitle(title)
 
-    # Compute the list of package raw data URLs
-    dataURLs = arrayNew()
-    packages = arrayNew()
-    packageLists = arrayNew(javascriptPackages, pythonPackages)
-    packageTypes = arrayNew('JavaScript', 'Python')
-    for packageType, ixPackageType in packageTypes:
-        packageList = arrayGet(packageLists, ixPackageType)
-        for packageName in packageList:
-            arrayPush(dataURLs, downloadsDataURL(packageType, packageName))
-            arrayPush(packages, objectNew('name', packageName, 'type', packageType))
-        endfor
-    endfor
+    # Load the package data
+    data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
+    dataMonthly = downloadsDataMonthly(data)
+    dataAverage = downloadsDataAverage(dataMonthly, 'Month')
 
-    # Fetch the package raw data and validate
-    dataText = systemFetch(dataURLs)
-    packageData = arrayNew()
+    # Create links and compute total downloads
     totalDownloads = 0
-    for package, ixPackage in packages:
-        packageName = objectGet(package, 'name')
-        packageType = objectGet(package, 'type')
+    for row in dataAverage:
+        rowPackage = objectGet(row, 'Package')
+        rowLanguage = objectGet(row, 'Language')
+        totalDownloads = totalDownloads + objectGet(row, 'Downloads')
 
-        # Validate the data
-        data = dataValidate(jsonParse(arrayGet(dataText, ixPackage)), true)
-        if packageType == 'Python':
-            packageURL = 'https://pypi.org/project/' + urlEncodeComponent(packageName) + '/'
+        # Package page link
+        objectSet(row, 'Package', argsLink(downloadsArguments, rowPackage, objectNew('name', rowPackage, 'language', rowLanguage)))
+
+        # Package repository link
+        if rowLanguage == 'Python':
+            packageURL = 'https://pypi.org/project/' + urlEncodeComponent(rowPackage) + '/'
         else:
-            packageURL = 'https://www.npmjs.com/package/' + urlEncodeComponent(packageName)
+            packageURL = 'https://www.npmjs.com/package/' + urlEncodeComponent(rowPackage)
         endif
-
-        # Add the rankings data row
-        packageDownloads = objectGet(downloadsMonthlyData(data), 'monthlyAverage')
-        totalDownloads = totalDownloads + packageDownloads
-        arrayPush(packageData, objectNew( \
-            'Package', argsLink(downloadsArguments, packageName, objectNew('name', packageName, 'type', packageType)), \
-            'Language', '[' + markdownEscape(packageType) + '](' + packageURL + ')', \
-            'Downloads', packageDownloads \
-        ))
+        objectSet(row, 'Language', '[' + markdownEscape(rowLanguage) + '](' + packageURL + ')')
     endfor
-    dataSort(packageData, arrayNew(arrayNew('Downloads', true)))
-    arrayPush(packageData, objectNew('Package', '**Total**', 'Language', '', 'Downloads', totalDownloads))
+    dataSort(dataAverage, arrayNew(arrayNew('Downloads', true)))
+    arrayPush(dataAverage, objectNew('Package', '**Total**', 'Language', '', 'Downloads', totalDownloads))
 
-    # Render the rankings table
-    dataTable(packageData, objectNew( \
+    # Render the package downloads table
+    dataTable(dataAverage, objectNew( \
         'fields', arrayNew('Package', 'Language', 'Downloads'), \
         'formats', objectNew( \
             'Package', objectNew('markdown', true), \
@@ -86,30 +80,56 @@ async function downloadsRankings(javascriptPackages, pythonPackages):
 endfunction
 
 
-async function downloadsDashboard(packageName, packageType):
-    # Document title
-    title = packageName + ' (' + packageType + ') Downloads'
+async function downloadsChartPage():
+    # Render the title
+    title = 'Downloads Chart'
+    documentSetTitle(title)
     markdownPrint( \
-        argsLink(downloadsArguments, 'Rankings'), \
+        argsLink(downloadsArguments, 'Back', null, true), \
+        '', \
+        '# ' + markdownEscape(title) \
+    )
+
+    # Create the chart
+    data = downloadsDataMonthly(downloadsDataLoad())
+    chartWidth = windowWidth() - 4 * documentFontSize()
+    chartHeight = mathMax(200, mathFloor(0.4 * chartWidth))
+    dataLineChart(data, objectNew( \
+        'width', chartWidth, \
+        'height', chartHeight, \
+        'x', 'Month', \
+        'y', arrayNew('Downloads'), \
+        'color', 'Unique' \
+    ))
+
+    # Redraw on resize
+    windowSetResize(downloadsChartPage)
+endfunction
+
+
+async function downloadsDashboard(packageName, packageLanguage):
+    # Document title
+    title = packageName + ' (' + packageLanguage + ') Downloads'
+    markdownPrint( \
+        argsLink(downloadsArguments, 'Back', null, true), \
         '', \
         '# ' + markdownEscape(title) \
     )
     documentSetTitle(title)
 
-    # Load and validate the package data
-    data = dataValidate(jsonParse(systemFetch(downloadsDataURL(packageType, packageName))), true)
-
-    # Compute the monthly data and averages
-    monthly = downloadsMonthlyData(data)
-    dataTrim = objectGet(monthly, 'dataTrim')
-    dataClean = objectGet(monthly, 'dataClean')
-    dataMonthly = objectGet(monthly, 'dataMonthly')
-
-    # Chart constants
-    chartWidth = 1000
-    chartHeight = 250
+    # Load the package data
+    data = downloadsDataLoad()
+    data = dataFilter( \
+        data, \
+        'Package == packageName && Language == packageLanguage', \
+        objectNew('packageName', packageName, 'packageLanguage', packageLanguage) \
+    )
+    dataMonthly = downloadsDataMonthly(data)
 
     # Render the monthly line chart
+    chartWidth = windowWidth() - 4 * documentFontSize()
+    chartHeight = mathMax(200, mathFloor(0.2 * chartWidth))
+    monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(dataMonthly, 'Month'), 0), 'Downloads'))
     dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
@@ -118,14 +138,15 @@ async function downloadsDashboard(packageName, packageType):
         'y', arrayNew('Downloads'), \
         'yTicks', objectNew('start', 0), \
         'yLines', arrayNew( \
-            objectNew('value', objectGet(monthly, 'monthlyAverage')) \
+            objectNew('value', monthlyAverage) \
         ), \
         'datetime', 'day', \
         'precision', 1 \
     ))
 
     # Render the daily line chart (clean)
-    dataLineChart(dataClean, objectNew( \
+    dailyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(data, 'Date'), 0), 'Downloads'))
+    dataLineChart(data, objectNew( \
         'title', 'Daily Downloads (clean) - ' + packageName, \
         'width', chartWidth, \
         'height', chartHeight, \
@@ -133,22 +154,7 @@ async function downloadsDashboard(packageName, packageType):
         'y', arrayNew('Downloads'), \
         'yTicks', objectNew('start', 0), \
         'yLines', arrayNew( \
-            objectNew('value', objectGet(monthly, 'dailyAverageClean')) \
-        ), \
-        'datetime', 'day', \
-        'precision', 1 \
-    ))
-
-    # Render the daily line chart
-    dataLineChart(dataTrim, objectNew( \
-        'title', 'Daily Downloads - ' + packageName, \
-        'width', chartWidth, \
-        'height', chartHeight, \
-        'x', 'Date', \
-        'y', arrayNew('Downloads'), \
-        'yTicks', objectNew('start', 0), \
-        'yLines', arrayNew( \
-            objectNew('value', objectGet(monthly, 'dailyAverage')) \
+            objectNew('value', dailyAverage) \
         ), \
         'datetime', 'day', \
         'precision', 1 \
@@ -156,114 +162,87 @@ async function downloadsDashboard(packageName, packageType):
 
     # Render the monthly table by most recent
     dataSort(dataMonthly, arrayNew(arrayNew('Month', true)))
+    dataCalculatedField( \
+        dataMonthly, \
+        '% Average', 'numberToFixed((100 * (Downloads - monthlyAverage) / monthlyAverage), 1, true) + "%"', \
+        objectNew('monthlyAverage', monthlyAverage) \
+    )
     dataTable(dataMonthly, objectNew( \
-        'fields', arrayNew('Month', 'Downloads', '% Average', 'Projected'), \
+        'fields', arrayNew('Month', 'Downloads', '% Average'), \
         'formats', objectNew( \
-            'Downloads', objectNew('align', 'right'), \
-            '% Average', objectNew('align', 'right') \
+            'Downloads', objectNew('align', 'right') \
         ), \
-        'datetime', 'month' \
+        'datetime', 'month', \
+        'precision', 0 \
+    ))
+
+    # Redraw on resize
+    windowSetResize(systemPartial(downloadsDashboard, packageName, packageLanguage))
+endfunction
+
+
+async function downloadsDataLoad():
+    data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
+
+    # Compute the unique package names
+    nameLanguages = objectNew()
+    for row in data:
+        name = objectGet(row, 'Package')
+        language = objectGet(row, 'Language')
+        languages = objectGet(nameLanguages, name)
+        if !languages:
+            objectSet(nameLanguages, name, objectNew(language, true))
+        else:
+            objectSet(languages, language, true)
+        endif
+    endfor
+    for row in data:
+        name = objectGet(row, 'Package')
+        language = objectGet(row, 'Language')
+        if arrayLength(objectKeys(objectGet(nameLanguages, name))) == 1:
+            objectSet(row, 'Unique', name)
+        elif language == 'Python':
+            objectSet(row, 'Unique', name + ' (py)')
+        else:
+            objectSet(row, 'Unique', name + ' (js)')
+        endif
+    endfor
+
+    return data
+endfunction
+
+
+function downloadsDataMonthly(data):
+    dataCalculatedField(data, 'Month', 'datetimeISOParse(stringSlice(datetimeISOFormat(Date, true), 0, 7) + "-01")')
+    return dataAggregate(data, objectNew( \
+        'categories', arrayNew('Language', 'Package', 'Unique', 'Month'), \
+        'measures', arrayNew( \
+            objectNew( \
+                'field', 'Downloads', \
+                'function', 'sum' \
+            ) \
+        ) \
     ))
 endfunction
 
 
-function downloadsMonthlyData(data):
-    # Trim leading and trailing zero-download days
-    ixFirstNonZero = null
-    ixLastNonZero = arrayLength(data) - 1
-    for row, ixRow in dataSort(data, arrayNew(arrayNew('Date'))):
-        ixFirstNonZero = if(ixFirstNonZero == null && objectGet(row, 'Downloads') != 0, ixRow, ixFirstNonZero)
-        ixLastNonZero = if(objectGet(row, 'Downloads') != 0, ixRow, ixLastNonZero)
-    endfor
-    dataTrim = arraySlice(data, if(ixFirstNonZero != null, ixFirstNonZero, 0), ixLastNonZero + 1)
-
-    # Replace extreme outliers with a filtered average
-    dataStddev = dataAggregate(dataTrim, objectNew( \
-        'measures', arrayNew( \
-            objectNew('field', 'Downloads', 'name', 'downloadsStddev', 'function', 'stddev'), \
-            objectNew('field', 'Downloads', 'name', 'downloadsAverage', 'function', 'average') \
-        ) \
-    ))
-    dailyAverage = objectGet(arrayGet(dataStddev, 0), 'downloadsAverage')
-    downloadsMax = dailyAverage + 4 * objectGet(arrayGet(dataStddev, 0), 'downloadsStddev')
-    dataClean = arrayNew()
-    for row in dataTrim:
-        rowClean = objectCopy(row)
-        if objectGet(row, 'Downloads') > downloadsMax:
-            objectSet(rowClean, 'Downloads', null)
-        endif
-        arrayPush(dataClean, rowClean)
-    endfor
-    dataCleanAverage = dataAggregate(dataClean, objectNew( \
-        'measures', arrayNew( \
-            objectNew('field', 'Downloads', 'name', 'downloadsAverage', 'function', 'average') \
-        ) \
-    ))
-    dailyAverageClean = mathRound(objectGet(arrayGet(dataCleanAverage, 0), 'downloadsAverage'), 0)
-    for rowClean in dataClean:
-        if objectGet(rowClean, 'Downloads') == null:
-            objectSet(rowClean, 'Downloads', dailyAverageClean)
-        endif
-    endfor
-
-    # Compute the monthly download data
-    dataCalculatedField(dataClean, 'Month', 'datetimeNew(year(Date), datetimeMonth(Date), 1)')
-    dataCalculatedField(dataClean, 'monthDay', 'datetimeDay(Date)')
-    dataMonthly = dataAggregate(dataClean, objectNew( \
-        'categories', arrayNew('Month'), \
-        'measures', arrayNew( \
-            objectNew('field', 'Downloads', 'function', 'sum'), \
-            objectNew('field', 'monthDay', 'name', 'monthDayMin', 'function', 'min'), \
-            objectNew('field', 'monthDay', 'name', 'monthDayMax', 'function', 'max') \
-        ) \
-    ))
-    dataCalculatedField(dataMonthly, 'monthCount', 'monthDayMax - monthDayMin + 1')
-
-    # Adjust downloads for partial months
-    dataMinMax = dataAggregate(dataClean, objectNew( \
-        'measures', arrayNew( \
-            objectNew('field', 'Month', 'name', 'monthMin', 'function', 'min'), \
-            objectNew('field', 'Month', 'name', 'monthMax', 'function', 'max') \
-        ) \
-    ))
-    dataMonthly = dataFilter(dataMonthly, \
-        '(Month - monthMin != 0 && Month - monthMax != 0) || monthCount >= 5', \
-        arrayGet(dataMinMax, 0) \
-    )
-    dataCalculatedField(dataMonthly, 'monthDays', 'arrayGet(monthDays, datetimeMonth(Month) - 1)', objectNew( \
-        'monthDays', arrayNew(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) \
-    ))
-    dataCalculatedField(dataMonthly, 'Projected', \
-        "if((Month - monthMin == 0 || Month - monthMax == 0) && monthCount < monthDays, '*', '')", \
-        arrayGet(dataMinMax, 0) \
-    )
-    dataCalculatedField(dataMonthly, 'Downloads', \
-        "if(Projected == '', Downloads, round(Downloads * monthDays / monthCount, 0))", \
-        arrayGet(dataMinMax, 0) \
+function downloadsDataAverage(data, dateField):
+    # Filter the data
+    monthCount = 3
+    today = datetimeToday()
+    minDate = datetimeNew(datetimeYear(today), datetimeMonth(today) - monthCount, 1)
+    maxDate = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
+    dataFiltered = dataFilter( \
+        data, \
+        dateField + ' >= minDate && ' + dateField + ' < maxDate', \
+        objectNew('minDate', minDate, 'maxDate', maxDate) \
     )
 
-    # Compute the monthly average
-    dataAverage = dataAggregate(dataMonthly, objectNew( \
+    # Compute the average
+    return dataAggregate(dataFiltered, objectNew( \
+        'categories', arrayNew('Language', 'Package', 'Unique'), \
         'measures', arrayNew( \
             objectNew('field', 'Downloads', 'function', 'average') \
         ) \
     ))
-    monthlyAverage = objectGet(arrayGet(dataAverage, 0), 'Downloads')
-
-    # Add the percentage-of-average field
-    dataCalculatedField( \
-        dataMonthly, \
-        '% Average', \
-        "if(monthlyAverage, numberToFixed(100 * (Downloads - monthlyAverage) / monthlyAverage, 1) + '%', '')", \
-        objectNew('monthlyAverage', monthlyAverage) \
-    )
-
-    return objectNew( \
-        'dataTrim', dataTrim, \
-        'dataClean', dataClean, \
-        'dataMonthly', dataMonthly, \
-        'monthlyAverage', monthlyAverage, \
-        'dailyAverage', dailyAverage, \
-        'dailyAverageClean', dailyAverageClean \
-    )
 endfunction

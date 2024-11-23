@@ -44,25 +44,7 @@
 ~~~ markdown-script
 include 'downloads.mds'
 
-javascriptPackages = arrayNew( \\
-    'bare-script', \\
-    'element-model', \\
-    'markdown-model', \\
-    'markdown-up', \\
-    'schema-markdown-doc', \\
-    'schema-markdown' \\
-)
-pythonPackages = arrayNew( \\
-    'bare-script', \\
-    'chisel', \\
-    'markdown-up', \\
-    'ollama-chat', \\
-    'schema-markdown', \\
-    'simple-git-changelog', \\
-    'template-specialize', \\
-    'unittest-parallel' \\
-)
-downloadsMain(javascriptPackages, pythonPackages)
+downloadsMain()
 ~~~
 `});
         app.run();

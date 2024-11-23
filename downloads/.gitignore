@@ -1,0 +1,4 @@
+/build/
+/Makefile.tool
+/pylintrc
+.DS_Store
