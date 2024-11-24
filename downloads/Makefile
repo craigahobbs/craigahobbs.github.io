@@ -19,7 +19,7 @@ include Makefile.tool
 
 
 # Development dependencies
-TESTS_REQUIRE := pylint
+TESTS_REQUIRE := bare-script pylint
 
 
 .PHONY: help
@@ -34,6 +34,7 @@ clean:
 
 lint: $(DEFAULT_VENV_BUILD)
 	$(DEFAULT_VENV_PYTHON) -m pylint downloads.py
+	$(DEFAULT_VENV_BIN)/bare -s downloads.mds
 
 
 .PHONY: data
