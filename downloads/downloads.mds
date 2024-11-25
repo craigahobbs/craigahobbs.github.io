@@ -73,7 +73,8 @@ async function downloadsIndex():
         'fields', arrayNew('Package', 'Language', 'Downloads'), \
         'formats', objectNew( \
             'Package', objectNew('markdown', true), \
-            'Language', objectNew('markdown', true) \
+            'Language', objectNew('markdown', true), \
+            'Downloads', objectNew('align', 'right') \
         ), \
         'precision', 0 \
     ))
@@ -92,14 +93,17 @@ async function downloadsChartPage():
 
     # Create the chart
     data = downloadsDataMonthly(downloadsDataLoad())
-    chartWidth = windowWidth() - 4 * documentFontSize()
-    chartHeight = mathMax(200, mathFloor(0.4 * chartWidth))
+    chartWidth = mathMax(600, windowWidth() - 4 * documentFontSize())
+    chartHeight = mathFloor(0.4 * chartWidth)
     dataLineChart(data, objectNew( \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Month', \
         'y', arrayNew('Downloads'), \
-        'color', 'Unique' \
+        'color', 'Unique', \
+        'yTicks', objectNew('start', 0, 'count', 5), \
+        'precision', 0, \
+        'datetime', 'day' \
     ))
 
     # Redraw on resize
@@ -127,7 +131,7 @@ async function downloadsDashboard(packageName, packageLanguage):
     dataMonthly = downloadsDataMonthly(data)
 
     # Render the monthly line chart
-    chartWidth = windowWidth() - 4 * documentFontSize()
+    chartWidth = mathMax(600, windowWidth() - 4 * documentFontSize())
     chartHeight = mathMax(200, mathFloor(0.2 * chartWidth))
     monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(dataMonthly, 'Month'), 0), 'Downloads'))
     dataLineChart(dataMonthly, objectNew( \
