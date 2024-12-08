@@ -143,6 +143,7 @@ To set the git global configuration, execute the following:
 
 ~~~sh
 git config --global init.defaultBranch main
+git config --global fetch.prune true
 git config --global pull.rebase false
 git config --global core.editor emacs
 git config --global user.email "craigahobbs@gmail.com"
