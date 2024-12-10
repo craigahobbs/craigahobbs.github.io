@@ -134,6 +134,7 @@ async function downloadsDashboard(packageName, packageLanguage):
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(mathMax(200, mathFloor(0.2 * chartWidth)))
     monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(dataMonthly, 'Month'), 0), 'Downloads'))
+    minDate = downloadsDataAverageMinDate()
     dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
         'width', chartWidth, \
@@ -141,6 +142,9 @@ async function downloadsDashboard(packageName, packageLanguage):
         'x', 'Month', \
         'y', arrayNew('Downloads'), \
         'yTicks', objectNew('start', 0), \
+        'xLines', arrayNew( \
+            objectNew('value', minDate, 'label', '') \
+        ), \
         'yLines', arrayNew( \
             objectNew('value', monthlyAverage) \
         ), \
@@ -157,6 +161,9 @@ async function downloadsDashboard(packageName, packageLanguage):
         'x', 'Date', \
         'y', arrayNew('Downloads'), \
         'yTicks', objectNew('start', 0), \
+        'xLines', arrayNew( \
+            objectNew('value', minDate, 'label', '') \
+        ), \
         'yLines', arrayNew( \
             objectNew('value', dailyAverage) \
         ), \
@@ -217,8 +224,16 @@ endfunction
 
 
 function downloadsDataMonthly(data):
-    dataCalculatedField(data, 'Month', 'datetimeISOParse(stringSlice(datetimeISOFormat(Date, true), 0, 7) + "-01")')
-    return dataAggregate(data, objectNew( \
+    # Filter-out the current month
+    today = datetimeToday()
+    maxDate = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
+    dataFiltered = dataFilter(data, 'Date < maxDate', objectNew('maxDate', maxDate))
+
+    # Compute the month field
+    dataCalculatedField(dataFiltered, 'Month', 'datetimeISOParse(stringSlice(datetimeISOFormat(Date, true), 0, 7) + "-01")')
+
+    # Aggregate by month
+    return dataAggregate(dataFiltered, objectNew( \
         'categories', arrayNew('Language', 'Package', 'Unique', 'Month'), \
         'measures', arrayNew( \
             objectNew( \
@@ -232,15 +247,7 @@ endfunction
 
 function downloadsDataAverage(data, dateField):
     # Filter the data
-    monthCount = 3
-    today = datetimeToday()
-    minDate = datetimeNew(datetimeYear(today), datetimeMonth(today) - monthCount, 1)
-    maxDate = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
-    dataFiltered = dataFilter( \
-        data, \
-        dateField + ' >= minDate && ' + dateField + ' < maxDate', \
-        objectNew('minDate', minDate, 'maxDate', maxDate) \
-    )
+    dataFiltered = dataFilter(data, dateField + ' >= minDate', objectNew('minDate', downloadsDataAverageMinDate()))
 
     # Compute the average
     return dataAggregate(dataFiltered, objectNew( \
@@ -249,4 +256,11 @@ function downloadsDataAverage(data, dateField):
             objectNew('field', 'Downloads', 'function', 'average') \
         ) \
     ))
+endfunction
+
+
+function downloadsDataAverageMinDate():
+    monthCount = 3
+    today = datetimeToday()
+    return datetimeNew(datetimeYear(today), datetimeMonth(today) - monthCount, 1)
 endfunction
