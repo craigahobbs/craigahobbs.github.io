@@ -93,7 +93,7 @@ async function downloadsChartPage():
 
     # Create the chart
     data = downloadsDataMonthly(downloadsDataLoad())
-    chartWidth = mathMax(600, windowWidth() - 4 * documentFontSize())
+    chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(0.4 * chartWidth)
     dataLineChart(data, objectNew( \
         'width', chartWidth, \
@@ -131,8 +131,8 @@ async function downloadsDashboard(packageName, packageLanguage):
     dataMonthly = downloadsDataMonthly(data)
 
     # Render the monthly line chart
-    chartWidth = mathMax(600, windowWidth() - 4 * documentFontSize())
-    chartHeight = mathMax(200, mathFloor(0.2 * chartWidth))
+    chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
+    chartHeight = mathFloor(mathMax(200, mathFloor(0.2 * chartWidth)))
     monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(dataMonthly, 'Month'), 0), 'Downloads'))
     dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + packageName, \
