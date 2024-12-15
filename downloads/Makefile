@@ -39,4 +39,4 @@ lint: $(DEFAULT_VENV_BUILD)
 
 .PHONY: data
 data: $(DEFAULT_VENV_BUILD)
-	$(DEFAULT_VENV_PYTHON) downloads.py --years=5
+	$(DEFAULT_VENV_PYTHON) downloads.py
