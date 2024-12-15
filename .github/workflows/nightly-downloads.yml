@@ -1,0 +1,23 @@
+name: Nightly downloads update
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # Midnight PST
+  workflow_dispatch:      # Allows manual trigger from GitHub UI
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout
+
+    - name: Run script
+      run: cd downloads && python3 downloads.py
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git commit -am "downloads - update data" || exit 0
+        git push
