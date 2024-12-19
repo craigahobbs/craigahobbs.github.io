@@ -26397,7 +26397,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2024-12-18",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "element-model",
@@ -26409,7 +26409,7 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2024-12-18",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "markdown-up",
@@ -26427,6 +26427,78 @@
         "Package": "schema-markdown-doc",
         "Language": "JavaScript",
         "Date": "2024-12-18",
+        "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2024-12-18",
+        "Downloads": 59
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2024-12-18",
+        "Downloads": 9
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2024-12-18",
+        "Downloads": 4
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2024-12-18",
+        "Downloads": 9
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2024-12-18",
+        "Downloads": 239
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2024-12-18",
+        "Downloads": 1474
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2024-12-19",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2024-12-19",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2024-12-19",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2024-12-19",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2024-12-19",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2024-12-19",
         "Downloads": 0
     }
 ]
