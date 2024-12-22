@@ -26637,7 +26637,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2024-12-21",
-        "Downloads": 0
+        "Downloads": 3
     },
     {
         "Package": "element-model",
@@ -26649,7 +26649,7 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2024-12-21",
-        "Downloads": 0
+        "Downloads": 7
     },
     {
         "Package": "markdown-up",
@@ -26667,6 +26667,78 @@
         "Package": "schema-markdown-doc",
         "Language": "JavaScript",
         "Date": "2024-12-21",
+        "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2024-12-21",
+        "Downloads": 2
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2024-12-21",
+        "Downloads": 1
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2024-12-21",
+        "Downloads": 50
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2024-12-21",
+        "Downloads": 15
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2024-12-21",
+        "Downloads": 78
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2024-12-21",
+        "Downloads": 315
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2024-12-22",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2024-12-22",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2024-12-22",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2024-12-22",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2024-12-22",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2024-12-22",
         "Downloads": 0
     }
 ]
