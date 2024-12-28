@@ -27099,36 +27099,120 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2024-12-27",
-        "Downloads": 0
+        "Downloads": 5
     },
     {
         "Package": "element-model",
         "Language": "JavaScript",
         "Date": "2024-12-27",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2024-12-27",
-        "Downloads": 0
+        "Downloads": 4
     },
     {
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2024-12-27",
-        "Downloads": 0
+        "Downloads": 16
     },
     {
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2024-12-27",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "schema-markdown-doc",
         "Language": "JavaScript",
         "Date": "2024-12-27",
+        "Downloads": 2
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 58
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 174
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 97
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 89
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 56
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 19
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 148
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2024-12-27",
+        "Downloads": 940
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2024-12-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2024-12-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2024-12-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2024-12-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2024-12-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2024-12-28",
         "Downloads": 0
     }
 ]
