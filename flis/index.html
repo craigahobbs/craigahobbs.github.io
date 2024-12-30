@@ -39,7 +39,35 @@
     </body>
     <script type="module">
         import {MarkdownUp} from 'https://craigahobbs.github.io/markdown-up/lib/app.js';
-        const app = new MarkdownUp(window, {'url': 'wine.md'});
+        const app = new MarkdownUp(window, {
+            'markdownText': `
+# Specially Curated Wines for Flis 2024!
+
+## [Wine 1](#url=wine.md&wine-1)
+
+## [Wine 2](#url=wine.md&wine-2)
+
+## [Wine 3](#url=wine.md&wine-3)
+
+## [Wine 4](#url=wine.md&wine-4)
+
+## [Wine 5](#url=wine.md&wine-5)
+
+## [Wine 6](#url=wine.md&wine-6)
+
+## [Wine 7](#url=wine.md&wine-7)
+
+## [Wine 8](#url=wine.md&wine-8)
+
+## [Wine 9](#url=wine.md&wine-9)
+
+## [Wine 10](#url=wine.md&wine-10)
+
+## [Wine 11](#url=wine.md&wine-11)
+
+## [Wine 12](#url=wine.md&wine-12)
+`
+        });
         app.run();
     </script>
 </html>
