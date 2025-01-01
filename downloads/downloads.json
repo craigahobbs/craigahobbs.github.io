@@ -27429,7 +27429,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2024-12-31",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "element-model",
@@ -27441,24 +27441,108 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2024-12-31",
-        "Downloads": 0
+        "Downloads": 17
     },
     {
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2024-12-31",
-        "Downloads": 0
+        "Downloads": 8
     },
     {
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2024-12-31",
-        "Downloads": 0
+        "Downloads": 2
     },
     {
         "Package": "schema-markdown-doc",
         "Language": "JavaScript",
         "Date": "2024-12-31",
+        "Downloads": 2
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 60
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 166
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 49
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 196
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 13
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 15
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 211
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2024-12-31",
+        "Downloads": 723
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-01-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-01-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-01-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-01-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-01-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-01-01",
         "Downloads": 0
     }
 ]
