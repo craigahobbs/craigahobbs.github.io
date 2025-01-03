@@ -27597,7 +27597,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2025-01-02",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "element-model",
@@ -27615,7 +27615,7 @@
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2025-01-02",
-        "Downloads": 0
+        "Downloads": 2
     },
     {
         "Package": "schema-markdown",
@@ -27627,6 +27627,72 @@
         "Package": "schema-markdown-doc",
         "Language": "JavaScript",
         "Date": "2025-01-02",
+        "Downloads": 49
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-01-02",
+        "Downloads": 7
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-01-02",
+        "Downloads": 8
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-01-02",
+        "Downloads": 7
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-01-02",
+        "Downloads": 326
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-01-02",
+        "Downloads": 961
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-01-03",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-01-03",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-01-03",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-01-03",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-01-03",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-01-03",
         "Downloads": 0
     }
 ]
