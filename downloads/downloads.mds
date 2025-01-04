@@ -10,33 +10,44 @@ async function downloadsMain():
     name = objectGet(args, 'name')
     language = objectGet(args, 'language')
 
-    # Report page?
+    # Chart page?
     if page == 'chart':
-        return downloadsChartPage()
+        return downloadsChartPage(args)
     endif
 
     # Package dashboard?
     if name != null && language != null:
-        return downloadsDashboard(name, language)
+        return downloadsDashboard(args)
     endif
 
     # Render the index page
-    downloadsIndex()
+    downloadsIndex(args)
 endfunction
 
 
 downloadsArguments = argsValidate(arrayNew( \
     objectNew('name', 'page'), \
     objectNew('name', 'name'), \
-    objectNew('name', 'language') \
+    objectNew('name', 'language'), \
+    objectNew('name', 'currentMonth', 'type', 'bool', 'default', false) \
 ))
 
 
-async function downloadsIndex():
+function downloadsCurrentMonthMarkdown(includeCurrentMonth):
+    return '**Current Month:** ' + \
+        argsLink(downloadsArguments, if(includeCurrentMonth, 'Included', 'Excluded'), objectNew('currentMonth', !includeCurrentMonth))
+endfunction
+
+
+async function downloadsIndex(args):
+    includeCurrentMonth = objectGet(args, 'currentMonth')
+
     # Document title
     title = 'Package Downloads'
     markdownPrint( \
         '# ' + markdownEscape(title), \
+        '', \
+        downloadsCurrentMonthMarkdown(includeCurrentMonth), \
         '', \
         argsLink(downloadsArguments, 'Time Chart', objectNew('page', 'chart')) \
     )
@@ -44,7 +55,7 @@ async function downloadsIndex():
 
     # Load the package data
     data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
-    dataMonthly = downloadsDataMonthly(data)
+    dataMonthly = downloadsDataMonthly(data, includeCurrentMonth)
     dataAverage = downloadsDataAverage(dataMonthly, 'Month')
 
     # Create links and compute total downloads
@@ -81,18 +92,22 @@ async function downloadsIndex():
 endfunction
 
 
-async function downloadsChartPage():
+async function downloadsChartPage(args):
+    includeCurrentMonth = objectGet(args, 'currentMonth')
+
     # Render the title
     title = 'Downloads Chart'
     documentSetTitle(title)
     markdownPrint( \
-        argsLink(downloadsArguments, 'Back', null, true), \
+        argsLink(downloadsArguments, 'Back', objectNew('page', null)), \
         '', \
-        '# ' + markdownEscape(title) \
+        '# ' + markdownEscape(title), \
+        '', \
+        downloadsCurrentMonthMarkdown(includeCurrentMonth) \
     )
 
     # Create the chart
-    data = downloadsDataMonthly(downloadsDataLoad())
+    data = downloadsDataMonthly(downloadsDataLoad(), includeCurrentMonth)
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(0.4 * chartWidth)
     dataLineChart(data, objectNew( \
@@ -107,17 +122,23 @@ async function downloadsChartPage():
     ))
 
     # Redraw on resize
-    windowSetResize(downloadsChartPage)
+    windowSetResize(systemPartial(downloadsChartPage, args))
 endfunction
 
 
-async function downloadsDashboard(packageName, packageLanguage):
+async function downloadsDashboard(args):
+    name = objectGet(args, 'name')
+    language = objectGet(args, 'language')
+    includeCurrentMonth = objectGet(args, 'currentMonth')
+
     # Document title
-    title = packageName + ' (' + packageLanguage + ') Downloads'
+    title = name + ' (' + language + ') Downloads'
     markdownPrint( \
-        argsLink(downloadsArguments, 'Back', null, true), \
+        argsLink(downloadsArguments, 'Back', objectNew('name', null, 'language', null)), \
         '', \
-        '# ' + markdownEscape(title) \
+        '# ' + markdownEscape(title), \
+        '', \
+        downloadsCurrentMonthMarkdown(includeCurrentMonth) \
     )
     documentSetTitle(title)
 
@@ -126,9 +147,9 @@ async function downloadsDashboard(packageName, packageLanguage):
     data = dataFilter( \
         data, \
         'Package == packageName && Language == packageLanguage', \
-        objectNew('packageName', packageName, 'packageLanguage', packageLanguage) \
+        objectNew('packageName', name, 'packageLanguage', language) \
     )
-    dataMonthly = downloadsDataMonthly(data)
+    dataMonthly = downloadsDataMonthly(data, includeCurrentMonth)
 
     # Render the monthly line chart
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
@@ -136,7 +157,7 @@ async function downloadsDashboard(packageName, packageLanguage):
     monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(dataMonthly, 'Month'), 0), 'Downloads'))
     minDate = downloadsDataAverageMinDate()
     dataLineChart(dataMonthly, objectNew( \
-        'title', 'Monthly Downloads - ' + packageName, \
+        'title', 'Monthly Downloads - ' + name, \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Month', \
@@ -155,7 +176,7 @@ async function downloadsDashboard(packageName, packageLanguage):
     # Render the daily line chart (clean)
     dailyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(data, 'Date'), 0), 'Downloads'))
     dataLineChart(data, objectNew( \
-        'title', 'Daily Downloads (clean) - ' + packageName, \
+        'title', 'Daily Downloads (clean) - ' + name, \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Date', \
@@ -188,7 +209,7 @@ async function downloadsDashboard(packageName, packageLanguage):
     ))
 
     # Redraw on resize
-    windowSetResize(systemPartial(downloadsDashboard, packageName, packageLanguage))
+    windowSetResize(systemPartial(downloadsDashboard, args))
 endfunction
 
 
@@ -223,11 +244,15 @@ async function downloadsDataLoad():
 endfunction
 
 
-function downloadsDataMonthly(data):
+function downloadsDataMonthly(data, includeCurrentMonth):
     # Filter-out the current month
-    today = datetimeToday()
-    maxDate = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
-    dataFiltered = dataFilter(data, 'Date < maxDate', objectNew('maxDate', maxDate))
+    if includeCurrentMonth:
+        dataFiltered = data
+    else:
+        today = datetimeToday()
+        maxDate = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
+        dataFiltered = dataFilter(data, 'Date < maxDate', objectNew('maxDate', maxDate))
+    endif
 
     # Compute the month field
     dataCalculatedField(dataFiltered, 'Month', 'datetimeISOParse(stringSlice(datetimeISOFormat(Date, true), 0, 7) + "-01")')
