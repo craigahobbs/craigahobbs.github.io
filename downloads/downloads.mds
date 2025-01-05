@@ -106,16 +106,25 @@ async function downloadsChartPage(args):
         downloadsCurrentMonthMarkdown(includeCurrentMonth) \
     )
 
+    # Aggregate monthly and determine the color legend order
+    dataMonthly = downloadsDataMonthly(downloadsDataLoad(), includeCurrentMonth)
+    dataAverage = downloadsDataAverage(dataMonthly, 'Month')
+    dataSort(dataAverage, arrayNew(arrayNew('Downloads', true)))
+    colorOrder = arrayNew()
+    for row in dataAverage:
+        arrayPush(colorOrder, objectGet(row, 'Unique'))
+    endfor
+
     # Create the chart
-    data = downloadsDataMonthly(downloadsDataLoad(), includeCurrentMonth)
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(0.4 * chartWidth)
-    dataLineChart(data, objectNew( \
+    dataLineChart(dataMonthly, objectNew( \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Month', \
         'y', arrayNew('Downloads'), \
         'color', 'Unique', \
+        'colorOrder', colorOrder, \
         'yTicks', objectNew('start', 0, 'count', 5), \
         'precision', 0, \
         'datetime', 'day' \
