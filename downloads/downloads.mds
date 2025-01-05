@@ -33,21 +33,13 @@ downloadsArguments = argsValidate(arrayNew( \
 ))
 
 
-function downloadsCurrentMonthMarkdown(includeCurrentMonth):
-    return '**Current Month:** ' + \
-        argsLink(downloadsArguments, if(includeCurrentMonth, 'Included', 'Excluded'), objectNew('currentMonth', !includeCurrentMonth))
-endfunction
-
-
 async function downloadsIndex(args):
-    includeCurrentMonth = objectGet(args, 'currentMonth')
-
     # Document title
     title = 'Package Downloads'
     markdownPrint( \
         '# ' + markdownEscape(title), \
         '', \
-        downloadsCurrentMonthMarkdown(includeCurrentMonth), \
+        downloadsCurrentMonthMarkdown(args), \
         '', \
         argsLink(downloadsArguments, 'Time Chart', objectNew('page', 'chart')) \
     )
@@ -55,8 +47,8 @@ async function downloadsIndex(args):
 
     # Load the package data
     data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
-    dataMonthly = downloadsDataMonthly(data, includeCurrentMonth)
-    dataAverage = downloadsDataAverage(dataMonthly, 'Month')
+    dataMonthly = downloadsDataMonthly(args, data)
+    dataAverage = downloadsDataAverage(args, dataMonthly, 'Month')
 
     # Create links and compute total downloads
     totalDownloads = 0
@@ -93,8 +85,6 @@ endfunction
 
 
 async function downloadsChartPage(args):
-    includeCurrentMonth = objectGet(args, 'currentMonth')
-
     # Render the title
     title = 'Downloads Chart'
     documentSetTitle(title)
@@ -103,12 +93,12 @@ async function downloadsChartPage(args):
         '', \
         '# ' + markdownEscape(title), \
         '', \
-        downloadsCurrentMonthMarkdown(includeCurrentMonth) \
+        downloadsCurrentMonthMarkdown(args) \
     )
 
     # Aggregate monthly and determine the color legend order
-    dataMonthly = downloadsDataMonthly(downloadsDataLoad(), includeCurrentMonth)
-    dataAverage = downloadsDataAverage(dataMonthly, 'Month')
+    dataMonthly = downloadsDataMonthly(args, downloadsDataLoad())
+    dataAverage = downloadsDataAverage(args, dataMonthly, 'Month')
     dataSort(dataAverage, arrayNew(arrayNew('Downloads', true)))
     colorOrder = arrayNew()
     for row in dataAverage:
@@ -138,7 +128,6 @@ endfunction
 async function downloadsDashboard(args):
     name = objectGet(args, 'name')
     language = objectGet(args, 'language')
-    includeCurrentMonth = objectGet(args, 'currentMonth')
 
     # Document title
     title = name + ' (' + language + ') Downloads'
@@ -147,7 +136,7 @@ async function downloadsDashboard(args):
         '', \
         '# ' + markdownEscape(title), \
         '', \
-        downloadsCurrentMonthMarkdown(includeCurrentMonth) \
+        downloadsCurrentMonthMarkdown(args) \
     )
     documentSetTitle(title)
 
@@ -158,13 +147,13 @@ async function downloadsDashboard(args):
         'Package == packageName && Language == packageLanguage', \
         objectNew('packageName', name, 'packageLanguage', language) \
     )
-    dataMonthly = downloadsDataMonthly(data, includeCurrentMonth)
+    dataMonthly = downloadsDataMonthly(args, data)
 
     # Render the monthly line chart
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(mathMax(200, mathFloor(0.2 * chartWidth)))
-    monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(dataMonthly, 'Month'), 0), 'Downloads'))
-    minDate = downloadsDataAverageMinDate()
+    monthlyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(args, dataMonthly, 'Month'), 0), 'Downloads'))
+    minDate = downloadsDataAverageMinDate(args)
     dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + name, \
         'width', chartWidth, \
@@ -183,7 +172,7 @@ async function downloadsDashboard(args):
     ))
 
     # Render the daily line chart (clean)
-    dailyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(data, 'Date'), 0), 'Downloads'))
+    dailyAverage = mathRound(objectGet(arrayGet(downloadsDataAverage(args, data, 'Date'), 0), 'Downloads'))
     dataLineChart(data, objectNew( \
         'title', 'Daily Downloads (clean) - ' + name, \
         'width', chartWidth, \
@@ -222,6 +211,13 @@ async function downloadsDashboard(args):
 endfunction
 
 
+function downloadsCurrentMonthMarkdown(args):
+    includeCurrentMonth = objectGet(args, 'currentMonth')
+    return '**Current Month:** ' + \
+        argsLink(downloadsArguments, if(includeCurrentMonth, 'Included', 'Excluded'), objectNew('currentMonth', !includeCurrentMonth))
+endfunction
+
+
 async function downloadsDataLoad():
     data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
 
@@ -253,7 +249,9 @@ async function downloadsDataLoad():
 endfunction
 
 
-function downloadsDataMonthly(data, includeCurrentMonth):
+function downloadsDataMonthly(args, data):
+    includeCurrentMonth = objectGet(args, 'currentMonth')
+
     # Filter-out the current month
     if includeCurrentMonth:
         dataFiltered = data
@@ -279,9 +277,9 @@ function downloadsDataMonthly(data, includeCurrentMonth):
 endfunction
 
 
-function downloadsDataAverage(data, dateField):
+function downloadsDataAverage(args, data, dateField):
     # Filter the data
-    dataFiltered = dataFilter(data, dateField + ' >= minDate', objectNew('minDate', downloadsDataAverageMinDate()))
+    dataFiltered = dataFilter(data, dateField + ' >= minDate', objectNew('minDate', downloadsDataAverageMinDate(args)))
 
     # Compute the average
     return dataAggregate(dataFiltered, objectNew( \
@@ -293,8 +291,9 @@ function downloadsDataAverage(data, dateField):
 endfunction
 
 
-function downloadsDataAverageMinDate():
-    monthCount = 3
+function downloadsDataAverageMinDate(args):
+    includeCurrentMonth = objectGet(args, 'currentMonth')
+    monthCount = if(includeCurrentMonth, 4, 3)
     today = datetimeToday()
     return datetimeNew(datetimeYear(today), datetimeMonth(today) - monthCount, 1)
 endfunction
