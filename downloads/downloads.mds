@@ -73,7 +73,7 @@ async function downloadsIndex():
         'formats', objectNew( \
             'Package', objectNew('markdown', true), \
             'Language', objectNew('markdown', true), \
-            'Downloads', objectNew('align', 'right') \
+            'Downloads', objectNew('align', 'right', 'header', 'Monthly Downloads') \
         ), \
         'precision', 0 \
     ))
