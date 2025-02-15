@@ -31084,5 +31084,89 @@
         "Language": "JavaScript",
         "Date": "2025-02-14",
         "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 8
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 18
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 92
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 91
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 25
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 15
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 190
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-02-14",
+        "Downloads": 959
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-02-15",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-02-15",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-02-15",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-02-15",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-02-15",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-02-15",
+        "Downloads": 0
     }
 ]
