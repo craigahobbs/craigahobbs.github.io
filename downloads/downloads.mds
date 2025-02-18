@@ -21,18 +21,21 @@ async function downloadsMain():
     endif
 
     # Render the index page
-    downloadsIndex()
+    downloadsIndex(args)
 endfunction
 
 
 downloadsArguments = argsValidate(arrayNew( \
     objectNew('name', 'page'), \
     objectNew('name', 'name'), \
-    objectNew('name', 'language') \
+    objectNew('name', 'language'), \
+    objectNew('name', 'days', 'type', 'int', 'default', 90) \
 ))
 
 
-async function downloadsIndex():
+async function downloadsIndex(args):
+    trailingDays = objectGet(args, 'days')
+
     # Document title
     title = 'Package Downloads'
     markdownPrint( \
@@ -44,7 +47,7 @@ async function downloadsIndex():
 
     # Load the package data
     data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
-    dataAverage = downloadsDataAverage(data, true)
+    dataAverage = downloadsDataAverage(data, trailingDays, true)
 
     # Create links and compute total downloads
     totalDownloads = 0
@@ -81,6 +84,8 @@ endfunction
 
 
 async function downloadsChartPage(args):
+    trailingDays = objectGet(args, 'days')
+
     # Render the title
     title = 'Downloads Chart'
     documentSetTitle(title)
@@ -92,7 +97,7 @@ async function downloadsChartPage(args):
 
     # Compute the color legend order
     data = downloadsDataLoad()
-    dataAverage = downloadsDataAverage(data)
+    dataAverage = downloadsDataAverage(data, trailingDays)
     dataSort(dataAverage, arrayNew(arrayNew('Downloads', true)))
     colorOrder = arrayNew()
     for row in dataAverage:
@@ -123,6 +128,7 @@ endfunction
 async function downloadsDashboard(args):
     name = objectGet(args, 'name')
     language = objectGet(args, 'language')
+    trailingDays = objectGet(args, 'days')
 
     # Document title
     title = name + ' (' + language + ') Downloads'
@@ -135,19 +141,39 @@ async function downloadsDashboard(args):
 
     # Load the package data
     data = downloadsDataLoad()
-    data = dataFilter( \
-        data, \
-        'Package == packageName && Language == packageLanguage', \
-        objectNew('packageName', name, 'packageLanguage', language) \
-    )
     dataMonthly = downloadsDataMonthly(data)
-    dailyAverage = objectGet(arrayGet(downloadsDataAverage(data), 0), 'Downloads')
-    monthlyAverage = objectGet(arrayGet(downloadsDataAverage(data, true), 0), 'Downloads')
+    monthlyAverageData = downloadsDataAverage(data, trailingDays, true)
+
+    # Filter to this package's data
+    filterExpr = 'Package == packageName && Language == packageLanguage'
+    filterVars = objectNew('packageName', name, 'packageLanguage', language)
+    data = dataFilter(data, filterExpr, filterVars)
+    dataMonthly = dataFilter(dataMonthly, filterExpr, filterVars)
+    monthlyAverageData = dataFilter(monthlyAverageData, filterExpr, filterVars)
+    monthlyAverage = objectGet(arrayGet(monthlyAverageData, 0), 'Downloads')
+
+    # Compute the minimum date
+    minDateData = dataAggregate(data, objectNew( \
+        'measures', arrayNew( \
+            objectNew('field', 'Date', 'function', 'min') \
+        ) \
+    ))
+    minDateMin = objectGet(arrayGet(minDateData, 0), 'Date')
+    minDate = datetimeNew(datetimeYear(minDateMin), datetimeMonth(minDateMin), datetimeDay(minDateMin) + trailingDays)
+
+    # Compute the daily trailing average
+    for row in data:
+        rowDate = objectGet(row, 'Date')
+        if rowDate >= minDate:
+            averageDownloadsData = downloadsDataAverage(data, trailingDays, false, rowDate)
+            averageDownloads = objectGet(arrayGet(averageDownloadsData, 0), 'Downloads')
+            objectSet(row, 'Average Downloads', averageDownloads)
+        endif
+    endfor
 
     # Render the monthly line chart
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(mathMax(200, mathFloor(0.2 * chartWidth)))
-    minDate = downloadsDataAverageMinDate()
     dataLineChart(dataMonthly, objectNew( \
         'title', 'Monthly Downloads - ' + name, \
         'width', chartWidth, \
@@ -156,7 +182,7 @@ async function downloadsDashboard(args):
         'y', arrayNew('Downloads'), \
         'yTicks', objectNew('start', 0), \
         'xLines', arrayNew( \
-            objectNew('value', minDate, 'label', '') \
+            objectNew('value', downloadsDataAverageMinDate(dataMonthly, trailingDays, 'Month'), 'label', '') \
         ), \
         'yLines', arrayNew( \
             objectNew('value', monthlyAverage) \
@@ -165,19 +191,19 @@ async function downloadsDashboard(args):
         'precision', 1 \
     ))
 
-    # Render the daily line chart (clean)
+    # Render the daily line chart
     dataLineChart(data, objectNew( \
-        'title', 'Daily Downloads (clean) - ' + name, \
+        'title', 'Daily Downloads - ' + name, \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Date', \
-        'y', arrayNew('Downloads'), \
+        'y', arrayNew('Downloads', 'Average Downloads'), \
         'yTicks', objectNew('start', 0), \
         'xLines', arrayNew( \
-            objectNew('value', minDate, 'label', '') \
+            objectNew('value', downloadsDataAverageMinDate(data, trailingDays), 'label', '') \
         ), \
         'yLines', arrayNew( \
-            objectNew('value', dailyAverage) \
+            objectNew('value', averageDownloads) \
         ), \
         'datetime', 'day', \
         'precision', 1 \
@@ -257,29 +283,42 @@ function downloadsDataMonthly(data):
 endfunction
 
 
-function downloadsDataAverage(data, monthly):
+function downloadsDataAverage(data, trailingDays, monthly, maxDate):
     # Filter the data
-    minDate = downloadsDataAverageMinDate()
-    dataFiltered = dataFilter(data, 'Date >= minDate', objectNew('minDate', minDate))
+    minDate = downloadsDataAverageMinDate(data, trailingDays, null, maxDate)
+    if maxDate:
+        dataFiltered = dataFilter(data, 'Date >= minDate && Date <= maxDate', objectNew('minDate', minDate, 'maxDate', maxDate))
+    else:
+        dataFiltered = dataFilter(data, 'Date >= minDate', objectNew('minDate', minDate))
+    endif
 
     # Compute the average
     dataAverage = dataAggregate(dataFiltered, objectNew( \
         'categories', arrayNew('Language', 'Package', 'Unique'), \
         'measures', arrayNew( \
-            objectNew('field', 'Downloads', 'function', 'average') \
+            objectNew('field', 'Downloads', 'function', 'sum') \
         ) \
     ))
+    dataCalculatedField(dataAverage, 'Downloads', 'Downloads / trailingDays', objectNew('trailingDays', trailingDays))
 
     # Monthly average?
     if monthly:
-        dataAverage = dataCalculatedField(dataAverage, 'Downloads', 'Downloads * 30')
+        dataCalculatedField(dataAverage, 'Downloads', 'Downloads * 30')
     endif
 
     return dataAverage
 endfunction
 
 
-function downloadsDataAverageMinDate():
-    today = datetimeToday()
-    return datetimeNew(datetimeYear(today), datetimeMonth(today), datetimeDay(today) - 91)
+function downloadsDataAverageMinDate(data, trailingDays, field, maxDate):
+    field = if(field, field, 'Date')
+    if !maxDate:
+        maxDateData = dataAggregate(data, objectNew( \
+            'measures', arrayNew( \
+                objectNew('field', field, 'function', 'max') \
+            ) \
+        ))
+        maxDate = objectGet(arrayGet(maxDateData, 0), field)
+    endif
+    return datetimeNew(datetimeYear(maxDate), datetimeMonth(maxDate), datetimeDay(maxDate) - trailingDays)
 endfunction
