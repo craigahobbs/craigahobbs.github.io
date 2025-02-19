@@ -57,7 +57,7 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
 # gh-pages-check
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages-check)
 	@if [ -d $$$$HOME/src/$(strip $(2)).gh-pages ]; then \
-		if cd $$$$HOME/src/$(strip $(2)).gh-pages && git diff -w --exit-code > /dev/null; then \
+		if cd $$$$HOME/src/$(strip $(2)).gh-pages && [ -n "$(git status --porcelain)" ]; then \
 			rm -rf $$$$HOME/src/$(strip $(2)).gh-pages; \
 		else \
 			echo '$(strip $(2)).gh-pages'; \
