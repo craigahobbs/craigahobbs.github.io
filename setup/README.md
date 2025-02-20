@@ -4,6 +4,7 @@
 ## Create a Debian Linux USB Drive
 
 1. Download the [Debian Stable ISO](https://www.debian.org/distrib/netinst).
+   Alternatively, you can use a [Debian Testing ISO](https://www.debian.org/devel/debian-installer/).
 
 2. Insert the USB drive and determine its device name:
 
