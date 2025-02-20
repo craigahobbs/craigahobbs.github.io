@@ -44,11 +44,10 @@ First, add yourself to the sudoers:
 su -l -c "usermod -aG sudo $USER && reboot"
 ~~~
 
-Next, install applications, configure docker, remove the grub delay, and reboot:
+Next, install applications, remove the grub delay, and reboot:
 
 ~~~sh
-sudo apt install docker.io emacs git git-gui make python3-venv rsync xsel
-sudo usermod -aG docker $USER
+sudo apt install emacs git git-gui make podman python3-venv rsync xsel
 sudo apt purge evolution gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-weather libreoffice* rhythmbox shotwell simple-scan totem yelp
 sudo apt autoremove
 sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
@@ -69,6 +68,9 @@ if [ ! -f ~/.git-prompt.sh ]; then
 fi
 source ~/.git-prompt.sh
 PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1: -3}
+
+# Use podman for development
+export USE_PODMAN=1
 ~~~
 
 
@@ -125,9 +127,6 @@ export PATH=$PATH:/c/'Program Files'/nodejs
 
 # Windows Python
 export PATH=$PATH:/c/Users/craig/AppData/Local/Microsoft/WindowsApps
-
-# python-build: no-docker
-export NO_DOCKER=1
 ~~~
 
 
