@@ -47,9 +47,10 @@ su -l -c "usermod -aG sudo $USER && reboot"
 
 Next, install applications, remove the grub delay, and reboot:
 
+rygel rygel-playbin rygel-tracker
 ~~~sh
 sudo apt install emacs git git-gui make podman python3-venv rsync xsel
-sudo apt purge evolution gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-weather libreoffice* rhythmbox shotwell simple-scan totem yelp
+sudo apt purge evolution evolution-data-server evolution-ews-core gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-tour gnome-weather libreoffice* rhythmbox rygel rygel-playbin rygel-tracker shotwell simple-scan totem
 sudo apt autoremove
 sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
 sudo update-grub
