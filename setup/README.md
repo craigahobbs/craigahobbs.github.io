@@ -49,7 +49,7 @@ Next, install applications, remove the grub delay, and reboot:
 
 ~~~sh
 sudo apt install emacs git git-gui make podman python3-venv rsync xsel
-sudo apt purge evolution evolution-data-server evolution-ews-core gnome-bluetooth-sendto gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-tour gnome-user-share gnome-weather libreoffice* rhythmbox rygel rygel-playbin rygel-tracker shotwell simple-scan totem yelp
+sudo apt purge evolution evolution-data-server evolution-ews-core exim4-base exim4-config exim4-daemon-light gnome-bluetooth-sendto gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-tour gnome-user-share gnome-weather libreoffice* rhythmbox rygel rygel-playbin rygel-tracker shotwell simple-scan totem yelp
 sudo apt autoremove
 sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
 sudo update-grub
@@ -72,6 +72,9 @@ PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1
 
 # Use podman for development
 export USE_PODMAN=1
+
+# Add venv/bin to path
+export PATH=$HOME/venv/bin:$PATH
 ~~~
 
 
