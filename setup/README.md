@@ -49,7 +49,7 @@ Next, install applications, remove the grub delay, and reboot:
 
 ~~~sh
 sudo apt install emacs git git-gui make nodejs npm podman python3-venv rsync screen tree xsel
-sudo apt purge evolution evolution-data-server evolution-ews-core exim4-base exim4-config exim4-daemon-light gnome-bluetooth-sendto gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-tour gnome-user-share gnome-weather libreoffice* rhythmbox rygel rygel-playbin rygel-tracker shotwell simple-scan totem yelp
+sudo apt purge evolution evolution-data-server evolution-ews-core exim4-base exim4-config exim4-daemon-light gnome-bluetooth-sendto gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-tour gnome-user-share gnome-weather libreoffice* mailutils mailutils-common rhythmbox rygel rygel-playbin rygel-tracker shotwell simple-scan totem yelp
 sudo apt autoremove
 sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
 sudo update-grub
