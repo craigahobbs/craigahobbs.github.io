@@ -33868,5 +33868,89 @@
         "Language": "Python",
         "Date": "2025-03-19",
         "Downloads": 1944
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-03-20",
+        "Downloads": 48
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-03-20",
+        "Downloads": 3
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-03-20",
+        "Downloads": 2
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-03-20",
+        "Downloads": 47
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-03-20",
+        "Downloads": 4
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-03-20",
+        "Downloads": 2
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 68
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 30
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 176
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 253
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 39
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 15
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 582
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-03-20",
+        "Downloads": 2002
     }
 ]
