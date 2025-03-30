@@ -58,7 +58,7 @@ sudo reboot
 ~~~
 
 
-## Git Bash Prompt
+## .bashrc
 
 Add the following to the end of your .bashrc:
 
@@ -86,6 +86,16 @@ To reduce disk log file disk usage, periodically execute the following command:
 ~~~sh
 sudo journalctl --vacuum-time=2d
 ~~~
+
+
+## GNOME Brightness Slider
+
+If the GNOME brightness slider disappears:
+
+```
+sudo apt install brightnessctl
+brightnessctl set +10%
+```
 
 
 # macOS Setup
