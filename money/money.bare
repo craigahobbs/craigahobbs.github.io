@@ -1,7 +1,7 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/markdown-up/blob/main/LICENSE
 
-include <pager.mds>
+include <pager.bare>
 
 
 # The money application main entry point

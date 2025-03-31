@@ -2,8 +2,8 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
-include <args.mds>
-include <forms.mds>
+include <args.bare>
+include <forms.bare>
 
 
 # Life application main entry point

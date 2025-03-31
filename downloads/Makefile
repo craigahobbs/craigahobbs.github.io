@@ -35,7 +35,7 @@ clean:
 
 lint: $(DEFAULT_VENV_BUILD)
 	$(DEFAULT_VENV_PYTHON) -m pylint downloads.py
-	$(DEFAULT_VENV_BIN)/bare -s downloads.mds
+	$(DEFAULT_VENV_BIN)/bare -s downloads.bare
 
 
 .PHONY: data

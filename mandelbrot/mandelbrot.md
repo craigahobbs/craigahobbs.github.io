@@ -4,7 +4,7 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
-include <args.mds>
+include <args.bare>
 
 
 function mandelbrotMain():
