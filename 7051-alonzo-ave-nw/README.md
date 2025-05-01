@@ -1,0 +1,57 @@
+# 7051 Alonzo Ave NW
+
+
+## Tesla Solar
+
+The Tesla Solar system is comprised of:
+
+- 36 solar panels that generate up to 11.34 kW
+- 3 Powerwalls (home battery) that store up to 40.5 kWh
+- SolarEdge inverter
+
+Click here for the [system specification](solar.pdf).
+
+For my family (2 adults, 2 teenagers, and an electric car), the system produced more (electric)
+power than we needed most years.
+
+During the day, the solar panels generate energy that is either used immediately, used to charge the
+Powerwalls or is sent to the grid. When the sun goes down, the Powerwalls dispense power to the home
+as needed. If the Powerwalls run out of power, it is drawn directly from the grid. Power that is
+sent to the grid builds up a grid surplus, which you draw down when you draw power from the grid.
+
+The system is a net energy producer (self-powered) from March through September. During the
+remaining months, power is drawn from the grid surplus. In most years, we had excess surplus power
+when the zero-out date of March 31st arrived. The only years the home wasn't fully powered were
+those with system issues (see below).
+
+You can see the system surplus here:
+
+[Grid Surplus](https://craigahobbs.github.io/solar/#var.vPage='Surplus')
+
+You can see self-powered performance here:
+
+[Self-Powered](https://craigahobbs.github.io/solar/#var.vPage='Self-Powered')
+
+
+### Issues
+
+- In 2021 or 2022, one of the Powerwalls failed. Tesla replaced it under warranty.
+
+- In 2023, the SolarEdge inverter failed which stopped solar energy production. Tesla repaired it
+  under warranty.
+
+- In 2024, I had an issue with Pigeons roosting under the solar panels and their poop reduced energy
+  production. I had the birds removed and had a blocking mesh installed around the solar panels to
+  prevent future incursions.
+
+
+## Hue Lights
+
+The following rooms have Philips Hue lights:
+
+TODO
+
+
+## Lockly Locks
+
+TODO
