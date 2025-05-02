@@ -49,7 +49,33 @@ You can see self-powered performance here:
 
 The following rooms have Philips Hue lights:
 
-TODO
+- Family room
+- Kitchen
+- Dining room
+- Living room
+- Office
+- Entry hallway
+- All upstairs bedrooms
+- Basement (with under-cabinet lights and above-cabinet orb)
+- Upstairs hallway (with motion sensor)
+- Basement hallway (with motion sensors)
+
+You can turn the lights on, off, or dim them with the Hue light switches in each room. You can also
+operate them using the Hue app. The traditional wall switches for each room need to be turned on to
+power the Hue lights.
+
+Because there are so many devices (lights, switches, sensors), the home requires two Hue hubs: one
+for the main floor ("Main") and one for the upstairs and the basement ("Up/Down"). The hubs are
+located in the main entry closet above the door.
+
+Each hub has a schedule to turn on a set of lights around sunset and turn all lights off at
+midnight.
+
+**Note:** I've configured all the switches to match the entry hallway switch (which is a newer
+variety). The "On" button is a toggle on-off, the "Off" button cycles through the default "scenes"),
+and the dimmer buttons operate as expected. This behavior can be modified in the Hue app.
+
+**Note:** We moved the floor lamps with Hue bulbs, and you'll want to remove them using the Hue app.
 
 
 ## Lockly Locks
