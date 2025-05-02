@@ -1,6 +1,16 @@
 # 7051 Alonzo Ave NW
 
 
+# Contents
+
+- [Tesla Solar](#tesla-solar)
+- [Hue Lights](#hue-lights)
+- [Lockly Locks](#lockly-locks)
+
+
+----------
+
+
 ## Tesla Solar
 
 The Tesla Solar system is comprised of:
@@ -45,6 +55,9 @@ You can see self-powered performance here:
   prevent future incursions.
 
 
+----------
+
+
 ## Hue Lights
 
 The following rooms have Philips Hue lights:
@@ -76,6 +89,9 @@ variety). The "On" button is a toggle on-off, the "Off" button cycles through th
 and the dimmer buttons operate as expected. This behavior can be modified in the Hue app.
 
 **Note:** We moved the floor lamps with Hue bulbs, and you'll want to remove them using the Hue app.
+
+
+----------
 
 
 ## Lockly Locks
