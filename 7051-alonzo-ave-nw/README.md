@@ -13,10 +13,10 @@
 
 ## Tesla Solar
 
-The Tesla Solar system is comprised of:
+The [Tesla Solar](https://www.tesla.com/solarpanels) system is comprised of:
 
 - 36 solar panels that generate up to 11.34 kW
-- 3 Powerwalls (home battery) that store up to 40.5 kWh
+- 3 [Powerwalls](https://www.tesla.com/powerwall) (home battery) that store up to 40.5 kWh
 - SolarEdge inverter
 
 Click here for the [system specification](solar.pdf).
@@ -60,7 +60,7 @@ You can see self-powered performance here:
 
 ## Hue Lights
 
-The following rooms have Philips Hue lights:
+The following rooms have [Philips Hue](https://www.philips-hue.com/en-us/explore-hue) lights:
 
 - Family room
 - Kitchen

@@ -39,7 +39,7 @@
     </body>
     <script type="module">
         import {MarkdownUp} from 'https://craigahobbs.github.io/markdown-up/lib/app.js';
-        const app = new MarkdownUp(window);
+        const app = new MarkdownUp(window, {'url': 'README.md?raw=true'});
         app.run();
     </script>
 </html>
