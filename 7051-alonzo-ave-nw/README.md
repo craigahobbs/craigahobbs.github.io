@@ -94,7 +94,7 @@ and the dimmer buttons operate as expected. This behavior can be modified in the
 ----------
 
 
-## Lockly The
+## Lockly Locks
 
 The home has three [Lockly Locks](https://lockly.com/products/lockly-secure-pro):
 
