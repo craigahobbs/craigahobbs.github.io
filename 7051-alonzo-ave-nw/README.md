@@ -94,6 +94,21 @@ and the dimmer buttons operate as expected. This behavior can be modified in the
 ----------
 
 
-## Lockly Locks
+## Lockly The
 
-TODO
+The home has three [Lockly Locks](https://lockly.com/products/lockly-secure-pro):
+
+- Front door
+- Basement door
+- Garage entry door
+
+The Lockly locks have a fingerprint reader that you can program for each household member using the
+Lockly app. It also supports per-user and time-limited codes and a traditional key.
+
+The locks can be used over Bluetooth or WiFi using the Lockly app. WiFi is enabled by pairing the
+locks to a Lockly WiFi connector. The WiFi connector for the front door is in the front entry
+closet. The WiFi connector for the basement side door and the garage entry door is above the
+basement upper cabinet next to the orb lamp.
+
+When paired with the WiFi connector, you can lock, unlock, and add/remove codes remotely. You can
+also recieve notifications when doors are open, closed, locked, or unlocked.
