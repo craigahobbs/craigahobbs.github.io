@@ -1,4 +1,4 @@
-# Upgrades
+# Prodigy Upgrades
 
 
 ## Questions for Builder / Ginger
