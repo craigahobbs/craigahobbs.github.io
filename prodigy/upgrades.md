@@ -16,19 +16,18 @@
 
 ## Currently Priced for Re-Consideration
 
-- 8ft tall double doors at Entry
+- 8ft tall double doors at Entry - would like to see examples
   - $3600
-  - Do we want double?
+  - What does the 8ft singe entry upgrade cost?
 
 - Side by Side Fridgidaire Freestanding Fridge & Freezer
   - $9600
   - No - will go with standard width refrigerator and use extra space for countertop/cabinets
 
-- 14x14 pavilion- conduit for electrical, Circuit for future appliance, 6 can lights. Plumb for
+- 14x14 pavilion - conduit for electrical, Circuit for future appliance, 6 can lights. Plumb for
   future sink,soffits and facia painted. Stucco on wall and columns. Broom Finished concrete.
   - $34,365
-  - Seems pricey. How much does removing plumbing reduce it?
-  - Do we even need it?
+  - How much does removing plumbing reduce it?
 
 
 ## Additional Upgrades
