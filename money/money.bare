@@ -138,6 +138,9 @@ function moneyData(moneyModel):
 
     # Add the transaction rows
     for txn in objectGet(moneyModel, 'transactions'):
+        if objectGet(txn, 'disabled', false):
+            continue
+        endif
         txnDate = objectGet(txn, 'date')
         txnAmount = objectGet(txn, 'amount')
         txnDesc = objectGet(txn, 'description')
@@ -244,6 +247,9 @@ moneyTypes = schemaParse( \
     '', \
     '    # The repeat model', \
     '    optional Repeat repeat', \
+    '', \
+    '    # If true, the transaction is disabled (default is false)', \
+    '    optional bool disabled', \
     '', \
     '', \
     '# A repeat model', \
