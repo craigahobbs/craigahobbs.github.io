@@ -4,7 +4,7 @@
 include <args.bare>
 
 
-async function downloadsMain():
+async function downloadsMain(options):
     args = argsParse(downloadsArguments)
     page = objectGet(args, 'page')
     name = objectGet(args, 'name')
@@ -12,7 +12,7 @@ async function downloadsMain():
 
     # Chart page?
     if page == 'chart':
-        return downloadsChartPage(args)
+        return downloadsChartPage(args, options)
     endif
 
     # Package dashboard?
@@ -83,7 +83,7 @@ async function downloadsIndex(args):
 endfunction
 
 
-async function downloadsChartPage(args):
+async function downloadsChartPage(args, options):
     trailingDays = objectGet(args, 'days')
 
     # Render the title
@@ -104,21 +104,37 @@ async function downloadsChartPage(args):
         arrayPush(colorOrder, objectGet(row, 'Unique'))
     endfor
 
-    # Create the chart
-    dataMonthly = downloadsDataMonthly(data)
-    chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
-    chartHeight = mathFloor(0.4 * chartWidth)
-    dataLineChart(dataMonthly, objectNew( \
-        'width', chartWidth, \
-        'height', chartHeight, \
-        'x', 'Month', \
-        'y', arrayNew('Downloads'), \
-        'color', 'Unique', \
-        'colorOrder', colorOrder, \
-        'yTicks', objectNew('start', 0, 'count', 5), \
-        'precision', 0, \
-        'datetime', 'day' \
-    ))
+    # Add the featured column
+    featuredMap = objectGet(options, 'featured') || objectNew()
+    dataCalculatedField( \
+        data, \
+        'Featured', \
+        'objectGet(objectGet(featuredMap, Package), Language, false)', \
+        objectNew('featuredMap', featuredMap) \
+    )
+
+    # First featured, then non-featured
+    for isFeatured in arrayNew(true, false):
+        # Create the chart
+        dataMonthly = downloadsDataMonthly(dataFilter(data, '!!Featured == isFeatured', objectNew('isFeatured', isFeatured)))
+        if !dataMonthly:
+            continue
+        endif
+        chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
+        chartHeight = mathFloor(0.3 * chartWidth)
+        dataLineChart(dataMonthly, objectNew( \
+            'title', 'Monthly Downloads' + if(isFeatured, ' (Featured)', ''), \
+            'width', chartWidth, \
+            'height', chartHeight, \
+            'x', 'Month', \
+            'y', arrayNew('Downloads'), \
+            'color', 'Unique', \
+            'colorOrder', colorOrder, \
+            'yTicks', objectNew('start', 0, 'count', 5), \
+            'precision', 0, \
+            'datetime', 'day' \
+        ))
+    endfor
 
     # Redraw on resize
     windowSetResize(systemPartial(downloadsChartPage, args))
