@@ -137,7 +137,7 @@ async function downloadsChartPage(args, options):
     endfor
 
     # Redraw on resize
-    windowSetResize(systemPartial(downloadsChartPage, args))
+    windowSetResize(systemPartial(downloadsChartPage, args, options))
 endfunction
 
 
