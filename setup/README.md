@@ -88,16 +88,6 @@ sudo journalctl --vacuum-time=2d
 ~~~
 
 
-## GNOME Brightness Slider
-
-If the GNOME brightness slider disappears:
-
-```
-sudo apt install brightnessctl
-brightnessctl set +10%
-```
-
-
 # macOS Setup
 
 
