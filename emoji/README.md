@@ -1,3 +1,5 @@
+[Home](https://craigahobbs.github.io/emoji/)
+
 # Emoji
 
 Emoji simple emoji picker application.
