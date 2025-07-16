@@ -2,7 +2,7 @@
 
 # Emoji
 
-Emoji simple emoji picker application.
+Emoji is a simple emoji picker application.
 
 [Arguments](https://craigahobbs.github.io/emoji/#var.vHelp=true)
 
