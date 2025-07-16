@@ -49,7 +49,7 @@ async function emojiMain():
     elif category:
         # Render the title
         title = 'Emoji - ' + category
-        markdownPrint(argsLink(arguments, 'Home'), '', '# ' + markdownEscape(title))
+        markdownPrint(argsLink(arguments, 'Back'), '', '# ' + markdownEscape(title))
         documentSetTitle(title)
 
         # Render the list of emoji

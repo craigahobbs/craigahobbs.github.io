@@ -4,6 +4,8 @@
 
 Emoji simple emoji picker application.
 
-[Emoji Arguments](https://craigahobbs.github.io/emoji/#var.vHelp=true)
+[Arguments](https://craigahobbs.github.io/emoji/#var.vHelp=true)
 
-[Emoji File Format](https://craigahobbs.github.io/emoji/#var.vConfig=true)
+[File Format](https://craigahobbs.github.io/emoji/#var.vConfig=true)
+
+[Source](https://github.com/craigahobbs/craigahobbs.github.io/tree/main/emoji)
