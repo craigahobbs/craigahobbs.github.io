@@ -94,7 +94,7 @@ async function emojiMain():
 endfunction
 
 
-emojiAboutURL = 'https://craigahobbs.github.io/emoji/'
+emojiAboutURL = 'https://craigahobbs.github.io/emoji/#url=README.md'
 
 
 function emojiCompare(a, b):
