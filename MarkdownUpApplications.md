@@ -10,6 +10,8 @@
 
 [Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
 
+[Emoji](https://craigahobbs.github.io/emoji/)
+
 [The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
 
 [Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)

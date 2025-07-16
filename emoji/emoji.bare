@@ -1,0 +1,114 @@
+include <args.bare>
+include <forms.bare>
+
+
+async function emojiMain():
+    # Parse arguments
+    arguments = argsValidate(arrayNew( \
+        objectNew('name', 'url', 'global', 'vURL', 'default', 'emoji.json'), \
+        objectNew('name', 'category', 'explicit', true), \
+        objectNew('name', 'config', 'type', 'bool', 'explicit', true), \
+        objectNew('name', 'help', 'type', 'bool', 'explicit', true) \
+    ))
+    args = argsParse(arguments)
+    url = objectGet(args, 'url')
+    category = objectGet(args, 'category')
+
+    # Load the emojis
+    emojiConfigJSON = systemFetch(url)
+    emojiConfigObj = if(emojiConfigJSON, jsonParse(emojiConfigJSON))
+    emojiConfig = if(emojiConfigObj, schemaValidate(emojiTypes, 'EmojiConfig', emojiConfigObj))
+    if !emojiConfig:
+        markdownPrint('**ERROR:** Failed to load "' + markdownEscape(url) + '"')
+        return
+    endif
+    emojiCategories = objectGet(emojiConfig, 'categories')
+
+    # Config file documentation?
+    if objectGet(args, 'config'):
+        # Render the menu
+        markdownPrint('[Back](' + emojiAboutURL + ')')
+        documentSetTitle('EmojiConfig')
+
+        # Render the configuration schema documentation
+        elementModelRender(schemaElements(emojiTypes, 'EmojiConfig'))
+        return
+
+    # Help?
+    elif objectGet(args, 'help'):
+        # Render the title
+        title = 'Emoji Arguments'
+        markdownPrint('[Back](' + emojiAboutURL + ')')
+        documentSetTitle(title)
+
+        # Render the arguments documention
+        argsHelp(arguments)
+        return
+
+    # Category page
+    elif category:
+        # Render the title
+        title = 'Emoji - ' + category
+        markdownPrint(argsLink(arguments, 'Home'), '', '# ' + markdownEscape(title))
+        documentSetTitle(title)
+
+        # Render the list of emoji
+        elem = arrayNew()
+        valign = 'vertical-align:middle;'
+        for emoji in arraySort(objectGet(emojiCategories, category), emojiCompare):
+            emojiChar = objectGet(emoji, 'emoji')
+            emojiName = objectGet(emoji, 'name')
+            emojiStyle = valign + 'font-size:32pt; padding-right:0.25em; cursor: pointer; user-select: none; text-decoration: none;'
+            arrayPush(elem, objectNew( \
+                'html', 'p', \
+                'elem', arrayNew( \
+                    objectNew( \
+                        'html', 'a', \
+                        'attr', objectNew('style', emojiStyle), \
+                        'elem', objectNew('text', emojiChar), \
+                        'callback', objectNew('click', systemPartial(windowClipboardWrite, emojiChar)) \
+                    ), \
+                    objectNew( \
+                        'html', 'span', \
+                        'attr', objectNew('style', valign), \
+                        'elem', formsLinkButtonElements(emojiName, systemPartial(windowClipboardWrite, emojiChar)) \
+                    ) \
+                ) \
+            ))
+        endfor
+        elementModelRender(elem)
+
+    # Index page
+    elif category == null:
+        # Render the title
+        title = 'Emoji'
+        markdownPrint('[About](' + emojiAboutURL + ')', '', '# ' + markdownEscape(title))
+        documentSetTitle(title)
+
+        # Render the emoji category list
+        categories = arraySort(objectKeys(emojiCategories))
+        for category in categories:
+            markdownPrint('', argsLink(arguments, category, objectNew('category', category)))
+        endfor
+    endif
+endfunction
+
+
+emojiAboutURL = 'https://craigahobbs.github.io/emoji/'
+
+
+function emojiCompare(a, b):
+    return systemCompare(objectGet(a, 'name'), objectGet(b, 'name'))
+endfunction
+
+
+emojiTypes = schemaParse( \
+    'struct EmojiConfig', \
+    '    EmojiList{} categories', \
+    '', \
+    'typedef Emoji[] EmojiList', \
+    '', \
+    'struct Emoji', \
+    '    string emoji', \
+    '    string name' \
+)
