@@ -38,7 +38,7 @@ async function emojiMain():
     elif objectGet(args, 'help'):
         # Render the title
         title = 'Emoji Arguments'
-        markdownPrint('[Back](' + emojiAboutURL + ')')
+        markdownPrint('[Back](' + emojiAboutURL + ')', '', '# ' + markdownEscape(title))
         documentSetTitle(title)
 
         # Render the arguments documention
