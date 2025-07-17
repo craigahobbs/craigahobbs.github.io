@@ -40,9 +40,10 @@ async function emojiMain():
         # Render the configuration schema documentation
         elementModelRender(schemaElements(emojiTypes, 'EmojiConfig'))
         return
+    endif
 
     # Help?
-    elif objectGet(args, 'help'):
+    if objectGet(args, 'help'):
         # Render the title
         title = 'Emoji Arguments'
         markdownPrint('[Back](' + emojiAboutURL + ')', '', '# ' + markdownEscape(title))
@@ -51,9 +52,18 @@ async function emojiMain():
         # Render the arguments documention
         argsHelp(arguments)
         return
+    endif
 
     # Category page
-    elif category:
+    if category:
+        # Validate the category name
+        emojiCategory = objectGet(emojiCategories, category)
+        if !emojiCategory:
+            markdownPrint('**ERROR:** Unknown emoji category "' + markdownEscape(category) + '"')
+            return
+        endif
+        emojiList = arraySort(objectGet(emojiCategory, 'emojis'), emojiCompare)
+
         # Render the title
         title = 'Emoji - ' + category
         markdownPrint(argsLink(arguments, 'Back', objectNew('category', null)), '', '# ' + markdownEscape(title))
@@ -62,7 +72,7 @@ async function emojiMain():
         # Render the list of emoji
         elem = arrayNew()
         valign = 'vertical-align:middle;'
-        for emoji, ixEmoji in arraySort(objectGet(emojiCategories, category), emojiCompare):
+        for emoji, ixEmoji in emojiList:
             emojiChar = objectGet(emoji, 'emoji')
             emojiName = objectGet(emoji, 'name')
             emojiStyle = valign + 'font-size:32pt; padding-right:0.25em; cursor: pointer; user-select: none; text-decoration: none;'
@@ -88,20 +98,19 @@ async function emojiMain():
             ))
         endfor
         elementModelRender(elem)
+        return
+    endif
 
     # Index page
-    elif category == null:
-        # Render the title
-        title = 'Emoji'
-        markdownPrint('[About](' + emojiAboutURL + ')', '', '# ' + markdownEscape(title))
-        documentSetTitle(title)
+    title = 'Emoji'
+    markdownPrint('[About](' + emojiAboutURL + ')', '', '# ' + markdownEscape(title))
+    documentSetTitle(title)
 
-        # Render the emoji category list
-        categories = arraySort(objectKeys(emojiCategories))
-        for category in categories:
-            markdownPrint('', argsLink(arguments, category, objectNew('category', category)))
-        endfor
-    endif
+    # Render the emoji category list
+    categories = arraySort(objectKeys(emojiCategories))
+    for category in categories:
+        markdownPrint('', argsLink(arguments, category, objectNew('category', category)))
+    endfor
 endfunction
 
 
@@ -124,11 +133,14 @@ emojiTypes = schemaParse( \
     'struct EmojiConfig', \
     '', \
     '    # The list of emoji categories' , \
-    '    EmojiList{} categories', \
+    '    EmojiCategory{} categories', \
     '', \
     '', \
-    '# A list of emoji', \
-    'typedef Emoji[] EmojiList', \
+    '# An emoji category', \
+    'struct EmojiCategory', \
+    '', \
+    '    # The list of emojis', \
+    '    Emoji[] emojis', \
     '', \
     '', \
     '# An emoji', \
@@ -137,6 +149,6 @@ emojiTypes = schemaParse( \
     '    # The emoji character', \
     '    string emoji', \
     '', \
-    '    # The emoji name', \
+    "    # The emoji's name", \
     '    string name' \
 )
