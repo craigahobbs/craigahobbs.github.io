@@ -14,7 +14,9 @@ async function emojiMain():
         objectNew('name', 'config', 'type', 'bool', 'explicit', true, \
                   'description', 'If true, display the Emoji JSON configuration file format'), \
         objectNew('name', 'help', 'type', 'bool', 'explicit', true, \
-                  'description', 'If true, display the Emoji application arguments documentation') \
+                  'description', 'If true, display the Emoji application arguments documentation'), \
+        objectNew('name', 'json', 'global', 'vJSON', 'type', 'bool', 'explicit', true, \
+                  'description', 'If true, display the Emoji JSON') \
     ))
     args = argsParse(arguments)
     url = objectGet(args, 'url')
@@ -51,6 +53,18 @@ async function emojiMain():
 
         # Render the arguments documention
         argsHelp(arguments)
+        return
+    endif
+
+    # JSON?
+    if objectGet(args, 'json'):
+        # Render the title
+        title = 'Emoji JSON'
+        markdownPrint('[Back](' + emojiAboutURL + ')', '', '# ' + markdownEscape(title))
+        documentSetTitle(title)
+
+        # Render the emoji JSON
+        markdownPrint('', '```json', jsonStringify(emojiConfig, 4), '```')
         return
     endif
 
