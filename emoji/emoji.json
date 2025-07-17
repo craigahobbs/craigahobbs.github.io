@@ -53,7 +53,8 @@
                 {"emoji": "🦿", "name": "Mechanical Leg"},
                 {"emoji": "👄", "name": "Mouth"},
                 {"emoji": "👃", "name": "Nose"},
-                {"emoji": "👅", "name": "Tongue"}
+                {"emoji": "👅", "name": "Tongue"},
+                {"emoji": "🫆", "name": "Fingerprint"}
             ]
         },
         "Clothing": {
@@ -81,7 +82,8 @@
                 {"emoji": "🏴‍☠️", "name": "Pirate Flag"},
                 {"emoji": "🏳️‍🌈", "name": "Rainbow Flag"},
                 {"emoji": "🚩", "name": "Triangular Flag"},
-                {"emoji": "🏳️", "name": "White Flag"}
+                {"emoji": "🏳️", "name": "White Flag"},
+                {"emoji": "🇨🇶", "name": "Flag: Sark"}
             ]
         },
         "Food": {
@@ -95,7 +97,8 @@
                 {"emoji": "🍜", "name": "Ramen"},
                 {"emoji": "🍝", "name": "Spaghetti"},
                 {"emoji": "🍲", "name": "Stew"},
-                {"emoji": "🍣", "name": "Sushi"}
+                {"emoji": "🍣", "name": "Sushi"},
+                {"emoji": "🫜", "name": "Root Vegetable"}
             ]
         },
         "Fruits & Vegetables": {
@@ -189,7 +192,8 @@
                 {"emoji": "🎶", "name": "Musical Notes"},
                 {"emoji": "🎼", "name": "Musical Score"},
                 {"emoji": "🎷", "name": "Saxophone"},
-                {"emoji": "🎺", "name": "Trumpet"}
+                {"emoji": "🎺", "name": "Trumpet"},
+                {"emoji": "🪈", "name": "Harp"}
             ]
         },
         "Nature": {
@@ -212,7 +216,8 @@
                 {"emoji": "🌾", "name": "Sheaf Of Rice"},
                 {"emoji": "🌻", "name": "Sunflower"},
                 {"emoji": "🌷", "name": "Tulip"},
-                {"emoji": "🥀", "name": "Wilted Flower"}
+                {"emoji": "🥀", "name": "Wilted Flower"},
+                {"emoji": "🪾", "name": "Leafless Tree"}
             ]
         },
         "Objects": {
@@ -226,7 +231,8 @@
                 {"emoji": "📱", "name": "Mobile Phone"},
                 {"emoji": "💿", "name": "Optical Disk"},
                 {"emoji": "🖨️", "name": "Printer"},
-                {"emoji": "🖲️", "name": "Trackball"}
+                {"emoji": "🖲️", "name": "Trackball"},
+                {"emoji": "🪏", "name": "Shovel"}
             ]
         },
         "People": {
@@ -240,7 +246,8 @@
                 {"emoji": "🧑‍🦱", "name": "Person: Curly Hair"},
                 {"emoji": "🧑‍🦰", "name": "Person: Red Hair"},
                 {"emoji": "🧑‍🦳", "name": "Person: White Hair"},
-                {"emoji": "👩", "name": "Woman"}
+                {"emoji": "👩", "name": "Woman"},
+                {"emoji": "🫩", "name": "Face With Bags Under Eyes"}
             ]
         },
         "Symbols": {
@@ -249,7 +256,13 @@
                 {"emoji": "🔥", "name": "Fire"},
                 {"emoji": "✨", "name": "Sparkles"},
                 {"emoji": "⭐", "name": "Star"},
-                {"emoji": "🌊", "name": "Water Wave"}
+                {"emoji": "🌊", "name": "Water Wave"},
+                {"emoji": "⚡", "name": "High Voltage"},
+                {"emoji": "💥", "name": "Collision"},
+                {"emoji": "💫", "name": "Dizzy"},
+                {"emoji": "💦", "name": "Sweat Droplets"},
+                {"emoji": "❄️", "name": "Snowflake"},
+                {"emoji": "🫟", "name": "Splatter"}
             ]
         },
         "Travel": {
