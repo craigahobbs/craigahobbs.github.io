@@ -1,6 +1,6 @@
 [Home](https://craigahobbs.github.io/emoji/)
 
-# Emoji
+# About Emoji
 
 Emoji is a simple emoji picker application.
 
