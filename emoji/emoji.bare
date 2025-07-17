@@ -5,14 +5,21 @@ include <forms.bare>
 async function emojiMain():
     # Parse arguments
     arguments = argsValidate(arrayNew( \
-        objectNew('name', 'url', 'global', 'vURL', 'default', 'emoji.json'), \
-        objectNew('name', 'category', 'explicit', true), \
-        objectNew('name', 'config', 'type', 'bool', 'explicit', true), \
-        objectNew('name', 'help', 'type', 'bool', 'explicit', true) \
+        objectNew('name', 'url', 'global', 'vURL', 'default', 'emoji.json', \
+                  'description', 'The Emoji JSON configuration file URL'), \
+        objectNew('name', 'category', \
+                  'description', 'The selected emoji category name'), \
+        objectNew('name', 'copied', 'type', 'int', 'explicit', true, \
+                  'description', 'The most-recently copied emoji index'), \
+        objectNew('name', 'config', 'type', 'bool', 'explicit', true, \
+                  'description', 'If true, display the Emoji JSON configuration file format'), \
+        objectNew('name', 'help', 'type', 'bool', 'explicit', true, \
+                  'description', 'If true, display the Emoji application arguments documentation') \
     ))
     args = argsParse(arguments)
     url = objectGet(args, 'url')
     category = objectGet(args, 'category')
+    copiedIndex = objectGet(args, 'copied')
 
     # Load the emojis
     emojiConfigJSON = systemFetch(url)
@@ -49,16 +56,17 @@ async function emojiMain():
     elif category:
         # Render the title
         title = 'Emoji - ' + category
-        markdownPrint(argsLink(arguments, 'Back'), '', '# ' + markdownEscape(title))
+        markdownPrint(argsLink(arguments, 'Back', objectNew('category', null)), '', '# ' + markdownEscape(title))
         documentSetTitle(title)
 
         # Render the list of emoji
         elem = arrayNew()
         valign = 'vertical-align:middle;'
-        for emoji in arraySort(objectGet(emojiCategories, category), emojiCompare):
+        for emoji, ixEmoji in arraySort(objectGet(emojiCategories, category), emojiCompare):
             emojiChar = objectGet(emoji, 'emoji')
             emojiName = objectGet(emoji, 'name')
             emojiStyle = valign + 'font-size:32pt; padding-right:0.25em; cursor: pointer; user-select: none; text-decoration: none;'
+            copyCallback = systemPartial(emojiCopyClipboard, emojiChar, argsURL(arguments, objectNew('copied', ixEmoji)))
             arrayPush(elem, objectNew( \
                 'html', 'p', \
                 'elem', arrayNew( \
@@ -66,12 +74,15 @@ async function emojiMain():
                         'html', 'a', \
                         'attr', objectNew('style', emojiStyle), \
                         'elem', objectNew('text', emojiChar), \
-                        'callback', objectNew('click', systemPartial(windowClipboardWrite, emojiChar)) \
+                        'callback', objectNew('click', copyCallback) \
                     ), \
                     objectNew( \
                         'html', 'span', \
                         'attr', objectNew('style', valign), \
-                        'elem', formsLinkButtonElements(emojiName, systemPartial(windowClipboardWrite, emojiChar)) \
+                        'elem', arrayNew( \
+                            formsLinkButtonElements(emojiName, copyCallback), \
+                            if(copiedIndex == ixEmoji, objectNew('text', ' (copied)')) \
+                        ) \
                     ) \
                 ) \
             ))
@@ -102,13 +113,30 @@ function emojiCompare(a, b):
 endfunction
 
 
+async function emojiCopyClipboard(text, url):
+    windowClipboardWrite(text)
+    windowSetLocation(url)
+endfunction
+
+
 emojiTypes = schemaParse( \
+    '# The Emoji JSON configuration file format', \
     'struct EmojiConfig', \
+    '', \
+    '    # The list of emoji categories' , \
     '    EmojiList{} categories', \
     '', \
+    '', \
+    '# A list of emoji', \
     'typedef Emoji[] EmojiList', \
     '', \
+    '', \
+    '# An emoji', \
     'struct Emoji', \
+    '', \
+    '    # The emoji character', \
     '    string emoji', \
+    '', \
+    '    # The emoji name', \
     '    string name' \
 )
