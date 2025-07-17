@@ -10,6 +10,6 @@ Emoji is a simple emoji picker application.
 
 [File Format](https://craigahobbs.github.io/emoji/#var.vConfig=true)
 
-[Emoji JSON](https://craigahobbs.github.io/emoji/#var.vJSON=true)
+[Emoji JSON](https://craigahobbs.github.io/emoji/emoji.json)
 
 [Source](https://github.com/craigahobbs/craigahobbs.github.io/tree/main/emoji)
