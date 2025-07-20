@@ -1,49 +1,68 @@
 # MarkdownUp Application Examples
 
-[BareSript Library Documentation Viewer](https://craigahobbs.github.io/bare-script/library/)
-&mdash; [Source](https://github.com/craigahobbs/bare-script/blob/main/static/library/app.bare)
+| Package | |
+| ------- | ------ |
+| [BareSript Library Documentation Viewer] | [Source][BareSript Library Documentation Viewer Source] |
+| [Chaos Balls] | [Source][Chaos Balls Source] |
+| [Chisel Documentation Viewer] | [Source][Chisel Documentation Viewer Source] |
+| [Conway's Game of Life] | [Source][Conway's Game of Life Source] |
+| [Day Hikes Dashboard] | [Source][Day Hikes Dashboard Source] |
+| [Emoji] | [Source][Emoji Source] |
+| [The Fruit Fly Trap Maker] | [Source][The Fruit Fly Trap Maker Source] |
+| [Happy Holidays!] | [Source][Happy Holidays! Source] |
+| [The Hobbs Family Cookbook] | [Source][The Hobbs Family Cookbook Source] |
+| [Mandelbrot Set Explorer] | [Source][Mandelbrot Set Explorer Source] |
+| [Money] | [Source][Money Source] |
+| [npm Dependency Explorer] | [Source][npm Dependency Explorer Source] |
+| [Package Downloads Dashboard] | [Source][Package Downloads Dashboard Source] |
+| [Schema Markdown Documentation Viewer] | [Source][Schema Markdown Documentation Viewer Source] |
+| [Solar Dashboard] | [Source][Solar Dashboard Source] |
+| [Sunrise Dashboard] | [Source][Sunrise Dashboard Source] |
 
-[Chaos Balls](https://craigahobbs.github.io/chaosBalls/)
-&mdash; [Source](https://craigahobbs.github.io/chaosBalls/#view=markdown)
+[BareSript Library Documentation Viewer]: https://craigahobbs.github.io/bare-script/library/
+[BareSript Library Documentation Viewer Source]: https://github.com/craigahobbs/bare-script/blob/main/static/library/app.bare
 
-[Chisel Documentation Viewer](https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request')
-&mdash; [Source](https://github.com/craigahobbs/chisel/blob/main/src/chisel/static/chiselDoc.bare)
+[Chaos Balls]: https://craigahobbs.github.io/chaosBalls/
+[Chaos Balls Source]: https://craigahobbs.github.io/chaosBalls/#view=markdown
 
-[Conway's Game of Life](https://craigahobbs.github.io/life/)
-&mdash; [Source](https://craigahobbs.github.io/life/#view=markdown)
+[Chisel Documentation Viewer]: https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request'
+[Chisel Documentation Viewer Source]: https://github.com/craigahobbs/chisel/blob/main/src/chisel/static/chiselDoc.bare
 
-[Day Hikes Dashboard](https://craigahobbs.github.io/day-hikes/)
-&mdash; [Source](https://craigahobbs.github.io/day-hikes/#view=markdown)
+[Conway's Game of Life]: https://craigahobbs.github.io/life/
+[Conway's Game of Life Source]: https://craigahobbs.github.io/life/#view=markdown
 
-[Emoji](https://craigahobbs.github.io/emoji/)
-&mdash; [Source](https://github.com/craigahobbs/craigahobbs.github.io/blob/main/emoji/emoji.bare)
+[Day Hikes Dashboard]: https://craigahobbs.github.io/day-hikes/
+[Day Hikes Dashboard Source]: https://craigahobbs.github.io/day-hikes/#view=markdown
 
-[The Fruit Fly Trap Maker](https://craigahobbs.github.io/fruit-fly-trap/)
-&mdash; [Source](https://craigahobbs.github.io/fruit-fly-trap/#view=markdown)
+[Emoji]: https://craigahobbs.github.io/emoji/
+[Emoji Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/emoji/emoji.bare
 
-[Happy Holidays!](https://craigahobbs.github.io/happy-holidays/)
-&mdash; [Source](https://craigahobbs.github.io/happy-holidays/#view=markdown)
+[The Fruit Fly Trap Maker]: https://craigahobbs.github.io/fruit-fly-trap/
+[The Fruit Fly Trap Maker Source]: https://craigahobbs.github.io/fruit-fly-trap/#view=markdown
 
-[The Hobbs Family Cookbook](https://craigahobbs.github.io/hobbs-family-cookbook/)
-&mdash; [Source](https://github.com/craigahobbs/hobbs-family-cookbook)
+[Happy Holidays!]: https://craigahobbs.github.io/happy-holidays/
+[Happy Holidays! Source]: https://craigahobbs.github.io/happy-holidays/#view=markdown
 
-[Mandelbrot Set Explorer](https://craigahobbs.github.io/mandelbrot/)
-&mdash; [Source](https://craigahobbs.github.io/mandelbrot/#view=markdown)
+[The Hobbs Family Cookbook]: https://craigahobbs.github.io/hobbs-family-cookbook/
+[The Hobbs Family Cookbook Source]: https://github.com/craigahobbs/hobbs-family-cookbook
 
-[Money](https://craigahobbs.github.io/money/)
-&mdash; [Source](https://github.com/craigahobbs/craigahobbs.github.io/blob/main/money/money.bare)
+[Mandelbrot Set Explorer]: https://craigahobbs.github.io/mandelbrot/
+[Mandelbrot Set Explorer Source]: https://craigahobbs.github.io/mandelbrot/#view=markdown
 
-[npm Dependency Explorer](https://craigahobbs.github.io/npm-dependency-explorer/)
-&mdash; [Source](https://github.com/craigahobbs/npm-dependency-explorer)
+[Money]: https://craigahobbs.github.io/money/
+[Money Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/money/money.bare
 
-[Package Downloads Dashboard](https://craigahobbs.github.io/downloads/)
-&mdash; [Source](https://github.com/craigahobbs/craigahobbs.github.io/blob/main/downloads/downloads.bare)
+[npm Dependency Explorer]: https://craigahobbs.github.io/npm-dependency-explorer/
+[npm Dependency Explorer Source]: https://github.com/craigahobbs/npm-dependency-explorer
 
-[Schema Markdown Documentation Viewer](https://craigahobbs.github.io/schema-markdown-doc/doc/)
-&mdash; [Source](https://github.com/craigahobbs/schema-markdown-doc/blob/main/static/doc/app.bare)
+[Package Downloads Dashboard]: https://craigahobbs.github.io/downloads/
+[Package Downloads Dashboard Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/downloads/downloads.bare
 
-[Solar Dashboard](https://craigahobbs.github.io/solar/)
-&mdash; [Source](https://craigahobbs.github.io/solar/#view=markdown)
+[Schema Markdown Documentation Viewer]: https://craigahobbs.github.io/schema-markdown-doc/doc/
+[Schema Markdown Documentation Viewer Source]: https://github.com/craigahobbs/schema-markdown-doc/blob/main/static/doc/app.bare
 
-[Sunrise Dashboard](https://craigahobbs.github.io/sunrise/)
-&mdash; [Source](https://craigahobbs.github.io/sunrise/#view=markdown)
+[Solar Dashboard]: https://craigahobbs.github.io/solar/
+[Solar Dashboard Source]: https://craigahobbs.github.io/solar/#view=markdown
+
+[Sunrise Dashboard]: https://craigahobbs.github.io/sunrise/
+[Sunrise Dashboard Source]: https://craigahobbs.github.io/sunrise/#view=markdown
