@@ -1,6 +1,6 @@
 # MarkdownUp Application Examples
 
-| Package | |
+| | |
 | ------- | ------ |
 | [BareSript Library Documentation Viewer] | [Source][BareSript Library Documentation Viewer Source] |
 | [Chaos Balls] | [Source][Chaos Balls Source] |
