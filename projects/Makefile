@@ -78,9 +78,6 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
 		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
 		exit 1; \
 	fi
-	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
-		$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean; \
-	fi
 	cd $$$$HOME/src/$(strip $(2)) && git pull
 
 
