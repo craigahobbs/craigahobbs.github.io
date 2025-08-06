@@ -55,23 +55,27 @@ def main():
         print(f'Updating {package_name} ({package_language})')
 
         # Get the package download data
-        if package_language == 'Python':
-            package_url = f'https://pypistats.org/api/packages/{package_name}/overall'
-            with urllib.request.urlopen(package_url) as response:
-                package_updated_raw = json.load(response)
-            package_updated = [
-                {'Package': package_name, 'Language': package_language, 'Date': row['date'], 'Downloads': row['downloads']}
-                for row in package_updated_raw['data'] if row['category'] == 'without_mirrors'
-            ]
-        else: # package_language == 'javascript'
-            year_ago = today - datetime.timedelta(days=365)
-            package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
-            with urllib.request.urlopen(package_url) as response:
-                package_updated_raw = json.load(response)
-            package_updated = [
-                {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
-                for row in package_updated_raw['downloads']
-            ]
+        try:
+            if package_language == 'Python':
+                package_url = f'https://pypistats.org/api/packages/{package_name}/overall'
+                with urllib.request.urlopen(package_url) as response:
+                    package_updated_raw = json.load(response)
+                package_updated = [
+                    {'Package': package_name, 'Language': package_language, 'Date': row['date'], 'Downloads': row['downloads']}
+                    for row in package_updated_raw['data'] if row['category'] == 'without_mirrors'
+                ]
+            else: # package_language == 'javascript'
+                year_ago = today - datetime.timedelta(days=365)
+                package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
+                with urllib.request.urlopen(package_url) as response:
+                    package_updated_raw = json.load(response)
+                package_updated = [
+                    {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
+                    for row in package_updated_raw['downloads']
+                ]
+        except:
+            package_updated = []
+            print(f'Warning: Package stats download failure "{package_url}"')
 
         # Update the package data
         package_existing = [row for row in package_data if row['Package'] == package_name and row['Language'] == package_language]
