@@ -45064,5 +45064,41 @@
         "Language": "JavaScript",
         "Date": "2025-08-07",
         "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-08-08",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-08-08",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-08-08",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-08-08",
+        "Downloads": 1
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-08-08",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-08-08",
+        "Downloads": 1
     }
 ]
