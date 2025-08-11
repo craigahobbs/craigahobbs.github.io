@@ -56,24 +56,29 @@ def main():
         print(f'Updating {package_name} ({package_language})')
 
         # Get the package download data
-        try:
-            if package_language == 'Python':
-                package_updated = [
-                    {'Package': package_name, 'Language': package_language, 'Date': row['date'], 'Downloads': row['downloads']}
-                    for row in get_pepy_downloads(package_name)
-                ]
-            else: # package_language == 'JavaScript'
-                year_ago = today - datetime.timedelta(days=365)
-                package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
-                with urllib.request.urlopen(package_url) as response:
-                    package_updated_raw = json.load(response)
-                package_updated = [
-                    {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
-                    for row in package_updated_raw['downloads']
-                ]
-        except:
-            package_updated = []
-            print(f'Warning: Package stats download failure "{package_url}"')
+        if package_language == 'Python':
+            pepy_url = f'https://api.pepy.tech/api/v2/projects/{package_name}'
+            pepy_headers = {
+                'X-API-Key': os.environ.get('PEPY_API_KEY'),
+                'User-Agent': 'Mozilla/5.0 (compatible; MyScript/1.0)'
+            }
+            req = urllib.request.Request(pepy_url, headers=pepy_headers)
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode('utf-8'))
+            downloads_by_date = data.get('downloads') or {}
+            package_updated = [
+                {'Package': package_name, 'Language': package_language, 'Date': date_str, 'Downloads': sum(version_downloads.values())}
+                for date_str, version_downloads in sorted(downloads_by_date.items())
+            ]
+        else: # package_language == 'JavaScript'
+            year_ago = today - datetime.timedelta(days=365)
+            package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
+            with urllib.request.urlopen(package_url) as response:
+                package_updated_raw = json.load(response)
+            package_updated = [
+                {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
+                for row in package_updated_raw['downloads']
+            ]
 
         # Update the package data
         package_existing = [row for row in package_data if row['Package'] == package_name and row['Language'] == package_language]
@@ -87,25 +92,6 @@ def main():
     # Update the data file
     with open(package_file, 'w', encoding='utf-8') as fh:
         json.dump(sorted(package_data, key=lambda row: (row['Date'], row['Language'], row['Package'])), fh, indent=4)
-
-
-def get_pepy_downloads(package):
-    # Get the package download statistics
-    pepy_url = f'https://api.pepy.tech/api/v2/projects/{package}'
-    pepy_headers = {
-        'X-API-Key': os.environ.get('PEPY_API_KEY'),
-        'User-Agent': 'Mozilla/5.0 (compatible; MyScript/1.0)'
-    }
-    req = urllib.request.Request(pepy_url, headers=pepy_headers)
-    with urllib.request.urlopen(req) as response:
-        data = json.loads(response.read().decode('utf-8'))
-    downloads_by_date = data.get('downloads') or {}
-
-    # Compute the daily package downloads (without mirrors)
-    result_data = []
-    for date_str, version_downloads in sorted(downloads_by_date.items()):
-        result_data.append({'date': date_str, 'downloads': sum(version_downloads.values())})
-    return result_data
 
 
 if __name__ == '__main__':
