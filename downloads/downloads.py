@@ -62,13 +62,11 @@ def main():
                 'X-API-Key': os.environ.get('PEPY_API_KEY'),
                 'User-Agent': 'Mozilla/5.0 (compatible; MyScript/1.0)'
             }
-            req = urllib.request.Request(pepy_url, headers=pepy_headers)
-            with urllib.request.urlopen(req) as response:
-                data = json.loads(response.read().decode('utf-8'))
-            downloads_by_date = data.get('downloads') or {}
+            with urllib.request.urlopen(urllib.request.Request(pepy_url, headers=pepy_headers)) as response:
+                package_updated_raw = json.loads(response.read().decode('utf-8'))
             package_updated = [
                 {'Package': package_name, 'Language': package_language, 'Date': date_str, 'Downloads': sum(version_downloads.values())}
-                for date_str, version_downloads in sorted(downloads_by_date.items())
+                for date_str, version_downloads in package_updated_raw['downloads'].items()
             ]
         else: # package_language == 'JavaScript'
             year_ago = today - datetime.timedelta(days=365)
