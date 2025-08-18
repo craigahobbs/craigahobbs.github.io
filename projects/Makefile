@@ -8,6 +8,10 @@ help:
 	@echo '            TYPE=[python|javascript|build|other]'
 
 
+# The source directory
+SRC_DIR ?= ../..
+
+
 # Project rule header function - args are (project_type, project_name, rule)
 define PROJECT_RULE_HEADER
 .PHONY: _$(strip $(3))-$(strip $(2))
@@ -23,8 +27,8 @@ define PROJECT_RULES
 
 # changed
 $(call PROJECT_RULE_HEADER, $(1), $(2), changed)
-	@if [ -d $$$$HOME/src/$(strip $(2)) ]; then \
-		FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+	@if [ -d $$(SRC_DIR)/$(strip $(2)) ]; then \
+		FAIL=$$$$(cd $$(SRC_DIR)/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 		if [ "$$$$FAIL" != "" ]; then \
 			echo '$(strip $(2))'; \
 		fi; \
@@ -35,30 +39,30 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), changed)
 
 # clean
 $(call PROJECT_RULE_HEADER, $(1), $(2), clean)
-	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
-		$(MAKE) -C $$$$HOME/src/$(strip $(2)) clean; \
+	@if [ -f $$(SRC_DIR)/$(strip $(2))/Makefile ]; then \
+		$(MAKE) -C $$(SRC_DIR)/$(strip $(2)) clean; \
 	fi
 
 
 # commit
 $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
-	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
-		$(MAKE)$(if $(findstring no-parallel, $(4)),, -j) -C $$$$HOME/src/$(strip $(2)) commit; \
+	@if [ -f $$(SRC_DIR)/$(strip $(2))/Makefile ]; then \
+		$(MAKE)$(if $(findstring no-parallel, $(4)),, -j) -C $$(SRC_DIR)/$(strip $(2)) commit; \
 	fi
 
 
 # gh-pages
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
-	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
-		$(MAKE)$(if $(findstring no-parallel, $(4)),, -j) -C $$$$HOME/src/$(strip $(2)) gh-pages; \
+	@if [ -f $$(SRC_DIR)/$(strip $(2))/Makefile ]; then \
+		$(MAKE)$(if $(findstring no-parallel, $(4)),, -j) -C $$(SRC_DIR)/$(strip $(2)) gh-pages; \
 	fi
 
 
 # gh-pages-check
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages-check)
-	@if [ -d $$$$HOME/src/$(strip $(2)).gh-pages ]; then \
-		if cd $$$$HOME/src/$(strip $(2)).gh-pages && [ -z "$$$$(git status --porcelain)" ] && git diff -w --exit-code > /dev/null; then \
-			rm -rf $$$$HOME/src/$(strip $(2)).gh-pages; \
+	@if [ -d $$(SRC_DIR)/$(strip $(2)).gh-pages ]; then \
+		if cd $$(SRC_DIR)/$(strip $(2)).gh-pages && [ -z "$$$$(git status --porcelain)" ] && git diff -w --exit-code > /dev/null; then \
+			rm -rf $$(SRC_DIR)/$(strip $(2)).gh-pages; \
 		else \
 			echo '$(strip $(2)).gh-pages'; \
 		fi; \
@@ -72,26 +76,26 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), list)
 
 # pull
 $(call PROJECT_RULE_HEADER, $(1), $(2), pull)
-	if [ ! -d $$$$HOME/src/$(strip $(2)) ]; then git clone $(strip $(3)) $$$$HOME/src/$(strip $(2)); fi
-	@FAIL=$$$$(cd $$$$HOME/src/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
+	if [ ! -d $$(SRC_DIR)/$(strip $(2)) ]; then git clone $(strip $(3)) $$(SRC_DIR)/$(strip $(2)); fi
+	@FAIL=$$$$(cd $$(SRC_DIR)/$(strip $(2)) && if [ "$$$$(git status -s)" != "" ]; then echo FAIL; fi); \
 	if [ "$$$$FAIL" != "" ]; then \
-		echo Error: Non-clean git status in $$$$HOME/src/$(strip $(2)); \
+		echo Error: Non-clean git status in $$(SRC_DIR)/$(strip $(2)); \
 		exit 1; \
 	fi
-	cd $$$$HOME/src/$(strip $(2)) && git pull
+	cd $$(SRC_DIR)/$(strip $(2)) && git pull
 
 
 # superclean
 $(call PROJECT_RULE_HEADER, $(1), $(2), superclean)
-	@if [ -f $$$$HOME/src/$(strip $(2))/Makefile ]; then \
-		$(MAKE) -C $$$$HOME/src/$(strip $(2)) superclean; \
+	@if [ -f $$(SRC_DIR)/$(strip $(2))/Makefile ]; then \
+		$(MAKE) -C $$(SRC_DIR)/$(strip $(2)) superclean; \
 	fi
 
 
 # markdown-up
 ifneq '$(findstring markdown-up, $(4))' ''
 $(call PROJECT_RULE_HEADER, $(1), $(2), markdown-up)
-	$(MAKE) -C $$$$HOME/src/$(strip $(2)) markdown-up
+	$(MAKE) -C $$(SRC_DIR)/$(strip $(2)) markdown-up
 endif
 
 endef # PROJECT_RULES
