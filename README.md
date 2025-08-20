@@ -3,7 +3,7 @@
 
 ## Applications
 
-[MarkdownUp](https://github.com/craigahobbs/markdown-up#readme)
+[MarkdownUp](https://github.com/craigahobbs/markdown-up-py#readme)
 
 [npm Dependency Explorer](https://craigahobbs.github.io/npm-dependency-explorer/)
 
