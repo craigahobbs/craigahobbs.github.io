@@ -46594,5 +46594,89 @@
         "Language": "Python",
         "Date": "2025-08-20",
         "Downloads": 2785
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-08-21",
+        "Downloads": 1
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-08-21",
+        "Downloads": 1
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-08-21",
+        "Downloads": 1
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-08-21",
+        "Downloads": 35
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-08-21",
+        "Downloads": 1
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-08-21",
+        "Downloads": 21
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 409
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 99
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 59
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 435
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 43
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 5
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 524
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-08-21",
+        "Downloads": 2222
     }
 ]
