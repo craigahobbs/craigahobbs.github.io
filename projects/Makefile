@@ -112,9 +112,9 @@ $(eval $(call PROJECT_RULES, javascript, schema-markdown-js, 'git@github.com:cra
 # Python projects
 $(eval $(call PROJECT_RULES, python, bare-script-py, 'git@github.com:craigahobbs/bare-script-py.git', markdown-up))
 $(eval $(call PROJECT_RULES, python, chisel, 'git@github.com:craigahobbs/chisel.git', markdown-up))
-$(eval $(call PROJECT_RULES, python, file-prompt, 'git@github.com:craigahobbs/file-prompt.git'))
 $(eval $(call PROJECT_RULES, python, markdown-up-py, 'git@github.com:craigahobbs/markdown-up-py.git'))
 $(eval $(call PROJECT_RULES, python, ollama-chat, 'git@github.com:craigahobbs/ollama-chat.git'))
+$(eval $(call PROJECT_RULES, python, promptkit, 'git@github.com:craigahobbs/promptkit.git'))
 $(eval $(call PROJECT_RULES, python, schema-markdown, 'git@github.com:craigahobbs/schema-markdown.git'))
 $(eval $(call PROJECT_RULES, python, simple-git-changelog, 'git@github.com:craigahobbs/simple-git-changelog.git'))
 $(eval $(call PROJECT_RULES, python, template-specialize, 'git@github.com:craigahobbs/template-specialize.git'))
