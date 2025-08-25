@@ -213,7 +213,7 @@ async function downloadsDashboard(args):
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Date', \
-        'y', arrayNew('Downloads', 'Average Downloads'), \
+        'y', arrayNew('Average Downloads', 'Downloads'), \
         'yTicks', objectNew('start', 0), \
         'xLines', arrayNew( \
             objectNew('value', downloadsDataAverageMinDate(data, trailingDays), 'label', '') \
