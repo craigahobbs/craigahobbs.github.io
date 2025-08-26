@@ -3,6 +3,7 @@ if [ -x /opt/homebrew/bin/brew ]; then
     export PATH="/opt/homebrew/bin:$PATH"
     export PATH="/opt/homebrew/sbin:$PATH"
 fi
+export HOMEBREW_NO_ANALYTICS=1
 
 # Personal path
 export PATH=$HOME/bin:$HOME/bin/env/bin:$PATH
