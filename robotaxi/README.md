@@ -4,9 +4,9 @@
 # Load the data
 data = dataValidate(dataParseCSV(systemFetch('robotaxi.csv')))
 
-data = dataFilter(data, 'Month < monthMax', objectNew('monthMax', datetimeNew(2026, 9, 1)))
+dataFiltered = dataFilter(data, 'Month < monthMax', objectNew('monthMax', datetimeNew(2026, 9, 1)))
 
-dataLineChart(data, objectNew( \
+dataLineChart(dataFiltered, objectNew( \
     'title', 'Project Robotaxi Fleet Sizes', \
     'width', 1000, \
     'height', 450, \
