@@ -9,7 +9,8 @@ data = dataFilter(data, 'Month < monthMax', objectNew('monthMax', datetimeNew(20
 dataLineChart(data, objectNew( \
     'title', 'Project Robotaxi Fleet Sizes', \
     'width', 1000, \
-    'height', 600, \
+    'height', 450, \
+    'precision', 0, \
     'datetime', 'month', \
     'x', 'Month', \
     'y', arrayNew('Size'), \
