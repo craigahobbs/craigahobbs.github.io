@@ -47064,6 +47064,12 @@
         "Downloads": 65
     },
     {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2025-08-26",
+        "Downloads": 63
+    },
+    {
         "Package": "ollama-chat",
         "Language": "Python",
         "Date": "2025-08-26",

@@ -22,6 +22,7 @@ PACKAGES = [
     # Python packages
     {'Package': 'bare-script', 'Language': 'Python'},
     {'Package': 'chisel', 'Language': 'Python'},
+    {'Package': 'ctxkit', 'Language': 'Python'},
     {'Package': 'markdown-up', 'Language': 'Python'},
     {'Package': 'ollama-chat', 'Language': 'Python'},
     {'Package': 'schema-markdown', 'Language': 'Python'},
