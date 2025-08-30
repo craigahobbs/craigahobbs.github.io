@@ -157,15 +157,15 @@ async function downloadsDashboard(args):
 
     # Load the package data
     data = downloadsDataLoad()
-    dataMonthly = downloadsDataMonthly(data)
-    monthlyAverageData = downloadsDataAverage(data, trailingDays, true)
 
     # Filter to this package's data
     filterExpr = 'Package == packageName && Language == packageLanguage'
     filterVars = objectNew('packageName', name, 'packageLanguage', language)
     data = dataFilter(data, filterExpr, filterVars)
-    dataMonthly = dataFilter(dataMonthly, filterExpr, filterVars)
-    monthlyAverageData = dataFilter(monthlyAverageData, filterExpr, filterVars)
+
+    # Compute the monthly average
+    dataMonthly = downloadsDataMonthly(data)
+    monthlyAverageData = downloadsDataAverage(data, trailingDays, true)
     monthlyAverage = objectGet(arrayGet(monthlyAverageData, 0), 'Downloads')
 
     # Compute the minimum date
@@ -190,56 +190,63 @@ async function downloadsDashboard(args):
     # Render the monthly line chart
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(mathMax(200, mathFloor(0.2 * chartWidth)))
-    dataLineChart(dataMonthly, objectNew( \
-        'title', 'Monthly Downloads - ' + name, \
-        'width', chartWidth, \
-        'height', chartHeight, \
-        'x', 'Month', \
-        'y', arrayNew('Downloads'), \
-        'yTicks', objectNew('start', 0), \
-        'xLines', arrayNew( \
-            objectNew('value', downloadsDataAverageMinDate(dataMonthly, trailingDays, 'Month'), 'label', '') \
-        ), \
-        'yLines', arrayNew( \
-            objectNew('value', monthlyAverage) \
-        ), \
-        'datetime', 'day', \
-        'precision', 1 \
-    ))
+    if dataMonthly:
+        dataLineChart(dataMonthly, objectNew( \
+            'title', 'Monthly Downloads - ' + name, \
+            'width', chartWidth, \
+            'height', chartHeight, \
+            'x', 'Month', \
+            'y', arrayNew('Downloads'), \
+            'yTicks', objectNew('start', 0), \
+            'xLines', arrayNew( \
+                objectNew('value', downloadsDataAverageMinDate(dataMonthly, trailingDays, 'Month'), 'label', '') \
+            ), \
+            'yLines', arrayNew( \
+                objectNew('value', monthlyAverage) \
+            ), \
+            'datetime', 'day', \
+            'precision', 1 \
+        ))
+    endif
 
     # Render the daily line chart
-    dataLineChart(data, objectNew( \
+    dailyLineChart = objectNew( \
         'title', 'Daily Downloads - ' + name, \
         'width', chartWidth, \
         'height', chartHeight, \
         'x', 'Date', \
         'y', arrayNew('Average Downloads', 'Downloads'), \
         'yTicks', objectNew('start', 0), \
-        'xLines', arrayNew( \
-            objectNew('value', downloadsDataAverageMinDate(data, trailingDays), 'label', '') \
-        ), \
         'yLines', arrayNew( \
-            objectNew('value', averageDownloads) \
+            objectNew('value', if(averageDownloads != null, averageDownloads, monthlyAverage)) \
         ), \
         'datetime', 'day', \
         'precision', 1 \
-    ))
+    )
+    if averageDownloads != null:
+        objectSet(dailyLineChart, 'xLines', arrayNew( \
+            objectNew('value', downloadsDataAverageMinDate(data, trailingDays), 'label', '') \
+        ))
+    endif
+    dataLineChart(data, dailyLineChart)
 
     # Render the monthly table by most recent
-    dataSort(dataMonthly, arrayNew(arrayNew('Month', true)))
-    dataCalculatedField( \
-        dataMonthly, \
-        '% Average', 'numberToFixed((100 * (Downloads - monthlyAverage) / monthlyAverage), 1, true) + "%"', \
-        objectNew('monthlyAverage', monthlyAverage) \
-    )
-    dataTable(dataMonthly, objectNew( \
-        'fields', arrayNew('Month', 'Downloads', '% Average'), \
-        'formats', objectNew( \
-            'Downloads', objectNew('align', 'right') \
-        ), \
-        'datetime', 'month', \
-        'precision', 0 \
-    ))
+    if dataMonthly:
+        dataSort(dataMonthly, arrayNew(arrayNew('Month', true)))
+        dataCalculatedField( \
+            dataMonthly, \
+            '% Average', 'numberToFixed((100 * (Downloads - monthlyAverage) / monthlyAverage), 1, true) + "%"', \
+            objectNew('monthlyAverage', monthlyAverage) \
+        )
+        dataTable(dataMonthly, objectNew( \
+            'fields', arrayNew('Month', 'Downloads', '% Average'), \
+            'formats', objectNew( \
+                'Downloads', objectNew('align', 'right') \
+            ), \
+            'datetime', 'month', \
+            'precision', 0 \
+        ))
+    endif
 
     # Redraw on resize
     windowSetResize(systemPartial(downloadsDashboard, args))
