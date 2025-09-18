@@ -609,12 +609,14 @@ function tododoneTaskForm(task, tasks, args):
     endfor
 
     labelSpace = stringFromCharCode(160, 160, 160)
+    taskTitleID = 'taskTitle'
+    documentSetFocus(taskTitleID)
     return objectNew( \
         'html', 'div', \
         'elem', arrayNew( \
             objectNew('html', 'p', 'elem', arrayNew( \
                 objectNew('html', 'b', 'elem', objectNew('text', 'Title:' + labelSpace)), \
-                formsTextElements('taskTitle', defaultTitle, 40) \
+                formsTextElements(taskTitleID, defaultTitle, 40) \
             )), \
             objectNew('html', 'p', 'elem', arrayNew( \
                 objectNew('html', 'b', 'elem', objectNew('text', 'Category:' + labelSpace)), \
