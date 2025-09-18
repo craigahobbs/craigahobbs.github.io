@@ -34,6 +34,8 @@ async function tododoneMain():
         tododoneAddTask(tasks, args)
     elif view == 'categories':
         tododoneManageCategories(tasks, args)
+    elif view == 'backup':
+        tododoneBackupView(tasks, args)
     else:
         tododoneRenderMainView(tasks, args)
     endif
@@ -85,6 +87,7 @@ function tododoneRenderMainView(tasks, args):
     markdownPrint( \
         argsLink(tododoneArguments, 'Add Task', objectNew('view', 'add')) + ' | ', \
         argsLink(tododoneArguments, 'Categories', objectNew('view', 'categories')) + ' | ', \
+        argsLink(tododoneArguments, 'Backup', objectNew('view', 'backup')) + ' | ', \
         argsLink(tododoneArguments, 'Reset', null, true) \
     )
 
@@ -106,7 +109,7 @@ function tododoneRenderMainView(tasks, args):
     )
 
     # Category filter
-    categories = tododoneGetAllCategories(tasks)
+    categories = arraySort(tododoneGetAllCategories(tasks))
     if arrayLength(categories) > 0:
         markdownPrint('')
         categoryParts = arrayNew()
@@ -125,6 +128,9 @@ function tododoneRenderMainView(tasks, args):
     filteredTasks = tododoneFilterTasks(tasks, filter, categoryFilter)
     sortedTasks = tododoneSortTasks(filteredTasks, sortBy)
 
+    # Display statistics
+    tododoneDisplayStats(tasks)
+
     # Render tasks
     markdownPrint('')
     markdownPrint('## Tasks')
@@ -138,8 +144,183 @@ function tododoneRenderMainView(tasks, args):
 endfunction
 
 
+# Display task statistics
+function tododoneDisplayStats(tasks):
+    totalTasks = arrayLength(tasks)
+    completedTasks = arrayLength(tododoneGetCompletedTasks(tasks))
+    activeTasks = 0
+    overdueCount = 0
+
+    for task in tasks:
+        if !objectGet(task, 'completed') && !tododoneIsSnoozed(objectGet(task, 'snoozedUntil')):
+            activeTasks = activeTasks + 1
+            if tododoneIsOverdue(objectGet(task, 'deadline')):
+                overdueCount = overdueCount + 1
+            endif
+        endif
+    endfor
+
+    markdownPrint('')
+    markdownPrint('📊 **Stats:** ' + \
+        'Total: ' + totalTasks + ' | ' + \
+        'Active: ' + activeTasks + ' | ' + \
+        'Completed: ' + completedTasks + \
+        if(overdueCount > 0, ' | **⚠️ Overdue: ' + overdueCount + '**', ''))
+endfunction
+
+
+# Get completed tasks
+function tododoneGetCompletedTasks(tasks):
+    completed = arrayNew()
+    for task in tasks:
+        if objectGet(task, 'completed'):
+            arrayPush(completed, task)
+        endif
+    endfor
+    return completed
+endfunction
+
+
+# Backup and restore view
+async function tododoneBackupView(tasks, args):
+    customCategories = tododoneGetCustomCategories()
+
+    markdownPrint('# Backup & Restore')
+    markdownPrint('')
+    markdownPrint(argsLink(tododoneArguments, 'Back', objectNew('view', 'tasks')))
+
+    markdownPrint('')
+    markdownPrint('## Export Data')
+    markdownPrint('')
+    markdownPrint('Export your tasks and categories to a JSON file for backup or transfer to another device.')
+    markdownPrint('')
+
+    # Create export data
+    exportData = objectNew( \
+        'version', '1.0', \
+        'exportDate', datetimeISOFormat(datetimeNow()), \
+        'tasks', tasks, \
+        'customCategories', customCategories \
+    )
+    exportJSON = jsonStringify(exportData, 2)
+
+    # Display export options
+    elementModelRender(arrayNew( \
+        objectNew('html', 'p', 'elem', arrayNew( \
+            formsLinkButtonElements('📥 Download Backup', systemPartial(tododoneDownloadBackup, exportJSON)), \
+            objectNew('text', '  '), \
+            formsLinkButtonElements('📋 Copy to Clipboard', systemPartial(tododoneCopyBackup, exportJSON)) \
+        )), \
+        objectNew('html', 'details', 'elem', arrayNew( \
+            objectNew('html', 'summary', 'elem', objectNew('text', 'View Export Data')), \
+            objectNew('html', 'pre', \
+                'attr', objectNew('style', 'background: #f0f0f0; padding: 10px; overflow-x: auto;'), \
+                'elem', objectNew('text', exportJSON) \
+            ) \
+        )) \
+    ))
+
+    markdownPrint('')
+    markdownPrint('## Import Data')
+    markdownPrint('')
+    markdownPrint('Paste your backup JSON data below to restore your tasks and categories.')
+    markdownPrint('')
+    markdownPrint('⚠️ **Warning:** This will replace all existing data!')
+    markdownPrint('')
+
+    elementModelRender(arrayNew( \
+        objectNew('html', 'p', 'elem', arrayNew( \
+            objectNew('html', 'textarea', \
+                'attr', objectNew('id', 'importData', 'rows', 10, 'cols', 60, \
+                    'placeholder', 'Paste your backup JSON data here...', \
+                    'style', 'font-family: monospace;') \
+            ) \
+        )), \
+        objectNew('html', 'p', 'elem', arrayNew( \
+            formsLinkButtonElements('📤 Import Backup', systemPartial(tododoneImportBackup)), \
+            objectNew('text', '  '), \
+            formsLinkButtonElements('🗑️ Clear All Data', systemPartial(tododoneClearAllData)) \
+        )) \
+    ))
+endfunction
+
+
+# Download backup as JSON file
+async function tododoneDownloadBackup(exportJSON):
+    # Create a download link
+    filename = 'tododone-backup-' + datetimeISOFormat(datetimeToday(), true) + '.json'
+    downloadURL = urlObjectCreate(exportJSON, 'application/json')
+
+    # Create and trigger download
+    elementModelRender(objectNew( \
+        'html', 'a', \
+        'attr', objectNew('href', downloadURL, 'download', filename, 'id', 'downloadLink', 'style', 'display: none;'), \
+        'callback', objectNew('click', systemPartial(tododoneTriggerDownload)) \
+    ))
+endfunction
+
+
+# Trigger the download link
+function tododoneTriggerDownload(element):
+    clickFunc = objectGet(element, 'click')
+    clickFunc()
+endfunction
+
+
+# Copy backup to clipboard
+async function tododoneCopyBackup(exportJSON):
+    windowClipboardWrite(exportJSON)
+    windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'backup')))
+endfunction
+
+
+# Import backup data
+async function tododoneImportBackup():
+    importJSON = documentInputValue('importData')
+    if !importJSON || stringTrim(importJSON) == '':
+        windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'backup')))
+        return
+    endif
+
+    # Parse and validate import data
+    importData = jsonParse(importJSON)
+    if !importData:
+        windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'backup')))
+        return
+    endif
+
+    # Extract and save tasks
+    importedTasks = objectGet(importData, 'tasks')
+    if importedTasks && systemType(importedTasks) == 'array':
+        tododoneSaveTasks(importedTasks)
+    endif
+
+    # Extract and save custom categories
+    importedCategories = objectGet(importData, 'customCategories')
+    if importedCategories && systemType(importedCategories) == 'array':
+        tododoneSaveCustomCategories(importedCategories)
+    endif
+
+    # Navigate back to main view
+    windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'tasks')))
+endfunction
+
+
+# Clear all data
+async function tododoneClearAllData():
+    # Clear tasks and categories
+    tododoneSaveTasks(arrayNew())
+    tododoneSaveCustomCategories(arrayNew())
+
+    # Navigate back to main view
+    windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'tasks')))
+endfunction
+
+
 # Render task list
 function tododoneRenderTaskList(tasks, args, showNotesId):
+    nbsp = stringFromCharCode(160)
+
     for task in tasks:
         taskId = objectGet(task, 'id')
         title = objectGet(task, 'title')
@@ -200,19 +381,25 @@ function tododoneRenderTaskList(tasks, args, showNotesId):
         actionElements = arrayNew()
         if !completed:
             arrayPush(actionElements, formsLinkButtonElements('✓ Complete', systemPartial(tododoneToggleComplete, tasks, taskId, true, args)))
-            arrayPush(actionElements, objectNew('text', ' '))
-            arrayPush(actionElements, formsLinkButtonElements('💤 Snooze', systemPartial(tododoneNavigateSnooze, taskId)))
+            arrayPush(actionElements, objectNew('text', nbsp))
+
+            # Show "Unsnooze" if task is snoozed, otherwise "Snooze"
+            if snoozedUntil && tododoneIsSnoozed(snoozedUntil):
+                arrayPush(actionElements, formsLinkButtonElements('⏰ Unsnooze', systemPartial(tododoneUnsnoozeTask, tasks, taskId, args)))
+            else:
+                arrayPush(actionElements, formsLinkButtonElements('💤 Snooze', systemPartial(tododoneNavigateSnooze, taskId)))
+            endif
         else:
             arrayPush(actionElements, formsLinkButtonElements('↩ Uncomplete', systemPartial(tododoneToggleComplete, tasks, taskId, false, args)))
         endif
-        arrayPush(actionElements, objectNew('text', ' '))
+        arrayPush(actionElements, objectNew('text', nbsp))
         arrayPush(actionElements, formsLinkButtonElements('✏️ Edit', systemPartial(tododoneNavigateEdit, taskId)))
-        arrayPush(actionElements, objectNew('text', ' '))
+        arrayPush(actionElements, objectNew('text', nbsp))
         arrayPush(actionElements, formsLinkButtonElements('🗑️ Delete', systemPartial(tododoneDeleteTaskAction, tasks, taskId, args)))
 
         # Add notes show/hide button if task has notes
         if notes && stringTrim(notes) != '':
-            arrayPush(actionElements, objectNew('text', ' '))
+            arrayPush(actionElements, objectNew('text', nbsp))
             if showNotesId == taskId:
                 arrayPush(actionElements, formsLinkButtonElements('📝 Hide Notes', systemPartial(tododoneToggleNotes, null)))
             else:
@@ -314,8 +501,9 @@ endfunction
 
 # Manage categories view
 function tododoneManageCategories(tasks, args):
-    allCategories = tododoneGetAllCategories(tasks)
-    customCategories = tododoneGetCustomCategories()
+    # Reload categories to ensure they're up-to-date
+    allCategories = arraySort(tododoneGetAllCategories(tasks))
+    customCategories = arraySort(tododoneGetCustomCategories())
 
     markdownPrint('# Manage Categories')
     markdownPrint('')
@@ -324,7 +512,6 @@ function tododoneManageCategories(tasks, args):
     markdownPrint('')
     markdownPrint('## Built-in Categories')
     for category in tododoneBuiltinCategories:
-        markdownPrint('')
         markdownPrint('- ' + markdownEscape(category))
     endfor
 
@@ -334,22 +521,31 @@ function tododoneManageCategories(tasks, args):
         markdownPrint('')
         markdownPrint('*No custom categories defined.*')
     else:
+        # Build elements for custom categories list
+        categoryListElements = arrayNew()
         for category in customCategories:
-            markdownPrint('')
-            elementModelRender(arrayNew( \
-                objectNew('text', '- ' + markdownEscape(category) + ' '), \
+            arrayPush(categoryListElements, objectNew('html', 'p', 'elem', arrayNew( \
+                objectNew('text', '• ' + markdownEscape(category) + ' '), \
                 formsLinkButtonElements('Delete', systemPartial(tododoneDeleteCategory, tasks, category)) \
-            ))
+            )))
         endfor
+        elementModelRender(categoryListElements)
     endif
 
     markdownPrint('')
     markdownPrint('## Add New Category')
+    labelSpace = stringFromCharCode(160, 160, 160)
     elementModelRender(arrayNew( \
         formsTextElements('newCategory', '', 20), \
-        objectNew('text', ' '), \
+        objectNew('text', labelSpace), \
         formsLinkButtonElements('Add', systemPartial(tododoneAddCategory, tasks)) \
     ))
+endfunction
+
+
+# Navigate to tasks filtered by category
+async function tododoneNavigateToCategory(category):
+    windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'tasks', 'category', category)))
 endfunction
 
 
@@ -357,15 +553,15 @@ endfunction
 function tododoneTaskForm(task, tasks, args):
     isEdit = task != null
     taskId = if(isEdit, objectGet(task, 'id'), null)
-    allCategories = tododoneGetAllCategories(tasks)
+    allCategories = arraySort(tododoneGetAllCategories(tasks))
 
     # Default values, prefer temp_ args if present
-    defaultTitle = objectGet(args, 'temp_title', if(isEdit, objectGet(task, 'title'), ''))
-    defaultCategory = objectGet(args, 'temp_category', if(isEdit, objectGet(task, 'category'), ''))
-    defaultPriority = objectGet(args, 'temp_priority', if(isEdit, objectGet(task, 'priority'), 'medium'))
-    defaultDeadline = objectGet(args, 'temp_deadline', if(isEdit, objectGet(task, 'deadline'), ''))
-    defaultDeadlineType = objectGet(args, 'temp_deadline_type', if(isEdit, objectGet(task, 'deadlineType'), 'soft'))
-    defaultNotes = objectGet(args, 'temp_notes', if(isEdit, objectGet(task, 'notes'), ''))
+    defaultTitle = if(objectHas(args, 'temp_title'), objectGet(args, 'temp_title'), if(isEdit, objectGet(task, 'title'), ''))
+    defaultCategory = if(objectHas(args, 'temp_category'), objectGet(args, 'temp_category'), if(isEdit, objectGet(task, 'category'), ''))
+    defaultPriority = if(objectHas(args, 'temp_priority'), objectGet(args, 'temp_priority'), if(isEdit, objectGet(task, 'priority'), 'medium'))
+    defaultDeadline = if(objectHas(args, 'temp_deadline'), objectGet(args, 'temp_deadline'), if(isEdit, objectGet(task, 'deadline'), ''))
+    defaultDeadlineType = if(objectHas(args, 'temp_deadline_type'), objectGet(args, 'temp_deadline_type'), if(isEdit, objectGet(task, 'deadlineType'), 'soft'))
+    defaultNotes = if(objectHas(args, 'temp_notes'), objectGet(args, 'temp_notes'), if(isEdit, objectGet(task, 'notes'), ''))
 
     # Get default dates for quick selection
     today = datetimeISOFormat(datetimeToday(), true)
@@ -373,22 +569,44 @@ function tododoneTaskForm(task, tasks, args):
     nextWeek = tododoneAddDays(today, 7)
     nextMonth = tododoneAddDays(today, 30)
 
+    # Build category menu element model
+    categoryMenuElements = arrayNew()
+    if defaultCategory == '':
+        arrayPush(categoryMenuElements, objectNew('html', 'b', 'elem', objectNew('text', 'None')))
+    else:
+        baseArgs = if(isEdit, objectNew('editId', taskId), objectNew('view', 'add'))
+        arrayPush(categoryMenuElements, formsLinkElements('None', \
+            argsURL(tododoneArguments, objectAssign(objectCopy(baseArgs), objectNew('temp_category', '')))))
+    endif
+
+    menuSeparator = stringFromCharCode(160) + '|' + stringFromCharCode(160)
+    for category in allCategories:
+        if arrayLength(categoryMenuElements) > 0:
+            arrayPush(categoryMenuElements, objectNew('text', menuSeparator))
+        endif
+        if category == defaultCategory:
+            arrayPush(categoryMenuElements, objectNew('html', 'b', 'elem', objectNew('text', markdownEscape(category))))
+        else:
+            baseArgs = if(isEdit, objectNew('editId', taskId), objectNew('view', 'add'))
+            arrayPush(categoryMenuElements, formsLinkElements(category, \
+                argsURL(tododoneArguments, objectAssign(objectCopy(baseArgs), objectNew('temp_category', category)))))
+        endif
+    endfor
+
+    labelSpace = stringFromCharCode(160, 160, 160)
     return objectNew( \
         'html', 'div', \
         'elem', arrayNew( \
             objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'label', 'elem', objectNew('text', 'Title: ')), \
+                objectNew('html', 'b', 'elem', objectNew('text', 'Title:' + labelSpace)), \
                 formsTextElements('taskTitle', defaultTitle, 40) \
             )), \
             objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'label', 'elem', objectNew('text', 'Category: ')), \
-                objectNew('html', 'select', \
-                    'attr', objectNew('id', 'taskCategory'), \
-                    'elem', tododoneCreateCategoryOptions(allCategories, defaultCategory) \
-                ) \
+                objectNew('html', 'b', 'elem', objectNew('text', 'Category:' + labelSpace)), \
+                categoryMenuElements \
             )), \
             objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'label', 'elem', objectNew('text', 'Priority: ')), \
+                objectNew('html', 'b', 'elem', objectNew('text', 'Priority:' + labelSpace)), \
                 objectNew('html', 'select', \
                     'attr', objectNew('id', 'taskPriority'), \
                     'elem', arrayNew( \
@@ -408,7 +626,7 @@ function tododoneTaskForm(task, tasks, args):
                 ) \
             )), \
             objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'label', 'elem', objectNew('text', 'Deadline: ')), \
+                objectNew('html', 'b', 'elem', objectNew('text', 'Deadline:' + labelSpace)), \
                 objectNew('html', 'input', 'attr', objectNew( \
                     'type', 'date', \
                     'id', 'taskDeadline', \
@@ -432,15 +650,15 @@ function tododoneTaskForm(task, tasks, args):
             objectNew('html', 'p', 'elem', arrayNew( \
                 objectNew('text', 'Quick dates: '), \
                 formsLinkButtonElements('Today', systemPartial(tododoneUpdateFormDeadline, today, args, isEdit, taskId)), \
-                objectNew('text', ' '), \
+                objectNew('text', menuSeparator), \
                 formsLinkButtonElements('Tomorrow', systemPartial(tododoneUpdateFormDeadline, tomorrow, args, isEdit, taskId)), \
-                objectNew('text', ' '), \
+                objectNew('text', menuSeparator), \
                 formsLinkButtonElements('Next Week', systemPartial(tododoneUpdateFormDeadline, nextWeek, args, isEdit, taskId)), \
-                objectNew('text', ' '), \
+                objectNew('text', menuSeparator), \
                 formsLinkButtonElements('Next Month', systemPartial(tododoneUpdateFormDeadline, nextMonth, args, isEdit, taskId)) \
             )), \
             objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'label', 'elem', objectNew('text', 'Notes (optional): ')), \
+                objectNew('html', 'b', 'elem', objectNew('text', 'Notes (optional):' + labelSpace)), \
                 objectNew('html', 'br'), \
                 objectNew('html', 'textarea', \
                     'attr', objectNew('id', 'taskNotes', 'rows', 4, 'cols', 50), \
@@ -460,7 +678,6 @@ endfunction
 async function tododoneUpdateFormDeadline(date, args, isEdit, taskId):
     # Read current form values
     title = documentInputValue('taskTitle')
-    category = documentInputValue('taskCategory')
     priority = documentInputValue('taskPriority')
     deadlineType = documentInputValue('taskDeadlineType')
     notes = documentInputValue('taskNotes')
@@ -468,12 +685,16 @@ async function tododoneUpdateFormDeadline(date, args, isEdit, taskId):
     # Create temp params object
     tempParams = objectNew( \
         'temp_title', title, \
-        'temp_category', category, \
         'temp_priority', priority, \
         'temp_deadline', date, \
         'temp_deadline_type', deadlineType, \
         'temp_notes', notes \
     )
+
+    # Preserve category from args if present
+    if objectHas(args, 'temp_category'):
+        objectSet(tempParams, 'temp_category', objectGet(args, 'temp_category'))
+    endif
 
     # Add view-specific params
     if isEdit:
@@ -487,33 +708,9 @@ async function tododoneUpdateFormDeadline(date, args, isEdit, taskId):
 endfunction
 
 
-# Create category options for select element
-function tododoneCreateCategoryOptions(categories, selectedCategory):
-    options = arrayNew()
-
-    # Add empty option
-    arrayPush(options, objectNew('html', 'option', \
-        'attr', objectNew('value', ''), \
-        'elem', objectNew('text', '-- Select or leave empty --') \
-    ))
-
-    # Add all categories
-    for category in categories:
-        isSelected = category == selectedCategory
-        arrayPush(options, objectNew('html', 'option', \
-            'attr', if(isSelected, objectNew('value', category, 'selected', 'selected'), objectNew('value', category)), \
-            'elem', objectNew('text', category) \
-        ))
-    endfor
-
-    return options
-endfunction
-
-
 # Save new task
 async function tododoneSaveTask(tasks, taskId, args):
     title = documentInputValue('taskTitle')
-    category = documentInputValue('taskCategory')
     priority = documentInputValue('taskPriority')
     deadline = documentInputValue('taskDeadline')
     deadlineType = documentInputValue('taskDeadlineType')
@@ -523,6 +720,9 @@ async function tododoneSaveTask(tasks, taskId, args):
         windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'add')))
         return
     endif
+
+    # Get category from temp params
+    category = if(objectHas(args, 'temp_category'), objectGet(args, 'temp_category'), '')
 
     # Create new task
     newTask = objectNew( \
@@ -556,7 +756,6 @@ async function tododoneUpdateTask(tasks, taskId, args):
     endif
 
     title = documentInputValue('taskTitle')
-    category = documentInputValue('taskCategory')
     priority = documentInputValue('taskPriority')
     deadline = documentInputValue('taskDeadline')
     deadlineType = documentInputValue('taskDeadlineType')
@@ -566,6 +765,9 @@ async function tododoneUpdateTask(tasks, taskId, args):
         windowSetLocation(argsURL(tododoneArguments, objectNew('editId', taskId)))
         return
     endif
+
+    # Get category from temp params
+    category = if(objectHas(args, 'temp_category'), objectGet(args, 'temp_category'), '')
 
     # Update task
     objectSet(task, 'title', stringTrim(title))
@@ -643,6 +845,19 @@ async function tododoneApplyCustomSnooze(tasks, taskId):
 endfunction
 
 
+# Unsnooze task action
+async function tododoneUnsnoozeTask(tasks, taskId, args):
+    task = tododoneFindTask(tasks, taskId)
+    if task:
+        objectSet(task, 'snoozedUntil', null)
+        tododoneSaveTasks(tasks)
+    endif
+
+    # Re-render the main view
+    tododoneRenderMainView(tasks, args)
+endfunction
+
+
 # Add new category
 async function tododoneAddCategory(tasks):
     newCategory = documentInputValue('newCategory')
@@ -654,11 +869,13 @@ async function tododoneAddCategory(tasks):
         # Check if category already exists
         if arrayIndexOf(customCategories, categoryName) < 0 && arrayIndexOf(tododoneBuiltinCategories, categoryName) < 0:
             arrayPush(customCategories, categoryName)
+            customCategories = arraySort(customCategories)
             tododoneSaveCustomCategories(customCategories)
         endif
     endif
 
-    windowSetLocation(argsURL(tododoneArguments, objectNew('view', 'categories')))
+    # Re-render categories view with updated data
+    tododoneManageCategories(tasks, argsParse(tododoneArguments))
 endfunction
 
 
@@ -668,6 +885,7 @@ async function tododoneDeleteCategory(tasks, category):
     index = arrayIndexOf(customCategories, category)
     if index >= 0:
         arrayDelete(customCategories, index)
+        customCategories = arraySort(customCategories)
         tododoneSaveCustomCategories(customCategories)
     endif
 
