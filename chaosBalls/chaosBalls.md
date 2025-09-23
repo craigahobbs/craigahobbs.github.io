@@ -52,6 +52,9 @@ async function chaosBallsMain():
     # Render the application
     chaosBallsRender(session, args)
 
+    # Set the keydown callback
+    documentSetKeyDown(systemPartial(chaosBallsKeyDown, args))
+
     # Set the window resize handler
     windowSetResize(systemPartial(chaosBallsRender, session, args))
 endfunction
@@ -113,6 +116,21 @@ function chaosBallsTimeout(session, args):
     # Set the timeout handler
     endTime = datetimeNow()
     chaosBallsSetTimeout(session, args, startTime, endTime)
+endfunction
+
+
+# Chaos Balls document keydown handler
+function chaosBallsKeyDown(args, event):
+    key = objectGet(event, 'key')
+
+    # Play/Pause
+    if key == ' ':
+        windowSetLocation(argsURL(chaosBallsArguments, objectNew('play', !objectGet(args, 'play'))))
+        return
+    endif
+
+    # Re-render the current state
+    chaosBallsRender(chaosBallsGetSession(), args)
 endfunction
 
 
