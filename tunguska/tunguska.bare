@@ -7,6 +7,13 @@ async function tunguskaMain():
     args = argsParse(tunguskaArguments)
     phase = objectGet(args, 'phase')
 
+    # Handle reset phase
+    if phase == 'reset':
+        sessionStorageRemove('tunguskaState')
+        windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'simulation', 'frame', 0)))
+        return
+    endif
+
     # Set the title
     documentSetTitle('Tunguska Event Simulation')
 
@@ -156,6 +163,11 @@ function tunguskaShowIntro(state):
 
     drawTextStyle(20, 'yellow')
     drawText('Press SPACE to begin simulation', width / 2, height - 100)
+
+    # Draw start link
+    drawTextStyle(20, 'yellow')
+    drawText('Start Simulation', width / 2, height - 50)
+    drawOnClick(tunguskaStartHandler)
 endfunction
 
 
@@ -856,8 +868,15 @@ function tunguskaShowAftermath(state):
     drawText('Forest flattened: 2,150 km²', width / 2, textY + 140)
     drawText('Trees knocked down: ~80 million', width / 2, textY + 175)
 
-    drawTextStyle(18, 'yellow')
+    drawTextStyle(20, 'yellow')
     drawText('Press SPACE to restart • Press Q to quit', width / 2, height - 150)
+
+    # Draw restart and quit links
+    drawTextStyle(20, 'yellow')
+    drawText('Restart', width / 2 - 60, height - 100)
+    drawOnClick(tunguskaRestartHandler)
+    drawText('Quit', width / 2 + 60, height - 100)
+    drawOnClick(tunguskaQuitHandler)
 endfunction
 
 
@@ -873,15 +892,31 @@ function tunguskaShowAftermathTransition():
 endfunction
 
 
+# Start simulation handler
+function tunguskaStartHandler():
+    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'reset')))
+endfunction
+
+
+# Restart simulation handler
+function tunguskaRestartHandler():
+    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'reset')))
+endfunction
+
+
+# Quit to intro handler
+function tunguskaQuitHandler():
+    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'intro')))
+endfunction
+
+
 # Keyboard event handler
 function tunguskaKeyHandler(event):
     key = objectGet(event, 'key')
 
     if key == ' ':
         # Reset and start simulation
-        state = tunguskaInitState()
-        tunguskaSaveState(state)
-        windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'simulation', 'frame', 0)))
+        windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'reset')))
     elif key == 'q' || key == 'Q':
         # Return to intro
         windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'intro')))
