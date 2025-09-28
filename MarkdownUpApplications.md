@@ -5,6 +5,7 @@
 | [BareSript Library Documentation Viewer] | [Source][BareSript Library Documentation Viewer Source] |
 | [Chaos Balls] | [Source][Chaos Balls Source] |
 | [Chisel Documentation Viewer] | [Source][Chisel Documentation Viewer Source] |
+| [Color Ramp] | [Source][Color Ramp Source] |
 | [Conway's Game of Life] | [Source][Conway's Game of Life Source] |
 | [Day Hikes Dashboard] | [Source][Day Hikes Dashboard Source] |
 | [Emoji] | [Source][Emoji Source] |
@@ -28,6 +29,9 @@
 
 [Chisel Documentation Viewer]: https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request'
 [Chisel Documentation Viewer Source]: https://github.com/craigahobbs/chisel/blob/main/src/chisel/static/chiselDoc.bare
+
+[Color Ramp]: https://craigahobbs.github.io/color-ramp/
+[Color Ramp Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/color-ramp/colorRamp.bare
 
 [Conway's Game of Life]: https://craigahobbs.github.io/life/
 [Conway's Game of Life Source]: https://craigahobbs.github.io/life/#view=markdown
