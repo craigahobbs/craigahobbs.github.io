@@ -163,10 +163,10 @@ function colorRampRenderEditor(args, ramp):
             ), \
             if(editRampName, arrayNew( \
                 objectNew('html', 'p', 'elem', \
-                    formsTextElements('colorRampName', objectGet(ramp, 'name'), 50, systemPartial(colorRampUpdateName, args)) \
+                    formsTextElements('colorRampName', objectGet(ramp, 'name'), 50, colorRampUpdateName) \
                 ), \
                 objectNew('html', 'p', 'elem', arrayNew( \
-                    formsLinkButtonElements('Update', systemPartial(colorRampUpdateName, args)), \
+                    formsLinkButtonElements('Update', colorRampUpdateName), \
                     objectNew('text', ' | '), \
                     formsLinkElements('Cancel', argsURL(colorRampArguments)) \
                 )) \
@@ -304,7 +304,7 @@ endfunction
 
 
 # Update the color ramp name
-function colorRampUpdateName(args):
+function colorRampUpdateName():
     ramp = colorRampLoad()
     nameValue = documentInputValue('colorRampName')
     if nameValue != null && stringTrim(nameValue) != '':
@@ -312,7 +312,7 @@ function colorRampUpdateName(args):
         colorRampSave(ramp)
     endif
 
-    colorRampRender(args)
+    windowSetLocation(argsURL(colorRampArguments))
 endfunction
 
 
