@@ -1,0 +1,3 @@
+include 'color-ramp.bare'
+
+colorRampMain()

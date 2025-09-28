@@ -1,0 +1,429 @@
+# Color Ramp Application
+# Create and edit color gradients with 2-5 RGB colors
+
+include <args.bare>
+include <forms.bare>
+
+
+# The Color Ramp application arguments
+colorRampArguments = argsValidate(arrayNew( \
+    objectNew('name', 'action', 'type', 'string', 'explicit', true), \
+    objectNew('name', 'url', 'global', 'vURL', 'type', 'string', 'explicit', true) \
+))
+
+
+# Main entry point for the Color Ramp application
+async function colorRampMain():
+    # Parse arguments
+    args = argsParse(colorRampArguments)
+    url = objectGet(args, 'url')
+
+    # Load from URL?
+    if url != null:
+        rampJSON = systemFetch(url)
+        ramp = if(rampJSON, schemaValidate(colorRampTypes, 'ColorRamp', jsonParse(rampJSON)))
+        if !ramp:
+            markdownPrint('**ERROR:** Failed to load "' + url + '"')
+            return
+        endif
+
+        # Save the color ramp and remove the URL argument
+        colorRampSave(ramp)
+        windowSetLocation(argsURL(colorRampArguments, objectNew(), true))
+    endif
+
+    # Render the application
+    colorRampRender(args)
+
+    # Set the window resize handler
+    windowSetResize(systemPartial(colorRampRender, args))
+endfunction
+
+
+# Render the Color Ramp application
+function colorRampRender(args):
+    # Load or create the color ramp
+    ramp = colorRampLoad()
+
+    # Render the title
+    title = 'Color Ramp'
+    documentSetTitle(title)
+    markdownPrint( \
+        '# ' + markdownEscape(title), \
+        '', \
+        'A tool for creating and editing color gradients with 2-5 RGB colors.', \
+        '', \
+        '## ' + markdownEscape(objectGet(ramp, 'name')) \
+    )
+
+    # Render the color editor
+    colorRampRenderEditor(args, ramp)
+
+    # Render the color ramp display
+    colorRampRenderDisplay(ramp)
+
+    # Restore focus if needed
+    focusId = sessionStorageGet('colorRampFocus')
+    if focusId != null:
+        documentSetFocus(focusId)
+        sessionStorageRemove('colorRampFocus')
+    endif
+endfunction
+
+
+# Render the color editor section
+function colorRampRenderEditor(args, ramp):
+    colors = objectGet(ramp, 'colors')
+    numColors = arrayLength(colors)
+
+    # Create the editor table elements
+    tableElems = arrayNew()
+
+    # Header row
+    arrayPush(tableElems, objectNew( \
+        'html', 'tr', \
+        'elem', arrayNew( \
+            objectNew('html', 'th', 'elem', objectNew('text', 'Swatch')), \
+            objectNew('html', 'th', 'elem', objectNew('text', 'Hex')), \
+            objectNew('html', 'th', 'elem', objectNew('text', 'Decimal')), \
+            objectNew('html', 'th', 'elem', objectNew('text', 'R')), \
+            objectNew('html', 'th', 'elem', objectNew('text', 'G')), \
+            objectNew('html', 'th', 'elem', objectNew('text', 'B')), \
+            objectNew('html', 'th', 'elem', objectNew('text', 'Action')) \
+        ) \
+    ))
+
+    # Color rows
+    for color, index in colors:
+        r = objectGet(color, 'r')
+        g = objectGet(color, 'g')
+        b = objectGet(color, 'b')
+        hexColor = colorRampToHex(r, g, b)
+
+        arrayPush(tableElems, objectNew( \
+            'html', 'tr', \
+            'elem', arrayNew( \
+                objectNew( \
+                    'html', 'td', \
+                    'attr', objectNew('style', 'vertical-align: middle;'), \
+                    'elem', objectNew( \
+                        'html', 'div', \
+                        'attr', objectNew( \
+                            'style', 'width: 50px; height: 30px; background-color: ' + hexColor + '; border: 1px solid black;' \
+                        ) \
+                    ) \
+                ), \
+                objectNew('html', 'td', 'elem', objectNew('text', hexColor)), \
+                objectNew('html', 'td', 'elem', objectNew('text', 'rgb(' + r + ', ' + g + ', ' + b + ')')), \
+                objectNew( \
+                    'html', 'td', \
+                    'elem', formsTextElements('colorRampR' + index, '' + r, 6, systemPartial(colorRampUpdate, args)) \
+                ), \
+                objectNew( \
+                    'html', 'td', \
+                    'elem', formsTextElements('colorRampG' + index, '' + g, 6, systemPartial(colorRampUpdate, args)) \
+                ), \
+                objectNew( \
+                    'html', 'td', \
+                    'elem', formsTextElements('colorRampB' + index, '' + b, 6, systemPartial(colorRampUpdate, args)) \
+                ), \
+                objectNew( \
+                    'html', 'td', \
+                    'elem', if(numColors > 2, formsLinkButtonElements('Delete', systemPartial(colorRampDeleteColor, args, index))) \
+                ) \
+            ) \
+        ))
+    endfor
+
+    # Render the table
+    elementModelRender(objectNew( \
+        'html', 'table', \
+        'attr', objectNew('style', 'border-collapse: collapse; margin: 10px 0;'), \
+        'elem', tableElems \
+    ))
+
+    # Render the menu
+    editRampName = objectGet(args, 'action') == 'editRampName'
+    downloadURL = urlObjectCreate(jsonStringify(ramp, 4), 'text/markdown')
+    elementModelRender(objectNew( \
+        'html', 'p', \
+        'elem', arrayNew( \
+            if(numColors < 5, formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args))), \
+            objectNew('text', ' | '), \
+            formsLinkButtonElements('Update', systemPartial(colorRampUpdate, args)), \
+            objectNew('text', ' | '), \
+            if(editRampName, objectNew('text', 'Title'), formsLinkElements('Title', argsURL(colorRampArguments, objectNew('action', 'editRampName')))), \
+            objectNew('text', ' | '), \
+            formsLinkButtonElements('Reset', systemPartial(colorRampReset, args)), \
+            objectNew('text', ' | '), \
+            objectNew( \
+                'html', 'a', \
+                'attr', objectNew('href', downloadURL, 'download', 'colorRamp.json'), \
+                'elem', objectNew('text', 'Download') \
+            ), \
+            if(editRampName, arrayNew( \
+                objectNew('html', 'p', 'elem', \
+                    formsTextElements('colorRampName', objectGet(ramp, 'name'), 50, systemPartial(colorRampUpdateName, args)) \
+                ), \
+                objectNew('html', 'p', 'elem', arrayNew( \
+                    formsLinkButtonElements('Update', systemPartial(colorRampUpdateName, args)), \
+                    objectNew('text', ' | '), \
+                    formsLinkElements('Cancel', argsURL(colorRampArguments)) \
+                )) \
+            )) \
+        ) \
+    ))
+
+    # If editing the ramp name, set focus
+    if editRampName:
+        documentSetFocus('colorRampName')
+    endif
+endfunction
+
+
+# Render the color ramp display
+function colorRampRenderDisplay(ramp):
+    # Get the display dimensions
+    fontSize = documentFontSize()
+    padding = 0.5 * fontSize
+    width = mathMax(20 * fontSize, mathMin(40 * fontSize, windowWidth() - 3 * fontSize))
+    height = 100
+
+    # Create the drawing
+    drawNew(width, height)
+
+    # Draw the white background
+    drawStyle('none', 0, 'white')
+    drawRect(0, 0, width, height)
+
+    # Draw the color ramp inside the padding
+    rampWidth = width - 2 * padding
+    rampHeight = height - 2 * padding
+    rampX = padding
+    rampY = padding
+
+    # Get the colors
+    colors = objectGet(ramp, 'colors')
+    numColors = arrayLength(colors)
+    numSegments = numColors - 1
+
+    # Draw the color ramp
+    x = 0
+    while x < rampWidth:
+        # Determine which segment we're in
+        position = x / (rampWidth - 1)
+        segmentPosition = position * numSegments
+        segmentIndex = mathMin(numSegments - 1, mathFloor(segmentPosition))
+        segmentT = segmentPosition - segmentIndex
+
+        # Get the colors to interpolate between
+        color1 = arrayGet(colors, segmentIndex)
+        color2 = arrayGet(colors, segmentIndex + 1)
+
+        # Interpolate the RGB values
+        r = colorRampInterpolate(objectGet(color1, 'r'), objectGet(color2, 'r'), segmentT)
+        g = colorRampInterpolate(objectGet(color1, 'g'), objectGet(color2, 'g'), segmentT)
+        b = colorRampInterpolate(objectGet(color1, 'b'), objectGet(color2, 'b'), segmentT)
+
+        # Draw the vertical line
+        drawStyle('none', 0, colorRampToHex(r, g, b))
+        drawRect(rampX + x, rampY, 1, rampHeight)
+
+        x = x + 1
+    endwhile
+endfunction
+
+
+# Parse a color value (hex or decimal)
+function colorRampParseValue(value):
+    value = stringTrim(value)
+
+    # Check for hex prefix
+    rHex = regexNew('^0?x', 'i')
+    hexStr = regexReplace(rHex, value, '')
+    if hexStr != value:
+        hexVal = numberParseInt(hexStr, 16)
+        return hexVal || 0
+    endif
+
+    # Try decimal
+    decVal = numberParseInt(value)
+    return decVal || 0
+endfunction
+
+
+# Add a new color to the ramp
+function colorRampAddColor(args):
+    ramp = colorRampLoad()
+    colors = objectGet(ramp, 'colors')
+
+    if arrayLength(colors) < 5:
+        # Add a new color (interpolated between last two colors)
+        lastColor = arrayGet(colors, arrayLength(colors) - 1)
+        secondLastColor = arrayGet(colors, mathMax(0, arrayLength(colors) - 2))
+
+        newR = mathRound((objectGet(lastColor, 'r') + objectGet(secondLastColor, 'r')) / 2)
+        newG = mathRound((objectGet(lastColor, 'g') + objectGet(secondLastColor, 'g')) / 2)
+        newB = mathRound((objectGet(lastColor, 'b') + objectGet(secondLastColor, 'b')) / 2)
+
+        arrayPush(colors, objectNew('r', newR, 'g', newG, 'b', newB))
+
+        # Save and re-render
+        colorRampSave(ramp)
+        colorRampRender(args)
+    endif
+endfunction
+
+
+# Update all colors from the input fields
+function colorRampUpdate(args):
+    ramp = colorRampLoad()
+    colors = objectGet(ramp, 'colors')
+
+    # Update all colors from inputs
+    for color, index in colors:
+        rValue = documentInputValue('colorRampR' + index)
+        gValue = documentInputValue('colorRampG' + index)
+        bValue = documentInputValue('colorRampB' + index)
+
+        if rValue != null && gValue != null && bValue != null:
+            r = colorRampParseValue(rValue)
+            g = colorRampParseValue(gValue)
+            b = colorRampParseValue(bValue)
+
+            objectSet(color, 'r', mathMax(0, mathMin(255, r)))
+            objectSet(color, 'g', mathMax(0, mathMin(255, g)))
+            objectSet(color, 'b', mathMax(0, mathMin(255, b)))
+        endif
+    endfor
+
+    # Save and re-render
+    colorRampSave(ramp)
+    colorRampRender(args)
+endfunction
+
+
+# Update the color ramp name
+function colorRampUpdateName(args):
+    ramp = colorRampLoad()
+    nameValue = documentInputValue('colorRampName')
+    if nameValue != null && stringTrim(nameValue) != '':
+        objectSet(ramp, 'name', stringTrim(nameValue))
+        colorRampSave(ramp)
+    endif
+
+    colorRampRender(args)
+endfunction
+
+
+# Delete a color from the ramp
+function colorRampDeleteColor(args, index):
+    ramp = colorRampLoad()
+    colors = objectGet(ramp, 'colors')
+
+    if arrayLength(colors) > 2:
+        arrayDelete(colors, index)
+
+        # Save and re-render
+        colorRampSave(ramp)
+        colorRampRender(args)
+    endif
+endfunction
+
+
+# Reset the color ramp to default
+function colorRampReset():
+    ramp = colorRampCreateDefault()
+    colorRampSave(ramp)
+    colorRampRender(args)
+endfunction
+
+
+# Load the color ramp from local storage
+function colorRampLoad():
+    rampJSON = localStorageGet('colorRamp')
+
+    if rampJSON != null:
+        ramp = jsonParse(rampJSON)
+        if ramp != null:
+            # Validate the ramp
+            ramp = schemaValidate(colorRampTypes, 'ColorRamp', ramp)
+            if ramp != null:
+                return ramp
+            endif
+        endif
+    endif
+
+    # Return default if no valid ramp in storage
+    return colorRampCreateDefault()
+endfunction
+
+
+# Save the color ramp to local storage
+function colorRampSave(ramp):
+    localStorageSet('colorRamp', jsonStringify(ramp))
+endfunction
+
+
+# Create a default color ramp
+function colorRampCreateDefault():
+    return objectNew( \
+        'name', 'Default Color Ramp', \
+        'colors', arrayNew( \
+            objectNew('r', 255, 'g', 0, 'b', 0), \
+            objectNew('r', 224, 'g', 224, 'b', 224), \
+            objectNew('r', 0, 'g', 255, 'b', 0) \
+        ) \
+    )
+endfunction
+
+
+# Convert RGB values to hex color string
+function colorRampToHex(r, g, b):
+    rHex = colorRampByteToHex(mathRound(r))
+    gHex = colorRampByteToHex(mathRound(g))
+    bHex = colorRampByteToHex(mathRound(b))
+    return '#' + rHex + gHex + bHex
+endfunction
+
+
+# Convert a byte value to two-digit hex
+function colorRampByteToHex(value):
+    value = mathMax(0, mathMin(255, value))
+    hex = '0123456789abcdef'
+    high = mathFloor(value / 16)
+    low = value % 16
+    return stringSlice(hex, high, high + 1) + stringSlice(hex, low, low + 1)
+endfunction
+
+
+# Interpolate between two values
+function colorRampInterpolate(v1, v2, t):
+    return v1 + (v2 - v1) * t
+endfunction
+
+
+# Color Ramp schema
+colorRampTypes = schemaParse( \
+    '# A color ramp definition', \
+    'struct ColorRamp', \
+    '', \
+    '    # The color ramp name', \
+    '    string(len > 0) name', \
+    '', \
+    '    # The array of colors (2-5 colors)', \
+    '    Color[len >= 2, len <= 5] colors', \
+    '', \
+    '', \
+    '# An RGB color', \
+    'struct Color', \
+    '', \
+    '    # Red component (0-255)', \
+    '    int(>= 0, <= 255) r', \
+    '', \
+    '    # Green component (0-255)', \
+    '    int(>= 0, <= 255) g', \
+    '', \
+    '    # Blue component (0-255)', \
+    '    int(>= 0, <= 255) b' \
+)
