@@ -8,6 +8,7 @@ include <forms.bare>
 # The Color Ramp application arguments
 colorRampArguments = argsValidate(arrayNew( \
     objectNew('name', 'action', 'type', 'string', 'explicit', true), \
+    objectNew('name', 'hex', 'type', 'bool', 'default', false), \
     objectNew('name', 'url', 'global', 'vURL', 'type', 'string', 'explicit', true) \
 ))
 
@@ -75,6 +76,7 @@ endfunction
 function colorRampRenderEditor(args, ramp):
     colors = objectGet(ramp, 'colors')
     numColors = arrayLength(colors)
+    isHex = objectGet(args, 'hex')
 
     # Create the editor table elements
     tableElems = arrayNew()
@@ -100,6 +102,11 @@ function colorRampRenderEditor(args, ramp):
         b = objectGet(color, 'b')
         hexColor = colorRampToHex(r, g, b)
 
+        # Format values based on hex mode
+        rValue = if(isHex, colorRampByteToHex(r), r)
+        gValue = if(isHex, colorRampByteToHex(g), g)
+        bValue = if(isHex, colorRampByteToHex(b), b)
+
         arrayPush(tableElems, objectNew( \
             'html', 'tr', \
             'elem', arrayNew( \
@@ -117,15 +124,15 @@ function colorRampRenderEditor(args, ramp):
                 objectNew('html', 'td', 'elem', objectNew('text', 'rgb(' + r + ', ' + g + ', ' + b + ')')), \
                 objectNew( \
                     'html', 'td', \
-                    'elem', formsTextElements('colorRampR' + index, '' + r, 6, systemPartial(colorRampUpdate, args)) \
+                    'elem', formsTextElements('colorRampR' + index, rValue, 6, systemPartial(colorRampUpdate, args)) \
                 ), \
                 objectNew( \
                     'html', 'td', \
-                    'elem', formsTextElements('colorRampG' + index, '' + g, 6, systemPartial(colorRampUpdate, args)) \
+                    'elem', formsTextElements('colorRampG' + index, gValue, 6, systemPartial(colorRampUpdate, args)) \
                 ), \
                 objectNew( \
                     'html', 'td', \
-                    'elem', formsTextElements('colorRampB' + index, '' + b, 6, systemPartial(colorRampUpdate, args)) \
+                    'elem', formsTextElements('colorRampB' + index, bValue, 6, systemPartial(colorRampUpdate, args)) \
                 ), \
                 objectNew( \
                     'html', 'td', \
@@ -148,9 +155,11 @@ function colorRampRenderEditor(args, ramp):
     elementModelRender(objectNew( \
         'html', 'p', \
         'elem', arrayNew( \
-            if(numColors < 5, formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args))), \
+            if(numColors < 5, formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), objectNew('text', 'Add')), \
             objectNew('text', ' | '), \
             formsLinkButtonElements('Update', systemPartial(colorRampUpdate, args)), \
+            objectNew('text', ' | '), \
+            formsLinkElements(if(isHex, 'Dec', 'Hex'), argsURL(colorRampArguments, objectNew('hex', !isHex))), \
             objectNew('text', ' | '), \
             if(editRampName, objectNew('text', 'Title'), formsLinkElements('Title', argsURL(colorRampArguments, objectNew('action', 'editRampName')))), \
             objectNew('text', ' | '), \
@@ -235,20 +244,19 @@ endfunction
 
 
 # Parse a color value (hex or decimal)
-function colorRampParseValue(value):
+function colorRampParseValue(value, isHex):
     value = stringTrim(value)
 
-    # Check for hex prefix
-    rHex = regexNew('^0?x', 'i')
-    hexStr = regexReplace(rHex, value, '')
-    if hexStr != value:
-        hexVal = numberParseInt(hexStr, 16)
-        return hexVal || 0
+    # Parse based on mode
+    if isHex:
+        # Remove any 0x prefix if present
+        rHex = regexNew('^0?x', 'i')
+        hexStr = regexReplace(rHex, value, '')
+        return numberParseInt(hexStr, 16) || 0
     endif
 
     # Try decimal
-    decVal = numberParseInt(value)
-    return decVal || 0
+    return numberParseInt(value) || 0
 endfunction
 
 
@@ -279,6 +287,7 @@ endfunction
 function colorRampUpdate(args):
     ramp = colorRampLoad()
     colors = objectGet(ramp, 'colors')
+    isHex = objectGet(args, 'hex')
 
     # Update all colors from inputs
     for color, index in colors:
@@ -287,9 +296,9 @@ function colorRampUpdate(args):
         bValue = documentInputValue('colorRampB' + index)
 
         if rValue != null && gValue != null && bValue != null:
-            r = colorRampParseValue(rValue)
-            g = colorRampParseValue(gValue)
-            b = colorRampParseValue(bValue)
+            r = colorRampParseValue(rValue, isHex)
+            g = colorRampParseValue(gValue, isHex)
+            b = colorRampParseValue(bValue, isHex)
 
             objectSet(color, 'r', mathMax(0, mathMin(255, r)))
             objectSet(color, 'g', mathMax(0, mathMin(255, g)))
@@ -332,7 +341,7 @@ endfunction
 
 
 # Reset the color ramp to default
-function colorRampReset():
+function colorRampReset(args):
     ramp = colorRampCreateDefault()
     colorRampSave(ramp)
     colorRampRender(args)
