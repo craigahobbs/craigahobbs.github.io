@@ -1,5 +1,5 @@
-# Color Ramp Application
-# Create and edit color gradients with 2-5 RGB colors
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
 include <forms.bare>
@@ -52,7 +52,7 @@ function colorRampRender(args):
     markdownPrint( \
         '# ' + markdownEscape(title), \
         '', \
-        'A tool for creating and editing color gradients with 2-5 RGB colors.', \
+        'A tool for creating and editing color gradients.', \
         '', \
         '## ' + markdownEscape(objectGet(ramp, 'name')) \
     )
@@ -151,7 +151,8 @@ function colorRampRenderEditor(args, ramp):
 
     # Render the menu
     editRampName = objectGet(args, 'action') == 'editRampName'
-    downloadURL = urlObjectCreate(jsonStringify(ramp, 4), 'text/markdown')
+    downloadFilename = colorRampFilename(objectGet(ramp, 'name'))
+    downloadURL = urlObjectCreate(jsonStringify(ramp, 4), 'text/json')
     elementModelRender(objectNew( \
         'html', 'p', \
         'elem', arrayNew( \
@@ -167,7 +168,7 @@ function colorRampRenderEditor(args, ramp):
             objectNew('text', ' | '), \
             objectNew( \
                 'html', 'a', \
-                'attr', objectNew('href', downloadURL, 'download', 'colorRamp.json'), \
+                'attr', objectNew('href', downloadURL, 'download', downloadFilename), \
                 'elem', objectNew('text', 'Download') \
             ), \
             if(editRampName, arrayNew( \
@@ -187,6 +188,17 @@ function colorRampRenderEditor(args, ramp):
     if editRampName:
         documentSetFocus('colorRampName')
     endif
+endfunction
+
+
+# Create a download filename from the color ramp name
+function colorRampFilename(name):
+    name = stringLower(stringTrim(name))
+    name = regexReplace(regexNew("[']"), name, '')
+    name = regexReplace(regexNew('[^a-z0-9]+'), name, '-')
+    name = regexReplace(regexNew('^-+'), name, '')
+    name = regexReplace(regexNew('-+$'), name, '')
+    return name + '.json'
 endfunction
 
 
