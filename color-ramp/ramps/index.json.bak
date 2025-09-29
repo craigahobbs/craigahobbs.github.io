@@ -1,0 +1,113 @@
+{
+    "name": "Color Ramp Library",
+    "ramps": [
+        {
+            "name": "Classic Area Red",
+            "url": "classic-area-red.json"
+        },
+        {
+            "name": "Classic Blue-White-Orange",
+            "url": "classic-blue-white-orange.json"
+        },
+        {
+            "name": "Classic Green-Blue",
+            "url": "classic-green-blue.json"
+        },
+        {
+            "name": "Classic Orange-Blue",
+            "url": "classic-orange-blue.json"
+        },
+        {
+            "name": "Classic Purple-Gray",
+            "url": "classic-purple-gray.json"
+        },
+        {
+            "name": "Classic Red-Black-Green",
+            "url": "classic-red-black-green.json"
+        },
+        {
+            "name": "Classic Red-Green",
+            "url": "classic-red-green.json"
+        },
+        {
+            "name": "Classic Red-White-Green",
+            "url": "classic-red-white-green.json"
+        },
+        {
+            "name": "Brown-Teal Diverging",
+            "url": "diverging-brown-teal.json"
+        },
+        {
+            "name": "Gold-Purple Diverging",
+            "url": "diverging-gold-purple.json"
+        },
+        {
+            "name": "Orange-Blue Diverging",
+            "url": "diverging-orange-blue.json"
+        },
+        {
+            "name": "Red-Black-Green Diverging",
+            "url": "diverging-red-black-green.json"
+        },
+        {
+            "name": "Red-Blue Diverging",
+            "url": "diverging-red-blue.json"
+        },
+        {
+            "name": "Red-Green Diverging",
+            "url": "diverging-red-green.json"
+        },
+        {
+            "name": "Sunset-Sunrise Diverging",
+            "url": "diverging-sunset-sunrise.json"
+        },
+        {
+            "name": "Heatmap",
+            "url": "heatmap.json"
+        },
+        {
+            "name": "Red-Gold",
+            "url": "red-gold.json"
+        },
+        {
+            "name": "Blue-Green Sequential",
+            "url": "sequential-blue-green.json"
+        },
+        {
+            "name": "Blue Sequential",
+            "url": "sequential-blue.json"
+        },
+        {
+            "name": "Gray Sequential",
+            "url": "sequential-gray.json"
+        },
+        {
+            "name": "Green Sequential",
+            "url": "sequential-green.json"
+        },
+        {
+            "name": "Orange Sequential",
+            "url": "sequential-orange.json"
+        },
+        {
+            "name": "Purple Sequential",
+            "url": "sequential-purple.json"
+        },
+        {
+            "name": "Red Sequential",
+            "url": "sequential-red.json"
+        },
+        {
+            "name": "Teal Sequential",
+            "url": "sequential-teal.json"
+        },
+        {
+            "name": "Temperature",
+            "url": "temperature.json"
+        },
+        {
+            "name": "Traffic Light",
+            "url": "traffic-light.json"
+        }
+    ]
+}

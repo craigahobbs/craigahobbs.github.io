@@ -1,0 +1,69 @@
+{
+    "name": "Color Ramp Library",
+    "ramps": [
+        {
+            "name": "Blue-White",
+            "url": "blue-white.json"
+        },
+        {
+            "name": "Blue",
+            "url": "blue.json"
+        },
+        {
+            "name": "Gray",
+            "url": "gray.json"
+        },
+        {
+            "name": "Green-White",
+            "url": "green-white.json"
+        },
+        {
+            "name": "Green",
+            "url": "green.json"
+        },
+        {
+            "name": "Orange-Blue",
+            "url": "orange-blue.json"
+        },
+        {
+            "name": "Orange-White-Blue",
+            "url": "orange-white-blue.json"
+        },
+        {
+            "name": "Orange-White",
+            "url": "orange-white.json"
+        },
+        {
+            "name": "Orange",
+            "url": "orange.json"
+        },
+        {
+            "name": "Purple-White-Green",
+            "url": "purple-white-green.json"
+        },
+        {
+            "name": "Purple",
+            "url": "purple.json"
+        },
+        {
+            "name": "Red-Blue",
+            "url": "red-blue.json"
+        },
+        {
+            "name": "Red-Green",
+            "url": "red-green.json"
+        },
+        {
+            "name": "Red-White-Blue",
+            "url": "red-white-blue.json"
+        },
+        {
+            "name": "Red-White-Green",
+            "url": "red-white-green.json"
+        },
+        {
+            "name": "Red",
+            "url": "red.json"
+        }
+    ]
+}
