@@ -9,7 +9,7 @@ include <forms.bare>
 colorRampArguments = argsValidate(arrayNew( \
     objectNew('name', 'action', 'type', 'string', 'explicit', true), \
     objectNew('name', 'hex', 'type', 'bool', 'default', false), \
-    objectNew('name', 'library', 'type', 'bool', 'default', false, 'explicit', true), \
+    objectNew('name', 'model', 'type', 'bool', 'default', false, 'explicit', true), \
     objectNew('name', 'url', 'global', 'vURL', 'type', 'string', 'explicit', true) \
 ))
 
@@ -19,11 +19,11 @@ async function colorRampMain():
     # Parse arguments
     args = argsParse(colorRampArguments)
     url = objectGet(args, 'url')
-    showLibrary = objectGet(args, 'library')
 
-    # Show the library page?
-    if showLibrary:
-        colorRampRenderLibrary(args)
+    # Color ramp documentation page?
+    if objectGet(args, 'model'):
+        markdownPrint(argsLink(colorRampArguments, 'Home'))
+        elementModelRender(schemaElements(colorRampTypes, 'ColorRamp'))
         return
     endif
 
@@ -39,7 +39,7 @@ async function colorRampMain():
 
         # Save the color ramp and remove the URL argument
         colorRampSave(ramp)
-        windowSetLocation(argsURL(colorRampArguments, objectNew(), true))
+        windowSetLocation(argsURL(colorRampArguments))
         return
     endif
 
@@ -48,39 +48,6 @@ async function colorRampMain():
 
     # Set the window resize handler
     windowSetResize(systemPartial(colorRampRender, args))
-endfunction
-
-
-# Render the Color Ramp library page
-async function colorRampRenderLibrary(args):
-    # Load the library index
-    indexJSON = systemFetch('ramps/index.json')
-    libraryIndex = if(indexJSON, jsonParse(indexJSON))
-    libraryIndex = if(libraryIndex, schemaValidate(colorRampTypes, 'ColorRampLibrary', libraryIndex))
-
-    if !libraryIndex:
-        markdownPrint('**ERROR:** Failed to load the Color Ramp Library')
-        return
-    endif
-
-    # Render the title and back link
-    title = objectGet(libraryIndex, 'name')
-    documentSetTitle(title)
-    markdownPrint( \
-        argsLink(colorRampArguments, 'Back', objectNew()), \
-        '', \
-        '# ' + markdownEscape(title), \
-        '', \
-        'Select a color ramp to load:' \
-    )
-
-    # Render the list of ramps
-    ramps = objectGet(libraryIndex, 'ramps')
-    for rampEntry in ramps:
-        rampName = objectGet(rampEntry, 'name')
-        rampURL = 'ramps/' + objectGet(rampEntry, 'url')
-        markdownPrint('', argsLink(colorRampArguments, rampName, objectNew('url', rampURL)))
-    endfor
 endfunction
 
 
@@ -97,7 +64,7 @@ function colorRampRender(args):
         '', \
         'A tool for creating and editing color gradients.', \
         '', \
-        argsLink(colorRampArguments, 'Color Ramp Library', objectNew('library', true)), \
+        '[Color Ramp Library](index.html#url=README.md&color-ramp-library)', \
         '', \
         '## ' + markdownEscape(objectGet(ramp, 'name')) \
     )
@@ -300,20 +267,9 @@ function colorRampRenderDisplay(ramp):
 endfunction
 
 
-# Parse a color value (hex or decimal)
-function colorRampParseValue(value, isHex):
-    value = stringTrim(value)
-
-    # Parse based on mode
-    if isHex:
-        # Remove any 0x prefix if present
-        rHex = regexNew('^0?x', 'i')
-        hexStr = regexReplace(rHex, value, '')
-        return numberParseInt(hexStr, 16) || 0
-    endif
-
-    # Try decimal
-    return numberParseInt(value) || 0
+# Interpolate between two values
+function colorRampInterpolate(v1, v2, t):
+    return v1 + (v2 - v1) * t
 endfunction
 
 
@@ -369,6 +325,23 @@ function colorRampUpdate(args):
 endfunction
 
 
+# Parse a color value (hex or decimal)
+function colorRampParseValue(value, isHex):
+    value = stringTrim(value)
+
+    # Parse based on mode
+    if isHex:
+        # Remove any 0x prefix if present
+        rHex = regexNew('^0?x', 'i')
+        hexStr = regexReplace(rHex, value, '')
+        return numberParseInt(hexStr, 16) || 0
+    endif
+
+    # Try decimal
+    return numberParseInt(value) || 0
+endfunction
+
+
 # Update the color ramp name
 function colorRampUpdateName():
     ramp = colorRampLoad()
@@ -378,6 +351,7 @@ function colorRampUpdateName():
         colorRampSave(ramp)
     endif
 
+    # Remove the "action" argument
     windowSetLocation(argsURL(colorRampArguments))
 endfunction
 
@@ -452,12 +426,6 @@ function colorRampByteToHex(value):
 endfunction
 
 
-# Interpolate between two values
-function colorRampInterpolate(v1, v2, t):
-    return v1 + (v2 - v1) * t
-endfunction
-
-
 # Color Ramp schema types
 colorRampTypes = schemaParse( \
     '# A color ramp definition', \
@@ -480,25 +448,5 @@ colorRampTypes = schemaParse( \
     '    int(>= 0, <= 255) g', \
     '', \
     '    # Blue component (0-255)', \
-    '    int(>= 0, <= 255) b', \
-    '', \
-    '', \
-    '# A color ramp library', \
-    'struct ColorRampLibrary', \
-    '', \
-    '    # The library name', \
-    '    string(len > 0) name', \
-    '', \
-    '    # The array of color ramp entries', \
-    '    ColorRampEntry[len > 0] ramps', \
-    '', \
-    '', \
-    '# A color ramp library entry', \
-    'struct ColorRampEntry', \
-    '', \
-    '    # The color ramp name', \
-    '    string(len > 0) name', \
-    '', \
-    '    # The relative URL to the color ramp JSON file', \
-    '    string(len > 0) url' \
+    '    int(>= 0, <= 255) b' \
 )
