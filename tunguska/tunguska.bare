@@ -32,7 +32,7 @@ endfunction
 function tunguskaRender(args):
     # Initialize or get the simulation state
     state = tunguskaGetState()
-    if state == null || phase == 'intro':
+    if state == null:
         state = tunguskaInitState()
         tunguskaSaveState(state)
     endif
