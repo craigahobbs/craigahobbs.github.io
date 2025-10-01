@@ -17,15 +17,11 @@ async function tunguskaMain():
     # Set the title
     documentSetTitle('Tunguska Event Simulation')
 
-    # Initialize or get the simulation state
-    state = tunguskaGetState()
-    if state == null || phase == 'intro':
-        state = tunguskaInitState()
-        tunguskaSaveState(state)
-    endif
-
     # Render the application
-    tunguskaRender(state, args)
+    tunguskaRender(args)
+
+    # Set the resize handler
+    windowSetResize(systemPartial(tunguskaRender, args))
 
     # Set keyboard handler
     documentSetKeyDown(systemPartial(tunguskaKeyHandler, args))
@@ -33,17 +29,22 @@ endfunction
 
 
 # Render the application phase
-function tunguskaRender(state, args):
+function tunguskaRender(args):
+    # Initialize or get the simulation state
+    state = tunguskaGetState()
+    if state == null || phase == 'intro':
+        state = tunguskaInitState()
+        tunguskaSaveState(state)
+    endif
+
+    # Render the phase
     phase = objectGet(args, 'phase')
     if phase == 'simulation':
         tunguskaRunSimulation(state, args)
-        windowSetResize(systemPartial(tunguskaRenderSimulation, state))
     elif phase == 'aftermath':
         tunguskaShowAftermath(state)
-        windowSetResize(systemPartial(tunguskaShowAftermath, state))
     else: # phase == 'intro':
         tunguskaShowIntro(state)
-        windowSetResize(tunguskaResizeHandler)
     endif
 endfunction
 
