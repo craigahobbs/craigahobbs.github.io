@@ -50656,5 +50656,83 @@
         "Language": "Python",
         "Date": "2025-10-07",
         "Downloads": 1182
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-10-08",
+        "Downloads": 1
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-10-08",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-10-08",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-10-08",
+        "Downloads": 3
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-10-08",
+        "Downloads": 115
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-10-08",
+        "Downloads": 29
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 1
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 13
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 3
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 7
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 12
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 2720
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-10-08",
+        "Downloads": 1751
     }
 ]
