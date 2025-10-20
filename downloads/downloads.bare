@@ -25,12 +25,12 @@ async function downloadsMain(options):
 endfunction
 
 
-downloadsArguments = argsValidate(arrayNew( \
-    objectNew('name', 'page'), \
-    objectNew('name', 'name'), \
-    objectNew('name', 'language'), \
-    objectNew('name', 'days', 'type', 'int', 'default', 90) \
-))
+downloadsArguments = argsValidate([ \
+    {'name': 'page'}, \
+    {'name': 'name'}, \
+    {'name': 'language'}, \
+    {'name': 'days', 'type': 'int', 'default': 90} \
+])
 
 
 async function downloadsIndex(args):
@@ -41,7 +41,7 @@ async function downloadsIndex(args):
     markdownPrint( \
         '# ' + markdownEscape(title), \
         '', \
-        argsLink(downloadsArguments, 'Time Chart', objectNew('page', 'chart')) \
+        argsLink(downloadsArguments, 'Time Chart', {'page': 'chart'}) \
     )
     documentSetTitle(title)
 
@@ -57,7 +57,7 @@ async function downloadsIndex(args):
         totalDownloads = totalDownloads + objectGet(row, 'Downloads')
 
         # Package page link
-        objectSet(row, 'Package', argsLink(downloadsArguments, rowPackage, objectNew('name', rowPackage, 'language', rowLanguage)))
+        objectSet(row, 'Package', argsLink(downloadsArguments, rowPackage, {'name': rowPackage, 'language': rowLanguage}))
 
         # Package repository link
         if rowLanguage == 'Python':
@@ -67,19 +67,19 @@ async function downloadsIndex(args):
         endif
         objectSet(row, 'Language', '[' + markdownEscape(rowLanguage) + '](' + packageURL + ')')
     endfor
-    dataSort(dataAverage, arrayNew(arrayNew('Downloads', true)))
-    arrayPush(dataAverage, objectNew('Package', '**Total**', 'Language', '', 'Downloads', totalDownloads))
+    dataSort(dataAverage, [['Downloads', true]])
+    arrayPush(dataAverage, {'Package': '**Total**', 'Language': '', 'Downloads': totalDownloads})
 
     # Render the package downloads table
-    dataTable(dataAverage, objectNew( \
-        'fields', arrayNew('Package', 'Language', 'Downloads'), \
-        'formats', objectNew( \
-            'Package', objectNew('markdown', true), \
-            'Language', objectNew('markdown', true), \
-            'Downloads', objectNew('align', 'right', 'header', 'Monthly Downloads') \
-        ), \
-        'precision', 0 \
-    ))
+    dataTable(dataAverage, { \
+        'fields': ['Package', 'Language', 'Downloads'], \
+        'formats': { \
+            'Package': {'markdown': true}, \
+            'Language': {'markdown': true}, \
+            'Downloads': {'align': 'right', 'header': 'Monthly Downloads'} \
+        }, \
+        'precision': 0 \
+    })
 endfunction
 
 
@@ -90,7 +90,7 @@ async function downloadsChartPage(args, options):
     title = 'Downloads Chart'
     documentSetTitle(title)
     markdownPrint( \
-        argsLink(downloadsArguments, 'Back', objectNew('page', null)), \
+        argsLink(downloadsArguments, 'Back', {'page': null}), \
         '', \
         '# ' + markdownEscape(title) \
     )
@@ -98,42 +98,42 @@ async function downloadsChartPage(args, options):
     # Compute the color legend order
     data = downloadsDataLoad()
     dataAverage = downloadsDataAverage(data, trailingDays)
-    dataSort(dataAverage, arrayNew(arrayNew('Downloads', true)))
-    colorOrder = arrayNew()
+    dataSort(dataAverage, [['Downloads', true]])
+    colorOrder = []
     for row in dataAverage:
         arrayPush(colorOrder, objectGet(row, 'Unique'))
     endfor
 
     # Add the featured column
-    featuredMap = objectGet(options, 'featured') || objectNew()
+    featuredMap = objectGet(options, 'featured') || {}
     dataCalculatedField( \
         data, \
         'Featured', \
         'objectGet(objectGet(featuredMap, Package), Language, false)', \
-        objectNew('featuredMap', featuredMap) \
+        {'featuredMap': featuredMap} \
     )
 
     # First featured, then non-featured
-    for isFeatured in arrayNew(true, false):
+    for isFeatured in [true, false]:
         # Create the chart
-        dataMonthly = downloadsDataMonthly(dataFilter(data, '!!Featured == isFeatured', objectNew('isFeatured', isFeatured)))
+        dataMonthly = downloadsDataMonthly(dataFilter(data, '!!Featured == isFeatured', {'isFeatured': isFeatured}))
         if !dataMonthly:
             continue
         endif
         chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
         chartHeight = mathFloor(0.3 * chartWidth)
-        dataLineChart(dataMonthly, objectNew( \
-            'title', 'Monthly Downloads' + if(isFeatured, ' (Featured)', ''), \
-            'width', chartWidth, \
-            'height', chartHeight, \
-            'x', 'Month', \
-            'y', arrayNew('Downloads'), \
-            'color', 'Unique', \
-            'colorOrder', colorOrder, \
-            'yTicks', objectNew('start', 0, 'count', 5), \
-            'precision', 0, \
-            'datetime', 'day' \
-        ))
+        dataLineChart(dataMonthly, { \
+            'title': 'Monthly Downloads' + if(isFeatured, ' (Featured)', ''), \
+            'width': chartWidth, \
+            'height': chartHeight, \
+            'x': 'Month', \
+            'y': ['Downloads'], \
+            'color': 'Unique', \
+            'colorOrder': colorOrder, \
+            'yTicks': {'start': 0, 'count': 5}, \
+            'precision': 0, \
+            'datetime': 'day' \
+        })
     endfor
 
     # Redraw on resize
@@ -149,7 +149,7 @@ async function downloadsDashboard(args):
     # Document title
     title = name + ' (' + language + ') Downloads'
     markdownPrint( \
-        argsLink(downloadsArguments, 'Back', objectNew('name', null, 'language', null)), \
+        argsLink(downloadsArguments, 'Back', {'name': null, 'language': null}), \
         '', \
         '# ' + markdownEscape(title) \
     )
@@ -160,7 +160,7 @@ async function downloadsDashboard(args):
 
     # Filter to this package's data
     filterExpr = 'Package == packageName && Language == packageLanguage'
-    filterVars = objectNew('packageName', name, 'packageLanguage', language)
+    filterVars = {'packageName': name, 'packageLanguage': language}
     data = dataFilter(data, filterExpr, filterVars)
 
     # Compute the monthly average
@@ -169,11 +169,11 @@ async function downloadsDashboard(args):
     monthlyAverage = objectGet(arrayGet(monthlyAverageData, 0), 'Downloads')
 
     # Compute the minimum date
-    minDateData = dataAggregate(data, objectNew( \
-        'measures', arrayNew( \
-            objectNew('field', 'Date', 'function', 'min') \
-        ) \
-    ))
+    minDateData = dataAggregate(data, { \
+        'measures': [ \
+            {'field': 'Date', 'function': 'min'} \
+        ] \
+    })
     minDateMin = objectGet(arrayGet(minDateData, 0), 'Date')
     minDate = datetimeNew(datetimeYear(minDateMin), datetimeMonth(minDateMin), datetimeDay(minDateMin) + trailingDays)
 
@@ -191,61 +191,61 @@ async function downloadsDashboard(args):
     chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
     chartHeight = mathFloor(mathMax(200, mathFloor(0.2 * chartWidth)))
     if dataMonthly:
-        dataLineChart(dataMonthly, objectNew( \
-            'title', 'Monthly Downloads - ' + name, \
-            'width', chartWidth, \
-            'height', chartHeight, \
-            'x', 'Month', \
-            'y', arrayNew('Downloads'), \
-            'yTicks', objectNew('start', 0), \
-            'xLines', arrayNew( \
-                objectNew('value', downloadsDataAverageMinDate(dataMonthly, trailingDays, 'Month'), 'label', '') \
-            ), \
-            'yLines', arrayNew( \
-                objectNew('value', monthlyAverage) \
-            ), \
-            'datetime', 'day', \
-            'precision', 1 \
-        ))
+        dataLineChart(dataMonthly, { \
+            'title': 'Monthly Downloads - ' + name, \
+            'width': chartWidth, \
+            'height': chartHeight, \
+            'x': 'Month', \
+            'y': ['Downloads'], \
+            'yTicks': {'start': 0}, \
+            'xLines': [ \
+                {'value': downloadsDataAverageMinDate(dataMonthly, trailingDays, 'Month'), 'label': ''} \
+            ], \
+            'yLines': [ \
+                {'value': monthlyAverage} \
+            ], \
+            'datetime': 'day', \
+            'precision': 1 \
+        })
     endif
 
     # Render the daily line chart
-    dailyLineChart = objectNew( \
-        'title', 'Daily Downloads - ' + name, \
-        'width', chartWidth, \
-        'height', chartHeight, \
-        'x', 'Date', \
-        'y', arrayNew('Average Downloads', 'Downloads'), \
-        'yTicks', objectNew('start', 0), \
-        'yLines', arrayNew( \
-            objectNew('value', if(averageDownloads != null, averageDownloads, monthlyAverage)) \
-        ), \
-        'datetime', 'day', \
-        'precision', 1 \
-    )
+    dailyLineChart = { \
+        'title': 'Daily Downloads - ' + name, \
+        'width': chartWidth, \
+        'height': chartHeight, \
+        'x': 'Date', \
+        'y': ['Average Downloads', 'Downloads'], \
+        'yTicks': {'start': 0}, \
+        'yLines': [ \
+            {'value': if(averageDownloads != null, averageDownloads, monthlyAverage)} \
+        ], \
+        'datetime': 'day', \
+        'precision': 1 \
+    }
     if averageDownloads != null:
-        objectSet(dailyLineChart, 'xLines', arrayNew( \
-            objectNew('value', downloadsDataAverageMinDate(data, trailingDays), 'label', '') \
-        ))
+        objectSet(dailyLineChart, 'xLines', [ \
+            {'value': downloadsDataAverageMinDate(data, trailingDays), 'label': ''} \
+        ])
     endif
     dataLineChart(data, dailyLineChart)
 
     # Render the monthly table by most recent
     if dataMonthly:
-        dataSort(dataMonthly, arrayNew(arrayNew('Month', true)))
+        dataSort(dataMonthly, [['Month', true]])
         dataCalculatedField( \
             dataMonthly, \
             '% Average', 'numberToFixed((100 * (Downloads - monthlyAverage) / monthlyAverage), 1, true) + "%"', \
-            objectNew('monthlyAverage', monthlyAverage) \
+            {'monthlyAverage': monthlyAverage} \
         )
-        dataTable(dataMonthly, objectNew( \
-            'fields', arrayNew('Month', 'Downloads', '% Average'), \
-            'formats', objectNew( \
-                'Downloads', objectNew('align', 'right') \
-            ), \
-            'datetime', 'month', \
-            'precision', 0 \
-        ))
+        dataTable(dataMonthly, { \
+            'fields': ['Month', 'Downloads', '% Average'], \
+            'formats': { \
+                'Downloads': {'align': 'right'} \
+            }, \
+            'datetime': 'month', \
+            'precision': 0 \
+        })
     endif
 
     # Redraw on resize
@@ -257,13 +257,13 @@ async function downloadsDataLoad():
     data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
 
     # Compute the unique package names
-    nameLanguages = objectNew()
+    nameLanguages = {}
     for row in data:
         name = objectGet(row, 'Package')
         language = objectGet(row, 'Language')
         languages = objectGet(nameLanguages, name)
         if !languages:
-            objectSet(nameLanguages, name, objectNew(language, true))
+            objectSet(nameLanguages, name, {language: true})
         else:
             objectSet(languages, language, true)
         endif
@@ -288,21 +288,21 @@ function downloadsDataMonthly(data):
     # Filter-out the current month
     today = datetimeToday()
     maxDate = datetimeNew(datetimeYear(today), datetimeMonth(today), 1)
-    dataFiltered = dataFilter(data, 'Date < maxDate', objectNew('maxDate', maxDate))
+    dataFiltered = dataFilter(data, 'Date < maxDate', {'maxDate': maxDate})
 
     # Compute the month field
     dataCalculatedField(dataFiltered, 'Month', 'datetimeISOParse(stringSlice(datetimeISOFormat(Date, true), 0, 7) + "-01")')
 
     # Aggregate by month
-    return dataAggregate(dataFiltered, objectNew( \
-        'categories', arrayNew('Language', 'Package', 'Unique', 'Month'), \
-        'measures', arrayNew( \
-            objectNew( \
-                'field', 'Downloads', \
-                'function', 'sum' \
-            ) \
-        ) \
-    ))
+    return dataAggregate(dataFiltered, { \
+        'categories': ['Language', 'Package', 'Unique', 'Month'], \
+        'measures': [ \
+            { \
+                'field': 'Downloads', \
+                'function': 'sum' \
+            } \
+        ] \
+    })
 endfunction
 
 
@@ -310,19 +310,19 @@ function downloadsDataAverage(data, trailingDays, monthly, maxDate):
     # Filter the data
     minDate = downloadsDataAverageMinDate(data, trailingDays, null, maxDate)
     if maxDate:
-        dataFiltered = dataFilter(data, 'Date >= minDate && Date <= maxDate', objectNew('minDate', minDate, 'maxDate', maxDate))
+        dataFiltered = dataFilter(data, 'Date >= minDate && Date <= maxDate', {'minDate': minDate, 'maxDate': maxDate})
     else:
-        dataFiltered = dataFilter(data, 'Date >= minDate', objectNew('minDate', minDate))
+        dataFiltered = dataFilter(data, 'Date >= minDate', {'minDate': minDate})
     endif
 
     # Compute the average
-    dataAverage = dataAggregate(dataFiltered, objectNew( \
-        'categories', arrayNew('Language', 'Package', 'Unique'), \
-        'measures', arrayNew( \
-            objectNew('field', 'Downloads', 'function', 'sum') \
-        ) \
-    ))
-    dataCalculatedField(dataAverage, 'Downloads', 'Downloads / trailingDays', objectNew('trailingDays', trailingDays))
+    dataAverage = dataAggregate(dataFiltered, { \
+        'categories': ['Language', 'Package', 'Unique'], \
+        'measures': [ \
+            {'field': 'Downloads', 'function': 'sum'} \
+        ] \
+    })
+    dataCalculatedField(dataAverage, 'Downloads', 'Downloads / trailingDays', {'trailingDays': trailingDays})
 
     # Monthly average?
     if monthly:
@@ -336,11 +336,11 @@ endfunction
 function downloadsDataAverageMinDate(data, trailingDays, field, maxDate):
     field = if(field, field, 'Date')
     if !maxDate:
-        maxDateData = dataAggregate(data, objectNew( \
-            'measures', arrayNew( \
-                objectNew('field', field, 'function', 'max') \
-            ) \
-        ))
+        maxDateData = dataAggregate(data, { \
+            'measures': [ \
+                {'field': field, 'function': 'max'} \
+            ] \
+        })
         maxDate = objectGet(arrayGet(maxDateData, 0), field)
     endif
     return datetimeNew(datetimeYear(maxDate), datetimeMonth(maxDate), datetimeDay(maxDate) - trailingDays)

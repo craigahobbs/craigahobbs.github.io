@@ -45,12 +45,12 @@
 include <pager.bare>
 
 pagerMain( \\
-    objectNew('pages', arrayNew( \\
-        objectNew('name', 'Home', 'type', objectNew('markdown', objectNew( \'url', 'README.md'))), \\
-        objectNew('name', 'MarkdownUp', 'type', objectNew('markdown', objectNew('url', 'MarkdownUpApplications.md'))), \\
-        objectNew('name', 'GitHub', 'type', objectNew('link', objectNew('url', 'https://github.com/craigahobbs'))) \\
-    )), \\
-    objectNew('hideNav', true) \\
+    {'pages': [ \\
+        {'name': 'Home', 'type': {'markdown': {'url': 'README.md'}}}, \\
+        {'name': 'MarkdownUp', 'type': {'markdown': {'url': 'MarkdownUpApplications.md'}}}, \\
+        {'name': 'GitHub', 'type': {'link': {'url': 'https://github.com/craigahobbs'}}} \\
+    ]}, \\
+    {'hideNav': true} \\
 )
 ~~~
 `

@@ -44,12 +44,12 @@
 ~~~ markdown-script
 include 'downloads.bare'
 
-downloadsMain(objectNew( \\
-    'featured', objectNew( \\
-        'template-specialize', objectNew('Python', true), \\
-        'unittest-parallel', objectNew('Python', true) \\
-    ) \\
-))
+downloadsMain({ \\
+    'featured': { \\
+        'template-specialize': {'Python': true}, \\
+        'unittest-parallel': {'Python': true} \\
+    } \\
+})
 ~~~
 `});
         app.run();

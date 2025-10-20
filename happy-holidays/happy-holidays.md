@@ -7,10 +7,10 @@ include <args.bare>
 
 function main():
     # Parse arguments
-    arguments = argsValidate(arrayNew( \
-        objectNew('name', 'message', 'default', 'Happy Holidays!'), \
-        objectNew('name', 'fullScreen', 'type', 'bool', 'default', false) \
-    ))
+    arguments = argsValidate([ \
+        {'name': 'message', 'default': 'Happy Holidays!'}, \
+        {'name': 'fullScreen', 'type': 'bool', 'default': false} \
+    ])
     args = argsParse(arguments)
 
     # Set the title
@@ -22,8 +22,8 @@ function main():
     if !isFullScreen:
         markdownPrint( \
             argsLink(arguments, 'Reset', null, true) + ' |', \
-            argsLink(arguments, 'Custom', objectNew('message', 'Edit Message in URL')) + ' |', \
-            argsLink(arguments, 'Full', objectNew('fullScreen', true)) \
+            argsLink(arguments, 'Custom', {'message': 'Edit Message in URL'}) + ' |', \
+            argsLink(arguments, 'Full', {'fullScreen': true}) \
         )
     endif
 

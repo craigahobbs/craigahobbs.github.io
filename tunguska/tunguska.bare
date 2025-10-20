@@ -10,7 +10,7 @@ async function tunguskaMain():
     # Handle reset phase
     if phase == 'reset':
         sessionStorageRemove('tunguskaState')
-        windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'simulation')))
+        windowSetLocation(argsURL(tunguskaArguments, {'phase': 'simulation'}))
         return
     endif
 
@@ -50,9 +50,9 @@ endfunction
 
 
 # Application arguments
-tunguskaArguments = arrayNew( \
-    objectNew('name', 'phase', 'default', 'intro') \
-)
+tunguskaArguments = [ \
+    {'name': 'phase', 'default': 'intro'} \
+]
 
 
 # Initialize simulation state
@@ -68,57 +68,57 @@ function tunguskaInitState():
     treeCount = 80
 
     # Generate forest of trees
-    trees = arrayNew()
+    trees = []
     ix = 0
     while ix < treeCount:
         x = mathRandom() * width
         y = height - 150 + mathRandom() * 100
         size = 20 + mathRandom() * 15
-        arrayPush(trees, objectNew( \
-            'x', x, \
-            'y', y, \
-            'size', size, \
-            'standing', true, \
-            'fallAngle', 0, \
-            'fallProgress', 0 \
-        ))
+        arrayPush(trees, { \
+            'x': x, \
+            'y': y, \
+            'size': size, \
+            'standing': true, \
+            'fallAngle': 0, \
+            'fallProgress': 0 \
+        })
         ix = ix + 1
     endwhile
 
     # Generate fixed star positions
-    stars = arrayNew()
+    stars = []
     starCount = 50
     ix = 0
     while ix < starCount:
         x = mathRandom() * width
         y = mathRandom() * (height / 2)
         size = mathRandom() * 2
-        arrayPush(stars, objectNew('x', x, 'y', y, 'size', size))
+        arrayPush(stars, {'x': x, 'y': y, 'size': size})
         ix = ix + 1
     endwhile
 
     # Initialize particles for explosion effects
-    particles = arrayNew()
+    particles = []
 
-    return objectNew( \
-        'width', width, \
-        'height', height, \
-        'groundThickness', 150, \
-        'asteroidX', width / 2, \
-        'asteroidY', -50, \
-        'asteroidSize', 30, \
-        'explosionX', width / 2, \
-        'explosionY', height / 3, \
-        'explosionRadius', 0, \
-        'explosionMaxRadius', mathMin(width, height) * 0.6, \
-        'shockwaveRadius', 0, \
-        'phase', 'falling', \
-        'trees', trees, \
-        'stars', stars, \
-        'particles', particles, \
-        'frameCount', 0, \
-        'screenShake', 0 \
-    )
+    return { \
+        'width': width, \
+        'height': height, \
+        'groundThickness': 150, \
+        'asteroidX': width / 2, \
+        'asteroidY': -50, \
+        'asteroidSize': 30, \
+        'explosionX': width / 2, \
+        'explosionY': height / 3, \
+        'explosionRadius': 0, \
+        'explosionMaxRadius': mathMin(width, height) * 0.6, \
+        'shockwaveRadius': 0, \
+        'phase': 'falling', \
+        'trees': trees, \
+        'stars': stars, \
+        'particles': particles, \
+        'frameCount': 0, \
+        'screenShake': 0 \
+    }
 endfunction
 
 
@@ -439,16 +439,16 @@ function tunguskaCreateExplosionParticles(state):
             color = '#ff0000'  # Red
         endif
 
-        arrayPush(particles, objectNew( \
-            'x', explosionX, \
-            'y', explosionY, \
-            'vx', mathCos(angle) * speed, \
-            'vy', mathSin(angle) * speed, \
-            'size', size, \
-            'color', color, \
-            'life', 1.0, \
-            'decay', 0.02 + mathRandom() * 0.03 \
-        ))
+        arrayPush(particles, { \
+            'x': explosionX, \
+            'y': explosionY, \
+            'vx': mathCos(angle) * speed, \
+            'vy': mathSin(angle) * speed, \
+            'size': size, \
+            'color': color, \
+            'life': 1.0, \
+            'decay': 0.02 + mathRandom() * 0.03 \
+        })
         ix = ix + 1
     endwhile
 endfunction
@@ -457,7 +457,7 @@ endfunction
 # Update particles
 function tunguskaUpdateParticles(state):
     particles = objectGet(state, 'particles')
-    newParticles = arrayNew()
+    newParticles = []
 
     for particle in particles:
         # Update position
@@ -905,25 +905,25 @@ endfunction
 
 # Transition to aftermath
 function tunguskaShowAftermathTransition():
-    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'aftermath')))
+    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'aftermath'}))
 endfunction
 
 
 # Start simulation handler
 function tunguskaStartHandler():
-    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'reset')))
+    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'reset'}))
 endfunction
 
 
 # Restart simulation handler
 function tunguskaRestartHandler():
-    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'reset')))
+    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'reset'}))
 endfunction
 
 
 # Quit to intro handler
 function tunguskaQuitHandler():
-    windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'intro')))
+    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'intro'}))
 endfunction
 
 
@@ -934,11 +934,11 @@ function tunguskaKeyHandler(args, event):
 
     if key == ' ':
         if phase == 'intro' || phase == 'aftermath':
-            return windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'reset')))
+            return windowSetLocation(argsURL(tunguskaArguments, {'phase': 'reset'}))
         endif
     elif key == 'q' || key == 'Q':
         if phase == 'simulation' || phase == 'aftermath':
-            return windowSetLocation(argsURL(tunguskaArguments, objectNew('phase', 'intro')))
+            return windowSetLocation(argsURL(tunguskaArguments, {'phase': 'intro'}))
         endif
     endif
 endfunction
@@ -958,3 +958,7 @@ function tunguskaGetState():
     endif
     return null
 endfunction
+
+
+# Execute the main entry point
+tunguskaMain()

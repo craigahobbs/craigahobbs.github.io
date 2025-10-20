@@ -29,15 +29,15 @@ function main():
     # Print the cone form?
     if objectGet(args, 'print'):
         # Print close link
-        elementModelRender(objectNew( \
-            'html', 'p', \
-            'attr', objectNew('class', 'markdown-model-no-print'), \
-            'elem', objectNew( \
-                'html', 'a', \
-                'attr', objectNew('href', documentURL(argsURL(lifeArguments))), \
-                'elem', objectNew('text', 'Close') \
-            ) \
-        ))
+        elementModelRender({ \
+            'html': 'p', \
+            'attr': {'class': 'markdown-model-no-print'}, \
+            'elem': { \
+                'html': 'a', \
+                'attr': {'href': documentURL(argsURL(lifeArguments))}, \
+                'elem': {'text': 'Close'} \
+            } \
+        })
 
         # Render the cone form
         pixelsPerPoint = 4 / 3
@@ -68,43 +68,43 @@ function main():
     markdownPrint( \
         '## Instructions', \
         '', \
-        argsLink(lifeArguments, 'Reset', objectNew('metric', isMetric), true), \
+        argsLink(lifeArguments, 'Reset', {'metric': isMetric}, true), \
         ' | ', \
-        argsLink(lifeArguments, if(isMetric, 'Imperial', 'Metric'), objectNew('metric', !isMetric), true), \
+        argsLink(lifeArguments, if(isMetric, 'Imperial', 'Metric'), {'metric': !isMetric}, true), \
         '', \
         '1. Take the following measurements from a drinking glass (see diagram above).', \
         '', \
         '    **Top diameter (d)** (' + \
             if(isValidConeForm(diameter - delta, bottom, coneHeight, flapLength), \
-                argsLink(lifeArguments, 'Less', objectNew('diameter', mathRound(diameter - delta, precision))), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', {'diameter': mathRound(diameter - delta, precision)}), 'Less') + ' | ' + \
             if(isValidConeForm(diameter + delta, bottom, coneHeight, flapLength), \
-                argsLink(lifeArguments, 'More', objectNew('diameter', mathRound(diameter + delta, precision))), 'More') + \
+                argsLink(lifeArguments, 'More', {'diameter': mathRound(diameter + delta, precision)}), 'More') + \
             '): ' + diameter + ' ' + units, \
         '', \
         '    **Height (h)** (' + \
             if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), \
-                argsLink(lifeArguments, 'Less', objectNew('height', mathRound(height - delta, precision))), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', {'height': mathRound(height - delta, precision)}), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), \
-                argsLink(lifeArguments, 'More', objectNew('height', mathRound(height + delta, precision))), 'More') + \
+                argsLink(lifeArguments, 'More', {'height': mathRound(height + delta, precision)}), 'More') + \
             '): ' + height + ' ' + units, \
         '', \
         '    **Bottom offset (o)** (' + \
             if(isValidConeForm(diameter, bottom, coneHeight + delta, flapLength), \
-                argsLink(lifeArguments, 'Less', objectNew('offset', mathRound(offset - delta, precision))), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', {'offset': mathRound(offset - delta, precision)}), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom, coneHeight - delta, flapLength), \
-                argsLink(lifeArguments, 'More', objectNew('offset', mathRound(offset + delta, precision))), 'More') + \
+                argsLink(lifeArguments, 'More', {'offset': mathRound(offset + delta, precision)}), 'More') + \
             '): ' + offset + ' ' + units, \
         '', \
         '    **Bottom diameter (b)** (' + \
             if(isValidConeForm(diameter, bottom - delta, coneHeight, flapLength), \
-                argsLink(lifeArguments, 'Less', objectNew('bottom', mathRound(bottom - delta, precision))), 'Less') + ' | ' + \
+                argsLink(lifeArguments, 'Less', {'bottom': mathRound(bottom - delta, precision)}), 'Less') + ' | ' + \
             if(isValidConeForm(diameter, bottom + delta, coneHeight, flapLength), \
-                argsLink(lifeArguments, 'More', objectNew('bottom', mathRound(bottom + delta, precision))), 'More') + \
+                argsLink(lifeArguments, 'More', {'bottom': mathRound(bottom + delta, precision)}), 'More') + \
             '): ' + bottom + ' ' + units, \
         '', \
         '2. Print the cone form using the link below.', \
         '', \
-        '   ' + argsLink(lifeArguments, 'Print Cone Form', objectNew('print', true), false, argsTopHeaderId), \
+        '   ' + argsLink(lifeArguments, 'Print Cone Form', {'print': true}, false, argsTopHeaderId), \
         '', \
         "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
         '', \
@@ -119,14 +119,14 @@ function main():
 endfunction
 
 
-lifeArguments = argsValidate(arrayNew( \
-    objectNew('name', 'bottom', 'type', 'float'), \
-    objectNew('name', 'diameter', 'type', 'float'), \
-    objectNew('name', 'height', 'type', 'float'), \
-    objectNew('name', 'metric', 'type', 'bool', 'default', false), \
-    objectNew('name', 'offset', 'type', 'float'), \
-    objectNew('name', 'print', 'type', 'bool', 'default', false, 'explicit', true) \
-))
+lifeArguments = argsValidate([ \
+    {'name': 'bottom', 'type': 'float'}, \
+    {'name': 'diameter', 'type': 'float'}, \
+    {'name': 'height', 'type': 'float'}, \
+    {'name': 'metric', 'type': 'bool', 'default': false}, \
+    {'name': 'offset', 'type': 'float'}, \
+    {'name': 'print', 'type': 'bool', 'default': false, 'explicit': true} \
+])
 
 
 function isValidConeForm(diameterTop, diameterBottom, height, flapLength):

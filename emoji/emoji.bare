@@ -4,18 +4,18 @@ include <forms.bare>
 
 async function emojiMain():
     # Parse arguments
-    arguments = argsValidate(arrayNew( \
-        objectNew('name', 'url', 'global', 'vURL', 'default', 'emoji.json', \
-                  'description', 'The Emoji JSON configuration file URL'), \
-        objectNew('name', 'category', \
-                  'description', 'The selected emoji category name'), \
-        objectNew('name', 'copied', 'type', 'int', 'explicit', true, \
-                  'description', 'The most-recently copied emoji index'), \
-        objectNew('name', 'config', 'type', 'bool', 'explicit', true, \
-                  'description', 'If true, display the Emoji JSON configuration file format'), \
-        objectNew('name', 'help', 'type', 'bool', 'explicit', true, \
-                  'description', 'If true, display the Emoji application arguments documentation') \
-    ))
+    arguments = argsValidate([ \
+        {'name': 'url', 'global': 'vURL', 'default': 'emoji.json', \
+         'description': 'The Emoji JSON configuration file URL'}, \
+        {'name': 'category', \
+         'description': 'The selected emoji category name'}, \
+        {'name': 'copied', 'type': 'int', 'explicit': true, \
+         'description': 'The most-recently copied emoji index'}, \
+        {'name': 'config', 'type': 'bool', 'explicit': true, \
+         'description': 'If true, display the Emoji JSON configuration file format'}, \
+        {'name': 'help', 'type': 'bool', 'explicit': true, \
+         'description': 'If true, display the Emoji application arguments documentation'} \
+    ])
     args = argsParse(arguments)
     url = objectGet(args, 'url')
     category = objectGet(args, 'category')
@@ -66,36 +66,36 @@ async function emojiMain():
 
         # Render the title
         title = 'Emoji - ' + category
-        markdownPrint(argsLink(arguments, 'Back', objectNew('category', null)), '', '# ' + markdownEscape(title))
+        markdownPrint(argsLink(arguments, 'Back', {'category': null}), '', '# ' + markdownEscape(title))
         documentSetTitle(title)
 
         # Render the list of emoji
-        elem = arrayNew()
+        elem = []
         valign = 'vertical-align:middle;'
         for emoji, ixEmoji in emojiList:
             emojiChar = objectGet(emoji, 'emoji')
             emojiName = objectGet(emoji, 'name')
             emojiStyle = valign + 'font-size:32pt; padding-right:0.25em; cursor: pointer; user-select: none; text-decoration: none;'
-            copyCallback = systemPartial(emojiCopyClipboard, emojiChar, argsURL(arguments, objectNew('copied', ixEmoji)))
-            arrayPush(elem, objectNew( \
-                'html', 'p', \
-                'elem', arrayNew( \
-                    objectNew( \
-                        'html', 'a', \
-                        'attr', objectNew('style', emojiStyle), \
-                        'elem', objectNew('text', emojiChar), \
-                        'callback', objectNew('click', copyCallback) \
-                    ), \
-                    objectNew( \
-                        'html', 'span', \
-                        'attr', objectNew('style', valign), \
-                        'elem', arrayNew( \
+            copyCallback = systemPartial(emojiCopyClipboard, emojiChar, argsURL(arguments, {'copied': ixEmoji}))
+            arrayPush(elem, { \
+                'html': 'p', \
+                'elem': [ \
+                    { \
+                        'html': 'a', \
+                        'attr': {'style': emojiStyle}, \
+                        'elem': {'text': emojiChar}, \
+                        'callback': {'click': copyCallback} \
+                    }, \
+                    { \
+                        'html': 'span', \
+                        'attr': {'style': valign}, \
+                        'elem': [ \
                             formsLinkButtonElements(emojiName, copyCallback), \
-                            if(copiedIndex == ixEmoji, objectNew('text', ' (copied)')) \
-                        ) \
-                    ) \
-                ) \
-            ))
+                            if(copiedIndex == ixEmoji, {'text': ' (copied)'}) \
+                        ] \
+                    } \
+                ] \
+            })
         endfor
         elementModelRender(elem)
         return
@@ -109,7 +109,7 @@ async function emojiMain():
     # Render the emoji category list
     categories = arraySort(objectKeys(emojiCategories))
     for category in categories:
-        markdownPrint('', argsLink(arguments, category, objectNew('category', category)))
+        markdownPrint('', argsLink(arguments, category, {'category': category}))
     endfor
 endfunction
 

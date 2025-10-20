@@ -23,7 +23,7 @@ function mandelbrotMain():
         mandelbrotUpDown(args, 'Zoom', 'In', 'Out', 'xRange', -menuXYDelta, menuXYDelta) + ' \\', \
         mandelbrotUpDown(args, 'Iter', 'Up', 'Down', 'iter', menuIterDelta, menuIterDelta), \
         '', \
-        argsLink(mandelbrotArguments, 'Cycle', objectNew('cycle', cycle + 1)) + ' |', \
+        argsLink(mandelbrotArguments, 'Cycle', {'cycle': cycle + 1}) + ' |', \
         argsLink(mandelbrotArguments, 'Reset', null, true) + ' | ', \
         mandelbrotUpDown(args, 'Width', 'Up', 'Down', 'width', menuWHDelta, menuWHDelta, true) + ' |', \
         mandelbrotUpDown(args, 'Height', 'Up', 'Down', 'height', menuWHDelta, menuWHDelta, true) + ' |', \
@@ -35,7 +35,7 @@ function mandelbrotMain():
         objectGet(args, 'width'), \
         objectGet(args, 'height'), \
         objectGet(args, 'size'), \
-        arrayNew('#17becf', '#2ca02c', '#98df8a', '#1f77b4'), \
+        ['#17becf', '#2ca02c', '#98df8a', '#1f77b4'], \
         cycle, \
         objectGet(args, 'x'), \
         objectGet(args, 'y'), \
@@ -45,16 +45,16 @@ function mandelbrotMain():
 endfunction
 
 
-mandelbrotArguments = argsValidate(arrayNew( \
-    objectNew('name', 'cycle', 'type', 'int', 'default', 0), \
-    objectNew('name', 'height', 'type', 'int', 'default', 100), \
-    objectNew('name', 'iter', 'type', 'int', 'default', 60), \
-    objectNew('name', 'size', 'type', 'int', 'default', 4), \
-    objectNew('name', 'width', 'type', 'int', 'default', 150), \
-    objectNew('name', 'x', 'type', 'float', 'default', -0.5), \
-    objectNew('name', 'xRange', 'type', 'float', 'default', 2.6), \
-    objectNew('name', 'y', 'type', 'float', 'default', 0) \
-))
+mandelbrotArguments = argsValidate([ \
+    {'name': 'cycle', 'type': 'int', 'default': 0}, \
+    {'name': 'height', 'type': 'int', 'default': 100}, \
+    {'name': 'iter', 'type': 'int', 'default': 60}, \
+    {'name': 'size', 'type': 'int', 'default': 4}, \
+    {'name': 'width', 'type': 'int', 'default': 150}, \
+    {'name': 'x', 'type': 'float', 'default': -0.5}, \
+    {'name': 'xRange', 'type': 'float', 'default': 2.6}, \
+    {'name': 'y', 'type': 'float', 'default': 0} \
+])
 
 
 function mandelbrotUpDown(args, label, labelUp, labelDown, argName, argDelta, argMin, noValue):
@@ -65,10 +65,10 @@ function mandelbrotUpDown(args, label, labelUp, labelDown, argName, argDelta, ar
     endif
 
     # Compute the up/down links
-    linkUp = argsLink(mandelbrotArguments, labelUp, objectNew(argName, argValue + argDelta))
+    linkUp = argsLink(mandelbrotArguments, labelUp, {argName: argValue + argDelta})
     valueDown = argValue - argDelta
     if argMin == null || valueDown >= argMin:
-        linkDown = argsLink(mandelbrotArguments, labelDown, objectNew(argName, valueDown))
+        linkDown = argsLink(mandelbrotArguments, labelDown, {argName: valueDown})
     else:
         linkDown = labelDown
     endif

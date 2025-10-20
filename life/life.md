@@ -46,35 +46,35 @@ endfunction
 
 
 # The Life application arguments
-lifeArguments = argsValidate(arrayNew( \
-    objectNew('name', 'background', 'type', 'int', 'default', 1), \
-    objectNew('name', 'border', 'type', 'int', 'default', 0), \
-    objectNew('name', 'borderRatio', 'type', 'float', 'default', 0.1), \
-    objectNew('name', 'color', 'type', 'int', 'default', 0), \
-    objectNew('name', 'depth', 'type', 'int', 'default', 6), \
-    objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
-    objectNew('name', 'gap', 'type', 'int', 'default', 1), \
-    objectNew('name', 'initRatio', 'type', 'float', 'default', 0.2), \
-    objectNew('name', 'load', 'explicit', true), \
-    objectNew('name', 'play', 'type', 'bool', 'default', true), \
-    objectNew('name', 'rate', 'type', 'int', 'default', 2), \
-    objectNew('name', 'save', 'type', 'bool', 'default', false, 'explicit', true) \
-))
+lifeArguments = argsValidate([ \
+    {'name': 'background', 'type': 'int', 'default': 1}, \
+    {'name': 'border', 'type': 'int', 'default': 0}, \
+    {'name': 'borderRatio', 'type': 'float', 'default': 0.1}, \
+    {'name': 'color', 'type': 'int', 'default': 0}, \
+    {'name': 'depth', 'type': 'int', 'default': 6}, \
+    {'name': 'fullScreen', 'type': 'bool', 'default': false}, \
+    {'name': 'gap', 'type': 'int', 'default': 1}, \
+    {'name': 'initRatio', 'type': 'float', 'default': 0.2}, \
+    {'name': 'load', 'explicit': true}, \
+    {'name': 'play', 'type': 'bool', 'default': true}, \
+    {'name': 'rate', 'type': 'int', 'default': 2}, \
+    {'name': 'save', 'type': 'bool', 'default': false, 'explicit': true} \
+])
 
 
 # Render the Life application
 function lifeRender(life, args):
     # Render the menu
-    elementModelRender(arrayNew( \
+    elementModelRender([ \
         if(!objectGet(args, 'fullScreen'), \
-            objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'b', 'elem', objectNew('text', "Conway's Game of Life")), \
-                objectNew('html', 'br'), \
+            {'html': 'p', 'elem': [ \
+                {'html': 'b', 'elem': {'text': "Conway's Game of Life"}}, \
+                {'html': 'br'}, \
                 lifeMenuElements(life, args) \
-            )) \
+            ]} \
         ), \
-        objectNew('html', 'div', 'attr', objectNew('id', lifeDocumentResetID, 'style', 'display: none;')) \
-    ))
+        {'html': 'div', 'attr': {'id': lifeDocumentResetID, 'style': 'display: none;'}} \
+    ])
 
     # Render the Life board
     lifeDraw(life, args)
@@ -132,8 +132,8 @@ endfunction
 function lifeMenuElements(life, args):
     # Menu separators
     nbsp = stringFromCharCode(160)
-    linkSeparator = objectNew('text', ' ')
-    linkSection = objectNew('text', nbsp + '| ')
+    linkSeparator = {'text': ' '}
+    linkSection = {'text': nbsp + '| '}
 
     # Color menu part
     background = objectGet(args, 'background')
@@ -143,37 +143,37 @@ function lifeMenuElements(life, args):
     nextColor = if(nextColor != background, nextColor, (nextColor + 1) % arrayLength(lifeColors))
     nextBackground = (background + 1) % arrayLength(lifeColors)
     nextBackground = if(nextBackground != color, nextBackground, (nextBackground + 1) % arrayLength(lifeColors))
-    colorElements = arrayNew( \
-        formsLinkElements('Ground', argsURL(lifeArguments, objectNew('background', nextBackground))), \
+    colorElements = [ \
+        formsLinkElements('Ground', argsURL(lifeArguments, {'background': nextBackground})), \
         linkSeparator, \
-        formsLinkElements('Cell', argsURL(lifeArguments, objectNew('color', nextColor))), \
+        formsLinkElements('Cell', argsURL(lifeArguments, {'color': nextColor})), \
         linkSeparator, \
-        formsLinkElements('Border', argsURL(lifeArguments, objectNew('border', if(border == 0, 5, 0)))), \
+        formsLinkElements('Border', argsURL(lifeArguments, {'border': if(border == 0, 5, 0)})), \
         linkSection, \
-        formsLinkElements('Full', argsURL(lifeArguments, objectNew('fullScreen', 1))) \
-    )
+        formsLinkElements('Full', argsURL(lifeArguments, {'fullScreen': 1})) \
+    ]
 
     # Which menu? (play, save, or pause)
     if objectGet(args, 'play'):
         rate = objectGet(args, 'rate')
-        return arrayNew( \
-            formsLinkElements('Pause', argsURL(lifeArguments, objectNew('play', 0))), \
+        return [ \
+            formsLinkElements('Pause', argsURL(lifeArguments, {'play': 0})), \
             linkSection, \
             colorElements, \
             linkSection, \
-            formsLinkElements('<<', if(rate > 0, argsURL(lifeArguments, objectNew('rate', rate - 1)))), \
-            arrayNew(objectNew('text', nbsp + arrayGet(lifeRates, rate) + nbsp + 'Hz' + nbsp)), \
-            formsLinkElements('>>', if(rate < arrayLength(lifeRates) - 1, argsURL(lifeArguments, objectNew('rate', rate + 1)))) \
-        )
+            formsLinkElements('<<', if(rate > 0, argsURL(lifeArguments, {'rate': rate - 1}))), \
+            [{'text': nbsp + arrayGet(lifeRates, rate) + nbsp + 'Hz' + nbsp}], \
+            formsLinkElements('>>', if(rate < arrayLength(lifeRates) - 1, argsURL(lifeArguments, {'rate': rate + 1}))) \
+        ]
     elif objectGet(args, 'save'):
-        return arrayNew( \
-            objectNew('text', 'Save: '), \
-            formsLinkElements('Load', argsURL(lifeArguments, objectNew('load', lifeEncode(life)))) \
-        )
+        return [ \
+            {'text': 'Save: '}, \
+            formsLinkElements('Load', argsURL(lifeArguments, {'load': lifeEncode(life)})) \
+        ]
     else:
         # Pause menu
-        return arrayNew( \
-            formsLinkElements('Play', argsURL(lifeArguments, objectNew('play', 1))), \
+        return [ \
+            formsLinkElements('Play', argsURL(lifeArguments, {'play': 1})), \
             linkSection, \
             formsLinkButtonElements('Step', systemPartial(lifeClickStep, life, args)), \
             linkSeparator, \
@@ -181,27 +181,27 @@ function lifeMenuElements(life, args):
             linkSeparator, \
             formsLinkButtonElements('Reset', systemPartial(lifeClickReset, args)), \
             linkSeparator, \
-            formsLinkElements('Save', argsURL(lifeArguments, objectNew('play', 0, 'save', 1))), \
+            formsLinkElements('Save', argsURL(lifeArguments, {'play': 0, 'save': 1})), \
             linkSection, \
             colorElements, \
             linkSection, \
             formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, -5, 0)), \
-            arrayNew(objectNew('text', nbsp + 'Width' + nbsp)), \
+            [{'text': nbsp + 'Width' + nbsp}], \
             formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 5, 0)), \
             linkSection, \
             formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, 0, -5)), \
-            arrayNew(objectNew('text', nbsp + 'Height' + nbsp)), \
+            [{'text': nbsp + 'Height' + nbsp}], \
             formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 0, 5)) \
-        )
+        ]
     endif
 endfunction
 
 
 # The Life application menu change rates, in Hz
-lifeRates = arrayNew(0.5, 1, 2, 4, 6, 8, 10, 20, 30)
+lifeRates = [0.5, 1, 2, 4, 6, 8, 10, 20, 30]
 
 # The Life application menu colors
-lifeColors = arrayNew('forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue')
+lifeColors = ['forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'magenta', 'cornflowerblue']
 
 # The Life application menu/board document reset ID
 lifeDocumentResetID = 'lifeReset'
@@ -230,7 +230,7 @@ function lifeClickReset(args):
     lifeSave(life)
 
     # If we're already at the reset location, just update
-    resetLocation = argsURL(lifeArguments, objectNew('play', false), true)
+    resetLocation = argsURL(lifeArguments, {'play': false}, true)
     if resetLocation == argsURL(lifeArguments):
         lifeRender(life, args)
         return
@@ -295,7 +295,7 @@ function lifeNew(args, width, height, initial):
     endif
 
     # Create the blank life object
-    life = objectNew('width', width, 'height', height, 'initial', initial, 'cells', cells)
+    life = {'width': width, 'height': height, 'initial': initial, 'cells': cells}
     if initial == null:
         objectSet(life, 'initial', lifeEncode(life))
     endif
@@ -422,7 +422,7 @@ function lifeEncode(life):
     width = objectGet(life, 'width')
     height = objectGet(life, 'height')
     cells = objectGet(life, 'cells')
-    lifeChars = arrayNew()
+    lifeChars = []
 
     # Compute runs of alive/not-alive cells
     alive = 0

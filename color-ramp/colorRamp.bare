@@ -6,12 +6,12 @@ include <forms.bare>
 
 
 # The Color Ramp application arguments
-colorRampArguments = argsValidate(arrayNew( \
-    objectNew('name', 'action', 'type', 'string', 'explicit', true), \
-    objectNew('name', 'hex', 'type', 'bool', 'default', false), \
-    objectNew('name', 'model', 'type', 'bool', 'default', false, 'explicit', true), \
-    objectNew('name', 'url', 'global', 'vURL', 'type', 'string', 'explicit', true) \
-))
+colorRampArguments = argsValidate([ \
+    {'name': 'action', 'type': 'string', 'explicit': true}, \
+    {'name': 'hex', 'type': 'bool', 'default': false}, \
+    {'name': 'model', 'type': 'bool', 'default': false, 'explicit': true}, \
+    {'name': 'url', 'global': 'vURL', 'type': 'string', 'explicit': true} \
+])
 
 
 # Main entry point for the Color Ramp application
@@ -91,21 +91,21 @@ function colorRampRenderEditor(args, ramp):
     isHex = objectGet(args, 'hex')
 
     # Create the editor table elements
-    tableElems = arrayNew()
+    tableElems = []
 
     # Header row
-    arrayPush(tableElems, objectNew( \
-        'html', 'tr', \
-        'elem', arrayNew( \
-            objectNew('html', 'th', 'elem', objectNew('text', 'Swatch')), \
-            objectNew('html', 'th', 'elem', objectNew('text', 'Hex')), \
-            objectNew('html', 'th', 'elem', objectNew('text', 'Decimal')), \
-            objectNew('html', 'th', 'elem', objectNew('text', 'R')), \
-            objectNew('html', 'th', 'elem', objectNew('text', 'G')), \
-            objectNew('html', 'th', 'elem', objectNew('text', 'B')), \
-            objectNew('html', 'th', 'elem', objectNew('text', 'Action')) \
-        ) \
-    ))
+    arrayPush(tableElems, { \
+        'html': 'tr', \
+        'elem': [ \
+            {'html': 'th', 'elem': {'text': 'Swatch'}}, \
+            {'html': 'th', 'elem': {'text': 'Hex'}}, \
+            {'html': 'th', 'elem': {'text': 'Decimal'}}, \
+            {'html': 'th', 'elem': {'text': 'R'}}, \
+            {'html': 'th', 'elem': {'text': 'G'}}, \
+            {'html': 'th', 'elem': {'text': 'B'}}, \
+            {'html': 'th', 'elem': {'text': 'Action'}} \
+        ] \
+    })
 
     # Color rows
     for color, index in colors:
@@ -119,82 +119,82 @@ function colorRampRenderEditor(args, ramp):
         gValue = if(isHex, colorRampByteToHex(g), g)
         bValue = if(isHex, colorRampByteToHex(b), b)
 
-        arrayPush(tableElems, objectNew( \
-            'html', 'tr', \
-            'elem', arrayNew( \
-                objectNew( \
-                    'html', 'td', \
-                    'attr', objectNew('style', 'vertical-align: middle;'), \
-                    'elem', objectNew( \
-                        'html', 'div', \
-                        'attr', objectNew( \
-                            'style', 'width: 50px; height: 30px; background-color: ' + hexColor + '; border: 1px solid black;' \
-                        ) \
-                    ) \
-                ), \
-                objectNew('html', 'td', 'elem', objectNew('text', hexColor)), \
-                objectNew('html', 'td', 'elem', objectNew('text', 'rgb(' + r + ', ' + g + ', ' + b + ')')), \
-                objectNew( \
-                    'html', 'td', \
-                    'elem', formsTextElements('colorRampR' + index, rValue, 6, systemPartial(colorRampUpdate, args)) \
-                ), \
-                objectNew( \
-                    'html', 'td', \
-                    'elem', formsTextElements('colorRampG' + index, gValue, 6, systemPartial(colorRampUpdate, args)) \
-                ), \
-                objectNew( \
-                    'html', 'td', \
-                    'elem', formsTextElements('colorRampB' + index, bValue, 6, systemPartial(colorRampUpdate, args)) \
-                ), \
-                objectNew( \
-                    'html', 'td', \
-                    'elem', if(numColors > 2, formsLinkButtonElements('Delete', systemPartial(colorRampDeleteColor, args, index))) \
-                ) \
-            ) \
-        ))
+        arrayPush(tableElems, { \
+            'html': 'tr', \
+            'elem': [ \
+                { \
+                    'html': 'td', \
+                    'attr': {'style': 'vertical-align: middle;'}, \
+                    'elem': { \
+                        'html': 'div', \
+                        'attr': { \
+                            'style': 'width: 50px; height: 30px; background-color: ' + hexColor + '; border: 1px solid black;' \
+                        } \
+                    } \
+                }, \
+                {'html': 'td', 'elem': {'text': hexColor}}, \
+                {'html': 'td', 'elem': {'text': 'rgb(' + r + ', ' + g + ', ' + b + ')'}}, \
+                { \
+                    'html': 'td', \
+                    'elem': formsTextElements('colorRampR' + index, rValue, 6, systemPartial(colorRampUpdate, args)) \
+                }, \
+                { \
+                    'html': 'td', \
+                    'elem': formsTextElements('colorRampG' + index, gValue, 6, systemPartial(colorRampUpdate, args)) \
+                }, \
+                { \
+                    'html': 'td', \
+                    'elem': formsTextElements('colorRampB' + index, bValue, 6, systemPartial(colorRampUpdate, args)) \
+                }, \
+                { \
+                    'html': 'td', \
+                    'elem': if(numColors > 2, formsLinkButtonElements('Delete', systemPartial(colorRampDeleteColor, args, index))) \
+                } \
+            ] \
+        })
     endfor
 
     # Render the table
-    elementModelRender(objectNew( \
-        'html', 'table', \
-        'attr', objectNew('style', 'border-collapse: collapse; margin: 10px 0;'), \
-        'elem', tableElems \
-    ))
+    elementModelRender({ \
+        'html': 'table', \
+        'attr': {'style': 'border-collapse: collapse; margin: 10px 0;'}, \
+        'elem': tableElems \
+    })
 
     # Render the menu
     editRampName = objectGet(args, 'action') == 'editRampName'
     downloadFilename = colorRampFilename(objectGet(ramp, 'name'))
     downloadURL = urlObjectCreate(jsonStringify(ramp, 4), 'text/json')
-    elementModelRender(objectNew( \
-        'html', 'p', \
-        'elem', arrayNew( \
-            if(numColors < 5, formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), objectNew('text', 'Add')), \
-            objectNew('text', ' | '), \
+    elementModelRender({ \
+        'html': 'p', \
+        'elem': [ \
+            if(numColors < 5, formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), {'text': 'Add'}), \
+            {'text': ' | '}, \
             formsLinkButtonElements('Update', systemPartial(colorRampUpdate, args)), \
-            objectNew('text', ' | '), \
-            formsLinkElements(if(isHex, 'Dec', 'Hex'), argsURL(colorRampArguments, objectNew('hex', !isHex))), \
-            objectNew('text', ' | '), \
-            if(editRampName, objectNew('text', 'Title'), formsLinkElements('Title', argsURL(colorRampArguments, objectNew('action', 'editRampName')))), \
-            objectNew('text', ' | '), \
+            {'text': ' | '}, \
+            formsLinkElements(if(isHex, 'Dec', 'Hex'), argsURL(colorRampArguments, {'hex': !isHex})), \
+            {'text': ' | '}, \
+            if(editRampName, {'text': 'Title'}, formsLinkElements('Title', argsURL(colorRampArguments, {'action': 'editRampName'}))), \
+            {'text': ' | '}, \
             formsLinkButtonElements('Reset', systemPartial(colorRampReset, args)), \
-            objectNew('text', ' | '), \
-            objectNew( \
-                'html', 'a', \
-                'attr', objectNew('href', downloadURL, 'download', downloadFilename), \
-                'elem', objectNew('text', 'Download') \
-            ), \
-            if(editRampName, arrayNew( \
-                objectNew('html', 'p', 'elem', \
+            {'text': ' | '}, \
+            { \
+                'html': 'a', \
+                'attr': {'href': downloadURL, 'download': downloadFilename}, \
+                'elem': {'text': 'Download'} \
+            }, \
+            if(editRampName, [ \
+                {'html': 'p', 'elem': \
                     formsTextElements('colorRampName', objectGet(ramp, 'name'), 50, colorRampUpdateName) \
-                ), \
-                objectNew('html', 'p', 'elem', arrayNew( \
+                }, \
+                {'html': 'p', 'elem': [ \
                     formsLinkButtonElements('Update', colorRampUpdateName), \
-                    objectNew('text', ' | '), \
+                    {'text': ' | '}, \
                     formsLinkElements('Cancel', argsURL(colorRampArguments)) \
-                )) \
-            )) \
-        ) \
-    ))
+                ]} \
+            ]) \
+        ] \
+    })
 
     # If editing the ramp name, set focus
     if editRampName:
@@ -287,7 +287,7 @@ function colorRampAddColor(args):
         newG = mathRound((objectGet(lastColor, 'g') + objectGet(secondLastColor, 'g')) / 2)
         newB = mathRound((objectGet(lastColor, 'b') + objectGet(secondLastColor, 'b')) / 2)
 
-        arrayPush(colors, objectNew('r', newR, 'g', newG, 'b', newB))
+        arrayPush(colors, {'r': newR, 'g': newG, 'b': newB})
 
         # Save and re-render
         colorRampSave(ramp)
@@ -396,14 +396,14 @@ endfunction
 
 # Create a default color ramp
 function colorRampCreateDefault():
-    return objectNew( \
-        'name', 'Default Color Ramp', \
-        'colors', arrayNew( \
-            objectNew('r', 255, 'g', 0, 'b', 0), \
-            objectNew('r', 224, 'g', 224, 'b', 224), \
-            objectNew('r', 0, 'g', 255, 'b', 0) \
-        ) \
-    )
+    return { \
+        'name': 'Default Color Ramp', \
+        'colors': [ \
+            {'r': 255, 'g': 0, 'b': 0}, \
+            {'r': 224, 'g': 224, 'b': 224}, \
+            {'r': 0, 'g': 255, 'b': 0} \
+        ] \
+    }
 endfunction
 
 

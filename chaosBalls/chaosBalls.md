@@ -61,28 +61,28 @@ endfunction
 
 
 # The Chaos Balls application arguments
-chaosBallsArguments = argsValidate(arrayNew( \
-    objectNew('name', 'doc', 'type', 'bool'), \
-    objectNew('name', 'fullScreen', 'type', 'bool', 'default', false), \
-    objectNew('name', 'play', 'type', 'bool', 'default', true), \
-    objectNew('name', 'rate', 'type', 'int', 'default', 3), \
-    objectNew('name', 'url', 'global', 'vURL') \
-))
+chaosBallsArguments = argsValidate([ \
+    {'name': 'doc', 'type': 'bool'}, \
+    {'name': 'fullScreen', 'type': 'bool', 'default': false}, \
+    {'name': 'play', 'type': 'bool', 'default': true}, \
+    {'name': 'rate', 'type': 'int', 'default': 3}, \
+    {'name': 'url', 'global': 'vURL'} \
+])
 
 
 # Render the Chaos Balls application
 function chaosBallsRender(session, args):
     # Render the menu
-    elementModelRender(arrayNew( \
+    elementModelRender([ \
         if(!objectGet(args, 'fullScreen'), \
-            objectNew('html', 'p', 'elem', arrayNew( \
-                objectNew('html', 'b', 'elem', objectNew('text', "Chaos Balls")), \
-                objectNew('html', 'br'), \
+            {'html': 'p', 'elem': [ \
+                {'html': 'b', 'elem': {'text': "Chaos Balls"}}, \
+                {'html': 'br'}, \
                 chaosBallsMenuElements(session, args) \
-            )) \
+            ]} \
         ), \
-        objectNew('html', 'div', 'attr', objectNew('id', chaosBallsDocumentResetID, 'style', 'display: none;')) \
-    ))
+        {'html': 'div', 'attr': {'id': chaosBallsDocumentResetID, 'style': 'display: none;'}} \
+    ])
 
     # Render the balls
     chaosBallsDraw(session, args)
@@ -125,7 +125,7 @@ function chaosBallsKeyDown(args, event):
 
     # Play/Pause
     if key == ' ':
-        windowSetLocation(argsURL(chaosBallsArguments, objectNew('play', !objectGet(args, 'play'))))
+        windowSetLocation(argsURL(chaosBallsArguments, {'play': !objectGet(args, 'play')}))
         return
     endif
 
@@ -138,33 +138,33 @@ endfunction
 function chaosBallsMenuElements(session, args):
     # Menu separators
     nbsp = stringFromCharCode(160)
-    linkSeparator = objectNew('text', ' ')
-    linkSection = objectNew('text', nbsp + '| ')
+    linkSeparator = {'text': ' '}
+    linkSection = {'text': nbsp + '| '}
 
     # Create the menu element model
     play = objectGet(args, 'play')
     rate = objectGet(args, 'rate')
-    return arrayNew( \
-        if(play, formsLinkElements('Pause', argsURL(chaosBallsArguments, objectNew('play', 0)))), \
-        if(!play, formsLinkElements('Play', argsURL(chaosBallsArguments, objectNew('play', 1)))), \
+    return [ \
+        if(play, formsLinkElements('Pause', argsURL(chaosBallsArguments, {'play': 0}))), \
+        if(!play, formsLinkElements('Play', argsURL(chaosBallsArguments, {'play': 1}))), \
         linkSection, \
         formsLinkButtonElements('Step', systemPartial(chaosBallsStep, session, args)), \
         linkSeparator, \
         formsLinkButtonElements('Reset', systemPartial(chaosBallsReset, session, args)), \
         linkSection, \
-        formsLinkElements('<<', if(rate > 0, argsURL(chaosBallsArguments, objectNew('rate', rate - 1)))), \
-        objectNew('text', nbsp + arrayGet(chaosBallsRates, rate) + nbsp + 'Hz' + nbsp), \
-        formsLinkElements('>>', if(rate < arrayLength(chaosBallsRates) - 1, argsURL(chaosBallsArguments, objectNew('rate', rate + 1)))), \
+        formsLinkElements('<<', if(rate > 0, argsURL(chaosBallsArguments, {'rate': rate - 1}))), \
+        {'text': nbsp + arrayGet(chaosBallsRates, rate) + nbsp + 'Hz' + nbsp}, \
+        formsLinkElements('>>', if(rate < arrayLength(chaosBallsRates) - 1, argsURL(chaosBallsArguments, {'rate': rate + 1}))), \
         linkSection, \
-        formsLinkElements('Full', argsURL(chaosBallsArguments, objectNew('fullScreen', true))), \
+        formsLinkElements('Full', argsURL(chaosBallsArguments, {'fullScreen': true})), \
         linkSection, \
         formsLinkElements('About', '#url=README.md') \
-    )
+    ]
 endfunction
 
 
 # The Chaos Balls menu frame rates, in Hz
-chaosBallsRates = arrayNew(10, 15, 20, 30, 45, 60)
+chaosBallsRates = [10, 15, 20, 30, 45, 60]
 
 # The Chaos Balls document reset ID
 chaosBallsDocumentResetID = 'chaosBallsMenu'
@@ -174,7 +174,7 @@ chaosBallsDocumentResetID = 'chaosBallsMenu'
 function chaosBallsStep(session, args):
     chaosBallsMove(session, args)
     if objectGet(args, 'play'):
-        windowSetLocation(argsURL(chaosBallsArguments, objectNew('play', 0)))
+        windowSetLocation(argsURL(chaosBallsArguments, {'play': 0}))
     else:
         chaosBallsRender(session, args)
     endif
@@ -191,8 +191,8 @@ endfunction
 
 # Create a new Chaos Balls session object
 function chaosBallsNewSession(model):
-    balls = arrayNew()
-    session = objectNew('model', model, 'balls', balls)
+    balls = []
+    session = {'model': model, 'balls': balls}
 
     # Iterate the ball groups
     for group in objectGet(model, 'groups'):
@@ -224,7 +224,7 @@ function chaosBallsNewSession(model):
             dy = speed * mathSin(speedAngle)
 
             # Add the ball
-            arrayPush(balls, objectNew('color', groupColor, 'size', size, 'x', x, 'y', y, 'dx', dx, 'dy', dy))
+            arrayPush(balls, {'color': groupColor, 'size': size, 'x': x, 'y': y, 'dx': dx, 'dy': dy})
 
             ixBall = ixBall + 1
         endwhile
@@ -420,14 +420,14 @@ chaosBallsTypes = schemaParse( \
 
 
 # The default Chaos Balls model
-chaosBallsDefaultModel = schemaValidate(chaosBallsTypes, 'ChaosBalls', objectNew( \
-    'backgroundColor', '#ffffff', \
-    'groups', arrayNew( \
-        objectNew('count', 10, 'color', '#0000ff40', 'minSize', 0.3, 'maxSize', 0.4, 'minSpeed', 0.1, 'maxSpeed', 0.15), \
-        objectNew('count', 20, 'color', '#00ff0040', 'minSize', 0.2, 'maxSize', 0.3, 'minSpeed', 0.15, 'maxSpeed', 0.2), \
-        objectNew('count', 30, 'color', '#ff000040', 'minSize', 0.1, 'maxSize', 0.2, 'minSpeed', 0.2, 'maxSpeed', 0.25) \
-    ) \
-))
+chaosBallsDefaultModel = schemaValidate(chaosBallsTypes, 'ChaosBalls', { \
+    'backgroundColor': '#ffffff', \
+    'groups': [ \
+        {'count': 10, 'color': '#0000ff40', 'minSize': 0.3, 'maxSize': 0.4, 'minSpeed': 0.1, 'maxSpeed': 0.15}, \
+        {'count': 20, 'color': '#00ff0040', 'minSize': 0.2, 'maxSize': 0.3, 'minSpeed': 0.15, 'maxSpeed': 0.2}, \
+        {'count': 30, 'color': '#ff000040', 'minSize': 0.1, 'maxSize': 0.2, 'minSpeed': 0.2, 'maxSpeed': 0.25} \
+    ] \
+})
 
 
 # Call the main entry point

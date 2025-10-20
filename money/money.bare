@@ -6,28 +6,28 @@ include <pager.bare>
 
 # The money application main entry point
 async function moneyMain(url):
-    pagerModel = objectNew( \
-        'pages', arrayNew( \
-            objectNew('name', 'About', 'type', objectNew('markdown', objectNew( \
-                'url', 'https://craigahobbs.github.io/money/README.md' \
-            ))), \
-            objectNew('name', 'Report', 'type', objectNew('function', objectNew( \
-                'function', systemPartial(moneyPageReport, url) \
-            ))), \
-            objectNew('name', 'Schema', 'type', objectNew('function', objectNew( \
-                'function', moneyPageSchema \
-            ))) \
-        ) \
-    )
-    pagerMain(pagerModel, objectNew('arguments', moneyArguments, 'hideNav', true, 'start', 'Report'))
+    pagerModel = { \
+        'pages': [ \
+            {'name': 'About', 'type': {'markdown': { \
+                'url': 'https://craigahobbs.github.io/money/README.md' \
+            }}}, \
+            {'name': 'Report', 'type': {'function': { \
+                'function': systemPartial(moneyPageReport, url) \
+            }}}, \
+            {'name': 'Schema', 'type': {'function': { \
+                'function': moneyPageSchema \
+            }}} \
+        ] \
+    }
+    pagerMain(pagerModel, {'arguments': moneyArguments, 'hideNav': true, 'start': 'Report'})
 endfunction
 
 
-moneyArguments = argsValidate(arrayNew( \
-    objectNew('name', 'page', 'default', 'Report'), \
-    objectNew('name', 'url', 'global', 'vURL', 'default', 'money.json'), \
-    objectNew('name', 'model', 'type', 'bool', 'default', false, 'explicit', true) \
-))
+moneyArguments = argsValidate([ \
+    {'name': 'page', 'default': 'Report'}, \
+    {'name': 'url', 'global': 'vURL', 'default': 'money.json'}, \
+    {'name': 'model', 'type': 'bool', 'default': false, 'explicit': true} \
+])
 
 
 async function moneyPageReport(url, args):
@@ -54,7 +54,7 @@ async function moneyPageReport(url, args):
         markdownPrint(argsLink(moneyArguments, "Hide Model"), '', '~~~', moneyTextOrig, '~~~')
         return
     else:
-        markdownPrint(argsLink(moneyArguments, "Show Model", objectNew('model', true)))
+        markdownPrint(argsLink(moneyArguments, "Show Model", {'model': true}))
     endif
 
     # Render the money report
@@ -74,50 +74,50 @@ function moneyReport(moneyModel):
     data = moneyData(moneyModel)
 
     # Compute the account names
-    accountNames = arrayNew()
+    accountNames = []
     for account in objectGet(moneyModel, 'accounts'):
         arrayPush(accountNames, objectGet(account, 'name'))
     endfor
 
     # Render the line chart
-    lineData = arrayNew()
+    lineData = []
     for row in data:
         for accountName in accountNames:
-            arrayPush(lineData, objectNew( \
-                'Date', objectGet(row, 'Date'), \
-                'Account', accountName, \
-                'Balance', objectGet(row, accountName) \
-            ))
+            arrayPush(lineData, { \
+                'Date': objectGet(row, 'Date'), \
+                'Account': accountName, \
+                'Balance': objectGet(row, accountName) \
+            })
         endfor
     endfor
-    dataLineChart(lineData, objectNew( \
-        'width', 900, \
-        'height', 300, \
-        'precision', 2, \
-        'datetime', 'day', \
-        'x', 'Date', \
-        'y', arrayNew('Balance'), \
-        'color', 'Account', \
-        'xTicks', objectNew('count', 5), \
-        'yTicks', objectNew('count', 5), \
-        'yLines', arrayNew(objectNew('value', 0)) \
-    ))
+    dataLineChart(lineData, { \
+        'width': 900, \
+        'height': 300, \
+        'precision': 2, \
+        'datetime': 'day', \
+        'x': 'Date', \
+        'y': ['Balance'], \
+        'color': 'Account', \
+        'xTicks': {'count': 5}, \
+        'yTicks': {'count': 5}, \
+        'yLines': [{'value': 0}] \
+    })
 
     # Render the table
-    fields = arrayNew('Date')
-    formats = objectNew('Amount', objectNew('align', 'right'))
+    fields = ['Date']
+    formats = {'Amount': {'align': 'right'}}
     for accountName in accountNames:
         arrayPush(fields, accountName)
-        objectSet(formats, accountName, objectNew('align', 'right'))
+        objectSet(formats, accountName, {'align': 'right'})
     endfor
     arrayPush(fields, 'Amount', 'Description')
-    dataTable(data, objectNew( \
-        'datetime', 'day', \
-        'fields', fields, \
-        'formats', formats, \
-        'precision', 2, \
-        'trim', false \
-    ))
+    dataTable(data, { \
+        'datetime': 'day', \
+        'fields': fields, \
+        'formats': formats, \
+        'precision': 2, \
+        'trim': false \
+    })
 endfunction
 
 
@@ -127,9 +127,9 @@ function moneyData(moneyModel):
     endDate = objectGet(moneyModel, 'endDate')
 
     # Create the initial account balances
-    accountNames = arrayNew()
-    initialRow = objectNew('Date', beginDate, 'Amount', 0, 'Description', '')
-    data = arrayNew(initialRow)
+    accountNames = []
+    initialRow = {'Date': beginDate, 'Amount': 0, 'Description': ''}
+    data = [initialRow]
     for account in objectGet(moneyModel, 'accounts'):
         accountName = objectGet(account, 'name')
         arrayPush(accountNames, accountName)
@@ -155,7 +155,7 @@ function moneyData(moneyModel):
         while (txnRepeatEndDate == null || txnDate - txnRepeatEndDate <= 0) && txnDate - endDate <= 0:
             if txnDate - beginDate >= 0:
                 # Add the transaction delta row
-                txnRow = objectNew('Date', txnDate, txnAccount, txnAmount, 'Amount', txnAmount, 'Description', txnDesc)
+                txnRow = {'Date': txnDate, txnAccount: txnAmount, 'Amount': txnAmount, 'Description': txnDesc}
                 if txnDest != null:
                     objectSet(txnRow, txnDest, -txnAmount)
                 endif
@@ -179,7 +179,7 @@ function moneyData(moneyModel):
     endfor
 
     # Resolve the transaction rows
-    dataSort(data, arrayNew(arrayNew('Date')))
+    dataSort(data, [['Date']])
     for txnRow, ixTxnRow in data:
         if ixTxnRow != 0:
             for txnAccount in accountNames:
