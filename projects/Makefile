@@ -102,7 +102,7 @@ endef # PROJECT_RULES
 
 
 # Javascript projects
-$(eval $(call PROJECT_RULES, javascript, bare-script, 'git@github.com:craigahobbs/bare-script.git', markdown-up))
+$(eval $(call PROJECT_RULES, javascript, bare-script, 'git@github.com:craigahobbs/bare-script.git'))
 $(eval $(call PROJECT_RULES, javascript, element-model, 'git@github.com:craigahobbs/element-model.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-model, 'git@github.com:craigahobbs/markdown-model.git'))
 $(eval $(call PROJECT_RULES, javascript, markdown-up, 'git@github.com:craigahobbs/markdown-up.git'))
@@ -110,7 +110,7 @@ $(eval $(call PROJECT_RULES, javascript, schema-markdown-doc, 'git@github.com:cr
 $(eval $(call PROJECT_RULES, javascript, schema-markdown-js, 'git@github.com:craigahobbs/schema-markdown-js.git'))
 
 # Python projects
-$(eval $(call PROJECT_RULES, python, bare-script-py, 'git@github.com:craigahobbs/bare-script-py.git', markdown-up))
+$(eval $(call PROJECT_RULES, python, bare-script-py, 'git@github.com:craigahobbs/bare-script-py.git'))
 $(eval $(call PROJECT_RULES, python, chisel, 'git@github.com:craigahobbs/chisel.git', markdown-up))
 $(eval $(call PROJECT_RULES, python, ctxkit, 'git@github.com:craigahobbs/ctxkit.git'))
 $(eval $(call PROJECT_RULES, python, markdown-up-py, 'git@github.com:craigahobbs/markdown-up-py.git'))
