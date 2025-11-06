@@ -2,7 +2,7 @@ include <args.bare>
 
 
 # Tunguska Event Simulation main entry point
-async function tunguskaMain():
+function tunguskaMain():
     # Parse arguments
     args = argsParse(tunguskaArguments)
     phase = objectGet(args, 'phase')
