@@ -53122,5 +53122,95 @@
         "Language": "Python",
         "Date": "2025-11-05",
         "Downloads": 3390
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-11-06",
+        "Downloads": 243
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-11-06",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-11-06",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-11-06",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-11-06",
+        "Downloads": 24
+    },
+    {
+        "Package": "schema-markdown-doc",
+        "Language": "JavaScript",
+        "Date": "2025-11-06",
+        "Downloads": 1
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 228
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 248
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 4
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 29
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 11
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 73
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 1
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 1429
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-11-06",
+        "Downloads": 2455
     }
 ]
