@@ -63,9 +63,6 @@
 [Package Downloads Dashboard]: https://craigahobbs.github.io/downloads/
 [Package Downloads Dashboard Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/downloads/downloads.bare
 
-[Schema Markdown Documentation Viewer]: https://craigahobbs.github.io/schema-markdown-doc/doc/
-[Schema Markdown Documentation Viewer Source]: https://github.com/craigahobbs/schema-markdown-doc/blob/main/static/doc/app.bare
-
 [Solar Dashboard]: https://craigahobbs.github.io/solar/
 [Solar Dashboard Source]: https://craigahobbs.github.io/solar/#view=markdown
 

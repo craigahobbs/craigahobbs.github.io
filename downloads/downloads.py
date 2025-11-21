@@ -16,7 +16,6 @@ PACKAGES = [
     {'Package': 'element-model', 'Language': 'JavaScript'},
     {'Package': 'markdown-model', 'Language': 'JavaScript'},
     {'Package': 'markdown-up', 'Language': 'JavaScript'},
-    {'Package': 'schema-markdown-doc', 'Language': 'JavaScript'},
     {'Package': 'schema-markdown', 'Language': 'JavaScript'},
 
     # Python packages
