@@ -1,6 +1,7 @@
 include <args.bare>
 include <dataTable.bare>
 include <forms.bare>
+include <schemaDoc.bare>
 
 
 async function emojiMain():
@@ -39,7 +40,7 @@ async function emojiMain():
         documentSetTitle('EmojiConfig')
 
         # Render the configuration schema documentation
-        elementModelRender(schemaElements(emojiTypes, 'EmojiConfig'))
+        markdownPrint(schemaDocMarkdown(emojiTypes, 'EmojiConfig'))
         return
     endif
 

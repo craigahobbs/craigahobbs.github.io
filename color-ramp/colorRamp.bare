@@ -3,6 +3,7 @@
 
 include <args.bare>
 include <forms.bare>
+include <schemaDoc.bare>
 
 
 # The Color Ramp application arguments
@@ -23,7 +24,7 @@ async function colorRampMain():
     # Color ramp documentation page?
     if objectGet(args, 'model'):
         markdownPrint(argsLink(colorRampArguments, 'Home'))
-        elementModelRender(schemaElements(colorRampTypes, 'ColorRamp'))
+        markdownPrint(schemaDocMarkdown(colorRampTypes, 'ColorRamp'))
         return
     endif
 

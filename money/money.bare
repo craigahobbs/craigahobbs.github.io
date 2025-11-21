@@ -2,6 +2,7 @@
 # https://github.com/craigahobbs/markdown-up/blob/main/LICENSE
 
 include <pager.bare>
+include <schemaDoc.bare>
 
 
 # The money application main entry point
@@ -64,7 +65,7 @@ endfunction
 
 function moneyPageSchema():
     documentSetTitle('Money Schema')
-    elementModelRender(schemaElements(moneyTypes, 'Money'))
+    markdownPrint(schemaDocMarkdown(moneyTypes, 'Money'))
 endfunction
 
 

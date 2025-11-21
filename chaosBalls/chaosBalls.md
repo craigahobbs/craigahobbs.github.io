@@ -4,6 +4,7 @@
 
 include <args.bare>
 include <forms.bare>
+include <schemaDoc.bare>
 
 
 # Chaos Balls application main entry point
@@ -16,7 +17,7 @@ async function chaosBallsMain():
     if objectGet(args, 'doc'):
         documentSetTitle('Chaos Balls JSON Format')
         markdownPrint('[Home](#url=README.md)', '')
-        elementModelRender(schemaElements(chaosBallsTypes, 'ChaosBalls'))
+        markdownPrint(schemaDocMarkdown(chaosBallsTypes, 'ChaosBalls'))
         return
     endif
 
