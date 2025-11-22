@@ -16,7 +16,6 @@
 | [Money] | [Source][Money Source] |
 | [npm Dependency Explorer] | [Source][npm Dependency Explorer Source] |
 | [Package Downloads Dashboard] | [Source][Package Downloads Dashboard Source] |
-| [Schema Markdown Documentation Viewer] | [Source][Schema Markdown Documentation Viewer Source] |
 | [Solar Dashboard] | [Source][Solar Dashboard Source] |
 | [Sunrise Dashboard] | [Source][Sunrise Dashboard Source] |
 | [Tunguska Event Simulation] | [Source][Tunguska Event Simulation Source] |
