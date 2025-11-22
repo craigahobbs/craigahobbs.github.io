@@ -958,7 +958,3 @@ function tunguskaGetState():
     endif
     return null
 endfunction
-
-
-# Execute the main entry point
-tunguskaMain()
