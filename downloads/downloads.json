@@ -50530,5 +50530,89 @@
         "Language": "Python",
         "Date": "2025-11-27",
         "Downloads": 5193
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-11-28",
+        "Downloads": 6
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-11-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-11-28",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-11-28",
+        "Downloads": 65
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-11-28",
+        "Downloads": 17
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 76
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 17
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 2
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 12
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 23
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 18
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 1
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 1189
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-11-28",
+        "Downloads": 2027
     }
 ]
