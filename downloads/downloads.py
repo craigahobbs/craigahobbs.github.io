@@ -6,6 +6,7 @@
 import argparse
 import datetime
 import json
+import sys
 import urllib.request
 
 
@@ -33,7 +34,10 @@ PACKAGES = [
 
 def main():
     # Command-line arguments
-    parser = argparse.ArgumentParser(color=False)
+    argument_parser_args = {}
+    if sys.version_info >= (3, 14): # pragma: no cover
+        argument_parser_args['color'] = False
+    parser = argparse.ArgumentParser(**argument_parser_args)
     parser.add_argument('--years', type=int, default=5, help='Number of years of data to keep')
     args = parser.parse_args()
 
