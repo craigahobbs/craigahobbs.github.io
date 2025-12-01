@@ -33,7 +33,7 @@ PACKAGES = [
 
 def main():
     # Command-line arguments
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=False)
     parser.add_argument('--years', type=int, default=5, help='Number of years of data to keep')
     args = parser.parse_args()
 
