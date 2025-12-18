@@ -5,8 +5,7 @@
 include <args.bare>
 include <forms.bare>
 
-#include <qrcode.bare>
-include '../../bare-script/lib/include/qrcode.bare'
+include <qrcode.bare>
 
 
 # QR code application main entry point
