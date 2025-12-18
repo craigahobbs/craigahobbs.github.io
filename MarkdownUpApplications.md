@@ -16,6 +16,7 @@
 | [Money] | [Source][Money Source] |
 | [npm Dependency Explorer] | [Source][npm Dependency Explorer Source] |
 | [Package Downloads Dashboard] | [Source][Package Downloads Dashboard Source] |
+| [QR Code] | [Source][QR Code Source] |
 | [Solar Dashboard] | [Source][Solar Dashboard Source] |
 | [Sunrise Dashboard] | [Source][Sunrise Dashboard Source] |
 | [Tunguska Event Simulation] | [Source][Tunguska Event Simulation Source] |
@@ -61,6 +62,9 @@
 
 [Package Downloads Dashboard]: https://craigahobbs.github.io/downloads/
 [Package Downloads Dashboard Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/downloads/downloads.bare
+
+[QR Code]: https://craigahobbs.github.io/qrcode/
+[QR Code Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/qrcode/qrcodeApp.bare
 
 [Solar Dashboard]: https://craigahobbs.github.io/solar/
 [Solar Dashboard Source]: https://craigahobbs.github.io/solar/#view=markdown
