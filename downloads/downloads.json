@@ -52078,5 +52078,89 @@
         "Language": "Python",
         "Date": "2025-12-16",
         "Downloads": 2068
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2025-12-17",
+        "Downloads": 5
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2025-12-17",
+        "Downloads": 1
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2025-12-17",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2025-12-17",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2025-12-17",
+        "Downloads": 32
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 14
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 297
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 64
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 12
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 3
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 12
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 20
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 4026
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2025-12-17",
+        "Downloads": 2950
     }
 ]
