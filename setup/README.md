@@ -45,10 +45,11 @@ First, add yourself to the sudoers:
 su -l -c "usermod -aG sudo $USER && reboot"
 ~~~
 
-Next, install applications, remove the grub delay, and reboot:
+Next, install applications, configure docker, remove the grub delay, and reboot:
 
 ~~~sh
-sudo apt install emacs git git-gui make nodejs npm podman python3-venv rsync screen tree xsel
+sudo apt install docker.io emacs git git-gui make nodejs npm python3-venv rsync screen tree xsel
+sudo usermod -aG docker $USER
 sudo apt purge evolution evolution-data-server evolution-ews-core exim4-base exim4-config exim4-daemon-light gnome-bluetooth-sendto gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-contacts gnome-games gnome-maps gnome-music gnome-sound-recorder gnome-text-editor gnome-tour gnome-user-share gnome-weather libreoffice* mailutils mailutils-common rhythmbox rygel rygel-playbin rygel-tracker shotwell simple-scan totem yelp
 sudo apt autoremove
 sudo apt purge $(dpkg -l | grep '^rc' | awk '{print $2}')
@@ -71,8 +72,8 @@ fi
 source ~/.git-prompt.sh
 PS1=$(expr substr "$PS1" 1 $(expr length "$PS1" - 3))'$(__git_ps1 " (%s)")'${PS1: -3}
 
-# Use podman for development
-export USE_PODMAN=1
+# Use docker for development
+export USE_DOCKER=1
 
 # Add venv/bin to path
 export PATH=$HOME/venv/bin:$PATH
