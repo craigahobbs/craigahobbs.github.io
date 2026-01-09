@@ -3,6 +3,7 @@
 
 
 include <args.bare>
+include <elementModel.bare>
 include <forms.bare>
 include <qrcode.bare>
 
@@ -11,6 +12,7 @@ include <qrcode.bare>
 function qrcodeAppMain():
     # Parse arguments
     args = argsParse(qrcodeAppArguments)
+    copied = objectGet(args, 'copied')
     level = objectGet(args, 'level')
     message = objectGet(args, 'message')
     size = mathMax(50, mathMin(1000, objectGet(args, 'size')))
@@ -19,6 +21,12 @@ function qrcodeAppMain():
     title = 'QR Code'
     documentSetTitle(title)
     markdownPrint('# ' + markdownEscape(title))
+
+    # Generate the QR code matrix and SVG text
+    matrix = qrcodeMatrix(message, level)
+    svgText = elementModelToString(qrcodeElements(matrix, size, level))
+    svgURL = urlObjectCreate(svgText, 'image/svg+xml')
+    svgFilename = 'qrcode.svg'
 
     # Render the text input
     documentSetFocus(qrcodeAppMessageId)
@@ -44,18 +52,24 @@ function qrcodeAppMain():
         {'html': 'p', 'elem': [ \
             formsLinkButtonElements('Update', qrcodeAppOnMessage), \
             {'text': ' | '}, \
-            formsLinkElements('Reset', argsURL(qrcodeAppArguments, null, true)) \
+            formsLinkElements('Reset', argsURL(qrcodeAppArguments, null, true)), \
+            {'text': ' | '}, \
+            {'html': 'a', 'attr': {'href': svgURL, 'download': svgFilename}, 'elem': {'text': 'Download SVG'}}, \
+            {'text': ' | '}, \
+            formsLinkButtonElements('Copy SVG', systemPartial(qrcodeAppOnCopySVG, svgText)), \
+            if(copied, {'text': ' (copied)'}) \
         ]} \
     ])
 
     # Draw the QR code
     drawNew(size, size)
-    qrcodeDraw(message, 0, 0, size, level)
+    qrcodeDraw(matrix, 0, 0, size, level)
 endfunction
 
 
 # The QR code application arguments
 qrcodeAppArguments = argsValidate([ \
+    {'name': 'copied', 'type': 'bool', 'default': false, 'explicit': true}, \
     {'name': 'level', 'default': 'low'}, \
     {'name': 'message', 'default': 'https://craigahobbs.github.io/'}, \
     {'name': 'size', 'type': 'int', 'default': 300} \
@@ -70,4 +84,11 @@ qrcodeAppMessageId = 'message'
 function qrcodeAppOnMessage():
     message = documentInputValue(qrcodeAppMessageId)
     windowSetLocation(argsURL(qrcodeAppArguments, {'message': message}))
+endfunction
+
+
+# Copy SVG on-click
+async function qrcodeAppOnCopySVG(svgText):
+    windowClipboardWrite(svgText, 'image/svg+xml')
+    windowSetLocation(argsURL(qrcodeAppArguments, {'copied': true}))
 endfunction
