@@ -423,7 +423,7 @@ function colorRampByteToHex(value):
     hex = '0123456789abcdef'
     high = mathFloor(value / 16)
     low = value % 16
-    return stringSlice(hex, high, high + 1) + stringSlice(hex, low, low + 1)
+    return stringCharAt(hex, high) + stringCharAt(hex, low)
 endfunction
 
 

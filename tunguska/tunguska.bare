@@ -507,7 +507,7 @@ function tunguskaDrawParticles(state, offsetX, offsetY):
 
         # Apply opacity based on life
         opacityInt = mathRound(life * 15)
-        opacityHex = stringSlice('0123456789abcdef', opacityInt, opacityInt + 1)
+        opacityHex = stringCharAt('0123456789abcdef', opacityInt)
 
         drawStyle('none', 0, color + opacityHex + '0')
         drawCircle(x, y, size * life)
@@ -793,7 +793,7 @@ function tunguskaDrawShockwave(state, offsetX, offsetY):
     # Calculate opacity based on expansion
     opacity = mathMax(0, 1 - radius / objectGet(state, 'explosionMaxRadius'))
     opacityInt = mathRound(opacity * 15)
-    opacityHex = stringSlice('0123456789abcdef', opacityInt, opacityInt + 1)
+    opacityHex = stringCharAt('0123456789abcdef', opacityInt)
 
     # Draw multiple shockwave rings for depth
     # Leading edge
@@ -809,7 +809,7 @@ function tunguskaDrawShockwave(state, offsetX, offsetY):
     # Distortion effect behind shockwave
     if radius < 300:
         distortionOpacity = mathRound(opacity * 8)
-        distortionHex = stringSlice('0123456789abcdef', distortionOpacity, distortionOpacity + 1)
+        distortionHex = stringCharAt('0123456789abcdef', distortionOpacity)
         drawStyle('none', 0, '#ffffff' + '0' + distortionHex)
         drawCircle(x, y, radius * 0.8)
     endif
