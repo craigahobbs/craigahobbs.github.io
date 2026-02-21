@@ -57130,5 +57130,71 @@
         "Language": "Python",
         "Date": "2026-02-19",
         "Downloads": 3300
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-02-20",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-02-20",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-02-20",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-02-20",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-02-20",
+        "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-02-20",
+        "Downloads": 1
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-02-20",
+        "Downloads": 98
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-02-20",
+        "Downloads": 65
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-02-20",
+        "Downloads": 12
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-02-20",
+        "Downloads": 3142
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-02-20",
+        "Downloads": 2682
     }
 ]
