@@ -57490,5 +57490,71 @@
         "Language": "Python",
         "Date": "2026-02-24",
         "Downloads": 3075
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-02-25",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-02-25",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-02-25",
+        "Downloads": 3
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-02-25",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-02-25",
+        "Downloads": 0
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-02-25",
+        "Downloads": 6
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-02-25",
+        "Downloads": 2
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-02-25",
+        "Downloads": 4
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-02-25",
+        "Downloads": 1
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-02-25",
+        "Downloads": 3202
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-02-25",
+        "Downloads": 2505
     }
 ]
