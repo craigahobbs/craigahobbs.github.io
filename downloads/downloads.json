@@ -58971,7 +58971,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-03-17",
-        "Downloads": 0
+        "Downloads": 81
     },
     {
         "Package": "element-model",
@@ -58983,19 +58983,19 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-03-17",
-        "Downloads": 0
+        "Downloads": 24
     },
     {
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2026-03-17",
-        "Downloads": 0
+        "Downloads": 15
     },
     {
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2026-03-17",
-        "Downloads": 0
+        "Downloads": 6
     },
     {
         "Package": "bare-script",
@@ -59055,31 +59055,31 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-03-18",
-        "Downloads": 0
+        "Downloads": 112
     },
     {
         "Package": "element-model",
         "Language": "JavaScript",
         "Date": "2026-03-18",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-03-18",
-        "Downloads": 0
+        "Downloads": 43
     },
     {
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2026-03-18",
-        "Downloads": 0
+        "Downloads": 10
     },
     {
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2026-03-18",
-        "Downloads": 0
+        "Downloads": 8
     },
     {
         "Package": "bare-script",
@@ -59139,7 +59139,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-03-19",
-        "Downloads": 0
+        "Downloads": 9
     },
     {
         "Package": "element-model",
@@ -59151,13 +59151,13 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-03-19",
-        "Downloads": 0
+        "Downloads": 20
     },
     {
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2026-03-19",
-        "Downloads": 0
+        "Downloads": 5
     },
     {
         "Package": "schema-markdown",
@@ -59422,5 +59422,71 @@
         "Language": "Python",
         "Date": "2026-03-22",
         "Downloads": 1142
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-03-23",
+        "Downloads": 2
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-03-23",
+        "Downloads": 1
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-03-23",
+        "Downloads": 3
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-03-23",
+        "Downloads": 6
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-03-23",
+        "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-03-23",
+        "Downloads": 3
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-03-23",
+        "Downloads": 55
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-03-23",
+        "Downloads": 9
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-03-23",
+        "Downloads": 13
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-03-23",
+        "Downloads": 430
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-03-23",
+        "Downloads": 6263
     }
 ]
