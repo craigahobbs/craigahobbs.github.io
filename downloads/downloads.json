@@ -58425,7 +58425,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-03-10",
-        "Downloads": 0
+        "Downloads": 3
     },
     {
         "Package": "element-model",
@@ -58443,7 +58443,7 @@
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2026-03-10",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "schema-markdown",
@@ -59488,5 +59488,83 @@
         "Language": "Python",
         "Date": "2026-03-23",
         "Downloads": 6263
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-03-24",
+        "Downloads": 2
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-03-24",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-03-24",
+        "Downloads": 2
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-03-24",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-03-24",
+        "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 6
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 285
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 62
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 6
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 15
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 2
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 292
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-03-24",
+        "Downloads": 2830
     }
 ]
