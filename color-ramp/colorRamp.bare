@@ -2,6 +2,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <draw.bare>
 include <forms.bare>
 include <schemaDoc.bare>
 
@@ -165,7 +166,7 @@ function colorRampRenderEditor(args, ramp):
     # Render the menu
     editRampName = objectGet(args, 'action') == 'editRampName'
     downloadFilename = colorRampFilename(objectGet(ramp, 'name'))
-    downloadURL = urlObjectCreate(jsonStringify(ramp, 4), 'text/json')
+    downloadURL = windowURLObject(jsonStringify(ramp, 4), 'text/json')
     elementModelRender({ \
         'html': 'p', \
         'elem': [ \
@@ -265,6 +266,9 @@ function colorRampRenderDisplay(ramp):
 
         x = x + 1
     endwhile
+
+    # Render the color ramp
+    drawRender()
 endfunction
 
 

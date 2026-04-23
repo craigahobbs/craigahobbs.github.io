@@ -1,4 +1,5 @@
 include <args.bare>
+include <draw.bare>
 
 
 # Tunguska Event Simulation main entry point
@@ -176,6 +177,9 @@ function tunguskaShowIntro(state):
     drawTextStyle(20, 'yellow')
     drawText('Start Simulation', width / 2, height - 50)
     drawOnClick(tunguskaStartHandler)
+
+    # Render the drawing
+    drawRender()
 endfunction
 
 
@@ -343,6 +347,9 @@ function tunguskaDrawSimulation(state, offsetX, offsetY):
         tunguskaDrawShockwave(state, offsetX, offsetY)
         tunguskaDrawParticles(state, offsetX, offsetY)
     endif
+
+    # Render the drawing
+    drawRender()
 endfunction
 
 
@@ -900,6 +907,9 @@ function tunguskaShowAftermath(state):
     drawOnClick(tunguskaRestartHandler)
     drawText('Quit', width / 2 + 60, height - 100)
     drawOnClick(tunguskaQuitHandler)
+
+    # Render the drawing
+    drawRender()
 endfunction
 
 

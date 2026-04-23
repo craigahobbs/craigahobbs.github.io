@@ -1,6 +1,9 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/markdown-up/blob/main/LICENSE
 
+include <data.bare>
+include <dataLineChart.bare>
+include <dataTable.bare>
 include <pager.bare>
 include <schemaDoc.bare>
 

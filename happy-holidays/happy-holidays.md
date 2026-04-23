@@ -3,6 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <draw.bare>
 
 
 function main():
@@ -55,6 +56,9 @@ function main():
     drawRect(0.5 * width - 0.5 * titleBoxWidth, 0.5 * height - 0.5 * titleBoxHeight, titleBoxWidth, titleBoxHeight)
     drawTextStyle(titleTextHeight, 'white')
     drawText(titleText, 0.5 * width, 0.5 * height)
+
+    # Render the drawing
+    drawRender()
 
     # Set the resize handler
     windowSetResize(main)

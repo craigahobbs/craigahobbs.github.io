@@ -1,4 +1,7 @@
 ```markdown-script
+include <draw.bare>
+
+
 function closingMain():
     # Compute the days to closing
     closingDatetime = datetimeNew(2026, 5, 27)
@@ -23,6 +26,7 @@ function closingMain():
     drawText(daysText, 0.5 * width, 0.45 * height)
     drawTextStyle(labelFontSize)
     drawText(labelText, 0.5 * width, 0.85 * height)
+    drawRender()
 
     # Set the resize event
     windowSetResize(closingMain)

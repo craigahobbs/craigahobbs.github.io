@@ -5,6 +5,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <draw.bare>
 
 
 function mandelbrotMain():
@@ -99,6 +100,9 @@ function mandelbrotDraw(width, height, pixelSize, colors, colorCycle, x, y, xRan
         endwhile
         x = x + 1
     endwhile
+
+    # Render the drawing
+    drawRender()
 endfunction
 
 

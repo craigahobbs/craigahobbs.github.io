@@ -2,6 +2,9 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <data.bare>
+include <dataLineChart.bare>
+include <dataTable.bare>
 
 
 async function downloadsMain(options):
@@ -46,7 +49,8 @@ async function downloadsIndex(args):
     documentSetTitle(title)
 
     # Load the package data
-    data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
+    data = jsonParse(systemFetch('downloads.json'))
+    dataValidate(data, true)
     dataAverage = downloadsDataAverage(data, trailingDays, true)
 
     # Create links and compute total downloads
@@ -254,7 +258,8 @@ endfunction
 
 
 async function downloadsDataLoad():
-    data = dataValidate(jsonParse(systemFetch('downloads.json')), true)
+    data = jsonParse(systemFetch('downloads.json'))
+    dataValidate(data, true)
 
     # Compute the unique package names
     nameLanguages = {}

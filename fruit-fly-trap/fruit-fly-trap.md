@@ -3,6 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <draw.bare>
 
 
 function main():
@@ -204,6 +205,7 @@ function coneForm(diameterTop, diameterBottom, height, flapLength, lineWidth, ex
     drawStyle('lightgray', lineWidth, 'none')
     drawMove(edge + guideInnerX - formMinX, edge + formMaxY - guideInnerY)
     drawLine(edge + guideOuterX - formMinX, edge + formMaxY - guideOuterY)
+    drawRender()
 endfunction
 
 
@@ -270,6 +272,8 @@ function fruitFlyTrapDiagram():
         annotationBarWidth, annotationTextHeight, annotationTextSize)
     horizontalAnnotation('b', coneBottom - annotationWidth + 0.5 * annotationBarWidth, coneBottomLeft, coneBottomRight, \
         annotationBarWidth, annotationTextHeight, annotationTextSize)
+
+    drawRender()
 endfunction
 
 

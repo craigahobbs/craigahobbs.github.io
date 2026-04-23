@@ -3,6 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <draw.bare>
 include <forms.bare>
 
 
@@ -368,6 +369,7 @@ function lifeDraw(life, args):
         endwhile
         y = y + 1
     endwhile
+    drawRender()
 endfunction
 
 

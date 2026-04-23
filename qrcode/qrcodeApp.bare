@@ -25,7 +25,7 @@ function qrcodeAppMain():
     # Generate the QR code matrix and SVG text
     matrix = qrcodeMatrix(message, level)
     svgText = elementModelToString(qrcodeElements(matrix, size, level))
-    svgURL = urlObjectCreate(svgText, 'image/svg+xml')
+    svgURL = windowURLObject(svgText, 'image/svg+xml')
     svgFilename = 'qrcode.svg'
 
     # Render the text input
@@ -64,6 +64,7 @@ function qrcodeAppMain():
     # Draw the QR code
     drawNew(size, size)
     qrcodeDraw(matrix, 0, 0, size, level)
+    drawRender()
 endfunction
 
 

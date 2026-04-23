@@ -3,6 +3,7 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <draw.bare>
 include <forms.bare>
 include <schemaDoc.bare>
 
@@ -281,6 +282,7 @@ function chaosBallsDraw(session, args):
         drawStyle('black', 0, objectGet(ball, 'color'))
         drawCircle(objectGet(ball, 'x') * width, objectGet(ball, 'y') * height, 0.5 * objectGet(ball, 'size') * widthHeight)
     endfor
+    drawRender()
 endfunction
 
 
