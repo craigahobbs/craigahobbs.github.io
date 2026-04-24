@@ -49,8 +49,7 @@ async function downloadsIndex(args):
     documentSetTitle(title)
 
     # Load the package data
-    data = jsonParse(systemFetch('downloads.json'))
-    dataValidate(data, true)
+    data = downloadsDataLoad()
     dataAverage = downloadsDataAverage(data, trailingDays, true)
 
     # Create links and compute total downloads
@@ -274,6 +273,16 @@ endfunction
 async function downloadsDataLoad():
     data = jsonParse(systemFetch('downloads.json'))
     dataValidate(data, true)
+
+    # Reduce the data
+    maxDateData = dataAggregate(data, { \
+        'measures': [ \
+            {'field': 'Date', 'function': 'max'} \
+        ] \
+    })
+    maxDate = objectGet(arrayGet(maxDateData, 0), 'Date')
+    minDate = datetimeNew(datetimeYear(maxDate) - 1, 1, 1)
+    data = dataFilter(data, 'Date > minDate', {'minDate': minDate})
 
     # Compute the unique package names
     nameLanguages = {}
