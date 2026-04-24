@@ -125,7 +125,8 @@ async function downloadsChartPage(args, options):
         if !dataMonthly:
             continue
         endif
-        chartWidth = mathFloor(mathMax(600, windowWidth() - 4 * documentFontSize()))
+        fontSize = documentFontSize()
+        chartWidth = mathFloor(mathMin(1000, mathMax(600, windowWidth() - 4 * fontSize)))
         chartHeight = mathFloor(0.3 * chartWidth)
         dataLineChart(dataMonthly, { \
             'title': 'Monthly Downloads' + if(isFeatured, ' (Featured)', ''), \
@@ -138,7 +139,7 @@ async function downloadsChartPage(args, options):
             'yTicks': {'start': 0, 'count': 5}, \
             'precision': 0, \
             'datetime': 'day' \
-        })
+        }, {'fontSize': fontSize})
     endfor
 
     # Redraw on resize
@@ -207,7 +208,7 @@ async function downloadsDashboard(args):
     # Render the monthly line chart
     fontSize = documentFontSize()
     chartWidth = mathFloor(mathMin(1000, mathMax(600, windowWidth() - 4 * fontSize)))
-    chartHeight = mathFloor(mathMax(200, mathFloor(0.25 * chartWidth)))
+    chartHeight = mathFloor(0.25 * chartWidth)
     if dataMonthly:
         dataLineChart(dataMonthly, { \
             'title': 'Monthly Downloads - ' + name, \
@@ -224,7 +225,7 @@ async function downloadsDashboard(args):
             ], \
             'datetime': 'day', \
             'precision': 1 \
-        }, {'fontSize': documentFontSize()})
+        }, {'fontSize': fontSize})
     endif
 
     # Render the daily line chart
@@ -246,7 +247,7 @@ async function downloadsDashboard(args):
             {'value': downloadsDataAverageMinDate(data, trailingDays), 'label': ''} \
         ])
     endif
-    dataLineChart(data, dailyLineChart, {'fontSize': documentFontSize()})
+    dataLineChart(data, dailyLineChart, {'fontSize': fontSize})
 
     # Render the monthly table by most recent
     if dataMonthly:
