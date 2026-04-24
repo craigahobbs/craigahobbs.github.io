@@ -32,7 +32,8 @@ downloadsArguments = argsValidate([ \
     {'name': 'page'}, \
     {'name': 'name'}, \
     {'name': 'language'}, \
-    {'name': 'days', 'type': 'int', 'default': 90} \
+    {'name': 'days', 'type': 'int', 'default': 90}, \
+    {'name': 'years', 'type': 'int', 'default': 1} \
 ])
 
 
@@ -44,12 +45,14 @@ async function downloadsIndex(args):
     markdownPrint( \
         '# ' + markdownEscape(title), \
         '', \
+        downloadsYearsControls(args), \
+        '', \
         argsLink(downloadsArguments, 'Time Chart', {'page': 'chart'}) \
     )
     documentSetTitle(title)
 
     # Load the package data
-    data = downloadsDataLoad()
+    data = downloadsDataLoad(args)
     dataAverage = downloadsDataAverage(data, trailingDays, true)
 
     # Create links and compute total downloads
@@ -86,6 +89,16 @@ async function downloadsIndex(args):
 endfunction
 
 
+function downloadsYearsControls(args):
+    years = objectGet(args, 'years')
+    return [ \
+        '**Showing:** ' + if(years <= 0, 'Current', if(years == 1, '1 year', years + ' years')), \
+        '(' + argsLink(downloadsArguments, 'Fewer', {'years': mathMax(0, years - 1)}) + ' | ', \
+        argsLink(downloadsArguments, 'More', {'years': years + 1}) + ')' \
+    ]
+endfunction
+
+
 async function downloadsChartPage(args, options):
     trailingDays = objectGet(args, 'days')
 
@@ -95,11 +108,13 @@ async function downloadsChartPage(args, options):
     markdownPrint( \
         argsLink(downloadsArguments, 'Back', {'page': null}), \
         '', \
-        '# ' + markdownEscape(title) \
+        '# ' + markdownEscape(title), \
+        '', \
+        downloadsYearsControls(args) \
     )
 
     # Compute the color legend order
-    data = downloadsDataLoad()
+    data = downloadsDataLoad(args)
     dataAverage = downloadsDataAverage(data, trailingDays)
     dataSort(dataAverage, [['Downloads', true]])
     colorOrder = []
@@ -157,12 +172,14 @@ async function downloadsDashboard(args):
     markdownPrint( \
         argsLink(downloadsArguments, 'Back', {'name': null, 'language': null}), \
         '', \
-        '# ' + markdownEscape(title) \
+        '# ' + markdownEscape(title), \
+        '', \
+        downloadsYearsControls(args) \
     )
     documentSetTitle(title)
 
     # Load the package data
-    data = downloadsDataLoad()
+    data = downloadsDataLoad(args)
 
     # Filter to this package's data
     filterExpr = 'Package == packageName && Language == packageLanguage'
@@ -199,8 +216,8 @@ async function downloadsDashboard(args):
         endwhile
 
         # Add the average downloads field
+        averageDownloads = trailingAverageSum / trailingDays
         if rowDate >= minDate:
-            averageDownloads = trailingAverageSum / trailingDays
             objectSet(row, 'Average Downloads', averageDownloads)
         endif
     endfor
@@ -272,7 +289,10 @@ async function downloadsDashboard(args):
 endfunction
 
 
-async function downloadsDataLoad():
+async function downloadsDataLoad(args):
+    years = objectGet(args, 'years')
+
+    # Fetch and validate the data
     data = jsonParse(systemFetch('downloads.json'))
     dataValidate(data, true)
 
@@ -283,7 +303,7 @@ async function downloadsDataLoad():
         ] \
     })
     maxDate = objectGet(arrayGet(maxDateData, 0), 'Date')
-    minDate = datetimeNew(datetimeYear(maxDate) - 1, 1, 1)
+    minDate = datetimeNew(datetimeYear(maxDate) - years, 1, 1)
     data = dataFilter(data, 'Date > minDate', {'minDate': minDate})
 
     # Compute the unique package names
