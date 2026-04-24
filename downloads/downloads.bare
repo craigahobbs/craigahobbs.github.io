@@ -110,12 +110,14 @@ async function downloadsChartPage(args, options):
 
     # Add the featured column
     featuredMap = objectGet(options, 'featured') || {}
-    dataCalculatedField( \
-        data, \
-        'Featured', \
-        'objectGet(objectGet(featuredMap, Package), Language, false)', \
-        {'featuredMap': featuredMap} \
-    )
+    if featuredMap:
+        dataCalculatedField( \
+            data, \
+            'Featured', \
+            'if(objectHas(featuredMap, Package), objectGet(objectGet(featuredMap, Package), Language, false), false)', \
+            {'featuredMap': featuredMap} \
+        )
+    endif
 
     # First featured, then non-featured
     for isFeatured in [true, false]:
@@ -182,11 +184,23 @@ async function downloadsDashboard(args):
     minDate = datetimeNew(datetimeYear(minDateMin), datetimeMonth(minDateMin), datetimeDay(minDateMin) + trailingDays)
 
     # Compute the daily trailing average
+    averageDownloads = null
+    trailingAverageSum = 0
+    dataTrailingAverage = []
     for row in data:
+        # Compute the trailing average
+        trailingAverageSum = trailingAverageSum + objectGet(row, 'Downloads', 0)
+        arrayPush(dataTrailingAverage, row)
         rowDate = objectGet(row, 'Date')
+        dateTrailingAverage = datetimeNew(datetimeYear(rowDate), datetimeMonth(rowDate), datetimeDay(rowDate) - trailingDays)
+        while objectGet(arrayGet(dataTrailingAverage, 0), 'Date') < dateTrailingAverage:
+            trailingAverageSum = trailingAverageSum - objectGet(arrayGet(dataTrailingAverage, 0), 'Downloads', 0)
+            arrayDelete(dataTrailingAverage, 0)
+        endwhile
+
+        # Add the average downloads field
         if rowDate >= minDate:
-            averageDownloadsData = downloadsDataAverage(data, trailingDays, false, rowDate)
-            averageDownloads = objectGet(arrayGet(averageDownloadsData, 0), 'Downloads')
+            averageDownloads = trailingAverageSum / trailingDays
             objectSet(row, 'Average Downloads', averageDownloads)
         endif
     endfor
@@ -327,12 +341,12 @@ function downloadsDataAverage(data, trailingDays, monthly, maxDate):
             {'field': 'Downloads', 'function': 'sum'} \
         ] \
     })
-    dataCalculatedField(dataAverage, 'Downloads', 'Downloads / trailingDays', {'trailingDays': trailingDays})
-
-    # Monthly average?
-    if monthly:
-        dataCalculatedField(dataAverage, 'Downloads', 'Downloads * 30')
-    endif
+    dataCalculatedField( \
+        dataAverage, \
+        'Downloads', \
+        'if(monthly, Downloads * 30, Downloads) / trailingDays', \
+        {'trailingDays': trailingDays, 'monthly': monthly} \
+    )
 
     return dataAverage
 endfunction
