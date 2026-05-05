@@ -4,7 +4,7 @@ include <draw.bare>
 
 function closingMain():
     # Compute the days to closing
-    closingDatetime = datetimeNew(2026, 5, 27)
+    closingDatetime = datetimeNew(2026, 5, 29)
     daysToClose = (closingDatetime - datetimeToday()) / (24 * 60 * 60 * 1000)
 
     # Compute the sign size
