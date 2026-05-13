@@ -12,6 +12,10 @@ help:
 SRC_DIR ?= ../..
 
 
+# The make -j argument
+MAKEJ ?= -j
+
+
 # Project rule header function - args are (project_type, project_name, rule)
 define PROJECT_RULE_HEADER
 .PHONY: _$(strip $(3))-$(strip $(2))
@@ -47,14 +51,14 @@ $(call PROJECT_RULE_HEADER, $(1), $(2), clean)
 # commit
 $(call PROJECT_RULE_HEADER, $(1), $(2), commit)
 	@if [ -f $$(SRC_DIR)/$(strip $(2))/Makefile ]; then \
-		$(MAKE)$(if $(findstring no-parallel, $(4)),, -j) -C $$(SRC_DIR)/$(strip $(2)) commit; \
+		$(MAKE)$(if $(findstring no-parallel, $(4)),, $(MAKEJ)) -C $$(SRC_DIR)/$(strip $(2)) commit; \
 	fi
 
 
 # gh-pages
 $(call PROJECT_RULE_HEADER, $(1), $(2), gh-pages)
 	@if [ -f $$(SRC_DIR)/$(strip $(2))/Makefile ]; then \
-		$(MAKE)$(if $(findstring no-parallel, $(4)),, -j) -C $$(SRC_DIR)/$(strip $(2)) gh-pages; \
+		$(MAKE)$(if $(findstring no-parallel, $(4)),, $(MAKEJ)) -C $$(SRC_DIR)/$(strip $(2)) gh-pages; \
 	fi
 
 
