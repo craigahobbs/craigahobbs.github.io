@@ -1,970 +1,1221 @@
-include <args.bare>
+# Tunguska Event Simulation - a BareScript sample application
+#
+# A stylized animation of the 1908 Tunguska airburst: title screen with a
+# streaking comet, asteroid descent into a taiga forest, mid-air explosion,
+# expanding shockwave that flattens the trees, then an aftermath panel of
+# historical statistics. Drawn entirely with draw.bare's imperative SVG API.
+#
+# Architecture
+# ------------
+#  - tunguskaMain is the entry point; it's invoked from tunguska.md's
+#    markdown-script block after this file is included.
+#  - tunguskaInit builds the simulation state (forest, stars) and stores it
+#    in the global tState. Note the use of systemGlobalSet - assigning to
+#    tState from *inside* a function would create a local instead.
+#  - tunguskaTick is the per-frame update. It mutates state, re-renders, and
+#    reschedules itself via windowSetTimeout while the phase is animating.
+#  - tunguskaRender redraws the entire scene every frame: drawNew, then a
+#    sequence of draw* calls, then drawRender at the end.
+#  - tunguskaKeyDown and tunguskaResize both call scheduleTickIfAnimating
+#    because the MarkdownUp runtime clears any pending timer after every
+#    event callback; we have to keep re-arming it for the loop to survive.
+#
+# Living-across-renders
+# ---------------------
+# MarkdownUp rebuilds the BareScript globals scope on every page render
+# (hamburger menu toggle, in-session refresh, hash-param change, etc.), and
+# tears down the DOM around it. Two tricks keep the simulation alive:
+#  - State persistence: tunguskaRender JSON-serializes tState to sessionStorage
+#    on every render, and tunguskaMain reads it back at module load. This is
+#    what survives a hamburger click - systemGlobal* values do not.
+#  - DOM stability during simulation: tunguskaRender calls documentSetReset
+#    with the burger's "_top" anchor id. That tells MarkdownUp to preserve
+#    everything up to and including that element across per-tick re-renders,
+#    so the hamburger menu's DOM nodes stay clickable while the simulation
+#    is animating at 25 fps.
+#
+# BareScript reminders for new readers
+# ------------------------------------
+#  - Objects: construct with objectNew('k', v, 'k', v, ...) and access with
+#    objectGet / objectSet. There is no obj.k or obj['k'] syntax.
+#  - Arrays: arrayNew, arrayPush, arrayGet, arrayLength. Iterate with
+#    `for value in array:` (or `for value, ix in array:` for an index).
+#  - A trailing `\` continues a statement onto the next line - heavily used
+#    in this file's multi-key objectNew calls.
+#  - include <draw.bare> parses draw.bare's contents directly into global
+#    scope. There is no module/import system; every function is a global.
+
+
 include <draw.bare>
 
 
-# Tunguska Event Simulation main entry point
+# Forest size, star count, and per-frame interval
+tNumTrees = 80
+tNumStars = 90
+tFrameMs = 40
+
+
+# Design canvas dimensions - the reference frame for sceneScale. Shape sizes
+# in this file are calibrated against min(tDesignW, tDesignH) and scale
+# uniformly with min(actual W, actual H), so individual shapes never distort.
+tDesignW = 900
+tDesignH = 600
+
+
+# Scene layout - positions inside the scene as ratios of W or H. Shared by
+# the scene-metric helpers below AND by the tree-leaning logic in tunguskaInit
+# so the trees always lean away from wherever the explosion is positioned.
+tExplosionXRatio = 0.55
+tExplosionYRatio = 0.28
+tGroundYRatio = 0.78
+tAsteroidStartXRatio = 0.09
+tAsteroidStartYRatio = -0.05
+
+
+# Global simulation state. Initialized to null at module load; tunguskaInit
+# fills it in on the first call to tunguskaMain (or restoration from
+# sessionStorage may fill it earlier).
+tState = null
+
+
+# sessionStorage key used to persist tState across MarkdownUp re-renders and
+# same-session page refreshes. MarkdownUp builds a fresh BareScript globals
+# scope on every render (hamburger menu, etc.), so without this the script
+# would always restart from the title screen.
+tStateStorageKey = 'tunguskaState'
+
+
+# Entry point, invoked from the markdown-script block in tunguska.md. On the
+# very first call we try to restore prior state from sessionStorage (so the
+# hamburger menu and same-session refreshes don't snap us back to the title);
+# otherwise we initialize fresh. Either way we wire up event handlers.
 function tunguskaMain():
-    # Parse arguments
-    args = argsParse(tunguskaArguments)
-    phase = objectGet(args, 'phase')
-
-    # Handle reset phase
-    if phase == 'reset':
-        sessionStorageRemove('tunguskaState')
-        windowSetLocation(argsURL(tunguskaArguments, {'phase': 'simulation'}))
-        return
-    endif
-
-    # Set the title
-    documentSetTitle('Tunguska Event Simulation')
-
-    # Render the application
-    tunguskaRender(args)
-
-    # Set the resize handler
-    windowSetResize(systemPartial(tunguskaRender, args))
-
-    # Set keyboard handler
-    documentSetKeyDown(systemPartial(tunguskaKeyHandler, args))
-endfunction
-
-
-# Render the application phase
-function tunguskaRender(args):
-    # Initialize or get the simulation state
-    state = tunguskaGetState()
-    if state == null:
-        state = tunguskaInitState()
-        tunguskaSaveState(state)
-    endif
-
-    # Render the phase
-    phase = objectGet(args, 'phase')
-    if phase == 'simulation':
-        tunguskaRunSimulation(state, args)
-    elif phase == 'aftermath':
-        tunguskaShowAftermath(state)
-    else: # phase == 'intro':
-        tunguskaShowIntro(state)
-    endif
-endfunction
-
-
-# Application arguments
-tunguskaArguments = [ \
-    {'name': 'phase', 'default': 'intro'} \
-]
-
-
-# Initialize simulation state
-function tunguskaInitState():
-    # Create initial state with dynamic dimensions
-    width = windowWidth() - 3 * documentFontSize()
-    height = windowHeight() - 3 * documentFontSize()
-
-    # Ensure minimum dimensions
-    width = mathMax(600, width)
-    height = mathMax(400, height)
-
-    treeCount = 80
-
-    # Generate forest of trees
-    trees = []
-    ix = 0
-    while ix < treeCount:
-        x = mathRandom() * width
-        y = height - 150 + mathRandom() * 100
-        size = 20 + mathRandom() * 15
-        arrayPush(trees, { \
-            'x': x, \
-            'y': y, \
-            'size': size, \
-            'standing': true, \
-            'fallAngle': 0, \
-            'fallProgress': 0 \
-        })
-        ix = ix + 1
-    endwhile
-
-    # Generate fixed star positions
-    stars = []
-    starCount = 50
-    ix = 0
-    while ix < starCount:
-        x = mathRandom() * width
-        y = mathRandom() * (height / 2)
-        size = mathRandom() * 2
-        arrayPush(stars, {'x': x, 'y': y, 'size': size})
-        ix = ix + 1
-    endwhile
-
-    # Initialize particles for explosion effects
-    particles = []
-
-    return { \
-        'width': width, \
-        'height': height, \
-        'groundThickness': 150, \
-        'asteroidX': width / 2, \
-        'asteroidY': -50, \
-        'asteroidSize': 30, \
-        'explosionX': width / 2, \
-        'explosionY': height / 3, \
-        'explosionRadius': 0, \
-        'explosionMaxRadius': mathMin(width, height) * 0.6, \
-        'shockwaveRadius': 0, \
-        'phase': 'falling', \
-        'trees': trees, \
-        'stars': stars, \
-        'particles': particles, \
-        'frameCount': 0, \
-        'screenShake': 0 \
-    }
-endfunction
-
-
-# Resize handler for intro screen
-function tunguskaResizeHandler():
-    state = tunguskaGetState()
-    if state != null:
-        tunguskaShowIntro(state)
-    endif
-endfunction
-
-
-# Show introduction screen
-function tunguskaShowIntro(state):
-    # Update dimensions if needed
-    currentWidth = windowWidth() - 3 * documentFontSize()
-    currentHeight = windowHeight() - 3 * documentFontSize()
-    currentWidth = mathMax(600, currentWidth)
-    currentHeight = mathMax(400, currentHeight)
-
-    if objectGet(state, 'width') != currentWidth || objectGet(state, 'height') != currentHeight:
-        state = tunguskaResizeState(state, currentWidth, currentHeight)
-        tunguskaSaveState(state)
-    endif
-
-    width = objectGet(state, 'width')
-    height = objectGet(state, 'height')
-
-    # Create drawing
-    drawNew(width, height)
-
-    # Draw night sky background
-    drawStyle('none', 0, '#000033')
-    drawRect(0, 0, width, height)
-
-    # Draw fixed stars
-    tunguskaDrawStars(state, width, height)
-
-    # Draw title and information
-    drawTextStyle(48, 'white', true)
-    drawText('TUNGUSKA EVENT', width / 2, height / 3)
-
-    drawTextStyle(24, '#cccccc')
-    drawText('June 30, 1908', width / 2, height / 3 + 60)
-    drawText('Siberia, Russia', width / 2, height / 3 + 90)
-
-    drawTextStyle(18, '#aaaaaa')
-    drawText('A massive explosion flattened 2,150 km² of forest', width / 2, height / 2 + 30)
-    drawText('Estimated 15 megaton blast from an asteroid airburst', width / 2, height / 2 + 60)
-
-    drawTextStyle(20, 'yellow')
-    drawText('Press SPACE to begin simulation', width / 2, height - 100)
-
-    # Draw start link
-    drawTextStyle(20, 'yellow')
-    drawText('Start Simulation', width / 2, height - 50)
-    drawOnClick(tunguskaStartHandler)
-
-    # Render the drawing
-    drawRender()
-endfunction
-
-
-# Render the simulation (resize and draw only)
-function tunguskaRenderSimulation(state):
-    # Update dimensions if needed
-    currentWidth = windowWidth() - 3 * documentFontSize()
-    currentHeight = windowHeight() - 3 * documentFontSize()
-    currentWidth = mathMax(600, currentWidth)
-    currentHeight = mathMax(400, currentHeight)
-
-    if objectGet(state, 'width') != currentWidth || objectGet(state, 'height') != currentHeight:
-        state = tunguskaResizeState(state, currentWidth, currentHeight)
-        tunguskaSaveState(state)
-    endif
-
-    width = objectGet(state, 'width')
-    height = objectGet(state, 'height')
-
-    # Calculate screen shake offset
-    shakeX = 0
-    shakeY = 0
-    screenShake = objectGet(state, 'screenShake')
-    if screenShake > 0:
-        shakeX = (mathRandom() - 0.5) * screenShake
-        shakeY = (mathRandom() - 0.5) * screenShake
-    endif
-
-    # Create drawing once
-    drawNew(width, height)
-
-    # Draw the simulation with shake offset
-    tunguskaDrawSimulation(state, shakeX, shakeY)
-endfunction
-
-
-# Run the simulation
-function tunguskaRunSimulation(state, args):
-    frame = objectGet(state, 'frameCount')
-
-    # Update simulation based on frame
-    tunguskaUpdateSimulation(state, frame)
-
-    # Render the simulation
-    tunguskaRenderSimulation(state)
-
-    # Continue animation or transition to aftermath
-    phase = objectGet(state, 'phase')
-    if phase != 'complete':
-        objectSet(state, 'frameCount', frame + 1)
-        tunguskaSaveState(state)
-        windowSetTimeout(systemPartial(tunguskaRunSimulation, state, args), 50)
-    else:
-        windowSetTimeout(tunguskaShowAftermathTransition, 2000)
-    endif
-endfunction
-
-
-# Resize state for simulation
-function tunguskaResizeState(state, newWidth, newHeight):
-    oldWidth = objectGet(state, 'width')
-    oldHeight = objectGet(state, 'height')
-
-    # Scale all positions proportionally
-    scaleX = newWidth / oldWidth
-    scaleY = newHeight / oldHeight
-    scaleMin = mathMin(scaleX, scaleY)
-
-    # Update dimensions
-    objectSet(state, 'width', newWidth)
-    objectSet(state, 'height', newHeight)
-
-    # Update explosion position and max radius
-    explosionX = objectGet(state, 'explosionX')
-    explosionY = objectGet(state, 'explosionY')
-    objectSet(state, 'explosionX', explosionX * scaleX)
-    objectSet(state, 'explosionY', explosionY * scaleY)
-    objectSet(state, 'explosionMaxRadius', mathMin(newWidth, newHeight) * 0.6)
-
-    # Scale asteroid position and size
-    asteroidX = objectGet(state, 'asteroidX')
-    asteroidY = objectGet(state, 'asteroidY')
-    asteroidSize = objectGet(state, 'asteroidSize')
-    objectSet(state, 'asteroidX', asteroidX * scaleX)
-    objectSet(state, 'asteroidY', asteroidY * scaleY)
-    objectSet(state, 'asteroidSize', asteroidSize * scaleMin)
-
-    # Scale trees
-    trees = objectGet(state, 'trees')
-    for tree in trees:
-        x = objectGet(tree, 'x')
-        y = objectGet(tree, 'y')
-        size = objectGet(tree, 'size')
-        objectSet(tree, 'x', x * scaleX)
-        objectSet(tree, 'y', y * scaleY)
-        objectSet(tree, 'size', size * scaleMin)
-    endfor
-
-    # Scale stars
-    stars = objectGet(state, 'stars')
-    for star in stars:
-        x = objectGet(star, 'x')
-        y = objectGet(star, 'y')
-        size = objectGet(star, 'size')
-        objectSet(star, 'x', x * scaleX)
-        objectSet(star, 'y', y * scaleY)
-        objectSet(star, 'size', size * scaleMin)
-    endfor
-
-    # Scale particles
-    particles = objectGet(state, 'particles')
-    for particle in particles:
-        x = objectGet(particle, 'x')
-        y = objectGet(particle, 'y')
-        vx = objectGet(particle, 'vx')
-        vy = objectGet(particle, 'vy')
-        size = objectGet(particle, 'size')
-        objectSet(particle, 'x', x * scaleX)
-        objectSet(particle, 'y', y * scaleY)
-        objectSet(particle, 'vx', vx * scaleMin)
-        objectSet(particle, 'vy', vy * scaleMin)
-        objectSet(particle, 'size', size * scaleMin)
-    endfor
-
-    # Scale ground thickness
-    groundThickness = objectGet(state, 'groundThickness')
-    objectSet(state, 'groundThickness', groundThickness * scaleY)
-
-    # Scale shockwave
-    shockwaveRadius = objectGet(state, 'shockwaveRadius')
-    objectSet(state, 'shockwaveRadius', shockwaveRadius * scaleMin)
-
-    # Scale explosion
-    explosionRadius = objectGet(state, 'explosionRadius')
-    objectSet(state, 'explosionRadius', explosionRadius * scaleMin)
-
-    return state
-endfunction
-
-
-# Draw the entire simulation
-function tunguskaDrawSimulation(state, offsetX, offsetY):
-    width = objectGet(state, 'width')
-    height = objectGet(state, 'height')
-    groundThickness = objectGet(state, 'groundThickness')
-
-    # Draw sky gradient
-    tunguskaDrawSky(width, height, state, groundThickness)
-
-    # Draw ground
-    drawStyle('none', 0, '#2d1810')
-    drawRect(0, height - groundThickness, width, groundThickness)
-
-    # Draw trees with offset for shake effect
-    tunguskaDrawTrees(state, offsetX, offsetY)
-
-    # Draw asteroid or explosion with offset
-    phase = objectGet(state, 'phase')
-    if phase == 'falling':
-        tunguskaDrawAsteroid(state, offsetX, offsetY)
-    elif phase == 'explosion':
-        tunguskaDrawExplosion(state, offsetX, offsetY)
-        tunguskaDrawParticles(state, offsetX, offsetY)
-    elif phase == 'shockwave':
-        tunguskaDrawShockwave(state, offsetX, offsetY)
-        tunguskaDrawParticles(state, offsetX, offsetY)
-    endif
-
-    # Render the drawing
-    drawRender()
-endfunction
-
-
-# Update simulation state based on frame
-function tunguskaUpdateSimulation(state, frame):
-    phase = objectGet(state, 'phase')
-
-    if phase == 'falling':
-        # Move asteroid down with acceleration
-        asteroidY = objectGet(state, 'asteroidY')
-        speed = 5 + (asteroidY + 50) / 50  # Accelerate as it falls
-        asteroidY = asteroidY + speed
-        objectSet(state, 'asteroidY', asteroidY)
-
-        # Add slight wobble to asteroid path
-        asteroidX = objectGet(state, 'asteroidX')
-        asteroidX = asteroidX + mathSin(frame / 5) * 2
-        objectSet(state, 'asteroidX', asteroidX)
-
-        # Check if asteroid reached explosion height
-        if asteroidY >= objectGet(state, 'explosionY'):
-            objectSet(state, 'phase', 'explosion')
-            objectSet(state, 'explosionRadius', 10)
-            objectSet(state, 'screenShake', 20)
-
-            # Create explosion particles
-            tunguskaCreateExplosionParticles(state)
-        endif
-
-    elif phase == 'explosion':
-        # Expand explosion with varying speed
-        radius = objectGet(state, 'explosionRadius')
-        expansionRate = 12 - radius / 20  # Slow down as it expands
-        radius = radius + mathMax(4, expansionRate)
-        objectSet(state, 'explosionRadius', radius)
-
-        # Reduce screen shake
-        screenShake = objectGet(state, 'screenShake')
-        objectSet(state, 'screenShake', mathMax(0, screenShake - 1))
-
-        # Transition to shockwave
-        if radius > 100:
-            objectSet(state, 'phase', 'shockwave')
-            objectSet(state, 'shockwaveRadius', radius)
-        endif
-
-    elif phase == 'shockwave':
-        # Expand shockwave
-        radius = objectGet(state, 'shockwaveRadius')
-        radius = radius + 12
-        objectSet(state, 'shockwaveRadius', radius)
-
-        # Knock down trees hit by shockwave
-        tunguskaKnockDownTrees(state, radius)
-
-        # Check if complete
-        if radius > objectGet(state, 'explosionMaxRadius') + 100:
-            objectSet(state, 'phase', 'complete')
-        endif
-
-    endif
-
-    # Update falling trees
-    tunguskaUpdateFallingTrees(state)
-
-    # Update particles
-    tunguskaUpdateParticles(state)
-endfunction
-
-
-# Create explosion particles
-function tunguskaCreateExplosionParticles(state):
-    particles = objectGet(state, 'particles')
-    explosionX = objectGet(state, 'explosionX')
-    explosionY = objectGet(state, 'explosionY')
-
-    # Create multiple layers of particles
-    particleCount = 50
-    ix = 0
-    while ix < particleCount:
-        angle = mathRandom() * 2 * mathPi()
-        speed = 2 + mathRandom() * 8
-        size = 2 + mathRandom() * 6
-
-        # Determine particle color (hot to cool)
-        colorRand = mathRandom()
-        if colorRand < 0.3:
-            color = '#ffffff'  # White hot
-        elif colorRand < 0.6:
-            color = '#ffff00'  # Yellow
-        elif colorRand < 0.8:
-            color = '#ff6600'  # Orange
+    documentSetTitle('The Tunguska Event')
+
+    if tState == null:
+        # Try to restore. jsonParse returns null on invalid JSON; we also
+        # do a minimal shape check so a truncated or stale value can't
+        # leave us with a half-built state object.
+        saved = jsonParse(sessionStorageGet(tStateStorageKey))
+        if saved != null && objectGet(saved, 'phase') != null:
+            systemGlobalSet('tState', saved)
         else:
-            color = '#ff0000'  # Red
+            tunguskaInit()
         endif
-
-        arrayPush(particles, { \
-            'x': explosionX, \
-            'y': explosionY, \
-            'vx': mathCos(angle) * speed, \
-            'vy': mathSin(angle) * speed, \
-            'size': size, \
-            'color': color, \
-            'life': 1.0, \
-            'decay': 0.02 + mathRandom() * 0.03 \
-        })
-        ix = ix + 1
-    endwhile
-endfunction
-
-
-# Update particles
-function tunguskaUpdateParticles(state):
-    particles = objectGet(state, 'particles')
-    newParticles = []
-
-    for particle in particles:
-        # Update position
-        x = objectGet(particle, 'x')
-        y = objectGet(particle, 'y')
-        vx = objectGet(particle, 'vx')
-        vy = objectGet(particle, 'vy')
-
-        x = x + vx
-        y = y + vy
-
-        # Apply gravity and drag
-        vy = vy + 0.2  # Gravity
-        vx = vx * 0.98  # Air resistance
-        vy = vy * 0.98
-
-        # Update life
-        life = objectGet(particle, 'life')
-        decay = objectGet(particle, 'decay')
-        life = life - decay
-
-        # Keep particle if still alive
-        if life > 0:
-            objectSet(particle, 'x', x)
-            objectSet(particle, 'y', y)
-            objectSet(particle, 'vx', vx)
-            objectSet(particle, 'vy', vy)
-            objectSet(particle, 'life', life)
-            arrayPush(newParticles, particle)
-        endif
-    endfor
-
-    objectSet(state, 'particles', newParticles)
-endfunction
-
-
-# Draw particles with offset
-function tunguskaDrawParticles(state, offsetX, offsetY):
-    particles = objectGet(state, 'particles')
-
-    for particle in particles:
-        x = objectGet(particle, 'x') + offsetX
-        y = objectGet(particle, 'y') + offsetY
-        size = objectGet(particle, 'size')
-        color = objectGet(particle, 'color')
-        life = objectGet(particle, 'life')
-
-        # Apply opacity based on life
-        opacityInt = mathRound(life * 15)
-        opacityHex = stringCharAt('0123456789abcdef', opacityInt)
-
-        drawStyle('none', 0, color + opacityHex + '0')
-        drawCircle(x, y, size * life)
-    endfor
-endfunction
-
-
-# Knock down trees within shockwave radius
-function tunguskaKnockDownTrees(state, radius):
-    trees = objectGet(state, 'trees')
-    explosionX = objectGet(state, 'explosionX')
-    explosionY = objectGet(state, 'explosionY')
-
-    for tree in trees:
-        if objectGet(tree, 'standing'):
-            treeX = objectGet(tree, 'x')
-            treeY = objectGet(tree, 'y')
-
-            # Calculate distance from explosion center
-            dx = treeX - explosionX
-            dy = treeY - explosionY
-            distance = mathSqrt(dx * dx + dy * dy)
-
-            # Knock down if within radius
-            if distance < radius:
-                objectSet(tree, 'standing', false)
-                # Fall away from explosion
-                angle = mathAtan2(dy, dx)
-                objectSet(tree, 'fallAngle', angle)
-                objectSet(tree, 'fallProgress', 0)
-            endif
-        endif
-    endfor
-endfunction
-
-
-# Update falling trees animation
-function tunguskaUpdateFallingTrees(state):
-    trees = objectGet(state, 'trees')
-
-    for tree in trees:
-        if !objectGet(tree, 'standing'):
-            progress = objectGet(tree, 'fallProgress')
-            if progress < 1:
-                # Use easing for more realistic fall
-                progress = mathMin(1, progress + 0.08 * (2 - progress))
-                objectSet(tree, 'fallProgress', progress)
-            endif
-        endif
-    endfor
-endfunction
-
-
-# Draw fixed stars from state
-function tunguskaDrawStars(state, width, height):
-    stars = objectGet(state, 'stars')
-    drawStyle('none', 0, 'white')
-    for star in stars:
-        x = objectGet(star, 'x')
-        y = objectGet(star, 'y')
-        size = objectGet(star, 'size')
-        # Ensure stars stay within bounds
-        if x < width && y < height:
-            drawCircle(x, y, size)
-        endif
-    endfor
-endfunction
-
-
-# Draw sky gradient
-function tunguskaDrawSky(width, height, state, groundThickness):
-    phase = objectGet(state, 'phase')
-
-    # Different sky colors based on phase
-    if phase == 'explosion' || phase == 'shockwave':
-        # Orange/red glow during explosion
-        intensity = if(phase == 'explosion', 1, mathMax(0, 1 - objectGet(state, 'shockwaveRadius') / 400))
-        rValue = mathRound(50 + 150 * intensity)
-        gValue = mathRound(20 + 50 * intensity)
-        skyColor = 'rgb(' + rValue + ',' + gValue + ',33)'
-    else:
-        skyColor = '#000033'
+        documentSetKeyDown(tunguskaKeyDown)
+        windowSetResize(tunguskaResize)
     endif
 
-    drawStyle('none', 0, skyColor)
-    drawRect(0, 0, width, height - groundThickness)
+    tunguskaRender()
+    scheduleTickIfAnimating()
+endfunction
 
-    # Draw stars if not too bright
-    if phase == 'falling' || phase == 'complete':
-        tunguskaDrawStars(state, width, height)
+
+# True when a tick should run. Note 'title' is NOT here: title-screen star
+# twinkle is delegated to browser-native SVG <animate> elements baked into
+# each star (see drawTwinkleStar). That keeps the title's DOM stable across
+# the page lifetime so the on-screen click prompts stay clickable -
+# elementModelRender clears the entire SVG subtree on every render, which
+# would otherwise tear down the click target before mouseup fires.
+function isAnimating(phase):
+    return phase == 'falling' || phase == 'explode' || phase == 'shockwave' || phase == 'settle'
+endfunction
+
+
+# Re-arm the per-frame tick if we're in an animating phase. MarkdownUp's runtime
+# clears any pending windowSetTimeout after each event callback, so every event
+# handler (mount, tick, keydown, resize) has to call this to keep the loop alive.
+function scheduleTickIfAnimating():
+    if isAnimating(objectGet(tState, 'phase')):
+        windowSetTimeout(tunguskaTick, tFrameMs)
     endif
 endfunction
 
 
-# Draw trees with offset
-function tunguskaDrawTrees(state, offsetX, offsetY):
-    trees = objectGet(state, 'trees')
-
-    # Sort trees by y position for depth
-    sortedTrees = arraySort(trees, tunguskaTreeSort)
-
-    for tree in sortedTrees:
-        x = objectGet(tree, 'x') + offsetX
-        y = objectGet(tree, 'y') + offsetY
-        size = objectGet(tree, 'size')
-        standing = objectGet(tree, 'standing')
-
-        if standing:
-            # Draw standing evergreen tree
-            tunguskaDrawStandingTree(x, y, size)
-        else:
-            # Draw fallen tree
-            fallAngle = objectGet(tree, 'fallAngle')
-            fallProgress = objectGet(tree, 'fallProgress')
-            tunguskaDrawFallenTree(x, y, size, fallAngle, fallProgress)
-        endif
-    endfor
-endfunction
-
-
-# Tree sorting function
-function tunguskaTreeSort(a, b):
-    return systemCompare(objectGet(a, 'y'), objectGet(b, 'y'))
-endfunction
-
-
-# Draw a standing evergreen tree
-function tunguskaDrawStandingTree(x, y, size):
-    # Tree trunk
-    drawStyle('none', 0, '#4a2c17')
-    drawRect(x - size / 10, y, size / 5, size / 3)
-
-    # Tree layers (triangles as paths)
-    drawStyle('none', 0, '#0d5c0d')
-
-    # Bottom layer
-    drawMove(x - size / 2, y)
-    drawLine(x, y - size / 2)
-    drawLine(x + size / 2, y)
-    drawClose()
-
-    # Middle layer
-    drawStyle('none', 0, '#0f6f0f')
-    drawMove(x - size / 2.5, y - size / 3)
-    drawLine(x, y - size * 0.7)
-    drawLine(x + size / 2.5, y - size / 3)
-    drawClose()
-
-    # Top layer
-    drawStyle('none', 0, '#118511')
-    drawMove(x - size / 3, y - size / 2)
-    drawLine(x, y - size)
-    drawLine(x + size / 3, y - size / 2)
-    drawClose()
-endfunction
-
-
-# Draw a fallen tree
-function tunguskaDrawFallenTree(x, y, size, angle, progress):
-    # Simplified fallen tree - just a brown rectangle
-    drawStyle('none', 0, '#3a2010')
-
-    # Calculate end position based on fall angle and progress
-    endX = x + mathCos(angle) * size * progress
-    endY = y + mathSin(angle) * size * progress / 2
-
-    # Draw fallen trunk
-    drawMove(x, y)
-    drawLine(endX, endY)
-    drawLine(endX + 3, endY + 3)
-    drawLine(x + 3, y + 3)
-    drawClose()
-
-    # Draw some fallen branches
-    if progress > 0.5:
-        drawStyle('none', 0, '#0d5c0d')
-        branchX = x + (endX - x) * 0.5
-        branchY = y + (endY - y) * 0.5
-        drawCircle(branchX, branchY, size / 4)
-    endif
-endfunction
-
-
-# Draw the asteroid with offset
-function tunguskaDrawAsteroid(state, offsetX, offsetY):
-    x = objectGet(state, 'asteroidX') + offsetX
-    y = objectGet(state, 'asteroidY') + offsetY
-    size = objectGet(state, 'asteroidSize')
-    frame = objectGet(state, 'frameCount')
-
-    # Draw glowing asteroid with pulsing effect
-    glowSize = size * (1.2 + mathSin(frame / 3) * 0.1)
-
-    # Outer glow
-    drawStyle('none', 0, '#ff330020')
-    drawCircle(x, y, glowSize * 2)
-
-    # Middle glow
-    drawStyle('none', 0, '#ff6600')
-    drawCircle(x, y, size)
-
-    # Inner hot core
-    drawStyle('none', 0, '#ffff00')
-    drawCircle(x, y, size * 0.6)
-
-    # Bright center
-    drawStyle('none', 0, '#ffffff')
-    drawCircle(x, y, size * 0.3)
-
-    # Enhanced trail with sparks
-    drawStyle('none', 0, '#ff440080')
-    drawMove(x, y - size)
-    drawLine(x - 15, y - size * 4)
-    drawLine(x + 15, y - size * 4)
-    drawClose()
-
-    # Trail sparks
-    sparkCount = 5
-    ix = 0
-    while ix < sparkCount:
-        sparkY = y - size - mathRandom() * size * 3
-        sparkX = x + (mathRandom() - 0.5) * 20
-        drawStyle('none', 0, '#ffff0080')
-        drawCircle(sparkX, sparkY, 1 + mathRandom() * 2)
-        ix = ix + 1
-    endwhile
-endfunction
-
-
-# Draw the explosion with offset
-function tunguskaDrawExplosion(state, offsetX, offsetY):
-    x = objectGet(state, 'explosionX') + offsetX
-    y = objectGet(state, 'explosionY') + offsetY
-    radius = objectGet(state, 'explosionRadius')
-    frame = objectGet(state, 'frameCount')
-
-    # Multiple layers for depth
-    # Outer shock ring
-    drawStyle('none', 0, '#ff000015')
-    drawCircle(x, y, radius * 1.5)
-
-    # Outer explosion ring with gradient effect
-    drawStyle('none', 0, '#ff000040')
-    drawCircle(x, y, radius)
-
-    # Secondary ring
-    drawStyle('none', 0, '#ff330050')
-    drawCircle(x, y, radius * 0.85)
-
-    # Middle explosion ring
-    drawStyle('none', 0, '#ff6600')
-    drawCircle(x, y, radius * 0.7)
-
-    # Inner explosion core with pulsing
-    pulseSize = radius * 0.4 * (1 + mathSin(frame / 2) * 0.1)
-    drawStyle('none', 0, '#ffff00')
-    drawCircle(x, y, pulseSize)
-
-    # Bright white center
-    drawStyle('none', 0, '#ffffff')
-    drawCircle(x, y, radius * 0.2)
-
-    # Radial burst lines
-    lineCount = 12
-    ix = 0
-    while ix < lineCount:
-        angle = (ix / lineCount) * 2 * mathPi()
-        lineLength = radius * (0.8 + mathRandom() * 0.4)
-        drawStyle('#ffff0060', 2, 'none')
-        drawMove(x, y)
-        drawLine(x + mathCos(angle) * lineLength, y + mathSin(angle) * lineLength)
-        ix = ix + 1
-    endwhile
-endfunction
-
-
-# Draw the shockwave with offset
-function tunguskaDrawShockwave(state, offsetX, offsetY):
-    x = objectGet(state, 'explosionX') + offsetX
-    y = objectGet(state, 'explosionY') + offsetY
-    radius = objectGet(state, 'shockwaveRadius')
-
-    # Calculate opacity based on expansion
-    opacity = mathMax(0, 1 - radius / objectGet(state, 'explosionMaxRadius'))
-    opacityInt = mathRound(opacity * 15)
-    opacityHex = stringCharAt('0123456789abcdef', opacityInt)
-
-    # Draw multiple shockwave rings for depth
-    # Leading edge
-    drawStyle('#ffffff' + opacityHex + '0', 4, 'none')
-    drawCircle(x, y, radius)
-
-    # Secondary ring
-    if radius > 20:
-        drawStyle('#aaaaaa' + opacityHex + '0', 2, 'none')
-        drawCircle(x, y, radius - 10)
-    endif
-
-    # Distortion effect behind shockwave
-    if radius < 300:
-        distortionOpacity = mathRound(opacity * 8)
-        distortionHex = stringCharAt('0123456789abcdef', distortionOpacity)
-        drawStyle('none', 0, '#ffffff' + '0' + distortionHex)
-        drawCircle(x, y, radius * 0.8)
-    endif
-
-    # Draw debris and dust
-    if radius < 250:
-        debrisCount = 16
-        angle = 0
-        while angle < 360:
-            radians = angle * mathPi() / 180
-            wobble = mathSin(angle * 3) * 10
-            debrisX = x + mathCos(radians) * (radius * 0.8 + wobble)
-            debrisY = y + mathSin(radians) * (radius * 0.8 + wobble)
-            debrisSize = 3 + mathRandom() * 4
-            drawStyle('none', 0, '#88440040')
-            drawCircle(debrisX, debrisY, debrisSize)
-            angle = angle + 360 / debrisCount
-        endwhile
-    endif
-endfunction
-
-
-# Show aftermath screen
-function tunguskaShowAftermath(state):
-    # Update dimensions if needed
-    currentWidth = windowWidth() - 3 * documentFontSize()
-    currentHeight = windowHeight() - 3 * documentFontSize()
-    currentWidth = mathMax(600, currentWidth)
-    currentHeight = mathMax(400, currentHeight)
-
-    if objectGet(state, 'width') != currentWidth || objectGet(state, 'height') != currentHeight:
-        state = tunguskaResizeState(state, currentWidth, currentHeight)
-        tunguskaSaveState(state)
-    endif
-
-    width = objectGet(state, 'width')
-    height = objectGet(state, 'height')
-    groundThickness = objectGet(state, 'groundThickness')
-
-    # Draw the devastated landscape
-    drawNew(width, height)
-
-    # Dark sky
-    drawStyle('none', 0, '#000033')
-    drawRect(0, 0, width, height)
-    tunguskaDrawStars(state, width, height)
-
-    # Draw ground
-    drawStyle('none', 0, '#1a0f08')
-    drawRect(0, height - groundThickness, width, groundThickness)
-
-    # Draw all fallen trees (no offset needed here)
-    tunguskaDrawTrees(state, 0, 0)
-
-    # Add some lingering smoke effects
-    smokeCount = 5
-    ix = 0
-    while ix < smokeCount:
-        smokeX = mathRandom() * width
-        smokeY = height - 100 + mathRandom() * 50
-        drawStyle('none', 0, '#44444420')
-        drawCircle(smokeX, smokeY, 20 + mathRandom() * 30)
-        ix = ix + 1
+function tunguskaInit():
+    # Generate the forest in NORMALIZED coordinates: nx (0..1 across the scene)
+    # and nh (height as a fraction of the scene). The renderer multiplies by
+    # the current window W/H, so a resize re-positions every tree automatically.
+    trees = arrayNew()
+    spacing = 0.97 / tNumTrees
+    i = 0
+    while i < tNumTrees:
+        nx = 0.015 + i * spacing + (mathRandom() * spacing * 0.6 - spacing * 0.3)
+        nh = 0.065 + mathRandom() * 0.045
+        # Trees lean away from the explosion center.
+        leanDir = if(nx < tExplosionXRatio, -1, 1)
+        # Vary the green channel only (R and B are fixed) so the foliage gets
+        # subtle per-tree variation without leaving the dark-evergreen palette.
+        greenShade = mathFloor(70 + mathRandom() * 50)
+        arrayPush(trees, objectNew( \
+            'nx', nx, \
+            'nh', nh, \
+            'leanDir', leanDir, \
+            'fallen', false, \
+            'fallProgress', 0, \
+            'color', '#1a' + hex2(greenShade) + '2a' \
+        ))
+        i = i + 1
     endwhile
 
-    # Draw statistics overlay
-    drawStyle('none', 0, '#00000080')
-    drawRect(100, 100, width - 200, height - 200)
+    # Stars for the night sky. nx is normalized to the full width; ny is the
+    # fraction of the *sky band* (renderStars multiplies by sceneGroundY) and
+    # capped at 0.65 so stars don't appear too near the horizon. twinkleSpeed
+    # and twinklePhase drive a per-star sine wave (see renderStars).
+    stars = arrayNew()
+    i = 0
+    while i < tNumStars:
+        arrayPush(stars, objectNew( \
+            'nx', mathRandom(), \
+            'ny', mathRandom() * 0.65, \
+            'nr', 0.0008 + mathRandom() * 0.002, \
+            'twinkleSpeed', 0.05 + mathRandom() * 0.12, \
+            'twinklePhase', mathRandom() * mathPi() * 2 \
+        ))
+        i = i + 1
+    endwhile
 
-    drawTextStyle(36, 'white', true)
-    drawText('TUNGUSKA EVENT STATISTICS', width / 2, 150)
-
-    drawTextStyle(20, '#cccccc')
-    textY = 220
-    drawText('Date: June 30, 1908', width / 2, textY)
-    drawText('Location: Podkamennaya Tunguska River, Siberia', width / 2, textY + 35)
-    drawText('Explosion altitude: ~5-10 km', width / 2, textY + 70)
-    drawText('Energy released: ~15 megatons TNT', width / 2, textY + 105)
-    drawText('Forest flattened: 2,150 km²', width / 2, textY + 140)
-    drawText('Trees knocked down: ~80 million', width / 2, textY + 175)
-
-    drawTextStyle(20, 'yellow')
-    drawText('Press SPACE to restart • Press Q to quit', width / 2, height - 150)
-
-    # Draw restart and quit links
-    drawTextStyle(20, 'yellow')
-    drawText('Restart', width / 2 - 60, height - 100)
-    drawOnClick(tunguskaRestartHandler)
-    drawText('Quit', width / 2 + 60, height - 100)
-    drawOnClick(tunguskaQuitHandler)
-
-    # Render the drawing
-    drawRender()
+    # Initial state object. systemGlobalSet writes to the *module* global; a
+    # bare `tState = ...` here would create a local that died at function exit.
+    systemGlobalSet('tState', objectNew( \
+        'phase', 'title', \
+        'frame', 0, \
+        'trees', trees, \
+        'stars', stars, \
+        'debris', arrayNew(), \
+        'particles', arrayNew(), \
+        'asteroidT', 0, \
+        'flash', 0, \
+        'shockR', 0, \
+        'shakeAmp', 0 \
+    ))
 endfunction
 
 
-# Transition to aftermath
-function tunguskaShowAftermathTransition():
-    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'aftermath'}))
-endfunction
-
-
-# Start simulation handler
-function tunguskaStartHandler():
-    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'reset'}))
-endfunction
-
-
-# Restart simulation handler
-function tunguskaRestartHandler():
-    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'reset'}))
-endfunction
-
-
-# Quit to intro handler
-function tunguskaQuitHandler():
-    windowSetLocation(argsURL(tunguskaArguments, {'phase': 'intro'}))
-endfunction
-
-
-# Keyboard event handler
-function tunguskaKeyHandler(args, event):
+# Keyboard handler registered via documentSetKeyDown. Space advances title
+# -> falling and aftermath -> falling-fresh; 'q' from aftermath returns to
+# the title. The same transitions are exposed as on-screen clickable prompts;
+# both input paths delegate to the on*Click handlers below so the state
+# transition lives in exactly one place.
+function tunguskaKeyDown(event):
     key = objectGet(event, 'key')
-    phase = objectGet(args, 'phase')
+    phase = objectGet(tState, 'phase')
 
     if key == ' ':
-        if phase == 'intro' || phase == 'aftermath':
-            return windowSetLocation(argsURL(tunguskaArguments, {'phase': 'reset'}))
+        if phase == 'title':
+            onTitleStartClick()
+        elif phase == 'aftermath':
+            onAftermathRestartClick()
         endif
     elif key == 'q' || key == 'Q':
-        if phase == 'simulation' || phase == 'aftermath':
-            return windowSetLocation(argsURL(tunguskaArguments, {'phase': 'intro'}))
+        if phase == 'aftermath':
+            onAftermathQuitClick()
         endif
     endif
+
+    scheduleTickIfAnimating()
 endfunction
 
 
-# Save state to session storage
-function tunguskaSaveState(state):
-    sessionStorageSet('tunguskaState', jsonStringify(state))
+# Click handlers, wired to the on-screen prompts via drawOnClick. Defined here
+# (next to the keyboard handler) because they share the same transition logic.
+
+function onTitleStartClick():
+    tunguskaStart()
 endfunction
 
 
-# Get state from session storage
-function tunguskaGetState():
-    stateJSON = sessionStorageGet('tunguskaState')
-    if stateJSON != null:
-        return jsonParse(stateJSON)
+function onAftermathRestartClick():
+    tunguskaInit()
+    tunguskaStart()
+endfunction
+
+
+function onAftermathQuitClick():
+    tunguskaInit()
+    tunguskaRender()
+    scheduleTickIfAnimating()
+endfunction
+
+
+# Window resize handler. Just re-renders with current state - all sub-shapes
+# are positioned as ratios of W/H so they re-flow automatically.
+function tunguskaResize():
+    tunguskaRender()
+    scheduleTickIfAnimating()
+endfunction
+
+
+# Reset the per-run simulation fields and enter the falling phase. Trees and
+# stars persist across runs (they're built by tunguskaInit).
+function tunguskaStart():
+    objectSet(tState, 'phase', 'falling')
+    objectSet(tState, 'frame', 0)
+    objectSet(tState, 'asteroidT', 0)
+    objectSet(tState, 'flash', 0)
+    objectSet(tState, 'shockR', 0)
+    objectSet(tState, 'shakeAmp', 0)
+    objectSet(tState, 'debris', arrayNew())
+    objectSet(tState, 'particles', arrayNew())
+    tunguskaRender()
+    scheduleTickIfAnimating()
+endfunction
+
+
+# Per-frame update. Advances the phase state machine
+# (title -> falling -> explode -> shockwave -> settle -> aftermath), re-renders,
+# and reschedules itself if the phase is still animating.
+function tunguskaTick():
+    frame = objectGet(tState, 'frame') + 1
+    objectSet(tState, 'frame', frame)
+    phase = objectGet(tState, 'phase')
+
+    margin = 1.5 * documentFontSize()
+    W = mathMax(1, windowWidth() - 2 * margin)
+    H = mathMax(1, windowHeight() - 2 * margin)
+    eX = sceneExplosionX(W)
+    eY = sceneExplosionY(H)
+    gY = sceneGroundY(H)
+    maxR = mathSqrt(W * W + H * H)
+
+    if phase == 'falling':
+        # Update + spawn burning debris
+        debrisUpdate(W, H, eX, eY)
+
+        fallFrames = 55
+        t = frame / fallFrames
+        if t >= 1:
+            objectSet(tState, 'phase', 'explode')
+            objectSet(tState, 'frame', 0)
+            objectSet(tState, 'flash', 1)
+            objectSet(tState, 'asteroidT', 1)
+            objectSet(tState, 'shakeAmp', 16 * sceneScale(W, H))
+        else:
+            objectSet(tState, 'asteroidT', t)
+        endif
+    elif phase == 'explode':
+        explodeFrames = 18
+        # Spawn the particle burst on the very first frame of detonation
+        if frame == 1:
+            particlesSpawn()
+        endif
+        particlesUpdate()
+        objectSet(tState, 'shakeAmp', 16 * sceneScale(W, H) * (1 - frame / explodeFrames * 0.4))
+        if frame >= explodeFrames:
+            objectSet(tState, 'phase', 'shockwave')
+            objectSet(tState, 'frame', 0)
+            objectSet(tState, 'flash', 0.35)
+        else:
+            objectSet(tState, 'flash', 1 - frame / explodeFrames)
+        endif
+    elif phase == 'shockwave':
+        # Shockwave grows at constant velocity proportional to scene diagonal
+        speed = maxR / 80
+        radius = frame * speed
+        objectSet(tState, 'shockR', radius)
+        objectSet(tState, 'flash', mathMax(0, 0.35 - frame * 0.02))
+        objectSet(tState, 'shakeAmp', mathMax(0, 10 * sceneScale(W, H) - frame * 0.18 * sceneScale(W, H)))
+        particlesUpdate()
+
+        # Knock down trees whose mid-trunk pixel position is inside the
+        # shockwave radius. Already-fallen trees just advance their fall
+        # animation toward flat (a quadratic ease-out at render time).
+        for tree in objectGet(tState, 'trees'):
+            if !objectGet(tree, 'fallen'):
+                tx = objectGet(tree, 'nx') * W
+                ty = gY - objectGet(tree, 'nh') * mathMin(W, H) * 0.5
+                dx = tx - eX
+                dy = ty - eY
+                if mathSqrt(dx * dx + dy * dy) <= radius:
+                    objectSet(tree, 'fallen', true)
+                endif
+            else:
+                fp = objectGet(tree, 'fallProgress')
+                if fp < 1:
+                    objectSet(tree, 'fallProgress', mathMin(1, fp + 0.08))
+                endif
+            endif
+        endfor
+
+        if radius > maxR * 1.1:
+            objectSet(tState, 'phase', 'settle')
+            objectSet(tState, 'frame', 0)
+            objectSet(tState, 'shakeAmp', 0)
+        endif
+    elif phase == 'settle':
+        # Let remaining trees finish falling, then transition to aftermath.
+        particlesUpdate()
+        allDone = true
+        for tree in objectGet(tState, 'trees'):
+            if objectGet(tree, 'fallen'):
+                fp = objectGet(tree, 'fallProgress')
+                if fp < 1:
+                    objectSet(tree, 'fallProgress', mathMin(1, fp + 0.08))
+                    allDone = false
+                endif
+            endif
+        endfor
+        if allDone || frame > 30:
+            objectSet(tState, 'phase', 'aftermath')
+        endif
     endif
-    return null
+
+    tunguskaRender()
+    scheduleTickIfAnimating()
+endfunction
+
+
+# ---------- Scene metrics ----------
+#
+# Tiny helpers wrapping the layout ratios. Centralizes the scene's geometry
+# so both the simulation (collision tests, etc.) and the renderer agree on
+# where things are.
+
+function sceneGroundY(H):
+    return H * tGroundYRatio
+endfunction
+
+
+function sceneExplosionX(W):
+    return W * tExplosionXRatio
+endfunction
+
+
+function sceneExplosionY(H):
+    return H * tExplosionYRatio
+endfunction
+
+
+function sceneAsteroidStartX(W):
+    return W * tAsteroidStartXRatio
+endfunction
+
+
+function sceneAsteroidStartY(H):
+    return H * tAsteroidStartYRatio
+endfunction
+
+
+# Uniform shape-size scale: a ratio of the smaller window dimension. Shapes
+# whose sizes multiply by this never distort - they only grow or shrink with
+# min(W, H), so a tall-narrow window won't stretch them vertically.
+function sceneScale(W, H):
+    return mathMin(W, H) / mathMin(tDesignW, tDesignH)
+endfunction
+
+
+# ---------- Rendering ----------
+#
+# The renderer rebuilds the SVG element model from scratch every frame.
+# drawNew resets the drawing; subsequent draw* calls accumulate shapes into
+# the model; drawRender hands the result to elementModelRender, which the
+# MarkdownUp runtime diffs against the DOM. ~25 fps on a few hundred shapes.
+
+
+function tunguskaRender():
+    # Tell MarkdownUp to preserve the hamburger menu (and everything else
+    # before our content) on every re-render driven by our windowSetTimeout
+    # loop. Without this the body would be fully cleared 25 times per second
+    # during simulation, destroying the burger's DOM nodes between mousedown
+    # and mouseup and making it unclickable.
+    #
+    # This must be re-issued every render: MarkdownUp's runtime.reset() at the
+    # end of each runtimeUpdateFn nulls out the value, so a one-time call in
+    # tunguskaMain would only survive the initial render.
+    #
+    # The '_top' anchor is the trailing invisible div in burgerElements when
+    # there are no URL hash params; with params the id is "<params>&_top".
+    documentSetReset('_top')
+
+    phase = objectGet(tState, 'phase')
+
+    # Canvas fills the window. Positions inside the scene are ratios of W and H
+    # (so they fill the window in both axes); shape sizes use sceneScale, which
+    # is min(W, H)-based, so individual shapes never stretch.
+    margin = 1.5 * documentFontSize()
+    W = mathMax(1, windowWidth() - 2 * margin)
+    H = mathMax(1, windowHeight() - 2 * margin)
+
+    drawNew(W, H)
+
+    if phase == 'title':
+        renderTitle(W, H)
+    else:
+        renderScene(W, H)
+        if phase == 'aftermath':
+            renderAftermath(W, H)
+        endif
+    endif
+
+    applyCameraShake()
+    drawRender()
+
+    # Persist state so the next render (after a hamburger toggle, refresh, or
+    # any other event that causes MarkdownUp to re-evaluate the script) can
+    # resume from where we left off. Every code path that mutates state ends
+    # up here (tick, init, start, click handlers all call tunguskaRender), so
+    # one save site covers all of them.
+    sessionStorageSet(tStateStorageKey, jsonStringify(tState))
+endfunction
+
+
+# Wraps all currently rendered drawing elements in an SVG <g transform="translate(dx,dy)">
+# so they jitter together as a single "camera" frame. No-op if shake amplitude is small.
+function applyCameraShake():
+    amp = objectGet(tState, 'shakeAmp')
+    if amp < 0.5:
+        return null
+    endif
+    svg = drawElements()
+    elems = objectGet(svg, 'elem')
+    dx = (mathRandom() - 0.5) * 2 * amp
+    dy = (mathRandom() - 0.5) * 2 * amp
+    # numberToFixed because dx/dy are floats - numberToString in BareScript
+    # only handles non-negative integers.
+    wrapped = objectNew( \
+        'svg', 'g', \
+        'attr', objectNew('transform', 'translate(' + numberToFixed(dx, 3, true) + ',' + numberToFixed(dy, 3, true) + ')'), \
+        'elem', elems \
+    )
+    objectSet(svg, 'elem', arrayNew(wrapped))
+endfunction
+
+
+# Paint the sky as a vertical gradient from topColor (zenith) to midColor
+# (horizon) using a stack of solid-color bands. SVG has gradient elements but
+# the band approach keeps the renderer purely shape-based.
+function renderSky(W, H, topColor, midColor):
+    gY = sceneGroundY(H)
+    # Oversized by a margin so camera shake doesn't expose canvas edges
+    pad = 40
+    bands = 24
+    i = 0
+    while i < bands:
+        t = i / (bands - 1)
+        r = mathFloor(parseHex(topColor, 0) * (1 - t) + parseHex(midColor, 0) * t)
+        g = mathFloor(parseHex(topColor, 1) * (1 - t) + parseHex(midColor, 1) * t)
+        b = mathFloor(parseHex(topColor, 2) * (1 - t) + parseHex(midColor, 2) * t)
+        color = '#' + hex2(r) + hex2(g) + hex2(b)
+        drawStyle('none', 0, color)
+        y = mathFloor(i * gY / bands) - pad
+        h = mathCeil(gY / bands) + pad + 1
+        drawRect(-pad, y, W + 2 * pad, h)
+        i = i + 1
+    endwhile
+endfunction
+
+
+# Parse one channel (R=0, G=1, B=2) out of a #rrggbb hex color string.
+function parseHex(hex, channel):
+    start = 1 + channel * 2
+    return numberParseInt(stringSlice(hex, start, start + 2), 16)
+endfunction
+
+
+# Format a 0..255 value as a two-character lowercase hex pair (e.g. 16 -> '10').
+# Used everywhere we assemble '#rrggbb' or '#rrggbbaa' color strings on the fly.
+function hex2(n):
+    n = mathMax(0, mathMin(255, mathFloor(n)))
+    s = '0123456789abcdef'
+    return stringCharAt(s, mathFloor(n / 16)) + stringCharAt(s, n % 16)
+endfunction
+
+
+# Quadratic ease-out: fast start, slow finish. Used for tree-fall and asteroid
+# trajectory progress, both of which decelerate visually.
+function easeOut(t):
+    return 1 - (1 - t) * (1 - t)
+endfunction
+
+
+# Shrink desiredSize until the text fits within maxWidth. Returns desiredSize
+# unchanged when it already fits. Used for centered headings whose font is
+# derived from min(W, H) but whose width is bounded by W only - a narrow
+# portrait window can otherwise clip the title.
+function fitFontSize(text, desiredSize, maxWidth):
+    w = drawTextWidth(text, desiredSize)
+    if w > maxWidth:
+        return desiredSize * maxWidth / w
+    endif
+    return desiredSize
+endfunction
+
+
+# Solid ground band from the horizon line to the bottom of the canvas.
+function renderGround(W, H, color):
+    gY = sceneGroundY(H)
+    pad = 40
+    drawStyle('none', 0, color)
+    drawRect(-pad, gY, W + 2 * pad, H - gY + pad)
+endfunction
+
+
+# Star field. On the title screen each star is rendered once with SVG
+# <animate> children so the twinkle runs in the browser (no script-driven
+# re-render needed - which is what would otherwise destroy the click target
+# on the prompt text). During the simulation we render plain static circles
+# since the simulation is re-rendering rapidly anyway and embedded animations
+# would reset on every frame.
+function renderStars(W, H):
+    isTitle = objectGet(tState, 'phase') == 'title'
+    gY = sceneGroundY(H)
+    minDim = mathMin(W, H)
+    for star in objectGet(tState, 'stars'):
+        sx = objectGet(star, 'nx') * W
+        sy = objectGet(star, 'ny') * gY
+        baseR = mathMax(0.5, objectGet(star, 'nr') * minDim)
+        if isTitle:
+            drawTwinkleStar(sx, sy, baseR, star)
+        else:
+            drawStyle('none', 0, '#ffffff')
+            drawCircle(sx, sy, baseR)
+        endif
+    endfor
+endfunction
+
+
+# Draw a star circle and attach two SVG <animate> children that pulse its
+# radius and opacity in the browser. The animation runs without any script
+# involvement - perfect for the otherwise-static title screen.
+#
+# Per-star phasing is achieved with the <animate> `begin` attribute set to a
+# negative time, which makes the browser treat the animation as already in
+# progress at SVG mount time. Combined with each star's randomly-chosen
+# duration, no two stars are in sync.
+function drawTwinkleStar(sx, sy, baseR, star):
+    # Convert per-frame sine parameters into per-second SVG-animate values.
+    # Note: numberToString in BareScript is integer-only - use numberToFixed
+    # for floating-point values.
+    twinkleSpeed = objectGet(star, 'twinkleSpeed')   # radians per frame
+    twinklePhase = objectGet(star, 'twinklePhase')   # phase offset in radians
+    dur = (2 * mathPi() / twinkleSpeed) * tFrameMs / 1000
+    beginOffset = -twinklePhase / (2 * mathPi()) * dur
+    durStr = numberToFixed(dur, 3, true) + 's'
+    beginStr = numberToFixed(beginOffset, 3, true) + 's'
+
+    # Triangle-wave keyframes (dim - bright - dim) - SVG linear interpolation
+    # gives a "good enough" twinkle without sampling a full sine.
+    rDim = numberToFixed(baseR * 0.6, 3, true)
+    rBright = numberToFixed(baseR * 1.4, 3, true)
+    rValues = rDim + ';' + rBright + ';' + rDim
+
+    drawStyle('none', 0, '#ffffff')
+    drawCircle(sx, sy, baseR)
+
+    # drawCircle just pushed our circle as the last element in the SVG. Add
+    # <animate> children directly into its 'elem' field. This is how you
+    # extend a draw.bare-produced shape with raw SVG features that draw.bare
+    # doesn't natively expose.
+    svgElems = objectGet(drawElements(), 'elem')
+    circle = arrayGet(svgElems, arrayLength(svgElems) - 1)
+    objectSet(circle, 'elem', arrayNew( \
+        svgAnimate('opacity', '0.25;1;0.25', durStr, beginStr), \
+        svgAnimate('r', rValues, durStr, beginStr) \
+    ))
+endfunction
+
+
+# Construct a single SVG <animate> element model. Loops indefinitely.
+function svgAnimate(attrName, values, dur, begin):
+    return objectNew( \
+        'svg', 'animate', \
+        'attr', objectNew( \
+            'attributeName', attrName, \
+            'values', values, \
+            'dur', dur, \
+            'begin', begin, \
+            'repeatCount', 'indefinite' \
+        ) \
+    )
+endfunction
+
+
+# Title screen: night sky, streaking comet, horizon silhouette, and four
+# centered text lines that each shrink-to-fit the window width.
+function renderTitle(W, H):
+    s = sceneScale(W, H)
+    gY = sceneGroundY(H)
+
+    drawStyle('none', 0, '#050518')
+    drawRect(0, 0, W, H)
+    renderStars(W, H)
+
+    # A streaking comet - trail circles share one style, then two bright
+    # body circles on top.
+    cx = W * 0.72
+    cy = H * 0.27
+    drawStyle('none', 0, '#ffaa44')
+    k = 12
+    while k > 0:
+        tx = cx - k * 14 * s
+        ty = cy - k * 7 * s
+        tr = (16 - k * 1.1) * s
+        drawCircle(tx, ty, mathMax(0.5, tr))
+        k = k - 1
+    endwhile
+    drawStyle('none', 0, '#fff7c8')
+    drawCircle(cx, cy, 20 * s)
+    drawStyle('none', 0, '#ffd066')
+    drawCircle(cx, cy, 11 * s)
+
+    # Ground silhouette suggestion
+    drawStyle('none', 0, '#0a1208')
+    drawRect(0, gY + 30 * s, W, H - (gY + 30 * s))
+
+    # Stylized horizon trees (silhouettes)
+    nSilhouettes = mathMax(20, mathFloor(W / 28))
+    i = 0
+    while i < nSilhouettes:
+        bx = (i + 0.5) * (W / nSilhouettes)
+        h = (26 + (i % 5) * 6) * s
+        drawTreeRaw(bx, gY + 30 * s, h, 0, '#0b1f0b', '#0b1f0b')
+        i = i + 1
+    endwhile
+
+    # Title - each line's font is shrunk if it would overflow the window's
+    # width (s scales with min(W, H), but the text width is bounded by W).
+    maxTextW = W * 0.92
+
+    title = 'THE TUNGUSKA EVENT'
+    drawTextStyle(fitFontSize(title, 56 * s, maxTextW), '#ffd066', true)
+    drawText(title, W / 2, H * 0.4)
+
+    subtitle = 'June 30, 1908  *  Eastern Siberia'
+    drawTextStyle(fitFontSize(subtitle, 22 * s, maxTextW), '#cfd7ff', false, true)
+    drawText(subtitle, W / 2, H * 0.48)
+
+    description = 'A visual simulation of the largest impact event in recorded history'
+    drawTextStyle(fitFontSize(description, 18 * s, maxTextW), '#ffffff')
+    drawText(description, W / 2, H * 0.56)
+
+    prompt = 'Press SPACE to begin'
+    drawTextStyle(fitFontSize(prompt, 22 * s, maxTextW), '#ffe28a', true)
+    drawText(prompt, W / 2, H * 0.68)
+    # drawOnClick attaches click + 'cursor: pointer' to the most recent shape.
+    drawOnClick(onTitleStartClick)
+endfunction
+
+
+# Main scene: sky, ground, trees, plus whichever effect the current phase
+# calls for (falling asteroid + debris, fireball, multi-ring shockwave, drifting
+# explosion particles). The phase-specific blocks are kept in render order so
+# the layer stacking (sky -> ground -> trees -> effects -> particles) is
+# visible from a single function.
+function renderScene(W, H):
+    s = sceneScale(W, H)
+    gY = sceneGroundY(H)
+    eX = sceneExplosionX(W)
+    eY = sceneExplosionY(H)
+    maxR = mathSqrt(W * W + H * H)
+
+    phase = objectGet(tState, 'phase')
+    flash = objectGet(tState, 'flash')
+
+    if phase == 'falling':
+        renderSky(W, H, '#1a2748', '#6a7ea8')
+    elif phase == 'explode' || phase == 'shockwave':
+        if flash > 0.5:
+            renderSky(W, H, '#fff4c0', '#ffe2a0')
+        else:
+            renderSky(W, H, '#3a3550', '#a08a78')
+        endif
+    else:
+        renderSky(W, H, '#2b2738', '#8a7060')
+    endif
+
+    if phase == 'aftermath' || phase == 'settle':
+        renderGround(W, H, '#3a2a1a')
+    else:
+        renderGround(W, H, '#1f3a14')
+    endif
+
+    # Trees - rendered in two passes so each fallen tree's exposed trunk base
+    # is occluded by the foliage of the neighbor drawn AFTER it. Left-falling
+    # trees (leanDir == -1) are drawn left-to-right; right-falling trees
+    # (leanDir == +1) are drawn right-to-left (arrayReverse on a fresh copy
+    # so we don't mutate the source).
+    trees = objectGet(tState, 'trees')
+    trunkColor = '#3a2410'
+    aftermathColor = '#3d2a18'
+
+    # Pass 1: left-falling trees, natural order
+    for tree in trees:
+        if objectGet(tree, 'leanDir') == -1:
+            renderOneTree(tree, W, H, gY, phase, aftermathColor, trunkColor)
+        endif
+    endfor
+
+    # Pass 2: right-falling trees, reverse order
+    for tree in arrayReverse(arrayCopy(trees)):
+        if objectGet(tree, 'leanDir') == 1:
+            renderOneTree(tree, W, H, gY, phase, aftermathColor, trunkColor)
+        endif
+    endfor
+
+    # Asteroid (during fall)
+    if phase == 'falling':
+        startX = sceneAsteroidStartX(W)
+        startY = sceneAsteroidStartY(H)
+        t = objectGet(tState, 'asteroidT')
+        ease = t * t
+        ax = startX + (eX - startX) * ease
+        ay = startY + (eY - startY) * ease
+
+        # Burning debris/sparks (rendered behind the bolide)
+        renderDebris(W, H)
+
+        # Glowing trail
+        k = 18
+        while k > 0:
+            frac = k / 18
+            tx = ax - frac * (ax - startX) * 0.6
+            ty = ay - frac * (ay - startY) * 0.6
+            tr = ((1 - frac) * 14 + 3) * s
+            drawStyle('none', 0, '#ff' + hex2(mathFloor(160 * (1 - frac) + 90)) + '40')
+            drawCircle(tx, ty, tr)
+            k = k - 2
+        endwhile
+        drawStyle('none', 0, '#ffe2a0')
+        drawCircle(ax, ay, 17 * s)
+        drawStyle('none', 0, '#ffffff')
+        drawCircle(ax, ay, 9 * s)
+    endif
+
+    # Explosion fireball
+    if phase == 'explode':
+        frame = objectGet(tState, 'frame')
+        prog = frame / 18
+        baseR = (30 + prog * 110) * s
+        drawStyle('none', 0, '#ffd060')
+        drawCircle(eX, eY, baseR + 20 * s)
+        drawStyle('none', 0, '#ffe890')
+        drawCircle(eX, eY, baseR)
+        drawStyle('none', 0, '#ffffff')
+        drawCircle(eX, eY, baseR * 0.55)
+        drawStyle('#fff4c0', mathMax(1, 4 * s), 'none')
+        r = 0
+        while r < 12:
+            ang = r * (mathPi() * 2 / 12) + prog * 0.5
+            x1 = eX + mathCos(ang) * (baseR + 10 * s)
+            y1 = eY + mathSin(ang) * (baseR + 10 * s)
+            x2 = eX + mathCos(ang) * (baseR + (60 + prog * 40) * s)
+            y2 = eY + mathSin(ang) * (baseR + (60 + prog * 40) * s)
+            drawMove(x1, y1)
+            drawLine(x2, y2)
+            r = r + 1
+        endwhile
+    endif
+
+    # Multi-ring air shockwave + ground dust ring. Each front fades with
+    # distance (energy spreads, ring dims). 8-char hex (#rrggbbaa) for alpha;
+    # modern SVG renderers support it.
+    if phase == 'shockwave':
+        radius = objectGet(tState, 'shockR')
+        if radius > 0:
+            fade = mathMax(0, 1 - radius / (maxR * 1.1))
+
+            # Leading pressure front - hot white-yellow
+            drawStyle('#fff4c0' + hex2(mathFloor(255 * fade)), mathMax(2, 7 * s), 'none')
+            drawCircle(eX, eY, radius)
+
+            # Secondary front (~15% behind, so spatial gap grows with radius)
+            drawStyle('#ffc858' + hex2(mathFloor(220 * fade)), mathMax(1, 5 * s), 'none')
+            drawCircle(eX, eY, radius * 0.85)
+
+            # Trailing rarefaction pulse
+            drawStyle('#d05030' + hex2(mathFloor(170 * fade)), mathMax(1, 3 * s), 'none')
+            drawCircle(eX, eY, radius * 0.68)
+
+            # Ground dust ring: where the expanding sphere intersects the
+            # ground plane, drawn as a squashed ellipse for oblique viewing.
+            # The horizontal intersection radius is sqrt(R^2 - d^2) where d
+            # is the vertical distance from airburst to ground.
+            groundDist = gY - eY
+            if radius > groundDist:
+                dustR = mathSqrt(radius * radius - groundDist * groundDist)
+                dustRy = dustR * 0.18
+                dustFade = mathMax(0, 1 - dustR / (maxR * 1.1))
+                drawStyle('#8a6a4a' + hex2(mathFloor(170 * dustFade)), mathMax(1, 4 * s), 'none')
+                drawEllipse(eX, gY, dustR, dustRy)
+                if dustR > 24 * s:
+                    drawStyle('#d4b896' + hex2(mathFloor(230 * dustFade)), mathMax(1, 5 * s), 'none')
+                    drawEllipse(eX, gY, dustR * 0.9, dustRy * 0.9)
+                endif
+            endif
+        endif
+    endif
+
+    # Explosion particles - visible from detonation onward
+    if phase == 'explode' || phase == 'shockwave' || phase == 'settle' || phase == 'aftermath':
+        renderParticles(W, H)
+    endif
+endfunction
+
+
+# Spawns the initial burst of explosion particles at the explosion point.
+# A mix of "fire" particles (bright, fast, fall under gravity) and "smoke"
+# particles (gray, slow, rise from buoyancy). Positions are normalized so the
+# simulation is window-independent; size is in design pixels and gets scaled
+# by sceneScale at render time.
+function particlesSpawn():
+    particles = arrayNew()
+
+    nTotal = 220
+    i = 0
+    while i < nTotal:
+        # Bias to the upper hemisphere (in screen-y terms, vy < 0). 80% upward.
+        if mathRandom() < 0.80:
+            ang = mathPi() + mathRandom() * mathPi()
+        else:
+            ang = mathRandom() * mathPi()
+        endif
+
+        smokey = mathRandom() < 0.30
+        if smokey:
+            spd = 1.5 + mathRandom() * 4
+            maxAge = 90 + mathFloor(mathRandom() * 80)
+            size = 6 + mathRandom() * 10
+        else:
+            spd = 5 + mathRandom() * 22
+            maxAge = 14 + mathFloor(mathRandom() * 36)
+            size = 1.5 + mathRandom() * 3.5
+        endif
+
+        arrayPush(particles, objectNew( \
+            'nx', tExplosionXRatio, \
+            'ny', tExplosionYRatio, \
+            'nvx', mathCos(ang) * spd / tDesignW, \
+            'nvy', mathSin(ang) * spd / tDesignH, \
+            'age', 0, \
+            'maxAge', maxAge, \
+            'size', size, \
+            'smokey', smokey \
+        ))
+        i = i + 1
+    endwhile
+
+    objectSet(tState, 'particles', particles)
+endfunction
+
+
+# Advance every particle one tick: integrate position, apply drag/gravity (or
+# buoyancy for smoke), and drop any that have aged out.
+function particlesUpdate():
+    # Pure normalized-space update - no window dimensions needed because every
+    # position and velocity is stored as a fraction of W or H. Dead particles
+    # are filtered out by building a new array; that's the idiomatic pattern
+    # in BareScript since arrays have no in-place filter operation.
+    alive = arrayNew()
+    for p in objectGet(tState, 'particles'):
+        age = objectGet(p, 'age') + 1
+        if age < objectGet(p, 'maxAge'):
+            objectSet(p, 'age', age)
+            objectSet(p, 'nx', objectGet(p, 'nx') + objectGet(p, 'nvx'))
+            objectSet(p, 'ny', objectGet(p, 'ny') + objectGet(p, 'nvy'))
+            if objectGet(p, 'smokey'):
+                # Buoyant rise + drag; smoke expands as it cools.
+                objectSet(p, 'nvy', objectGet(p, 'nvy') * 0.985 - 0.10 / tDesignH)
+                objectSet(p, 'nvx', objectGet(p, 'nvx') * 0.985)
+                objectSet(p, 'size', objectGet(p, 'size') + 0.10)
+            else:
+                # Gravity + heavier drag.
+                objectSet(p, 'nvy', objectGet(p, 'nvy') * 0.94 + 0.35 / tDesignH)
+                objectSet(p, 'nvx', objectGet(p, 'nvx') * 0.94)
+            endif
+            arrayPush(alive, p)
+        endif
+    endfor
+
+    objectSet(tState, 'particles', alive)
+endfunction
+
+
+# Render the explosion particles in two passes: smoke first (behind), fire on
+# top. Both fade their color toward the end of their lifetime.
+function renderParticles(W, H):
+    particles = objectGet(tState, 'particles')
+    s = sceneScale(W, H)
+
+    # Pass 1: smoke (drawn first so it sits behind the fire).
+    for p in particles:
+        if objectGet(p, 'smokey'):
+            t = objectGet(p, 'age') / objectGet(p, 'maxAge')
+            shade = mathFloor(140 * (1 - t * 0.8) + 25)
+            drawStyle('none', 0, '#' + hex2(shade) + hex2(shade) + hex2(shade))
+            drawCircle(objectGet(p, 'nx') * W, objectGet(p, 'ny') * H, objectGet(p, 'size') * s)
+        endif
+    endfor
+
+    # Pass 2: fire (on top of the smoke). Color ramps from white-yellow at
+    # spawn to dim red at max age via the alpha = 1 - t lifetime fraction.
+    for p in particles:
+        if !objectGet(p, 'smokey'):
+            t = objectGet(p, 'age') / objectGet(p, 'maxAge')
+            alpha = 1 - t
+            rCh = 255
+            gCh = mathFloor(240 * alpha)
+            bCh = mathFloor(120 * alpha * alpha * alpha)
+            drawStyle('none', 0, '#' + hex2(rCh) + hex2(gCh) + hex2(bCh))
+            sz = objectGet(p, 'size') * (0.45 + alpha * 0.55) * s
+            drawCircle(objectGet(p, 'nx') * W, objectGet(p, 'ny') * H, sz)
+        endif
+    endfor
+endfunction
+
+
+# Advance and spawn the burning sparks that trail the falling asteroid.
+# Uses the same normalized-position scheme as the explosion particles.
+function debrisUpdate(W, H, eX, eY):
+    debris = objectGet(tState, 'debris')
+
+    # Advance and prune existing debris (filter-into-new-array pattern).
+    alive = arrayNew()
+    for p in debris:
+        age = objectGet(p, 'age') + 1
+        if age < objectGet(p, 'maxAge'):
+            objectSet(p, 'age', age)
+            objectSet(p, 'nx', objectGet(p, 'nx') + objectGet(p, 'nvx'))
+            objectSet(p, 'ny', objectGet(p, 'ny') + objectGet(p, 'nvy'))
+            objectSet(p, 'nvy', objectGet(p, 'nvy') + 0.35 / tDesignH)
+            arrayPush(alive, p)
+        endif
+    endfor
+
+    # Spawn two new sparks per tick. Sparks fly backward along the asteroid's
+    # current trajectory with a small random spread, then arc under gravity.
+    startX = sceneAsteroidStartX(W)
+    startY = sceneAsteroidStartY(H)
+    t = objectGet(tState, 'asteroidT')
+    ease = t * t
+    ax = startX + (eX - startX) * ease
+    ay = startY + (eY - startY) * ease
+    dxT = eX - startX
+    dyT = eY - startY
+    mag = mathSqrt(dxT * dxT + dyT * dyT)
+    if mag > 0:
+        bx = -dxT / mag
+        by = -dyT / mag
+        k = 0
+        while k < 2:
+            spreadAng = (mathRandom() - 0.5) * 0.7
+            cosA = mathCos(spreadAng)
+            sinA = mathSin(spreadAng)
+            spd = 2 + mathRandom() * 3
+            vx = (bx * cosA - by * sinA) * spd
+            vy = (bx * sinA + by * cosA) * spd
+            arrayPush(alive, objectNew( \
+                'nx', ax / W, \
+                'ny', ay / H, \
+                'nvx', vx / tDesignW, \
+                'nvy', vy / tDesignH, \
+                'age', 0, \
+                'maxAge', 18 + mathFloor(mathRandom() * 18), \
+                'size', 1.4 + mathRandom() * 1.8 \
+            ))
+            k = k + 1
+        endwhile
+    endif
+
+    objectSet(tState, 'debris', alive)
+endfunction
+
+
+# Render the asteroid's trailing sparks, fading from white-hot to dim red.
+function renderDebris(W, H):
+    s = sceneScale(W, H)
+    for p in objectGet(tState, 'debris'):
+        t = objectGet(p, 'age') / objectGet(p, 'maxAge')
+        alpha = 1 - t
+        # Color drifts from yellow-white -> orange -> dim red as the spark cools.
+        rCh = 255
+        gCh = mathFloor(220 * alpha + 30)
+        bCh = mathFloor(60 * alpha)
+        drawStyle('none', 0, '#' + hex2(rCh) + hex2(gCh) + hex2(bCh))
+        sz = objectGet(p, 'size') * (0.4 + alpha * 0.6) * s
+        drawCircle(objectGet(p, 'nx') * W, objectGet(p, 'ny') * H, sz)
+    endfor
+endfunction
+
+
+# Compute one tree's current world position, height, fall angle, and color
+# from its state, then hand off to the (phase-agnostic) drawTreeRaw.
+function renderOneTree(tree, W, H, gY, phase, aftermathColor, trunkColor):
+    fp = objectGet(tree, 'fallProgress')
+    leanDir = objectGet(tree, 'leanDir')
+    angle = leanDir * (mathPi() / 2) * easeOut(fp)
+    bx = objectGet(tree, 'nx') * W
+    h = objectGet(tree, 'nh') * mathMin(W, H)
+    color = objectGet(tree, 'color')
+    if phase == 'aftermath' || phase == 'settle':
+        color = aftermathColor
+    endif
+    drawTreeRaw(bx, gY, h, angle, color, trunkColor)
+endfunction
+
+
+# Draw a stylized pine tree rooted at (bx, by), of height h, rotated by
+# `angle` radians around its base. All sub-shapes (trunk rectangle + three
+# foliage triangles) are defined in *local* tree coordinates and projected
+# into world space by pathLocal / drawTriLocal - this is what lets the
+# tree fall flat when angle reaches +/- pi/2 without any extra geometry.
+function drawTreeRaw(bx, by, h, angle, foliage, trunk):
+    cosA = mathCos(angle)
+    sinA = mathSin(angle)
+
+    tw = mathMax(1.5, h * 0.06)
+    th = h * 0.25
+    drawStyle('none', 0, trunk)
+    pathLocal(bx, by, cosA, sinA, -tw, 0, true)
+    pathLocal(bx, by, cosA, sinA, tw, 0, false)
+    pathLocal(bx, by, cosA, sinA, tw, -th, false)
+    pathLocal(bx, by, cosA, sinA, -tw, -th, false)
+    drawClose()
+
+    drawStyle('none', 0, foliage)
+    drawTriLocal(bx, by, cosA, sinA, -h * 0.30, -h * 0.18, h * 0.30, -h * 0.18, 0, -h * 0.50)
+    drawTriLocal(bx, by, cosA, sinA, -h * 0.24, -h * 0.42, h * 0.24, -h * 0.42, 0, -h * 0.72)
+    drawTriLocal(bx, by, cosA, sinA, -h * 0.16, -h * 0.65, h * 0.16, -h * 0.65, 0, -h)
+endfunction
+
+
+# Add one segment to the current draw path using local (lx, ly) tree
+# coordinates: rotate by (cosA, sinA) then translate to anchor (bx, by).
+# isMove=true emits drawMove (start a sub-path), false emits drawLine.
+function pathLocal(bx, by, cosA, sinA, lx, ly, isMove):
+    sx = bx + lx * cosA - ly * sinA
+    sy = by + lx * sinA + ly * cosA
+    if isMove:
+        drawMove(sx, sy)
+    else:
+        drawLine(sx, sy)
+    endif
+endfunction
+
+
+# Draw a filled triangle from three local-coordinate points.
+function drawTriLocal(bx, by, cosA, sinA, x1, y1, x2, y2, x3, y3):
+    pathLocal(bx, by, cosA, sinA, x1, y1, true)
+    pathLocal(bx, by, cosA, sinA, x2, y2, false)
+    pathLocal(bx, by, cosA, sinA, x3, y3, false)
+    drawClose()
+endfunction
+
+
+# Overlay drawn on top of the scene during the 'aftermath' phase: a bordered
+# panel with a heading, dateline, and a two-column statistics table, plus a
+# bottom prompt strip. All text uses fitFontSize so nothing escapes the panel
+# when the window narrows. See the inline comment on the stats block for the
+# coupled-sizing math behind the column layout.
+function renderAftermath(W, H):
+    s = sceneScale(W, H)
+
+    # Panel width is fixed up front (capped at 820*s). Panel HEIGHT has to wait
+    # until the stat row spacing is known - narrower windows produce a smaller
+    # fontScale and tighter rows, and a hard-coded panelH would leave a big
+    # empty band under the stats at those widths.
+    panelPad = 50 * s
+    panelW = mathMin(W - 80 * s, 820 * s)
+    contentW = panelW - 2 * panelPad
+
+    # Two-column stats with coupled sizing. The label column is only as wide
+    # as the longest label at the chosen font; the value column starts right
+    # after it. So as the font shrinks, the label column shrinks too and the
+    # value column's left edge moves left, freeing more width for values.
+    #
+    # drawTextWidth is linear in font size, so this is a closed-form solve:
+    # at baseFont the total width consumed is (maxLabelW + gap + maxValueW),
+    # and we scale the whole row uniformly until that just fits the panel's
+    # content area. fontScale caps at 1.2 so the row font can grow up to 20%
+    # above baseFont when the panel has spare horizontal room.
+    stats = arrayNew( \
+        arrayNew('Energy released:', '~ 10-15 megatons TNT  (1000x Hiroshima)'), \
+        arrayNew('Trees flattened:', '~ 80,000,000 trees over 2,150 km^2'), \
+        arrayNew('Burst altitude:', '~ 5 to 10 km above the taiga'), \
+        arrayNew('Object size:', '~ 50 to 80 m bolide (asteroid or comet)'), \
+        arrayNew('Entry speed:', '~ 27 km/s  (~60,000 mph)'), \
+        arrayNew('Shockwave felt:', 'Up to 800 km away; circled the globe twice'), \
+        arrayNew('Crater:', 'None - the object detonated in mid-air') \
+    )
+    baseFont = 18 * s
+    baseGap = 14 * s
+
+    # Measure the widest label and the widest value at the base font size.
+    maxLabelW = 0
+    maxValueW = 0
+    for row in stats:
+        maxLabelW = mathMax(maxLabelW, drawTextWidth(arrayGet(row, 0), baseFont))
+        maxValueW = mathMax(maxValueW, drawTextWidth(arrayGet(row, 1), baseFont))
+    endfor
+
+    totalBase = maxLabelW + baseGap + maxValueW
+    fontScale = mathMin(1.2, contentW / totalBase)
+    rowFont = baseFont * fontScale
+    # Line spacing scales with rowFont so vertical proportions stay constant.
+    line = 28 * s * fontScale
+
+    # Size the panel to its content with matching top and bottom padding.
+    # Top padding (panelY -> top of "AFTERMATH" text) = 32*s, because the
+    # title baseline is at panelY+50*s with a 36*s middle-baseline font, so
+    # the text top is 50-18=32*s below panelY. To mirror that 32*s of
+    # padding below the last stat row, the panel must extend
+    # `rowFont/2` (text bottom from baseline) + 32*s past the last baseline.
+    # Capped at H - 120s so a short window still leaves margin around the
+    # panel.
+    panelH = mathMin(H - 120 * s, 162 * s + 6 * line + rowFont / 2)
+    panelX = (W - panelW) / 2
+    panelY = (H - panelH) / 2 - 20 * s
+
+    drawStyle('none', 0, '#000000')
+    drawRect(panelX, panelY, panelW, panelH)
+    drawStyle('#ffd066', mathMax(1, 2 * s), 'none')
+    drawRect(panelX, panelY, panelW, panelH)
+
+    # Heading + dateline (both shrink to the panel width if needed).
+    title = 'AFTERMATH'
+    drawTextStyle(fitFontSize(title, 36 * s, contentW), '#ffd066', true)
+    drawText(title, W / 2, panelY + 50 * s)
+
+    subtitle = 'Tunguska, Siberia  *  June 30, 1908 at 07:17 local time'
+    drawTextStyle(fitFontSize(subtitle, 18 * s, contentW), '#cfd7ff', false, true)
+    drawText(subtitle, W / 2, panelY + 85 * s)
+
+    # Center the used column width horizontally inside the panel. When fontScale
+    # is bound by contentW the offset is 0; when the panel has spare room the
+    # block centers instead of clinging to the left edge.
+    usedW = totalBase * fontScale
+    labelX = panelX + (panelW - usedW) / 2
+    valueX = labelX + (maxLabelW + baseGap) * fontScale
+
+    sy = panelY + 130 * s
+    for row, i in stats:
+        drawTextStyle(rowFont, '#ffffff', true)
+        drawText(arrayGet(row, 0), labelX, sy + line * i, 'start')
+        drawTextStyle(rowFont, '#ffe28a')
+        drawText(arrayGet(row, 1), valueX, sy + line * i, 'start')
+    endfor
+
+    # Prompt strip - the restart and quit halves are drawn separately so each
+    # can have its own click handler (drawOnClick attaches to the most recent
+    # shape). Layout: size the font against the full combined string so it
+    # fits in the window, then position each half by its measured width.
+    promptH = 50 * s
+    drawStyle('none', 0, '#000000')
+    drawRect(0, H - promptH, W, promptH)
+
+    restart = 'SPACE = restart'
+    sep = '        '
+    quit = 'Q = quit'
+    promptFont = fitFontSize(restart + sep + quit, 20 * s, W * 0.92)
+
+    restartW = drawTextWidth(restart, promptFont)
+    sepW = drawTextWidth(sep, promptFont)
+    quitW = drawTextWidth(quit, promptFont)
+    promptX = W / 2 - (restartW + sepW + quitW) / 2
+    promptY = H - promptH / 2
+
+    drawTextStyle(promptFont, '#ffe28a', true)
+    drawText(restart, promptX, promptY, 'start')
+    drawOnClick(onAftermathRestartClick)
+    drawText(quit, promptX + restartW + sepW, promptY, 'start')
+    drawOnClick(onAftermathQuitClick)
 endfunction
