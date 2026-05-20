@@ -57,6 +57,8 @@ function qrcodeAppMain():
             {'html': 'a', 'attr': {'href': svgURL, 'download': svgFilename}, 'elem': {'text': 'Download SVG'}}, \
             {'text': ' | '}, \
             formsLinkButtonElements('Copy SVG', systemPartial(qrcodeAppOnCopySVG, svgText)), \
+            {'text': ' | '}, \
+            formsLinkButtonElements('Copy Text', systemPartial(qrcodeAppOnCopySVGText, svgText)), \
             if(copied, {'text': ' (copied)'}) \
         ]} \
     ])
@@ -88,8 +90,15 @@ function qrcodeAppOnMessage():
 endfunction
 
 
-# Copy SVG on-click
+# Copy SVG image on-click
 async function qrcodeAppOnCopySVG(svgText):
     windowClipboardWrite(svgText, 'image/svg+xml')
+    windowSetLocation(argsURL(qrcodeAppArguments, {'copied': true}))
+endfunction
+
+
+# Copy SVG text on-click
+async function qrcodeAppOnCopySVGText(svgText):
+    windowClipboardWrite(svgText)
     windowSetLocation(argsURL(qrcodeAppArguments, {'copied': true}))
 endfunction
