@@ -63898,5 +63898,89 @@
         "Language": "Python",
         "Date": "2026-05-19",
         "Downloads": 2926
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-05-20",
+        "Downloads": 124
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-05-20",
+        "Downloads": 7
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-05-20",
+        "Downloads": 32
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-05-20",
+        "Downloads": 20
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-05-20",
+        "Downloads": 18
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 211
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 262
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 17
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 2
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 16
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 330
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 24
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 604
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-05-20",
+        "Downloads": 2490
     }
 ]
