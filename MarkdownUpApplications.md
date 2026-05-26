@@ -49,7 +49,7 @@
 [Happy Holidays! Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/happy-holidays/happy-holidays.bare
 
 [The Hobbs Family Cookbook]: https://craigahobbs.github.io/hobbs-family-cookbook/
-[The Hobbs Family Cookbook Source]: https://github.com/craigahobbs/hobbs-family-cookbook
+[The Hobbs Family Cookbook Source]: https://github.com/craigahobbs/hobbs-family-cookbook/blob/main/markdownBook.bare
 
 [Mandelbrot Set Explorer]: https://craigahobbs.github.io/mandelbrot/
 [Mandelbrot Set Explorer Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/mandelbrot/mandelbrot.bare
@@ -58,7 +58,7 @@
 [Money Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/money/money.bare
 
 [npm Dependency Explorer]: https://craigahobbs.github.io/npm-dependency-explorer/
-[npm Dependency Explorer Source]: https://github.com/craigahobbs/npm-dependency-explorer
+[npm Dependency Explorer Source]: https://github.com/craigahobbs/npm-dependency-explorer/blob/main/npmDependencyExplorer.bare
 
 [Package Downloads Dashboard]: https://craigahobbs.github.io/downloads/
 [Package Downloads Dashboard Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/downloads/downloads.bare
