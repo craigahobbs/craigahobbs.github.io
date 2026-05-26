@@ -37,7 +37,7 @@
 [Conway's Game of Life Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/life/life.bare
 
 [Day Hikes Dashboard]: https://craigahobbs.github.io/day-hikes/
-[Day Hikes Dashboard Source]: https://craigahobbs.github.io/day-hikes/#view=markdown
+[Day Hikes Dashboard Source]: https://github.com/craigahobbs/day-hikes/blob/main/dayHikes.bare
 
 [Emoji]: https://craigahobbs.github.io/emoji/
 [Emoji Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/emoji/emoji.bare
