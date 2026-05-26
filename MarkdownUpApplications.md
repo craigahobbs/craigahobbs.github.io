@@ -22,7 +22,7 @@
 | [Tunguska Event Simulation] | [Source][Tunguska Event Simulation Source] |
 
 [BareSript Library Documentation Viewer]: https://craigahobbs.github.io/bare-script/library/
-[BareSript Library Documentation Viewer Source]: https://github.com/craigahobbs/bare-script/blob/main/static/library/app.bare
+[BareSript Library Documentation Viewer Source]: https://github.com/craigahobbs/bare-script/blob/main/lib/include/baredoc.bare
 
 [Chaos Balls]: https://craigahobbs.github.io/chaosBalls/
 [Chaos Balls Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/chaosBalls/chaosBalls.bare
