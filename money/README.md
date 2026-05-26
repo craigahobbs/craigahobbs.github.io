@@ -1,10 +1,12 @@
 # Money
 
 Money is a simple cash account simulation application. To use the Money application, first copy the
-application HTML stub file:
+application files:
 
 ~~~
 curl -O https://craigahobbs.github.io/money/index.html
+curl -O https://craigahobbs.github.io/money/money.md
+curl -O https://craigahobbs.github.io/money/money.bare
 ~~~
 
 Next, create a [Money JSON file](https://craigahobbs.github.io/money/#var.vPage='Schema') named "money.json".

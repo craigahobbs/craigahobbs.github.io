@@ -25,7 +25,7 @@
 [BareSript Library Documentation Viewer Source]: https://github.com/craigahobbs/bare-script/blob/main/static/library/app.bare
 
 [Chaos Balls]: https://craigahobbs.github.io/chaosBalls/
-[Chaos Balls Source]: https://craigahobbs.github.io/chaosBalls/#view=markdown
+[Chaos Balls Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/chaosBalls/chaosBalls.bare
 
 [Chisel Documentation Viewer]: https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request'
 [Chisel Documentation Viewer Source]: https://github.com/craigahobbs/chisel/blob/main/src/chisel/static/chiselDoc.bare
@@ -34,7 +34,7 @@
 [Color Ramp Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/color-ramp/colorRamp.bare
 
 [Conway's Game of Life]: https://craigahobbs.github.io/life/
-[Conway's Game of Life Source]: https://craigahobbs.github.io/life/#view=markdown
+[Conway's Game of Life Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/life/life.bare
 
 [Day Hikes Dashboard]: https://craigahobbs.github.io/day-hikes/
 [Day Hikes Dashboard Source]: https://craigahobbs.github.io/day-hikes/#view=markdown
@@ -43,16 +43,16 @@
 [Emoji Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/emoji/emoji.bare
 
 [The Fruit Fly Trap Maker]: https://craigahobbs.github.io/fruit-fly-trap/
-[The Fruit Fly Trap Maker Source]: https://craigahobbs.github.io/fruit-fly-trap/#view=markdown
+[The Fruit Fly Trap Maker Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/fruit-fly-trap/fruit-fly-trap.bare
 
 [Happy Holidays!]: https://craigahobbs.github.io/happy-holidays/
-[Happy Holidays! Source]: https://craigahobbs.github.io/happy-holidays/#view=markdown
+[Happy Holidays! Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/happy-holidays/happy-holidays.bare
 
 [The Hobbs Family Cookbook]: https://craigahobbs.github.io/hobbs-family-cookbook/
 [The Hobbs Family Cookbook Source]: https://github.com/craigahobbs/hobbs-family-cookbook
 
 [Mandelbrot Set Explorer]: https://craigahobbs.github.io/mandelbrot/
-[Mandelbrot Set Explorer Source]: https://craigahobbs.github.io/mandelbrot/#view=markdown
+[Mandelbrot Set Explorer Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/mandelbrot/mandelbrot.bare
 
 [Money]: https://craigahobbs.github.io/money/
 [Money Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/money/money.bare

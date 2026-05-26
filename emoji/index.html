@@ -11,15 +11,7 @@
     </head>
     <script type="module">
         import {MarkdownUp} from 'https://craigahobbs.github.io/markdown-up/lib/appImports.js';
-        const app = new MarkdownUp(window, {
-            'markdownText': `\
-~~~markdown-script
-include 'emoji.bare'
-
-emojiMain()
-~~~
-`
-        });
+        const app = new MarkdownUp(window, {'url': 'emoji.md'});
         app.run();
     </script>
 </html>
