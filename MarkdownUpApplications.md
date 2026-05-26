@@ -67,10 +67,10 @@
 [QR Code Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/qrcode/qrcodeApp.bare
 
 [Solar Dashboard]: https://craigahobbs.github.io/solar/
-[Solar Dashboard Source]: https://craigahobbs.github.io/solar/#view=markdown
+[Solar Dashboard Source]: https://github.com/craigahobbs/solar/blob/main/solar.bare
 
 [Sunrise Dashboard]: https://craigahobbs.github.io/sunrise/
-[Sunrise Dashboard Source]: https://craigahobbs.github.io/sunrise/#view=markdown
+[Sunrise Dashboard Source]: https://github.com/craigahobbs/sunrise/blob/main/sunrise.bare
 
 [Tunguska Event Simulation]: https://craigahobbs.github.io/tunguska/
 [Tunguska Event Simulation Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/tunguska/tunguska.bare
