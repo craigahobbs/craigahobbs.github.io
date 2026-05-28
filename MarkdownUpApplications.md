@@ -17,6 +17,7 @@
 | [npm Dependency Explorer] | [Source][npm Dependency Explorer Source] |
 | [Package Downloads Dashboard] | [Source][Package Downloads Dashboard Source] |
 | [QR Code] | [Source][QR Code Source] |
+| [Snack Attack] | [Source][Snack Attack Source] |
 | [Solar Dashboard] | [Source][Solar Dashboard Source] |
 | [Sunrise Dashboard] | [Source][Sunrise Dashboard Source] |
 | [Tunguska Event Simulation] | [Source][Tunguska Event Simulation Source] |
@@ -65,6 +66,9 @@
 
 [QR Code]: https://craigahobbs.github.io/qrcode/
 [QR Code Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/qrcode/qrcodeApp.bare
+
+[Snack Attack]: https://craigahobbs.github.io/snackAttack/
+[Snack Attack Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/snackAttack/snackAttack.bare
 
 [Solar Dashboard]: https://craigahobbs.github.io/solar/
 [Solar Dashboard Source]: https://github.com/craigahobbs/solar/blob/main/solar.bare
