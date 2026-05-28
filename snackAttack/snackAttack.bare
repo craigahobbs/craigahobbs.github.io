@@ -1,0 +1,954 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+# Snack Attack - a Galaxian-like game with edible invaders, built on MarkdownUp.
+#
+# A full-window, draw-based arcade game that demonstrates the MarkdownUp
+# animation patterns:
+#
+#   - the self-rescheduling windowSetTimeout tick loop
+#   - an invisible documentSetReset anchor so the menu DOM stays stable
+#   - windowKeyState input polling (with rising-edge detection) inside the tick
+#   - a title / play / game-over state machine
+#   - a lightweight particle system (debris, shockwave rings, score popups)
+#   - sessionStorage state persistence so the game survives a menu/hash change
+#   - windowPlaySound for arcade sound effects
+#
+# The game is launched from snackAttack.md, which includes this file and calls
+# snackAttackMain().
+
+include <draw.bare>
+
+
+# Configuration constants
+snackAnchorId = 'snack-attack-anchor'
+snackStateKey = 'snackAttackState'
+snackHiKey = 'snackAttackHighScore'
+snackStateVersion = 3
+snackTickMs = 24
+
+snackCols = 7
+snackRows = 4
+snackMaxBullets = 5
+snackStartLives = 3
+snackParticleCap = 260
+
+# The roster of attacking snacks. Each is drawn as a glossy, twisting disc.
+# 'rgb' feeds the particle system so debris matches the snack's color.
+snackTypes = arrayNew( \
+    objectNew('name', 'Donut',   'fill', '#ff9ec4', 'accent', '#7b4b2a', 'rgb', '255,158,196', 'hole', true), \
+    objectNew('name', 'Cookie',  'fill', '#d49a5a', 'accent', '#5a3210', 'rgb', '212,154,90',  'hole', false), \
+    objectNew('name', 'Candy',   'fill', '#ff5a5a', 'accent', '#ffffff', 'rgb', '255,90,90',   'hole', false), \
+    objectNew('name', 'Cupcake', 'fill', '#b489ff', 'accent', '#ffe066', 'rgb', '180,137,255', 'hole', false), \
+    objectNew('name', 'Lime',    'fill', '#7ed957', 'accent', '#2e7d32', 'rgb', '126,217,87',  'hole', false) \
+)
+
+
+# Entry point - restore state and start the animation loop
+function snackAttackMain():
+    documentSetTitle('Snack Attack')
+
+    # Render the invisible reset anchor exactly once so the MarkdownUp menu DOM stays stable
+    elementModelRender(objectNew( \
+        'html', 'div', \
+        'attr', objectNew('id', snackAnchorId, 'style', 'display: none;') \
+    ))
+
+    snackState = snackLoadState()
+    systemGlobalSet('snackState', snackState)
+    snackRenderAndSchedule()
+endfunction
+
+
+# Load persisted state, or build a fresh title-screen state
+function snackLoadState():
+    raw = sessionStorageGet(snackStateKey)
+    if raw != null:
+        state = jsonParse(raw)
+        if state != null && objectGet(state, 'version') == snackStateVersion:
+            return state
+        endif
+    endif
+    return snackInitState()
+endfunction
+
+
+# Build a brand-new state object sitting on the title screen
+function snackInitState():
+    hi = numberParseInt(localStorageGet(snackHiKey))
+    state = objectNew( \
+        'version', snackStateVersion, \
+        'mode', 'title', \
+        'time', 0, \
+        'pxf', 0.5, \
+        'pvx', 0, \
+        'bullets', arrayNew(), \
+        'ebullets', arrayNew(), \
+        'snacks', arrayNew(), \
+        'particles', arrayNew(), \
+        'stars', snackMakeStars(), \
+        'score', 0, \
+        'hi', if(hi != null, hi, 0), \
+        'lives', snackStartLives, \
+        'wave', 1, \
+        'diveCd', 30, \
+        'invuln', 0, \
+        'hitFlash', 0, \
+        'shake', 0, \
+        'kStart', false, \
+        'kFire', false, \
+        'kRestart', false, \
+        'kQuit', false \
+    )
+    return state
+endfunction
+
+
+# Generate a parallax star field. Bigger stars drift faster and twinkle on
+# their own phase, giving a sense of flying through space.
+function snackMakeStars():
+    stars = arrayNew()
+    i = 0
+    while i < 90:
+        arrayPush(stars, objectNew( \
+            'xf', mathRandom(), \
+            'yf', mathRandom(), \
+            'r', 0.4 + 1.9 * mathRandom(), \
+            'tw', mathRandom() * 6.283, \
+            'sp', 0.4 + 1.4 * mathRandom() \
+        ))
+        i = i + 1
+    endwhile
+    return stars
+endfunction
+
+
+# Start a fresh game from wave 1
+function snackStartGame(state):
+    objectSet(state, 'mode', 'play')
+    objectSet(state, 'score', 0)
+    objectSet(state, 'lives', snackStartLives)
+    objectSet(state, 'wave', 1)
+    objectSet(state, 'pxf', 0.5)
+    objectSet(state, 'pvx', 0)
+    objectSet(state, 'bullets', arrayNew())
+    objectSet(state, 'ebullets', arrayNew())
+    objectSet(state, 'particles', arrayNew())
+    objectSet(state, 'invuln', 0)
+    objectSet(state, 'hitFlash', 0)
+    objectSet(state, 'shake', 0)
+    snackBuildWave(state)
+endfunction
+
+
+# Populate the formation for the current wave
+function snackBuildWave(state):
+    snacks = arrayNew()
+    marginXf = 0.13
+    gapXf = (1 - 2 * marginXf) / (snackCols - 1)
+    topYf = 0.13
+    gapYf = 0.085
+    row = 0
+    while row < snackRows:
+        col = 0
+        while col < snackCols:
+            arrayPush(snacks, objectNew( \
+                'type', row % arrayLength(snackTypes), \
+                'homeXf', marginXf + col * gapXf, \
+                'homeYf', topYf + row * gapYf, \
+                'xf', marginXf + col * gapXf, \
+                'yf', topYf + row * gapYf, \
+                'alive', true, \
+                'st', 'form', \
+                't', 0, \
+                'spin', mathRandom() * 6.283, \
+                'dir', if(mathRandom() < 0.5, -1, 1) \
+            ))
+            col = col + 1
+        endwhile
+        row = row + 1
+    endwhile
+    objectSet(state, 'snacks', snacks)
+    objectSet(state, 'ebullets', arrayNew())
+    objectSet(state, 'diveCd', 30)
+endfunction
+
+
+# Render the current frame and schedule the next tick
+function snackRenderAndSchedule():
+    documentSetReset(snackAnchorId)
+    snackDraw()
+    windowSetTimeout(snackTick, snackTickMs)
+endfunction
+
+
+# Advance one frame of the game
+function snackTick():
+    state = systemGlobalGet('snackState')
+    if state == null:
+        state = snackLoadState()
+        systemGlobalSet('snackState', state)
+    endif
+
+    objectSet(state, 'time', objectGet(state, 'time') + 0.05)
+    snackUpdateStars(state)
+
+    mode = objectGet(state, 'mode')
+    if mode == 'title':
+        snackUpdateTitle(state)
+    elif mode == 'play':
+        snackUpdatePlay(state)
+    elif mode == 'over':
+        snackUpdateOver(state)
+    endif
+
+    sessionStorageSet(snackStateKey, jsonStringify(state))
+    snackRenderAndSchedule()
+endfunction
+
+
+# Drift and recycle the star field for continuous motion
+function snackUpdateStars(state):
+    for star in objectGet(state, 'stars'):
+        yf = objectGet(star, 'yf') + 0.0006 + objectGet(star, 'r') * 0.0006
+        if yf > 1:
+            yf = yf - 1
+            objectSet(star, 'xf', mathRandom())
+        endif
+        objectSet(star, 'yf', yf)
+    endfor
+endfunction
+
+
+# Read a key with rising-edge detection. prevKey is the state field holding last frame's value.
+function snackKeyPressed(state, prevKey, code1, code2):
+    down = systemBoolean(windowKeyState(code1)) || (code2 != null && systemBoolean(windowKeyState(code2)))
+    was = objectGet(state, prevKey)
+    objectSet(state, prevKey, down)
+    return down && !was
+endfunction
+
+
+# Title screen: wait for the start key
+function snackUpdateTitle(state):
+    if snackKeyPressed(state, 'kStart', 'Space', 'Enter'):
+        windowPlaySound('coin')
+        snackStartGame(state)
+    endif
+endfunction
+
+
+# Game-over screen: restart or quit to the title
+function snackUpdateOver(state):
+    snackUpdateParticles(state)
+    if snackKeyPressed(state, 'kRestart', 'KeyR', null):
+        windowPlaySound('coin')
+        snackStartGame(state)
+    elif snackKeyPressed(state, 'kQuit', 'KeyQ', null):
+        windowPlaySound('blip')
+        objectSet(state, 'mode', 'title')
+    endif
+endfunction
+
+
+# Decrement a non-negative timer field, stopping at zero
+function snackCountdown(state, key):
+    value = objectGet(state, key)
+    if value > 0:
+        objectSet(state, key, value - 1)
+    endif
+endfunction
+
+
+# Main gameplay update
+function snackUpdatePlay(state):
+    snackCountdown(state, 'invuln')
+    snackCountdown(state, 'hitFlash')
+    snackCountdown(state, 'shake')
+
+    snackInputPlay(state)
+    snackUpdateBullets(state)
+    snackUpdateSnacks(state)
+    snackUpdateEnemyBullets(state)
+    snackUpdateParticles(state)
+    snackCheckWaveCleared(state)
+endfunction
+
+
+# Handle player movement (with velocity easing) and firing
+function snackInputPlay(state):
+    pvx = objectGet(state, 'pvx')
+    left = systemBoolean(windowKeyState('ArrowLeft')) || systemBoolean(windowKeyState('KeyA'))
+    right = systemBoolean(windowKeyState('ArrowRight')) || systemBoolean(windowKeyState('KeyD'))
+    if left && !right:
+        pvx = pvx - 0.0019
+    elif right && !left:
+        pvx = pvx + 0.0019
+    else:
+        pvx = pvx * 0.78
+    endif
+    pvx = mathMax(-0.021, mathMin(0.021, pvx))
+
+    pxf = objectGet(state, 'pxf') + pvx
+    if pxf < 0.05:
+        pxf = 0.05
+        pvx = 0
+    elif pxf > 0.95:
+        pxf = 0.95
+        pvx = 0
+    endif
+    objectSet(state, 'pxf', pxf)
+    objectSet(state, 'pvx', pvx)
+
+    bullets = objectGet(state, 'bullets')
+    if snackKeyPressed(state, 'kFire', 'Space', null) && arrayLength(bullets) < snackMaxBullets:
+        arrayPush(bullets, objectNew('xf', pxf, 'yf', 0.85))
+        snackSpawnMuzzle(state, pxf, 0.85)
+        windowPlaySound('laser')
+    endif
+endfunction
+
+
+# Move player bullets up and test for snack hits
+function snackUpdateBullets(state):
+    bullets = objectGet(state, 'bullets')
+    snacks = objectGet(state, 'snacks')
+    survivors = arrayNew()
+    for bullet in bullets:
+        yf = objectGet(bullet, 'yf') - 0.03
+        objectSet(bullet, 'yf', yf)
+        hit = false
+        if yf > -0.02:
+            bxf = objectGet(bullet, 'xf')
+            for snack in snacks:
+                if !hit && objectGet(snack, 'alive') && snackHitTest(bxf, yf, objectGet(snack, 'xf'), objectGet(snack, 'yf'), 0.04):
+                    objectSet(snack, 'alive', false)
+                    hit = true
+                    objectSet(state, 'score', objectGet(state, 'score') + 10)
+                    type = arrayGet(snackTypes, objectGet(snack, 'type'))
+                    snackSpawnExplosion(state, objectGet(snack, 'xf'), objectGet(snack, 'yf'), objectGet(type, 'rgb'))
+                    snackSpawnPopup(state, objectGet(snack, 'xf'), objectGet(snack, 'yf'), '+10')
+                    windowPlaySound('explosion')
+                endif
+            endfor
+            if !hit:
+                arrayPush(survivors, bullet)
+            endif
+        endif
+    endfor
+    objectSet(state, 'bullets', survivors)
+endfunction
+
+
+# Distance-based circular hit test in fractional space
+function snackHitTest(ax, ay, bx, by, radius):
+    dx = ax - bx
+    dy = ay - by
+    return (dx * dx + dy * dy) < (radius * radius)
+endfunction
+
+
+# Update the snack formation and divers
+function snackUpdateSnacks(state):
+    snacks = objectGet(state, 'snacks')
+    pxf = objectGet(state, 'pxf')
+    wave = objectGet(state, 'wave')
+    swayOffset = 0.05 * mathSin(objectGet(state, 'time') * 0.6)
+    diveSpeed = mathMin(0.015, 0.008 + 0.0012 * wave)
+    maxDivers = mathMin(6, 2 + wave)
+
+    # Count current divers
+    divers = 0
+    for snack in snacks:
+        if objectGet(snack, 'alive') && objectGet(snack, 'st') == 'dive':
+            divers = divers + 1
+        endif
+    endfor
+
+    # Maybe launch a new dive
+    diveCd = objectGet(state, 'diveCd') - 1
+    if diveCd <= 0 && divers < maxDivers:
+        snackLaunchDive(snacks, pxf)
+        diveCd = mathMax(16, 52 - 4 * wave)
+    endif
+    objectSet(state, 'diveCd', diveCd)
+
+    # Update every snack
+    for snack in snacks:
+        if !objectGet(snack, 'alive'):
+            continue
+        endif
+        if objectGet(snack, 'st') == 'form':
+            objectSet(snack, 'xf', objectGet(snack, 'homeXf') + swayOffset)
+            objectSet(snack, 'yf', objectGet(snack, 'homeYf'))
+            objectSet(snack, 'spin', objectGet(snack, 'spin') + 0.03)
+        else:
+            snackUpdateDiver(state, snack, pxf, diveSpeed, wave)
+        endif
+    endfor
+endfunction
+
+
+# Pick a random living formation snack and send it diving
+function snackLaunchDive(snacks, pxf):
+    candidates = arrayNew()
+    for snack in snacks:
+        if objectGet(snack, 'alive') && objectGet(snack, 'st') == 'form':
+            arrayPush(candidates, snack)
+        endif
+    endfor
+    if arrayLength(candidates) == 0:
+        return
+    endif
+    pick = arrayGet(candidates, mathFloor(mathRandom() * arrayLength(candidates)))
+    objectSet(pick, 'st', 'dive')
+    objectSet(pick, 't', 0)
+    objectSet(pick, 'dir', if(objectGet(pick, 'xf') < pxf, 1, -1))
+    windowPlaySound('blip')
+endfunction
+
+
+# Return a diving snack to its formation slot
+function snackParkSnack(snack):
+    objectSet(snack, 'st', 'form')
+    objectSet(snack, 't', 0)
+endfunction
+
+
+# Advance a single diving snack along its weaving, twisting path
+function snackUpdateDiver(state, snack, pxf, diveSpeed, wave):
+    t = objectGet(snack, 't') + 1
+    objectSet(snack, 't', t)
+
+    # Fast twisting spin as it weaves through space
+    objectSet(snack, 'spin', objectGet(snack, 'spin') + 0.22)
+
+    # Weave horizontally while drifting toward the player
+    xf = objectGet(snack, 'xf')
+    weave = 0.013 * mathCos(t * 0.14) * objectGet(snack, 'dir')
+    drift = mathMax(-0.0035, mathMin(0.0035, pxf - xf))
+    xf = xf + weave + drift
+    yf = objectGet(snack, 'yf') + diveSpeed
+    objectSet(snack, 'xf', mathMax(0.03, mathMin(0.97, xf)))
+    objectSet(snack, 'yf', yf)
+
+    # Occasionally drop a crumb-bomb while in the upper field
+    if yf < 0.75 && mathRandom() < (0.009 + 0.0018 * wave):
+        arrayPush(objectGet(state, 'ebullets'), objectNew('xf', xf, 'yf', yf))
+        windowPlaySound('blip')
+    endif
+
+    # Collide with the player
+    if objectGet(state, 'invuln') == 0 && snackHitTest(xf, yf, pxf, 0.9, 0.055):
+        snackPlayerHit(state)
+        snackParkSnack(snack)
+        return
+    endif
+
+    # Flew off the bottom - return to formation
+    if yf > 1.06:
+        snackParkSnack(snack)
+    endif
+endfunction
+
+
+# Move enemy bullets down and test for a player hit
+function snackUpdateEnemyBullets(state):
+    ebullets = objectGet(state, 'ebullets')
+    pxf = objectGet(state, 'pxf')
+    survivors = arrayNew()
+    for bullet in ebullets:
+        yf = objectGet(bullet, 'yf') + 0.016
+        objectSet(bullet, 'yf', yf)
+        if yf < 1.02:
+            if objectGet(state, 'invuln') == 0 && snackHitTest(objectGet(bullet, 'xf'), yf, pxf, 0.9, 0.04):
+                snackPlayerHit(state)
+            else:
+                arrayPush(survivors, bullet)
+            endif
+        endif
+    endfor
+    objectSet(state, 'ebullets', survivors)
+endfunction
+
+
+# Apply a hit to the player: lose a life or end the game
+function snackPlayerHit(state):
+    lives = objectGet(state, 'lives') - 1
+    objectSet(state, 'lives', lives)
+    objectSet(state, 'invuln', 55)
+    snackSpawnExplosion(state, objectGet(state, 'pxf'), 0.9, '255,225,77')
+    if lives <= 0:
+        # No lingering shake/flash - the game-over screen should sit still
+        objectSet(state, 'hitFlash', 0)
+        objectSet(state, 'shake', 0)
+        windowPlaySound('gameover')
+        objectSet(state, 'mode', 'over')
+        snackSaveHighScore(state)
+    else:
+        objectSet(state, 'hitFlash', 10)
+        objectSet(state, 'shake', 9)
+        windowPlaySound('hit')
+    endif
+endfunction
+
+
+# Advance to the next wave when all snacks are eaten
+function snackCheckWaveCleared(state):
+    # A fatal hit earlier this frame may have ended the game already
+    if objectGet(state, 'mode') != 'play':
+        return
+    endif
+    snacks = objectGet(state, 'snacks')
+    for snack in snacks:
+        if objectGet(snack, 'alive'):
+            return
+        endif
+    endfor
+    objectSet(state, 'wave', objectGet(state, 'wave') + 1)
+    objectSet(state, 'score', objectGet(state, 'score') + 100)
+    objectSet(state, 'bullets', arrayNew())
+    snackSpawnPopup(state, 0.5, 0.5, 'WAVE CLEAR  +100')
+    windowPlaySound('powerup')
+    snackBuildWave(state)
+endfunction
+
+
+# Persist the high score if beaten
+function snackSaveHighScore(state):
+    if objectGet(state, 'score') > objectGet(state, 'hi'):
+        objectSet(state, 'hi', objectGet(state, 'score'))
+        localStorageSet(snackHiKey, numberToString(objectGet(state, 'hi')))
+    endif
+endfunction
+
+
+# ----------------------------------------------------------------------------
+# Particle system
+# ----------------------------------------------------------------------------
+
+# Burst of debris plus an expanding shockwave ring
+function snackSpawnExplosion(state, xf, yf, rgb):
+    particles = objectGet(state, 'particles')
+    if arrayLength(particles) > snackParticleCap:
+        return
+    endif
+    arrayPush(particles, objectNew( \
+        'kind', 'ring', 'xf', xf, 'yf', yf, 'vxf', 0, 'vyf', 0, \
+        'life', 11, 'max', 11, 'r', 0.012, 'rgb', '255,255,255' \
+    ))
+    n = 0
+    while n < 16:
+        ang = mathRandom() * 6.283
+        spd = 0.003 + 0.013 * mathRandom()
+        lf = 16 + mathFloor(mathRandom() * 12)
+        arrayPush(particles, objectNew( \
+            'kind', 'spark', 'xf', xf, 'yf', yf, \
+            'vxf', mathCos(ang) * spd, 'vyf', mathSin(ang) * spd, \
+            'life', lf, 'max', lf, \
+            'r', 0.005 + 0.006 * mathRandom(), \
+            'rgb', if(mathRandom() < 0.4, '255,255,255', rgb) \
+        ))
+        n = n + 1
+    endwhile
+endfunction
+
+
+# Small upward spray from the player's gun when firing
+function snackSpawnMuzzle(state, xf, yf):
+    particles = objectGet(state, 'particles')
+    if arrayLength(particles) > snackParticleCap:
+        return
+    endif
+    n = 0
+    while n < 6:
+        arrayPush(particles, objectNew( \
+            'kind', 'spark', 'xf', xf + (mathRandom() - 0.5) * 0.02, 'yf', yf, \
+            'vxf', (mathRandom() - 0.5) * 0.004, 'vyf', -0.004 - 0.006 * mathRandom(), \
+            'life', 7, 'max', 7, \
+            'r', 0.003 + 0.004 * mathRandom(), 'rgb', '255,247,180' \
+        ))
+        n = n + 1
+    endwhile
+endfunction
+
+
+# Rising, fading score text
+function snackSpawnPopup(state, xf, yf, text):
+    particles = objectGet(state, 'particles')
+    arrayPush(particles, objectNew( \
+        'kind', 'text', 'xf', xf, 'yf', yf, 'vxf', 0, 'vyf', -0.004, \
+        'life', 32, 'max', 32, 'r', 0, 'rgb', '255,236,120', 'text', text \
+    ))
+endfunction
+
+
+# Advance and expire all particles
+function snackUpdateParticles(state):
+    particles = objectGet(state, 'particles')
+    survivors = arrayNew()
+    for p in particles:
+        life = objectGet(p, 'life') - 1
+        if life > 0:
+            objectSet(p, 'life', life)
+            objectSet(p, 'xf', objectGet(p, 'xf') + objectGet(p, 'vxf'))
+            objectSet(p, 'yf', objectGet(p, 'yf') + objectGet(p, 'vyf'))
+            if objectGet(p, 'kind') == 'spark':
+                objectSet(p, 'vyf', objectGet(p, 'vyf') + 0.0006)
+                objectSet(p, 'vxf', objectGet(p, 'vxf') * 0.96)
+            endif
+            arrayPush(survivors, p)
+        endif
+    endfor
+    objectSet(state, 'particles', survivors)
+endfunction
+
+
+# ----------------------------------------------------------------------------
+# Rendering
+# ----------------------------------------------------------------------------
+
+# Build an rgba() color string from an "r,g,b" triple and an alpha
+function snackRgba(rgb, alpha):
+    return 'rgba(' + rgb + ', ' + numberToFixed(alpha, 2) + ')'
+endfunction
+
+
+# Draw bold centered text with a drop shadow
+function snackDrawTextShadow(text, x, y, size, fill, shadow):
+    drawTextStyle(size, shadow, true)
+    drawText(text, x + size * 0.04, y + size * 0.04)
+    drawTextStyle(size, fill, true)
+    drawText(text, x, y)
+endfunction
+
+
+function snackDraw():
+    fontSize = documentFontSize()
+    width = windowWidth() - 3 * fontSize
+    height = windowHeight() - 3 * fontSize
+    drawNew(width, height)
+
+    state = systemGlobalGet('snackState')
+    if state == null:
+        drawStyle('none', 0, '#0a0616')
+        drawRect(0, 0, width, height)
+        drawRender()
+        return
+    endif
+
+    snackDrawBackground(state, width, height)
+
+    mode = objectGet(state, 'mode')
+    if mode == 'title':
+        snackDrawTitle(state, width, height)
+    elif mode == 'play':
+        snackDrawPlay(state, width, height)
+    elif mode == 'over':
+        snackDrawPlay(state, width, height)
+        snackDrawOver(state, width, height)
+    endif
+
+    drawRender()
+endfunction
+
+
+# Deep-space backdrop: base fill, soft nebula clouds, drifting twinkling stars
+function snackDrawBackground(state, width, height):
+    drawStyle('none', 0, '#0a0616')
+    drawRect(0, 0, width, height)
+
+    drawStyle('none', 0, 'rgba(86,42,150,0.22)')
+    drawEllipse(0.26 * width, 0.30 * height, 0.40 * width, 0.34 * height)
+    drawStyle('none', 0, 'rgba(28,64,150,0.18)')
+    drawEllipse(0.78 * width, 0.62 * height, 0.44 * width, 0.38 * height)
+    drawStyle('none', 0, 'rgba(150,40,96,0.15)')
+    drawEllipse(0.60 * width, 0.12 * height, 0.32 * width, 0.26 * height)
+
+    time = objectGet(state, 'time')
+    for star in objectGet(state, 'stars'):
+        bright = 0.3 + 0.7 * mathAbs(mathSin(time * 1.6 * objectGet(star, 'sp') + objectGet(star, 'tw')))
+        drawStyle('none', 0, snackRgba('255,255,255', bright))
+        drawCircle(objectGet(star, 'xf') * width, objectGet(star, 'yf') * height, objectGet(star, 'r'))
+    endfor
+endfunction
+
+
+# Draw a single glossy, twisting snack. The horizontal squash makes it look
+# like it is tumbling end-over-end as it weaves through space.
+function snackDrawSnack(snack, width, height, r, ox, oy):
+    cx = objectGet(snack, 'xf') * width + ox
+    cy = objectGet(snack, 'yf') * height + oy
+    spin = objectGet(snack, 'spin')
+    type = arrayGet(snackTypes, objectGet(snack, 'type'))
+
+    squash = 0.35 + 0.65 * mathAbs(mathCos(spin))
+    rx = r * squash
+
+    # Soft glow halo
+    drawStyle('none', 0, snackRgba(objectGet(type, 'rgb'), 0.20))
+    drawEllipse(cx, cy, rx + r * 0.35, r + r * 0.35)
+
+    # Body
+    drawStyle(objectGet(type, 'accent'), mathMax(1, r * 0.14), objectGet(type, 'fill'))
+    drawEllipse(cx, cy, rx, r)
+
+    if objectGet(type, 'hole'):
+        drawStyle('none', 0, '#0a0616')
+        drawEllipse(cx, cy, rx * 0.42, r * 0.42)
+    else:
+        # Three sprinkles that rotate with the spin
+        drawStyle('none', 0, objectGet(type, 'accent'))
+        k = 0
+        while k < 3:
+            ang = spin + k * 2.094
+            sx = cx + rx * 0.5 * mathCos(ang)
+            sy = cy + r * 0.5 * mathSin(ang)
+            drawCircle(sx, sy, mathMax(1, r * 0.15))
+            k = k + 1
+        endwhile
+    endif
+
+    # Glossy highlight for a candy-coated look
+    drawStyle('none', 0, 'rgba(255,255,255,0.40)')
+    drawEllipse(cx - rx * 0.32, cy - r * 0.34, rx * 0.32, r * 0.26)
+endfunction
+
+
+# Render all particles (offset by the screen-shake vector)
+function snackDrawParticles(state, width, height, ox, oy):
+    minDim = mathMin(width, height)
+    for p in objectGet(state, 'particles'):
+        alpha = objectGet(p, 'life') / objectGet(p, 'max')
+        x = objectGet(p, 'xf') * width + ox
+        y = objectGet(p, 'yf') * height + oy
+        kind = objectGet(p, 'kind')
+        if kind == 'ring':
+            rr = (objectGet(p, 'r') + (1 - alpha) * 0.06) * minDim
+            drawStyle(snackRgba(objectGet(p, 'rgb'), alpha * 0.85), mathMax(1, 0.006 * minDim), 'none')
+            drawCircle(x, y, rr)
+        elif kind == 'text':
+            drawTextStyle(mathMax(12, 0.03 * minDim), snackRgba(objectGet(p, 'rgb'), alpha), true)
+            drawText(objectGet(p, 'text'), x, y)
+        else:
+            rr = objectGet(p, 'r') * minDim * (0.4 + 0.6 * alpha)
+            drawStyle('none', 0, snackRgba(objectGet(p, 'rgb'), alpha))
+            drawCircle(x, y, rr)
+        endif
+    endfor
+endfunction
+
+
+function snackDrawPlay(state, width, height):
+    minDim = mathMin(width, height)
+    snackR = 0.026 * minDim
+    bulletR = mathMax(2, 0.0085 * minDim)
+
+    # Screen-shake offset
+    ox = 0
+    oy = 0
+    shake = objectGet(state, 'shake')
+    if shake > 0:
+        ox = (mathRandom() - 0.5) * shake * 0.0035 * width
+        oy = (mathRandom() - 0.5) * shake * 0.0035 * height
+    endif
+
+    # Snacks
+    for snack in objectGet(state, 'snacks'):
+        if objectGet(snack, 'alive'):
+            snackDrawSnack(snack, width, height, snackR, ox, oy)
+        endif
+    endfor
+
+    # Enemy crumb-bombs (glowing)
+    for bullet in objectGet(state, 'ebullets'):
+        bx = objectGet(bullet, 'xf') * width + ox
+        by = objectGet(bullet, 'yf') * height + oy
+        drawStyle('none', 0, 'rgba(255,112,67,0.30)')
+        drawCircle(bx, by, bulletR * 2.1)
+        drawStyle('none', 0, '#ff8a4c')
+        drawCircle(bx, by, bulletR)
+    endfor
+
+    # Player bullets (glowing vertical streaks)
+    for bullet in objectGet(state, 'bullets'):
+        bx = objectGet(bullet, 'xf') * width + ox
+        by = objectGet(bullet, 'yf') * height + oy
+        drawStyle('none', 0, 'rgba(120,230,255,0.30)')
+        drawCircle(bx, by, bulletR * 2.0)
+        drawStyle('none', 0, '#eafcff')
+        drawEllipse(bx, by, bulletR * 0.75, bulletR * 1.7)
+    endfor
+
+    # Particles
+    snackDrawParticles(state, width, height, ox, oy)
+
+    # Player ship (blinks while invulnerable)
+    invuln = objectGet(state, 'invuln')
+    if invuln == 0 || (mathFloor(invuln / 3) % 2) == 0:
+        flick = 0.55 + 0.45 * mathAbs(mathSin(objectGet(state, 'time') * 5.0))
+        snackDrawShip(objectGet(state, 'pxf') * width + ox, 0.9 * height + oy, 0.036 * minDim, flick)
+    endif
+
+    # Damage flash overlay
+    hitFlash = objectGet(state, 'hitFlash')
+    if hitFlash > 0:
+        drawStyle('none', 0, snackRgba('255,60,60', (hitFlash / 10) * 0.35))
+        drawRect(0, 0, width, height)
+    endif
+
+    snackDrawHud(state, width, height)
+endfunction
+
+
+# The player's "Spork Fighter" - a sleek cyan starfighter with swept wings,
+# an amber cockpit dome, twin cannons, and a flickering engine flame. The
+# flame argument is its intensity (pass 0 for a static life-icon).
+function snackDrawShip(cx, cy, r, flame):
+    # Engine glow + flame (behind the hull)
+    if flame > 0:
+        drawStyle('none', 0, 'rgba(120,230,255,0.35)')
+        drawCircle(cx, cy + r * 0.95, r * 0.5)
+        drawStyle('none', 0, '#46e0ff')
+        drawMove(cx - r * 0.22, cy + r * 0.85)
+        drawLine(cx, cy + r * (1.0 + 0.7 * flame))
+        drawLine(cx + r * 0.22, cy + r * 0.85)
+        drawClose()
+        drawStyle('none', 0, '#eafcff')
+        drawMove(cx - r * 0.11, cy + r * 0.85)
+        drawLine(cx, cy + r * (0.85 + 0.5 * flame))
+        drawLine(cx + r * 0.11, cy + r * 0.85)
+        drawClose()
+    endif
+
+    # Swept wings (behind the hull)
+    drawStyle('#147b86', mathMax(1, r * 0.05), '#1f9aa6')
+    drawMove(cx + r * 0.34, cy - r * 0.05)
+    drawLine(cx + r * 1.15, cy + r * 0.85)
+    drawLine(cx + r * 0.30, cy + r * 0.72)
+    drawClose()
+    drawMove(cx - r * 0.34, cy - r * 0.05)
+    drawLine(cx - r * 1.15, cy + r * 0.85)
+    drawLine(cx - r * 0.30, cy + r * 0.72)
+    drawClose()
+
+    # Hull
+    drawStyle('#147b86', mathMax(1, r * 0.08), '#3ad6d6')
+    drawMove(cx, cy - r * 1.2)
+    drawLine(cx + r * 0.30, cy - r * 0.4)
+    drawLine(cx + r * 0.42, cy + r * 0.5)
+    drawLine(cx + r * 0.28, cy + r * 0.95)
+    drawLine(cx - r * 0.28, cy + r * 0.95)
+    drawLine(cx - r * 0.42, cy + r * 0.5)
+    drawLine(cx - r * 0.30, cy - r * 0.4)
+    drawClose()
+
+    # Cockpit dome with a highlight
+    drawStyle('#b8860b', mathMax(1, r * 0.04), '#ffd23f')
+    drawEllipse(cx, cy - r * 0.2, r * 0.22, r * 0.32)
+    drawStyle('none', 0, 'rgba(255,255,255,0.6)')
+    drawEllipse(cx - r * 0.06, cy - r * 0.34, r * 0.08, r * 0.12)
+
+    # Twin cannon tips at the front
+    drawStyle('none', 0, 'rgba(120,230,255,0.5)')
+    drawCircle(cx - r * 0.22, cy - r * 0.85, r * 0.16)
+    drawCircle(cx + r * 0.22, cy - r * 0.85, r * 0.16)
+    drawStyle('none', 0, '#eafcff')
+    drawCircle(cx - r * 0.22, cy - r * 0.85, r * 0.08)
+    drawCircle(cx + r * 0.22, cy - r * 0.85, r * 0.08)
+
+    # Glossy hull highlight
+    drawStyle('none', 0, 'rgba(255,255,255,0.30)')
+    drawEllipse(cx - r * 0.12, cy + r * 0.1, r * 0.1, r * 0.4)
+endfunction
+
+
+function snackDrawHud(state, width, height):
+    minDim = mathMin(width, height)
+    fs = mathMax(12, 0.028 * minDim)
+    drawTextStyle(fs, '#ffffff', true)
+    drawText('SCORE ' + objectGet(state, 'score'), 0.03 * width, 0.05 * height, 'start')
+    drawTextStyle(fs, '#ffd23f', true)
+    drawText('HI ' + objectGet(state, 'hi'), 0.5 * width, 0.05 * height, 'middle')
+    drawTextStyle(fs, '#ff9ec4', true)
+    drawText('WAVE ' + objectGet(state, 'wave'), 0.97 * width, 0.05 * height, 'end')
+
+    # Lives shown as little ships
+    i = 0
+    lr = 0.02 * minDim
+    while i < objectGet(state, 'lives'):
+        snackDrawShip(0.05 * width + i * lr * 3, 0.93 * height, lr, 0)
+        i = i + 1
+    endwhile
+endfunction
+
+
+function snackDrawTitle(state, width, height):
+    minDim = mathMin(width, height)
+    time = objectGet(state, 'time')
+
+    # Snacks orbiting the title on a twisting elliptical path
+    n = 0
+    while n < 6:
+        ang = time * 0.5 + n * 1.047
+        demo = objectNew( \
+            'type', n % arrayLength(snackTypes), \
+            'xf', 0.5 + 0.34 * mathCos(ang), \
+            'yf', 0.4 + 0.16 * mathSin(ang), \
+            'spin', time * 2 + n \
+        )
+        snackDrawSnack(demo, width, height, 0.038 * minDim, 0, 0)
+        n = n + 1
+    endwhile
+
+    # Title with pulsing glow + drop shadow + bright face
+    pulse = 1 + 0.05 * mathSin(time * 2.2)
+    titleSize = mathMax(28, 0.12 * minDim) * pulse
+    glowAlpha = 0.25 + 0.15 * mathAbs(mathSin(time * 2.2))
+    drawTextStyle(titleSize * 1.08, snackRgba('255,158,196', glowAlpha), true)
+    drawText('SNACK ATTACK', 0.5 * width, 0.4 * height)
+    snackDrawTextShadow('SNACK ATTACK', 0.5 * width, 0.4 * height, titleSize, '#ff9ec4', '#3a1030')
+
+    drawTextStyle(mathMax(13, 0.03 * minDim), '#ffd23f', true)
+    drawText('The pantry has gone rogue!', 0.5 * width, 0.55 * height)
+
+    # Blinking start prompt
+    if mathSin(time * 4) > -0.3:
+        drawTextStyle(mathMax(15, 0.04 * minDim), '#ffffff', true)
+        drawText('Press SPACE to Start', 0.5 * width, 0.68 * height)
+    endif
+
+    drawTextStyle(mathMax(11, 0.022 * minDim), '#9aa0c0')
+    drawText('Move: Arrow keys or A / D        Fire: Space', 0.5 * width, 0.80 * height)
+
+    if objectGet(state, 'hi') > 0:
+        drawTextStyle(mathMax(12, 0.024 * minDim), '#7ed957', true)
+        drawText('High Score: ' + objectGet(state, 'hi'), 0.5 * width, 0.87 * height)
+    endif
+endfunction
+
+
+function snackDrawOver(state, width, height):
+    minDim = mathMin(width, height)
+    time = objectGet(state, 'time')
+
+    # Dim the field
+    drawStyle('none', 0, 'rgba(5,3,16,0.72)')
+    drawRect(0, 0, width, height)
+
+    pulse = 1 + 0.04 * mathSin(time * 3)
+    size = mathMax(26, 0.1 * minDim) * pulse
+    snackDrawTextShadow('GAME OVER', 0.5 * width, 0.38 * height, size, '#ff5a5a', '#5a0d0d')
+
+    drawTextStyle(mathMax(16, 0.04 * minDim), '#ffffff', true)
+    drawText('Score: ' + objectGet(state, 'score'), 0.5 * width, 0.52 * height)
+    drawTextStyle(mathMax(16, 0.04 * minDim), '#ffd23f', true)
+    drawText('High Score: ' + objectGet(state, 'hi'), 0.5 * width, 0.59 * height)
+
+    if mathSin(time * 4) > -0.3:
+        drawTextStyle(mathMax(14, 0.034 * minDim), '#ffffff', true)
+        drawText('Press R to Restart', 0.5 * width, 0.71 * height)
+    endif
+    drawTextStyle(mathMax(13, 0.03 * minDim), '#9aa0c0', true)
+    drawText('Press Q to Quit to Title', 0.5 * width, 0.78 * height)
+endfunction
