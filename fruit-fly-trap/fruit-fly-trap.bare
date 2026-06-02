@@ -31,7 +31,7 @@ function fruitFlyTrapMain():
         # Print close link
         elementModelRender({ \
             'html': 'p', \
-            'attr': {'class': 'markdown-model-no-print'}, \
+            'attr': {'class': 'barescript-no-print'}, \
             'elem': { \
                 'html': 'a', \
                 'attr': {'href': documentURL(argsURL(fruitFlyTrapArguments))}, \
