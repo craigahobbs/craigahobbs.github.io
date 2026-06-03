@@ -7,6 +7,8 @@ import argparse
 import datetime
 import json
 import sys
+import time
+import urllib.error
 import urllib.request
 
 
@@ -61,8 +63,7 @@ def main():
         # Get the package download data
         if package_language == 'Python':
             package_url = f'https://pypistats.org/api/packages/{package_name}/overall'
-            with urllib.request.urlopen(package_url) as response:
-                package_updated_raw = json.load(response)
+            package_updated_raw = urlopen_json(package_url)
             package_updated = [
                 {'Package': package_name, 'Language': package_language, 'Date': row['date'], 'Downloads': row['downloads']}
                 for row in package_updated_raw['data'] if row['category'] == 'without_mirrors'
@@ -70,8 +71,7 @@ def main():
         else: # package_language == 'JavaScript'
             year_ago = today - datetime.timedelta(days=365)
             package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
-            with urllib.request.urlopen(package_url) as response:
-                package_updated_raw = json.load(response)
+            package_updated_raw = urlopen_json(package_url)
             package_updated = [
                 {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
                 for row in package_updated_raw['downloads']
@@ -89,6 +89,23 @@ def main():
     # Update the data file
     with open(package_file, 'w', encoding='utf-8') as fh:
         json.dump(sorted(package_data, key=lambda row: (row['Date'], row['Language'], row['Package'])), fh, indent=4)
+
+
+# Helper to download a text resource URL with retries
+def urlopen_json(url):
+    retries = 3
+    retry_delay_s = 2
+    for _ in range(retries -1):
+        try:
+            with urllib.request.urlopen(url) as response:
+                return json.load(response)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            print(f'  Request failed ({exc}), retrying in {retry_delay_s}s')
+            time.sleep(retry_delay_s)
+
+    # Final attempt - let exceptions propagate
+    with urllib.request.urlopen(url) as response:
+        return json.load(response)
 
 
 if __name__ == '__main__':
