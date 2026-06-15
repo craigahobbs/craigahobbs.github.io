@@ -93,8 +93,8 @@ def main():
 
 # Helper to download a text resource URL with retries
 def urlopen_json(url):
-    retries = 3
-    retry_delay_s = 2
+    retries = 5
+    retry_delay_s = 10
     for _ in range(retries -1):
         try:
             with urllib.request.urlopen(url) as response:
