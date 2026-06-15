@@ -2,9 +2,9 @@
 
 | | |
 | ------- | ------ |
-| [BareSript Library Documentation Viewer] | [Source][BareSript Library Documentation Viewer Source] |
+| [BareSript Library Documentation] | [Source][BareSript Library Documentation Source] |
 | [Chaos Balls] | [Source][Chaos Balls Source] |
-| [Chisel Documentation Viewer] | [Source][Chisel Documentation Viewer Source] |
+| [Chisel Documentation] | [Source][Chisel Documentation Source] |
 | [Color Ramp] | [Source][Color Ramp Source] |
 | [Conway's Game of Life] | [Source][Conway's Game of Life Source] |
 | [Day Hikes Dashboard] | [Source][Day Hikes Dashboard Source] |
@@ -22,14 +22,14 @@
 | [Sunrise Dashboard] | [Source][Sunrise Dashboard Source] |
 | [Tunguska Event Simulation] | [Source][Tunguska Event Simulation Source] |
 
-[BareSript Library Documentation Viewer]: https://craigahobbs.github.io/bare-script/library/
-[BareSript Library Documentation Viewer Source]: https://github.com/craigahobbs/bare-script/blob/main/lib/include/baredoc.bare
+[BareSript Library Documentation]: https://craigahobbs.github.io/bare-script/library/
+[BareSript Library Documentation Source]: https://github.com/craigahobbs/bare-script/blob/main/lib/include/baredoc.bare
 
 [Chaos Balls]: https://craigahobbs.github.io/chaosBalls/
 [Chaos Balls Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/chaosBalls/chaosBalls.bare
 
-[Chisel Documentation Viewer]: https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request'
-[Chisel Documentation Viewer Source]: https://github.com/craigahobbs/chisel/blob/main/src/chisel/static/chiselDoc.bare
+[Chisel Documentation]: https://craigahobbs.github.io/chisel/example/#var.vName='chisel_doc_request'
+[Chisel Documentation Source]: https://github.com/craigahobbs/chisel/blob/main/src/chisel/static/chiselDoc.bare
 
 [Color Ramp]: https://craigahobbs.github.io/color-ramp/
 [Color Ramp Source]: https://github.com/craigahobbs/craigahobbs.github.io/blob/main/color-ramp/colorRamp.bare
