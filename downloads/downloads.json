@@ -66958,5 +66958,89 @@
         "Language": "Python",
         "Date": "2026-06-28",
         "Downloads": 1082
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-06-29",
+        "Downloads": 282
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-06-29",
+        "Downloads": 19
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-06-29",
+        "Downloads": 38
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-06-29",
+        "Downloads": 5
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-06-29",
+        "Downloads": 58
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 205
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 225
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 4
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 2
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 11
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 128
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 2
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 668
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-06-29",
+        "Downloads": 2616
     }
 ]
