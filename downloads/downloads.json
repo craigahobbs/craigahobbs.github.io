@@ -68650,5 +68650,83 @@
         "Language": "Python",
         "Date": "2026-07-19",
         "Downloads": 720
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-07-20",
+        "Downloads": 6
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-07-20",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-07-20",
+        "Downloads": 64
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-07-20",
+        "Downloads": 7
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-07-20",
+        "Downloads": 66
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 13
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 17
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 6
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 6
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 13
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 35
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 602
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-07-20",
+        "Downloads": 2912
     }
 ]
