@@ -66,7 +66,7 @@ function colorRampRender(args):
         '', \
         'A tool for creating and editing color gradients.', \
         '', \
-        '[Color Ramp Library](index.html#url=README.md&color-ramp-library)', \
+        '[Color Ramp Library](index.html#url=colorRampLibrary.md)', \
         '', \
         '## ' + markdownEscape(objectGet(ramp, 'name')) \
     )
@@ -242,39 +242,58 @@ function colorRampRenderDisplay(ramp):
     numColors = arrayLength(colors)
     numSegments = numColors - 1
 
-    # Draw the color ramp
+    # Draw the color ramp, batching same-color runs into single rectangles
+    runHexColor = null
+    runStart = 0
     x = 0
-    while x < rampWidth:
-        # Determine which segment we're in
-        position = x / (rampWidth - 1)
-        segmentPosition = position * numSegments
-        segmentIndex = mathMin(numSegments - 1, mathFloor(segmentPosition))
-        segmentT = segmentPosition - segmentIndex
-
-        # Get the colors to interpolate between
+    segmentIndex = 0
+    while segmentIndex < numSegments:
+        # Get the segment's channel values
         color1 = arrayGet(colors, segmentIndex)
         color2 = arrayGet(colors, segmentIndex + 1)
+        r1 = objectGet(color1, 'r')
+        g1 = objectGet(color1, 'g')
+        b1 = objectGet(color1, 'b')
+        rDelta = objectGet(color2, 'r') - r1
+        gDelta = objectGet(color2, 'g') - g1
+        bDelta = objectGet(color2, 'b') - b1
 
-        # Interpolate the RGB values
-        r = colorRampInterpolate(objectGet(color1, 'r'), objectGet(color2, 'r'), segmentT)
-        g = colorRampInterpolate(objectGet(color1, 'g'), objectGet(color2, 'g'), segmentT)
-        b = colorRampInterpolate(objectGet(color1, 'b'), objectGet(color2, 'b'), segmentT)
+        # Compute the segment's pixel extent
+        isLastSegment = segmentIndex == numSegments - 1
+        segmentEndX = if(isLastSegment, rampWidth, mathCeil((segmentIndex + 1) * (rampWidth - 1) / numSegments))
 
-        # Draw the vertical line
-        drawStyle('none', 0, colorRampToHex(r, g, b))
-        drawRect(rampX + x, rampY, 1, rampHeight)
+        # Draw the segment's pixels
+        while x < segmentEndX:
+            # Interpolate the RGB values and build the hex color
+            segmentT = mathMin(1, (x / (rampWidth - 1)) * numSegments - segmentIndex)
+            hexColor = '#' + arrayGet(colorRampHexBytes, mathRound(r1 + rDelta * segmentT)) + \
+                arrayGet(colorRampHexBytes, mathRound(g1 + gDelta * segmentT)) + \
+                arrayGet(colorRampHexBytes, mathRound(b1 + bDelta * segmentT))
 
-        x = x + 1
+            # On color change, draw the completed run
+            if hexColor != runHexColor:
+                if runHexColor != null:
+                    drawStyle('none', 0, runHexColor)
+                    drawRect(rampX + runStart, rampY, x - runStart, rampHeight)
+                endif
+                runHexColor = hexColor
+                runStart = x
+            endif
+
+            x = x + 1
+        endwhile
+
+        segmentIndex = segmentIndex + 1
     endwhile
+
+    # Draw the final run
+    if runHexColor != null:
+        drawStyle('none', 0, runHexColor)
+        drawRect(rampX + runStart, rampY, x - runStart, rampHeight)
+    endif
 
     # Render the color ramp
     drawRender()
-endfunction
-
-
-# Interpolate between two values
-function colorRampInterpolate(v1, v2, t):
-    return v1 + (v2 - v1) * t
 endfunction
 
 
@@ -421,13 +440,21 @@ function colorRampToHex(r, g, b):
 endfunction
 
 
+# Two-digit hex strings for byte values 0-255
+colorRampHexBytes = []
+colorRampHexDigits = '0123456789abcdef'
+colorRampHexIndex = 0
+while colorRampHexIndex < 256:
+    arrayPush(colorRampHexBytes, \
+        stringCharAt(colorRampHexDigits, mathFloor(colorRampHexIndex / 16)) + \
+        stringCharAt(colorRampHexDigits, colorRampHexIndex % 16))
+    colorRampHexIndex = colorRampHexIndex + 1
+endwhile
+
+
 # Convert a byte value to two-digit hex
 function colorRampByteToHex(value):
-    value = mathMax(0, mathMin(255, value))
-    hex = '0123456789abcdef'
-    high = mathFloor(value / 16)
-    low = value % 16
-    return stringCharAt(hex, high) + stringCharAt(hex, low)
+    return arrayGet(colorRampHexBytes, mathMax(0, mathMin(255, value)))
 endfunction
 
 
