@@ -9,11 +9,13 @@ help:
 
 .PHONY: clean
 clean:
+	$(MAKE) -C color-ramp clean
 	$(MAKE) -C downloads clean
 
 
 .PHONY: commit
 commit:
+	$(MAKE) -C color-ramp commit
 	$(MAKE) -C downloads commit
 
 
@@ -24,4 +26,5 @@ gh-pages:
 
 .PHONY: superclean
 superclean:
+	$(MAKE) -C color-ramp clean
 	$(MAKE) -C downloads superclean

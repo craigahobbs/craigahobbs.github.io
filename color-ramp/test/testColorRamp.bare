@@ -1,0 +1,992 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../colorRamp.bare'
+
+
+#
+# Test helpers
+#
+# Tests that touch local storage call localStorageClear() right after unittestMockAll() and
+# assert the recorded ['localStorageClear', []] entry. The clear is required because
+# unittestMock.bare resets its state with a shallow objectCopy - the nested localStorage
+# object is shared, so mocked saves would otherwise leak into later tests.
+#
+
+
+# Mock the runtime functions the render path depends on: a 23-pixel window and 1-pixel font
+# size for a tiny, deterministic 19-column color ramp display, and a fixed object URL
+function testColorRampMockRender():
+    unittestMockOne('windowWidth', testColorRampWindowWidth)
+    unittestMockOne('documentFontSize', testColorRampFontSize)
+    unittestMockOne('windowURLObject', testColorRampURLObject)
+endfunction
+
+function testColorRampWindowWidth():
+    return 23
+endfunction
+
+function testColorRampFontSize():
+    return 1
+endfunction
+
+function testColorRampURLObject():
+    return 'blob:mock'
+endfunction
+
+
+# localStorageGet mock that returns the "testColorRampStorage" global
+function testColorRampStorageGet():
+    return systemGlobalGet('testColorRampStorage')
+endfunction
+
+
+# sessionStorageGet mock that returns a focus ID
+function testColorRampSessionGet():
+    return 'colorRampR0'
+endfunction
+
+
+# Capture the mock call log of rendering the given ramp - the expected render tail of
+# interaction-handler tests. Render correctness itself is anchored by testColorRampRender's
+# explicit whole-log assertion.
+function testColorRampRenderCalls(args, ramp):
+    systemGlobalSet('testColorRampStorage', jsonStringify(ramp))
+    unittestMockAll()
+    testColorRampMockRender()
+    unittestMockOne('localStorageGet', testColorRampStorageGet)
+    colorRampRender(args)
+    calls = unittestMockEnd()
+    systemGlobalSet('testColorRampStorage', null)
+    return calls
+endfunction
+
+
+#
+# Shared button callback-binding test helpers
+#
+# The render tests assert each button carries a callback ('<function>'), but not WHICH
+# handler or captured arguments it is bound to (every function serializes to the same
+# '<function>' placeholder under unittestDeepEqual). These helpers pull the actual captured
+# callback out of the recorded call log and invoke it, proving the binding (e.g. that a
+# "Delete" button removes its own row and not another).
+#
+
+
+# Recursively find a labeled button's real click callback in a rendered element model
+function testColorRampFindClick(model, text):
+    type = systemType(model)
+    if type == 'array':
+        for item in model:
+            found = testColorRampFindClick(item, text)
+            if found != null:
+                return found
+            endif
+        endfor
+    elif type == 'object':
+        elem = objectGet(model, 'elem')
+        callback = objectGet(model, 'callback')
+        if callback != null && systemType(elem) == 'object' && objectGet(elem, 'text') == text:
+            return objectGet(callback, 'click')
+        endif
+        return testColorRampFindClick(elem, text)
+    endif
+    return null
+endfunction
+
+
+# Collect the real click callbacks of every labeled button matching text, in document order.
+# Used to disambiguate repeated labels (e.g. the three per-row "Delete" buttons).
+function testColorRampFindClicks(model, text, result):
+    type = systemType(model)
+    if type == 'array':
+        for item in model:
+            testColorRampFindClicks(item, text, result)
+        endfor
+    elif type == 'object':
+        elem = objectGet(model, 'elem')
+        callback = objectGet(model, 'callback')
+        if callback != null && systemType(elem) == 'object' && objectGet(elem, 'text') == text:
+            arrayPush(result, objectGet(callback, 'click'))
+        endif
+        testColorRampFindClicks(elem, text, result)
+    endif
+    return result
+endfunction
+
+
+# Assert that invoking actualFn produces the same recorded call log as invoking expectedFn
+# (each under fresh mocks from data). Proves a captured button callback is bound to the
+# intended handler and arguments.
+function testColorRampSameEffect(actualFn, expectedFn, data):
+    unittestMockAll(data)
+    localStorageClear()
+    testColorRampMockRender()
+    expectedFn()
+    expected = unittestMockEnd()
+    unittestMockAll(data)
+    localStorageClear()
+    testColorRampMockRender()
+    actualFn()
+    unittestDeepEqual(unittestMockEnd(), expected)
+endfunction
+
+
+# Render via renderFn, find the labeled button in the recorded call log, then verify its
+# binding with testColorRampSameEffect
+function testColorRampVerifyClick(renderFn, text, expectedFn, data):
+    unittestMockAll(data)
+    testColorRampMockRender()
+    renderFn()
+    found = testColorRampFindClick(unittestMockEnd(), text)
+    testColorRampSameEffect(found, expectedFn, data)
+endfunction
+
+
+# Like testColorRampVerifyClick but selects the ix-th button matching text
+function testColorRampVerifyClickN(renderFn, text, ix, expectedFn, data):
+    unittestMockAll(data)
+    testColorRampMockRender()
+    renderFn()
+    found = arrayGet(testColorRampFindClicks(unittestMockEnd(), text, []), ix)
+    testColorRampSameEffect(found, expectedFn, data)
+endfunction
+
+
+#
+# Expected element-model helpers
+#
+
+
+# The editor table header row element model
+testColorRampHeaderElements = { \
+    'html': 'tr', \
+    'elem': [ \
+        {'html': 'th', 'elem': {'text': 'Swatch'}}, \
+        {'html': 'th', 'elem': {'text': 'Hex'}}, \
+        {'html': 'th', 'elem': {'text': 'Decimal'}}, \
+        {'html': 'th', 'elem': {'text': 'R'}}, \
+        {'html': 'th', 'elem': {'text': 'G'}}, \
+        {'html': 'th', 'elem': {'text': 'B'}}, \
+        {'html': 'th', 'elem': {'text': 'Action'}} \
+    ] \
+}
+
+
+# An editor table color-row element model. rValue/gValue/bValue are the input display
+# values (decimal numbers or two-digit hex strings). deleteElem is the "Delete" button
+# element model, or null below the three-color minimum.
+function testColorRampRowElements(index, hexColor, decimalText, rValue, gValue, bValue, deleteElem):
+    return { \
+        'html': 'tr', \
+        'elem': [ \
+            { \
+                'html': 'td', \
+                'attr': {'style': 'vertical-align: middle;'}, \
+                'elem': { \
+                    'html': 'div', \
+                    'attr': { \
+                        'style': 'width: 50px; height: 30px; background-color: ' + hexColor + '; border: 1px solid black;' \
+                    } \
+                } \
+            }, \
+            {'html': 'td', 'elem': {'text': hexColor}}, \
+            {'html': 'td', 'elem': {'text': decimalText}}, \
+            {'html': 'td', 'elem': formsTextElements('colorRampR' + index, rValue, 6, colorRampUpdate)}, \
+            {'html': 'td', 'elem': formsTextElements('colorRampG' + index, gValue, 6, colorRampUpdate)}, \
+            {'html': 'td', 'elem': formsTextElements('colorRampB' + index, bValue, 6, colorRampUpdate)}, \
+            {'html': 'td', 'elem': deleteElem} \
+        ] \
+    }
+endfunction
+
+
+# The editor table element model
+function testColorRampTableElements(rows):
+    tableRows = [testColorRampHeaderElements]
+    arrayExtend(tableRows, rows)
+    return { \
+        'html': 'table', \
+        'attr': {'style': 'border-collapse: collapse; margin: 10px 0;'}, \
+        'elem': tableRows \
+    }
+endfunction
+
+
+# The editor menu element model. addElem is the "Add" button or inactive text, modeText and
+# modeHref are the hex/decimal toggle link, titleElem is the "Title" link or inactive text,
+# and editorElems is the ramp-name editor element model array or null.
+function testColorRampMenuElements(addElem, modeText, modeHref, titleElem, downloadFilename, editorElems):
+    return { \
+        'html': 'p', \
+        'elem': [ \
+            addElem, \
+            {'text': ' | '}, \
+            formsLinkButtonElements('Update', colorRampUpdate), \
+            {'text': ' | '}, \
+            formsLinkElements(modeText, modeHref), \
+            {'text': ' | '}, \
+            titleElem, \
+            {'text': ' | '}, \
+            formsLinkButtonElements('Reset', colorRampReset), \
+            {'text': ' | '}, \
+            { \
+                'html': 'a', \
+                'attr': {'href': 'blob:mock', 'download': downloadFilename}, \
+                'elem': {'text': 'Download'} \
+            }, \
+            editorElems \
+        ] \
+    }
+endfunction
+
+
+# A color ramp display run rectangle element model
+function testColorRampRectElements(fill, x, width):
+    return { \
+        'svg': 'rect', \
+        'attr': { \
+            'fill': fill, \
+            'height': 99, \
+            'rx': null, \
+            'ry': null, \
+            'stroke': 'none', \
+            'stroke-dasharray': 'none', \
+            'stroke-width': '0.00000000', \
+            'width': width, \
+            'x': x, \
+            'y': 0.5 \
+        } \
+    }
+endfunction
+
+
+# The color ramp display element model - the white background plus the given run rectangles
+function testColorRampSvgElements(runs):
+    rects = [ \
+        { \
+            'svg': 'rect', \
+            'attr': { \
+                'fill': 'white', \
+                'height': 100, \
+                'rx': null, \
+                'ry': null, \
+                'stroke': 'none', \
+                'stroke-dasharray': 'none', \
+                'stroke-width': '0.00000000', \
+                'width': 20, \
+                'x': 0, \
+                'y': 0 \
+            } \
+        } \
+    ]
+    arrayExtend(rects, runs)
+    return { \
+        'html': 'p', \
+        'elem': { \
+            'svg': 'svg', \
+            'attr': {'width': 20, 'height': 100}, \
+            'elem': rects \
+        } \
+    }
+endfunction
+
+
+# One single-pixel run rectangle per fill, for gradients with a distinct color per column
+function testColorRampSvgGradientElements(fills):
+    runs = []
+    for fill, ixFill in fills:
+        arrayPush(runs, testColorRampRectElements(fill, 0.5 + ixFill, 1))
+    endfor
+    return testColorRampSvgElements(runs)
+endfunction
+
+
+# The default ramp's 19 interpolated column colors at the mocked display size
+testColorRampDefaultFills = [ \
+    '#ff0000', '#fc1919', '#f83232', '#f54b4b', '#f16464', '#ee7c7c', '#ea9595', \
+    '#e7aeae', '#e3c7c7', '#e0e0e0', '#c7e3c7', '#aee7ae', '#95ea95', '#7cee7c', \
+    '#64f164', '#4bf54b', '#32f832', '#19fc19', '#00ff00' \
+]
+
+
+#
+# colorRampMain
+#
+
+
+async function testColorRampMain():
+    unittestMockAll()
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampMain()
+    calls = unittestMockEnd()
+
+    # The default ramp renders and the resize handler is set
+    expected = [['localStorageClear', []]]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': false}, colorRampCreateDefault()))
+    arrayPush(expected, ['windowSetResize', [colorRampRender]])
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampMain')
+
+
+async function testColorRampMainModel():
+    systemGlobalSet('vModel', true)
+    unittestMockAll()
+    colorRampMain()
+    calls = unittestMockEnd()
+    systemGlobalSet('vModel', null)
+
+    # The documentation page renders instead of the application
+    unittestDeepEqual(calls, [ \
+        ['markdownPrint', ['[Home](#var=)']], \
+        ['markdownPrint', [schemaDocMarkdown(colorRampTypes, 'ColorRamp')]] \
+    ])
+endfunction
+unittestRunTest('testColorRampMainModel')
+
+
+async function testColorRampMainURL():
+    ramp = {'name': 'Fetched', 'colors': [{'r': 1, 'g': 2, 'b': 3}, {'r': 4, 'g': 5, 'b': 6}]}
+    systemGlobalSet('vURL', 'test-ramp.json')
+    unittestMockAll({'systemFetch': {'test-ramp.json': jsonStringify(ramp)}})
+    localStorageClear()
+    colorRampMain()
+    calls = unittestMockEnd()
+    systemGlobalSet('vURL', null)
+
+    # The fetched ramp is saved and the URL argument is removed
+    unittestDeepEqual(calls, [ \
+        ['localStorageClear', []], \
+        ['systemFetch', ['test-ramp.json']], \
+        ['localStorageSet', ['colorRamp', jsonStringify(ramp)]], \
+        ['windowSetLocation', ['#var=']] \
+    ])
+endfunction
+unittestRunTest('testColorRampMainURL')
+
+
+async function testColorRampMainURLError():
+    systemGlobalSet('vURL', 'missing.json')
+    unittestMockAll()
+    colorRampMain()
+    calls = unittestMockEnd()
+    systemGlobalSet('vURL', null)
+
+    # The fetch fails and the error message renders
+    unittestDeepEqual(calls, [ \
+        ['systemFetch', ['missing.json']], \
+        ['markdownPrint', ['**ERROR:** Failed to load "missing.json"']] \
+    ])
+endfunction
+unittestRunTest('testColorRampMainURLError')
+
+
+#
+# colorRampRender
+#
+
+
+function testColorRampRender():
+    unittestMockAll()
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampRender({'hex': false})
+    calls = unittestMockEnd()
+
+    unittestDeepEqual(calls, [ \
+        ['localStorageClear', []], \
+        ['documentSetTitle', ['Color Ramp']], \
+        ['markdownPrint', [ \
+            '# Color Ramp', \
+            '', \
+            'A tool for creating and editing color gradients.', \
+            '', \
+            '[Color Ramp Library](index.html#url=colorRampLibrary.md)', \
+            '', \
+            '## Default Color Ramp' \
+        ]], \
+        ['elementModelRender', [testColorRampSvgGradientElements(testColorRampDefaultFills)]], \
+        ['elementModelRender', [testColorRampTableElements([ \
+            testColorRampRowElements(0, '#ff0000', 'rgb(255, 0, 0)', 255, 0, 0, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)), \
+            testColorRampRowElements(1, '#e0e0e0', 'rgb(224, 224, 224)', 224, 224, 224, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)), \
+            testColorRampRowElements(2, '#00ff00', 'rgb(0, 255, 0)', 0, 255, 0, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)) \
+        ])]], \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'default-color-ramp.json', null)]] \
+    ])
+endfunction
+unittestRunTest('testColorRampRender')
+
+
+function testColorRampRenderFocus():
+    unittestMockAll()
+    localStorageClear()
+    testColorRampMockRender()
+    unittestMockOne('sessionStorageGet', testColorRampSessionGet)
+    colorRampRender({'hex': false})
+    calls = unittestMockEnd()
+
+    # The focus is restored and the focus session key is removed
+    expected = [['localStorageClear', []]]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': false}, colorRampCreateDefault()))
+    arrayPush(expected, ['documentSetFocus', ['colorRampR0']])
+    arrayPush(expected, ['sessionStorageRemove', ['colorRampFocus']])
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampRenderFocus')
+
+
+#
+# colorRampRenderEditor
+#
+
+
+function testColorRampRenderEditorTwoColors():
+    ramp = {'name': 'Two', 'colors': [{'r': 0, 'g': 0, 'b': 0}, {'r': 255, 'g': 255, 'b': 255}]}
+    unittestMockAll()
+    testColorRampMockRender()
+    colorRampRenderEditor({'hex': false}, ramp)
+    calls = unittestMockEnd()
+
+    # No delete buttons at the two-color minimum
+    unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampTableElements([ \
+            testColorRampRowElements(0, '#000000', 'rgb(0, 0, 0)', 0, 0, 0, null), \
+            testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 255, 255, 255, null) \
+        ])]], \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'two.json', null)]] \
+    ])
+endfunction
+unittestRunTest('testColorRampRenderEditorTwoColors')
+
+
+function testColorRampRenderEditorHex():
+    ramp = {'name': 'Two', 'colors': [{'r': 0, 'g': 128, 'b': 255}, {'r': 255, 'g': 255, 'b': 255}]}
+    unittestMockAll()
+    testColorRampMockRender()
+    colorRampRenderEditor({'hex': true}, ramp)
+    calls = unittestMockEnd()
+
+    # The R/G/B inputs show two-digit hex values and the mode toggle shows "Dec"
+    unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampTableElements([ \
+            testColorRampRowElements(0, '#0080ff', 'rgb(0, 128, 255)', '00', '80', 'ff', null), \
+            testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 'ff', 'ff', 'ff', null) \
+        ])]], \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Dec', '#var=', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'two.json', null)]] \
+    ])
+endfunction
+unittestRunTest('testColorRampRenderEditorHex')
+
+
+function testColorRampRenderEditorManyColors():
+    color = {'r': 16, 'g': 32, 'b': 48}
+    ramp = {'name': 'Many', 'colors': [color, color, color, color, color, color, color]}
+    unittestMockAll()
+    testColorRampMockRender()
+    colorRampRenderEditor({'hex': false}, ramp)
+    calls = unittestMockEnd()
+
+    # There is no maximum color count - "Add" remains an active button
+    rows = []
+    ixColor = 0
+    while ixColor < arrayLength(objectGet(ramp, 'colors')):
+        arrayPush(rows, testColorRampRowElements(ixColor, '#102030', 'rgb(16, 32, 48)', 16, 32, 48, \
+            formsLinkButtonElements('Delete', colorRampDeleteColor)))
+        ixColor = ixColor + 1
+    endwhile
+    unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampTableElements(rows)]], \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'many.json', null)]] \
+    ])
+endfunction
+unittestRunTest('testColorRampRenderEditorManyColors')
+
+
+function testColorRampRenderEditorEditName():
+    ramp = {'name': 'Two', 'colors': [{'r': 0, 'g': 0, 'b': 0}, {'r': 255, 'g': 255, 'b': 255}]}
+    unittestMockAll()
+    testColorRampMockRender()
+    colorRampRenderEditor({'hex': false, 'action': 'editRampName'}, ramp)
+    calls = unittestMockEnd()
+
+    # The name editor renders below the menu, "Title" is inactive text, and the input is focused
+    unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampTableElements([ \
+            testColorRampRowElements(0, '#000000', 'rgb(0, 0, 0)', 0, 0, 0, null), \
+            testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 255, 255, 255, null) \
+        ])]], \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
+            {'text': 'Title'}, 'two.json', [ \
+                {'html': 'p', 'elem': formsTextElements('colorRampName', 'Two', 50, colorRampUpdateName)}, \
+                {'html': 'p', 'elem': [ \
+                    formsLinkButtonElements('Update', colorRampUpdateName), \
+                    {'text': ' | '}, \
+                    formsLinkElements('Cancel', '#var=') \
+                ]} \
+            ])]], \
+        ['documentSetFocus', ['colorRampName']] \
+    ])
+endfunction
+unittestRunTest('testColorRampRenderEditorEditName')
+
+
+function testColorRampRenderEditorMenuBindings():
+    args = {'hex': false}
+    render = systemPartial(colorRampRenderEditor, args, colorRampCreateDefault())
+
+    # The menu buttons must bind their own handlers with the render arguments
+    testColorRampVerifyClick(render, 'Add', systemPartial(colorRampAddColor, args), null)
+    testColorRampVerifyClick(render, 'Update', systemPartial(colorRampUpdate, args), null)
+    testColorRampVerifyClick(render, 'Reset', systemPartial(colorRampReset, args), null)
+endfunction
+unittestRunTest('testColorRampRenderEditorMenuBindings')
+
+
+function testColorRampRenderEditorDeleteBindings():
+    args = {'hex': false}
+    render = systemPartial(colorRampRenderEditor, args, colorRampCreateDefault())
+
+    # Each row's Delete button must delete its own color index
+    testColorRampVerifyClickN(render, 'Delete', 0, systemPartial(colorRampDeleteColor, args, 0), null)
+    testColorRampVerifyClickN(render, 'Delete', 2, systemPartial(colorRampDeleteColor, args, 2), null)
+endfunction
+unittestRunTest('testColorRampRenderEditorDeleteBindings')
+
+
+function testColorRampRenderEditorNameBindings():
+    args = {'hex': false, 'action': 'editRampName'}
+    render = systemPartial(colorRampRenderEditor, args, colorRampCreateDefault())
+    data = {'documentInputValue': {'colorRampName': 'Renamed'}}
+
+    # The menu Update button updates the colors; the name editor's Update button updates the name
+    testColorRampVerifyClickN(render, 'Update', 0, systemPartial(colorRampUpdate, args), data)
+    testColorRampVerifyClickN(render, 'Update', 1, colorRampUpdateName, data)
+endfunction
+unittestRunTest('testColorRampRenderEditorNameBindings')
+
+
+#
+# colorRampFilename
+#
+
+
+function testColorRampFilename():
+    unittestEqual(colorRampFilename('My Ramp'), 'my-ramp.json')
+    unittestEqual(colorRampFilename(' Hello  World '), 'hello-world.json')
+    unittestEqual(colorRampFilename("Craig's #1 Ramp!"), 'craigs-1-ramp.json')
+    unittestEqual(colorRampFilename('Ramp42'), 'ramp42.json')
+    unittestEqual(colorRampFilename('###'), '.json')
+endfunction
+unittestRunTest('testColorRampFilename')
+
+
+#
+# colorRampRenderDisplay
+#
+
+
+function testColorRampRenderDisplayBatched():
+    unittestMockAll()
+    testColorRampMockRender()
+    colorRampRenderDisplay({'name': 'T', 'colors': [{'r': 10, 'g': 20, 'b': 30}, {'r': 10, 'g': 20, 'b': 30}]})
+    calls = unittestMockEnd()
+
+    # A constant-color ramp batches to a single run rectangle
+    unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampSvgElements([testColorRampRectElements('#0a141e', 0.5, 19)])]] \
+    ])
+endfunction
+unittestRunTest('testColorRampRenderDisplayBatched')
+
+
+function testColorRampRenderDisplayGradient():
+    unittestMockAll()
+    testColorRampMockRender()
+    colorRampRenderDisplay({'name': 'T', 'colors': [{'r': 0, 'g': 0, 'b': 0}, {'r': 18, 'g': 18, 'b': 18}]})
+    calls = unittestMockEnd()
+
+    # A 0-18 grayscale ramp over 19 pixel columns yields one rectangle per column
+    unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampSvgGradientElements([ \
+            '#000000', '#010101', '#020202', '#030303', '#040404', '#050505', '#060606', \
+            '#070707', '#080808', '#090909', '#0a0a0a', '#0b0b0b', '#0c0c0c', '#0d0d0d', \
+            '#0e0e0e', '#0f0f0f', '#101010', '#111111', '#121212' \
+        ])]] \
+    ])
+endfunction
+unittestRunTest('testColorRampRenderDisplayGradient')
+
+
+#
+# colorRampAddColor
+#
+
+
+function testColorRampAddColor():
+    unittestMockAll()
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampAddColor({'hex': false})
+    calls = unittestMockEnd()
+
+    # The new color is the rounded midpoint of the last two colors, and the application re-renders
+    expectedRamp = { \
+        'name': 'Default Color Ramp', \
+        'colors': [ \
+            {'r': 255, 'g': 0, 'b': 0}, \
+            {'r': 224, 'g': 224, 'b': 224}, \
+            {'r': 0, 'g': 255, 'b': 0}, \
+            {'r': 112, 'g': 240, 'b': 112} \
+        ] \
+    }
+    expected = [ \
+        ['localStorageClear', []], \
+        ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
+    ]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': false}, expectedRamp))
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampAddColor')
+
+
+#
+# colorRampUpdate
+#
+
+
+function testColorRampUpdate():
+    unittestMockAll({'documentInputValue': { \
+        'colorRampR0': '300', 'colorRampG0': '-5', 'colorRampB0': '128', \
+        'colorRampR1': '10', 'colorRampG1': 'abc', 'colorRampB1': '20' \
+    }})
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampUpdate({'hex': false})
+    calls = unittestMockEnd()
+
+    # Values are parsed and clamped; the color with missing inputs is unchanged
+    expectedRamp = { \
+        'name': 'Default Color Ramp', \
+        'colors': [ \
+            {'r': 255, 'g': 0, 'b': 128}, \
+            {'r': 10, 'g': 0, 'b': 20}, \
+            {'r': 0, 'g': 255, 'b': 0} \
+        ] \
+    }
+    expected = [ \
+        ['localStorageClear', []], \
+        ['documentInputValue', ['colorRampR0']], \
+        ['documentInputValue', ['colorRampG0']], \
+        ['documentInputValue', ['colorRampB0']], \
+        ['documentInputValue', ['colorRampR1']], \
+        ['documentInputValue', ['colorRampG1']], \
+        ['documentInputValue', ['colorRampB1']], \
+        ['documentInputValue', ['colorRampR2']], \
+        ['documentInputValue', ['colorRampG2']], \
+        ['documentInputValue', ['colorRampB2']], \
+        ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
+    ]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': false}, expectedRamp))
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampUpdate')
+
+
+function testColorRampUpdateHex():
+    unittestMockAll({'documentInputValue': { \
+        'colorRampR0': 'ff', 'colorRampG0': '0x80', 'colorRampB0': 'g', \
+        'colorRampR1': '00', 'colorRampG1': '00', 'colorRampB1': '00', \
+        'colorRampR2': 'X10', 'colorRampG2': '20', 'colorRampB2': '30' \
+    }})
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampUpdate({'hex': true})
+    calls = unittestMockEnd()
+
+    # Hex values are parsed, with "0x"/"x" prefixes stripped and garbage parsed as zero
+    expectedRamp = { \
+        'name': 'Default Color Ramp', \
+        'colors': [ \
+            {'r': 255, 'g': 128, 'b': 0}, \
+            {'r': 0, 'g': 0, 'b': 0}, \
+            {'r': 16, 'g': 32, 'b': 48} \
+        ] \
+    }
+    expected = [ \
+        ['localStorageClear', []], \
+        ['documentInputValue', ['colorRampR0']], \
+        ['documentInputValue', ['colorRampG0']], \
+        ['documentInputValue', ['colorRampB0']], \
+        ['documentInputValue', ['colorRampR1']], \
+        ['documentInputValue', ['colorRampG1']], \
+        ['documentInputValue', ['colorRampB1']], \
+        ['documentInputValue', ['colorRampR2']], \
+        ['documentInputValue', ['colorRampG2']], \
+        ['documentInputValue', ['colorRampB2']], \
+        ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
+    ]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': true}, expectedRamp))
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampUpdateHex')
+
+
+#
+# colorRampParseValue
+#
+
+
+function testColorRampParseValue():
+    unittestEqual(colorRampParseValue('42', false), 42)
+    unittestEqual(colorRampParseValue(' 42 ', false), 42)
+    unittestEqual(colorRampParseValue('-5', false), -5)
+    unittestEqual(colorRampParseValue('abc', false), 0)
+    unittestEqual(colorRampParseValue('ff', true), 255)
+    unittestEqual(colorRampParseValue('0xff', true), 255)
+    unittestEqual(colorRampParseValue('X80', true), 128)
+    unittestEqual(colorRampParseValue('zz', true), 0)
+endfunction
+unittestRunTest('testColorRampParseValue')
+
+
+#
+# colorRampUpdateName
+#
+
+
+function testColorRampUpdateName():
+    unittestMockAll({'documentInputValue': {'colorRampName': '  New Name  '}})
+    localStorageClear()
+    colorRampUpdateName()
+    calls = unittestMockEnd()
+
+    # The trimmed name is saved and the "action" argument is removed
+    expectedRamp = objectAssign(colorRampCreateDefault(), {'name': 'New Name'})
+    unittestDeepEqual(calls, [ \
+        ['localStorageClear', []], \
+        ['documentInputValue', ['colorRampName']], \
+        ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]], \
+        ['windowSetLocation', ['#var=']] \
+    ])
+endfunction
+unittestRunTest('testColorRampUpdateName')
+
+
+function testColorRampUpdateNameEmpty():
+    unittestMockAll({'documentInputValue': {'colorRampName': '   '}})
+    localStorageClear()
+    colorRampUpdateName()
+    calls = unittestMockEnd()
+
+    # No save, but the "action" argument is still removed
+    unittestDeepEqual(calls, [ \
+        ['localStorageClear', []], \
+        ['documentInputValue', ['colorRampName']], \
+        ['windowSetLocation', ['#var=']] \
+    ])
+endfunction
+unittestRunTest('testColorRampUpdateNameEmpty')
+
+
+#
+# colorRampDeleteColor
+#
+
+
+function testColorRampDeleteColor():
+    unittestMockAll()
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampDeleteColor({'hex': false}, 1)
+    calls = unittestMockEnd()
+
+    # The middle color is deleted and the application re-renders
+    expectedRamp = { \
+        'name': 'Default Color Ramp', \
+        'colors': [ \
+            {'r': 255, 'g': 0, 'b': 0}, \
+            {'r': 0, 'g': 255, 'b': 0} \
+        ] \
+    }
+    expected = [ \
+        ['localStorageClear', []], \
+        ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
+    ]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': false}, expectedRamp))
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampDeleteColor')
+
+
+function testColorRampDeleteColorMin():
+    systemGlobalSet('testColorRampStorage', \
+        jsonStringify({'name': 'Two', 'colors': [{'r': 1, 'g': 1, 'b': 1}, {'r': 2, 'g': 2, 'b': 2}]}))
+    unittestMockAll()
+    unittestMockOne('localStorageGet', testColorRampStorageGet)
+    colorRampDeleteColor({'hex': false}, 0)
+    calls = unittestMockEnd()
+    systemGlobalSet('testColorRampStorage', null)
+
+    # No delete at the two-color minimum
+    unittestDeepEqual(calls, [])
+endfunction
+unittestRunTest('testColorRampDeleteColorMin')
+
+
+#
+# colorRampReset
+#
+
+
+function testColorRampReset():
+    unittestMockAll()
+    localStorageClear()
+    testColorRampMockRender()
+    colorRampReset({'hex': false})
+    calls = unittestMockEnd()
+
+    # The default ramp is saved and the application re-renders
+    expected = [ \
+        ['localStorageClear', []], \
+        ['localStorageSet', ['colorRamp', jsonStringify(colorRampCreateDefault())]] \
+    ]
+    arrayExtend(expected, testColorRampRenderCalls({'hex': false}, colorRampCreateDefault()))
+    unittestDeepEqual(calls, expected)
+endfunction
+unittestRunTest('testColorRampReset')
+
+
+#
+# colorRampLoad
+#
+
+
+function testColorRampLoadDefault():
+    unittestMockAll()
+    localStorageClear()
+    ramp = colorRampLoad()
+    unittestMockEnd()
+    unittestDeepEqual(ramp, colorRampCreateDefault())
+endfunction
+unittestRunTest('testColorRampLoadDefault')
+
+
+function testColorRampLoadStored():
+    stored = {'name': 'Stored', 'colors': [{'r': 1, 'g': 2, 'b': 3}, {'r': 4, 'g': 5, 'b': 6}]}
+    systemGlobalSet('testColorRampStorage', jsonStringify(stored))
+    unittestMockAll()
+    unittestMockOne('localStorageGet', testColorRampStorageGet)
+    ramp = colorRampLoad()
+    unittestMockEnd()
+    systemGlobalSet('testColorRampStorage', null)
+    unittestDeepEqual(ramp, stored)
+endfunction
+unittestRunTest('testColorRampLoadStored')
+
+
+function testColorRampLoadInvalidJSON():
+    systemLogDebug('NOTICE: The following "jsonParse" error is expected:')
+    systemGlobalSet('testColorRampStorage', 'not json')
+    unittestMockAll()
+    unittestMockOne('localStorageGet', testColorRampStorageGet)
+    ramp = colorRampLoad()
+    unittestMockEnd()
+    systemGlobalSet('testColorRampStorage', null)
+    unittestDeepEqual(ramp, colorRampCreateDefault())
+endfunction
+unittestRunTest('testColorRampLoadInvalidJSON')
+
+
+function testColorRampLoadInvalidSchema():
+    systemLogDebug('NOTICE: The following "schemaValidate" error is expected:')
+    systemGlobalSet('testColorRampStorage', '{"name": "No Colors"}')
+    unittestMockAll()
+    unittestMockOne('localStorageGet', testColorRampStorageGet)
+    ramp = colorRampLoad()
+    unittestMockEnd()
+    systemGlobalSet('testColorRampStorage', null)
+    unittestDeepEqual(ramp, colorRampCreateDefault())
+endfunction
+unittestRunTest('testColorRampLoadInvalidSchema')
+
+
+#
+# colorRampSave
+#
+
+
+function testColorRampSave():
+    ramp = colorRampCreateDefault()
+    unittestMockAll()
+    localStorageClear()
+    colorRampSave(ramp)
+    calls = unittestMockEnd()
+    unittestDeepEqual(calls, [ \
+        ['localStorageClear', []], \
+        ['localStorageSet', ['colorRamp', jsonStringify(ramp)]] \
+    ])
+endfunction
+unittestRunTest('testColorRampSave')
+
+
+#
+# colorRampCreateDefault
+#
+
+
+function testColorRampCreateDefault():
+    unittestDeepEqual(colorRampCreateDefault(), { \
+        'name': 'Default Color Ramp', \
+        'colors': [ \
+            {'r': 255, 'g': 0, 'b': 0}, \
+            {'r': 224, 'g': 224, 'b': 224}, \
+            {'r': 0, 'g': 255, 'b': 0} \
+        ] \
+    })
+endfunction
+unittestRunTest('testColorRampCreateDefault')
+
+
+#
+# colorRampToHex
+#
+
+
+function testColorRampToHex():
+    unittestEqual(colorRampToHex(255, 0, 128), '#ff0080')
+    unittestEqual(colorRampToHex(127.4, 127.5, 127.6), '#7f8080')
+    unittestEqual(colorRampToHex(-3, 260, 0), '#00ff00')
+endfunction
+unittestRunTest('testColorRampToHex')
+
+
+#
+# colorRampByteToHex
+#
+
+
+function testColorRampByteToHex():
+    unittestEqual(colorRampByteToHex(0), '00')
+    unittestEqual(colorRampByteToHex(16), '10')
+    unittestEqual(colorRampByteToHex(255), 'ff')
+    unittestEqual(colorRampByteToHex(-5), '00')
+    unittestEqual(colorRampByteToHex(300), 'ff')
+endfunction
+unittestRunTest('testColorRampByteToHex')

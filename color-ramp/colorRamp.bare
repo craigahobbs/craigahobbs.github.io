@@ -71,11 +71,11 @@ function colorRampRender(args):
         '## ' + markdownEscape(objectGet(ramp, 'name')) \
     )
 
-    # Render the color editor
-    colorRampRenderEditor(args, ramp)
-
     # Render the color ramp display
     colorRampRenderDisplay(ramp)
+
+    # Render the color editor
+    colorRampRenderEditor(args, ramp)
 
     # Restore focus if needed
     focusId = sessionStorageGet('colorRampFocus')
@@ -170,7 +170,7 @@ function colorRampRenderEditor(args, ramp):
     elementModelRender({ \
         'html': 'p', \
         'elem': [ \
-            if(numColors < 5, formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), {'text': 'Add'}), \
+            formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), \
             {'text': ' | '}, \
             formsLinkButtonElements('Update', systemPartial(colorRampUpdate, args)), \
             {'text': ' | '}, \
@@ -302,21 +302,19 @@ function colorRampAddColor(args):
     ramp = colorRampLoad()
     colors = objectGet(ramp, 'colors')
 
-    if arrayLength(colors) < 5:
-        # Add a new color (interpolated between last two colors)
-        lastColor = arrayGet(colors, arrayLength(colors) - 1)
-        secondLastColor = arrayGet(colors, mathMax(0, arrayLength(colors) - 2))
+    # Add a new color (interpolated between last two colors)
+    lastColor = arrayGet(colors, arrayLength(colors) - 1)
+    secondLastColor = arrayGet(colors, arrayLength(colors) - 2)
 
-        newR = mathRound((objectGet(lastColor, 'r') + objectGet(secondLastColor, 'r')) / 2)
-        newG = mathRound((objectGet(lastColor, 'g') + objectGet(secondLastColor, 'g')) / 2)
-        newB = mathRound((objectGet(lastColor, 'b') + objectGet(secondLastColor, 'b')) / 2)
+    newR = mathRound((objectGet(lastColor, 'r') + objectGet(secondLastColor, 'r')) / 2)
+    newG = mathRound((objectGet(lastColor, 'g') + objectGet(secondLastColor, 'g')) / 2)
+    newB = mathRound((objectGet(lastColor, 'b') + objectGet(secondLastColor, 'b')) / 2)
 
-        arrayPush(colors, {'r': newR, 'g': newG, 'b': newB})
+    arrayPush(colors, {'r': newR, 'g': newG, 'b': newB})
 
-        # Save and re-render
-        colorRampSave(ramp)
-        colorRampRender(args)
-    endif
+    # Save and re-render
+    colorRampSave(ramp)
+    colorRampRender(args)
 endfunction
 
 
@@ -466,8 +464,8 @@ colorRampTypes = schemaParse( \
     '    # The color ramp name', \
     '    string(len > 0) name', \
     '', \
-    '    # The array of colors (2-5 colors)', \
-    '    Color[len >= 2, len <= 5] colors', \
+    '    # The array of colors (two or more)', \
+    '    Color[len >= 2] colors', \
     '', \
     '', \
     '# An RGB color', \

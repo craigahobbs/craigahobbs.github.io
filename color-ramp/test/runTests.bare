@@ -1,0 +1,20 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <unittest.bare>
+
+
+# Start coverage
+unittestCoverageStart()
+
+# Test includes
+include 'testColorRamp.bare'
+
+# Stop coverage
+unittestCoverageStop()
+
+# Test report
+return unittestReport({ \
+    'coverageExclude': ['runTests.bare'], \
+    'coverageMin': 100 \
+})
