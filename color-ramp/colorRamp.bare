@@ -92,6 +92,41 @@ function colorRampRenderEditor(args, ramp):
     numColors = arrayLength(colors)
     isHex = objectGet(args, 'hex')
 
+    # Render the menu
+    editRampName = objectGet(args, 'action') == 'editRampName'
+    downloadFilename = colorRampFilename(objectGet(ramp, 'name'))
+    downloadURL = windowURLObject(jsonStringify(ramp, 4), 'text/json')
+    elementModelRender({ \
+        'html': 'p', \
+        'elem': [ \
+            formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), \
+            {'text': ' | '}, \
+            formsLinkButtonElements('Update', systemPartial(colorRampUpdate, args)), \
+            {'text': ' | '}, \
+            formsLinkElements(if(isHex, 'Dec', 'Hex'), argsURL(colorRampArguments, {'hex': !isHex})), \
+            {'text': ' | '}, \
+            if(editRampName, {'text': 'Title'}, formsLinkElements('Title', argsURL(colorRampArguments, {'action': 'editRampName'}))), \
+            {'text': ' | '}, \
+            formsLinkButtonElements('Reset', systemPartial(colorRampReset, args)), \
+            {'text': ' | '}, \
+            { \
+                'html': 'a', \
+                'attr': {'href': downloadURL, 'download': downloadFilename}, \
+                'elem': {'text': 'Download'} \
+            }, \
+            if(editRampName, [ \
+                {'html': 'p', 'elem': \
+                    formsTextElements('colorRampName', objectGet(ramp, 'name'), 50, colorRampUpdateName) \
+                }, \
+                {'html': 'p', 'elem': [ \
+                    formsLinkButtonElements('Update', colorRampUpdateName), \
+                    {'text': ' | '}, \
+                    formsLinkElements('Cancel', argsURL(colorRampArguments)) \
+                ]} \
+            ]) \
+        ] \
+    })
+
     # Create the editor table elements
     tableElems = []
 
@@ -161,41 +196,6 @@ function colorRampRenderEditor(args, ramp):
         'html': 'table', \
         'attr': {'style': 'border-collapse: collapse; margin: 10px 0;'}, \
         'elem': tableElems \
-    })
-
-    # Render the menu
-    editRampName = objectGet(args, 'action') == 'editRampName'
-    downloadFilename = colorRampFilename(objectGet(ramp, 'name'))
-    downloadURL = windowURLObject(jsonStringify(ramp, 4), 'text/json')
-    elementModelRender({ \
-        'html': 'p', \
-        'elem': [ \
-            formsLinkButtonElements('Add', systemPartial(colorRampAddColor, args)), \
-            {'text': ' | '}, \
-            formsLinkButtonElements('Update', systemPartial(colorRampUpdate, args)), \
-            {'text': ' | '}, \
-            formsLinkElements(if(isHex, 'Dec', 'Hex'), argsURL(colorRampArguments, {'hex': !isHex})), \
-            {'text': ' | '}, \
-            if(editRampName, {'text': 'Title'}, formsLinkElements('Title', argsURL(colorRampArguments, {'action': 'editRampName'}))), \
-            {'text': ' | '}, \
-            formsLinkButtonElements('Reset', systemPartial(colorRampReset, args)), \
-            {'text': ' | '}, \
-            { \
-                'html': 'a', \
-                'attr': {'href': downloadURL, 'download': downloadFilename}, \
-                'elem': {'text': 'Download'} \
-            }, \
-            if(editRampName, [ \
-                {'html': 'p', 'elem': \
-                    formsTextElements('colorRampName', objectGet(ramp, 'name'), 50, colorRampUpdateName) \
-                }, \
-                {'html': 'p', 'elem': [ \
-                    formsLinkButtonElements('Update', colorRampUpdateName), \
-                    {'text': ' | '}, \
-                    formsLinkElements('Cancel', argsURL(colorRampArguments)) \
-                ]} \
-            ]) \
-        ] \
     })
 
     # If editing the ramp name, set focus

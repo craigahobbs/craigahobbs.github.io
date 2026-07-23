@@ -411,6 +411,9 @@ function testColorRampRender():
             '## Red\\-Green Diverging' \
         ]], \
         ['elementModelRender', [testColorRampSvgGradientElements(testColorRampDefaultFills)]], \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'red-green-diverging.json', null)]], \
         ['elementModelRender', [testColorRampTableElements([ \
             testColorRampRowElements(0, '#a3123a', 'rgb(163, 18, 58)', 163, 18, 58, \
                 formsLinkButtonElements('Delete', colorRampDeleteColor)), \
@@ -426,10 +429,7 @@ function testColorRampRender():
                 formsLinkButtonElements('Delete', colorRampDeleteColor)), \
             testColorRampRowElements(6, '#24693d', 'rgb(36, 105, 61)', 36, 105, 61, \
                 formsLinkButtonElements('Delete', colorRampDeleteColor)) \
-        ])]], \
-        ['elementModelRender', [testColorRampMenuElements( \
-            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
-            formsLinkElements('Title', "#var.vAction='editRampName'"), 'red-green-diverging.json', null)]] \
+        ])]] \
     ])
 endfunction
 unittestRunTest('testColorRampRender')
@@ -467,13 +467,13 @@ function testColorRampRenderEditorTwoColors():
 
     # No delete buttons at the two-color minimum
     unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'two.json', null)]], \
         ['elementModelRender', [testColorRampTableElements([ \
             testColorRampRowElements(0, '#000000', 'rgb(0, 0, 0)', 0, 0, 0, null), \
             testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 255, 255, 255, null) \
-        ])]], \
-        ['elementModelRender', [testColorRampMenuElements( \
-            formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
-            formsLinkElements('Title', "#var.vAction='editRampName'"), 'two.json', null)]] \
+        ])]] \
     ])
 endfunction
 unittestRunTest('testColorRampRenderEditorTwoColors')
@@ -488,13 +488,13 @@ function testColorRampRenderEditorHex():
 
     # The R/G/B inputs show two-digit hex values and the mode toggle shows "Dec"
     unittestDeepEqual(calls, [ \
+        ['elementModelRender', [testColorRampMenuElements( \
+            formsLinkButtonElements('Add', colorRampAddColor), 'Dec', '#var=', \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'two.json', null)]], \
         ['elementModelRender', [testColorRampTableElements([ \
             testColorRampRowElements(0, '#0080ff', 'rgb(0, 128, 255)', '00', '80', 'ff', null), \
             testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 'ff', 'ff', 'ff', null) \
-        ])]], \
-        ['elementModelRender', [testColorRampMenuElements( \
-            formsLinkButtonElements('Add', colorRampAddColor), 'Dec', '#var=', \
-            formsLinkElements('Title', "#var.vAction='editRampName'"), 'two.json', null)]] \
+        ])]] \
     ])
 endfunction
 unittestRunTest('testColorRampRenderEditorHex')
@@ -517,10 +517,10 @@ function testColorRampRenderEditorManyColors():
         ixColor = ixColor + 1
     endwhile
     unittestDeepEqual(calls, [ \
-        ['elementModelRender', [testColorRampTableElements(rows)]], \
         ['elementModelRender', [testColorRampMenuElements( \
             formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
-            formsLinkElements('Title', "#var.vAction='editRampName'"), 'many.json', null)]] \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'many.json', null)]], \
+        ['elementModelRender', [testColorRampTableElements(rows)]] \
     ])
 endfunction
 unittestRunTest('testColorRampRenderEditorManyColors')
@@ -535,10 +535,6 @@ function testColorRampRenderEditorEditName():
 
     # The name editor renders below the menu, "Title" is inactive text, and the input is focused
     unittestDeepEqual(calls, [ \
-        ['elementModelRender', [testColorRampTableElements([ \
-            testColorRampRowElements(0, '#000000', 'rgb(0, 0, 0)', 0, 0, 0, null), \
-            testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 255, 255, 255, null) \
-        ])]], \
         ['elementModelRender', [testColorRampMenuElements( \
             formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
             {'text': 'Title'}, 'two.json', [ \
@@ -549,6 +545,10 @@ function testColorRampRenderEditorEditName():
                     formsLinkElements('Cancel', '#var=') \
                 ]} \
             ])]], \
+        ['elementModelRender', [testColorRampTableElements([ \
+            testColorRampRowElements(0, '#000000', 'rgb(0, 0, 0)', 0, 0, 0, null), \
+            testColorRampRowElements(1, '#ffffff', 'rgb(255, 255, 255)', 255, 255, 255, null) \
+        ])]], \
         ['documentSetFocus', ['colorRampName']] \
     ])
 endfunction
