@@ -307,9 +307,9 @@ endfunction
 
 # The default ramp's 19 interpolated column colors at the mocked display size
 testColorRampDefaultFills = [ \
-    '#ff0000', '#fc1919', '#f83232', '#f54b4b', '#f16464', '#ee7c7c', '#ea9595', \
-    '#e7aeae', '#e3c7c7', '#e0e0e0', '#c7e3c7', '#aee7ae', '#95ea95', '#7cee7c', \
-    '#64f164', '#4bf54b', '#32f832', '#19fc19', '#00ff00' \
+    '#a3123a', '#b8213d', '#ce3040', '#e33f43', '#ea5550', '#f16b5e', '#f8816b', \
+    '#ea9e88', '#dcbaa6', '#ced7c3', '#b0cda4', '#91c486', '#73ba67', '#63ac5f', \
+    '#549f56', '#44914e', '#398448', '#2f7643', '#24693d' \
 ]
 
 
@@ -408,20 +408,28 @@ function testColorRampRender():
             '', \
             '[Color Ramp Library](index.html#url=colorRampLibrary.md)', \
             '', \
-            '## Default Color Ramp' \
+            '## Red\\-Green Diverging' \
         ]], \
         ['elementModelRender', [testColorRampSvgGradientElements(testColorRampDefaultFills)]], \
         ['elementModelRender', [testColorRampTableElements([ \
-            testColorRampRowElements(0, '#ff0000', 'rgb(255, 0, 0)', 255, 0, 0, \
+            testColorRampRowElements(0, '#a3123a', 'rgb(163, 18, 58)', 163, 18, 58, \
                 formsLinkButtonElements('Delete', colorRampDeleteColor)), \
-            testColorRampRowElements(1, '#e0e0e0', 'rgb(224, 224, 224)', 224, 224, 224, \
+            testColorRampRowElements(1, '#e33f43', 'rgb(227, 63, 67)', 227, 63, 67, \
                 formsLinkButtonElements('Delete', colorRampDeleteColor)), \
-            testColorRampRowElements(2, '#00ff00', 'rgb(0, 255, 0)', 0, 255, 0, \
+            testColorRampRowElements(2, '#f8816b', 'rgb(248, 129, 107)', 248, 129, 107, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)), \
+            testColorRampRowElements(3, '#ced7c3', 'rgb(206, 215, 195)', 206, 215, 195, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)), \
+            testColorRampRowElements(4, '#73ba67', 'rgb(115, 186, 103)', 115, 186, 103, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)), \
+            testColorRampRowElements(5, '#44914e', 'rgb(68, 145, 78)', 68, 145, 78, \
+                formsLinkButtonElements('Delete', colorRampDeleteColor)), \
+            testColorRampRowElements(6, '#24693d', 'rgb(36, 105, 61)', 36, 105, 61, \
                 formsLinkButtonElements('Delete', colorRampDeleteColor)) \
         ])]], \
         ['elementModelRender', [testColorRampMenuElements( \
             formsLinkButtonElements('Add', colorRampAddColor), 'Hex', '#var.vHex=true', \
-            formsLinkElements('Title', "#var.vAction='editRampName'"), 'default-color-ramp.json', null)]] \
+            formsLinkElements('Title', "#var.vAction='editRampName'"), 'red-green-diverging.json', null)]] \
     ])
 endfunction
 unittestRunTest('testColorRampRender')
@@ -647,15 +655,8 @@ function testColorRampAddColor():
     calls = unittestMockEnd()
 
     # The new color is the rounded midpoint of the last two colors, and the application re-renders
-    expectedRamp = { \
-        'name': 'Default Color Ramp', \
-        'colors': [ \
-            {'r': 255, 'g': 0, 'b': 0}, \
-            {'r': 224, 'g': 224, 'b': 224}, \
-            {'r': 0, 'g': 255, 'b': 0}, \
-            {'r': 112, 'g': 240, 'b': 112} \
-        ] \
-    }
+    expectedRamp = objectCopy(colorRampCreateDefault())
+    arrayPush(objectGet(expectedRamp, 'colors'), {'r': 52, 'g': 125, 'b': 70})
     expected = [ \
         ['localStorageClear', []], \
         ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
@@ -682,14 +683,9 @@ function testColorRampUpdate():
     calls = unittestMockEnd()
 
     # Values are parsed and clamped; the color with missing inputs is unchanged
-    expectedRamp = { \
-        'name': 'Default Color Ramp', \
-        'colors': [ \
-            {'r': 255, 'g': 0, 'b': 128}, \
-            {'r': 10, 'g': 0, 'b': 20}, \
-            {'r': 0, 'g': 255, 'b': 0} \
-        ] \
-    }
+    expectedRamp = objectCopy(colorRampCreateDefault())
+    arraySet(objectGet(expectedRamp, 'colors'), 0, {'r': 255, 'g': 0, 'b': 128})
+    arraySet(objectGet(expectedRamp, 'colors'), 1, {'r': 10, 'g': 0, 'b': 20})
     expected = [ \
         ['localStorageClear', []], \
         ['documentInputValue', ['colorRampR0']], \
@@ -701,6 +697,18 @@ function testColorRampUpdate():
         ['documentInputValue', ['colorRampR2']], \
         ['documentInputValue', ['colorRampG2']], \
         ['documentInputValue', ['colorRampB2']], \
+        ['documentInputValue', ['colorRampR3']], \
+        ['documentInputValue', ['colorRampG3']], \
+        ['documentInputValue', ['colorRampB3']], \
+        ['documentInputValue', ['colorRampR4']], \
+        ['documentInputValue', ['colorRampG4']], \
+        ['documentInputValue', ['colorRampB4']], \
+        ['documentInputValue', ['colorRampR5']], \
+        ['documentInputValue', ['colorRampG5']], \
+        ['documentInputValue', ['colorRampB5']], \
+        ['documentInputValue', ['colorRampR6']], \
+        ['documentInputValue', ['colorRampG6']], \
+        ['documentInputValue', ['colorRampB6']], \
         ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
     ]
     arrayExtend(expected, testColorRampRenderCalls({'hex': false}, expectedRamp))
@@ -721,14 +729,10 @@ function testColorRampUpdateHex():
     calls = unittestMockEnd()
 
     # Hex values are parsed, with "0x"/"x" prefixes stripped and garbage parsed as zero
-    expectedRamp = { \
-        'name': 'Default Color Ramp', \
-        'colors': [ \
-            {'r': 255, 'g': 128, 'b': 0}, \
-            {'r': 0, 'g': 0, 'b': 0}, \
-            {'r': 16, 'g': 32, 'b': 48} \
-        ] \
-    }
+    expectedRamp = objectCopy(colorRampCreateDefault())
+    arraySet(objectGet(expectedRamp, 'colors'), 0, {'r': 255, 'g': 128, 'b': 0})
+    arraySet(objectGet(expectedRamp, 'colors'), 1, {'r': 0, 'g': 0, 'b': 0})
+    arraySet(objectGet(expectedRamp, 'colors'), 2, {'r': 16, 'g': 32, 'b': 48})
     expected = [ \
         ['localStorageClear', []], \
         ['documentInputValue', ['colorRampR0']], \
@@ -740,6 +744,18 @@ function testColorRampUpdateHex():
         ['documentInputValue', ['colorRampR2']], \
         ['documentInputValue', ['colorRampG2']], \
         ['documentInputValue', ['colorRampB2']], \
+        ['documentInputValue', ['colorRampR3']], \
+        ['documentInputValue', ['colorRampG3']], \
+        ['documentInputValue', ['colorRampB3']], \
+        ['documentInputValue', ['colorRampR4']], \
+        ['documentInputValue', ['colorRampG4']], \
+        ['documentInputValue', ['colorRampB4']], \
+        ['documentInputValue', ['colorRampR5']], \
+        ['documentInputValue', ['colorRampG5']], \
+        ['documentInputValue', ['colorRampB5']], \
+        ['documentInputValue', ['colorRampR6']], \
+        ['documentInputValue', ['colorRampG6']], \
+        ['documentInputValue', ['colorRampB6']], \
         ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
     ]
     arrayExtend(expected, testColorRampRenderCalls({'hex': true}, expectedRamp))
@@ -818,13 +834,8 @@ function testColorRampDeleteColor():
     calls = unittestMockEnd()
 
     # The middle color is deleted and the application re-renders
-    expectedRamp = { \
-        'name': 'Default Color Ramp', \
-        'colors': [ \
-            {'r': 255, 'g': 0, 'b': 0}, \
-            {'r': 0, 'g': 255, 'b': 0} \
-        ] \
-    }
+    expectedRamp = objectCopy(colorRampCreateDefault())
+    arrayDelete(objectGet(expectedRamp, 'colors'), 1)
     expected = [ \
         ['localStorageClear', []], \
         ['localStorageSet', ['colorRamp', jsonStringify(expectedRamp)]] \
@@ -953,11 +964,15 @@ unittestRunTest('testColorRampSave')
 
 function testColorRampCreateDefault():
     unittestDeepEqual(colorRampCreateDefault(), { \
-        'name': 'Default Color Ramp', \
+        'name': 'Red-Green Diverging', \
         'colors': [ \
-            {'r': 255, 'g': 0, 'b': 0}, \
-            {'r': 224, 'g': 224, 'b': 224}, \
-            {'r': 0, 'g': 255, 'b': 0} \
+            {'r': 163, 'g': 18, 'b': 58}, \
+            {'r': 227, 'g': 63, 'b': 67}, \
+            {'r': 248, 'g': 129, 'b': 107}, \
+            {'r': 206, 'g': 215, 'b': 195}, \
+            {'r': 115, 'g': 186, 'b': 103}, \
+            {'r': 68, 'g': 145, 'b': 78}, \
+            {'r': 36, 'g': 105, 'b': 61} \
         ] \
     })
 endfunction

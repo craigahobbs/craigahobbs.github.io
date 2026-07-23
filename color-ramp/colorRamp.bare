@@ -416,14 +416,18 @@ function colorRampSave(ramp):
 endfunction
 
 
-# Create a default color ramp
+# Create a default color ramp - a copy of the modern Tableau Red-Green Diverging palette
 function colorRampCreateDefault():
     return { \
-        'name': 'Default Color Ramp', \
+        'name': 'Red-Green Diverging', \
         'colors': [ \
-            {'r': 255, 'g': 0, 'b': 0}, \
-            {'r': 224, 'g': 224, 'b': 224}, \
-            {'r': 0, 'g': 255, 'b': 0} \
+            {'r': 163, 'g': 18, 'b': 58}, \
+            {'r': 227, 'g': 63, 'b': 67}, \
+            {'r': 248, 'g': 129, 'b': 107}, \
+            {'r': 206, 'g': 215, 'b': 195}, \
+            {'r': 115, 'g': 186, 'b': 103}, \
+            {'r': 68, 'g': 145, 'b': 78}, \
+            {'r': 36, 'g': 105, 'b': 61} \
         ] \
     }
 endfunction
