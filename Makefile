@@ -21,6 +21,7 @@ commit:
 
 .PHONY: gh-pages
 gh-pages:
+	$(MAKE) -C color-ramp gh-pages
 	$(MAKE) -C downloads gh-pages
 
 
