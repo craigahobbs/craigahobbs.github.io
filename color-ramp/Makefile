@@ -2,56 +2,49 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 
-# Dependencies installed into the build virtual environment
-TESTS_REQUIRE := bare-script
+# Download python-build
+PYTHON_BUILD_DIR ?= ../../python-build
+define WGET
+ifeq '$$(wildcard $(notdir $(1)))' ''
+$$(info Downloading $(notdir $(1)))
+$$(shell [ -f $(PYTHON_BUILD_DIR)/$(notdir $(1)) ] && cp $(PYTHON_BUILD_DIR)/$(notdir $(1)) . || $(call WGET_CMD, $(1)))
+endif
+endef
+WGET_CMD = if command -v wget >/dev/null 2>&1; then wget -q -c $(1); else curl -f -Os $(1); fi
+$(eval $(call WGET, https://craigahobbs.github.io/python-build/Makefile.tool))
 
-# Python virtual environment paths
-VENV_DIR := build/venv
-VENV_BIN := $(VENV_DIR)/bin
-VENV_BUILD := $(VENV_DIR).build
+
+# Include python-build
+include Makefile.tool
 
 
-.DEFAULT_GOAL := help
+# Development dependencies
+TESTS_REQUIRE := bare-script markdown-up
 
 
 .PHONY: help
 help:
-	@echo "usage: make [clean|commit|lint|run|test]"
+	@echo "            [run]"
 
 
-# Run the tests then lint - the pre-commit gate
-.PHONY: commit
-commit: test lint
+.PHONY: clean
+clean:
+	rm -rf Makefile.tool
 
 
 # Run the unit tests (TEST="testName" runs one test); -d surfaces builtin debug logs
 .PHONY: test
-test: $(VENV_BUILD)
-	$(VENV_BIN)/bare -d -m test/runTests.bare$(if $(TEST), -v vUnittestTest "'$(TEST)'")
+test: $(DEFAULT_VENV_BUILD)
+	$(DEFAULT_VENV_BIN)/bare -d -m test/runTests.bare$(if $(TEST), -v vUnittestTest "'$(TEST)'")
 
 
 # Statically analyze (and execute) every script, standalone
 .PHONY: lint
-lint: $(VENV_BUILD)
-	$(VENV_BIN)/bare -x -m *.bare test/*.bare
+lint: $(DEFAULT_VENV_BUILD)
+	$(DEFAULT_VENV_BIN)/bare -x -m *.bare test/*.bare
 
 
 # View the app in a browser (MarkdownUp local server)
 .PHONY: run
-run: $(VENV_BUILD)
-	$(VENV_BIN)/pip install markdown-up
-	$(VENV_BIN)/markdown-up colorRamp.md
-
-
-# Remove the build directory (and the virtual environment)
-.PHONY: clean
-clean:
-	rm -rf build/
-
-
-# Build the virtual environment with the bare CLI, once
-$(VENV_BUILD):
-	mkdir -p $(VENV_DIR)
-	python3 -m venv --upgrade-deps $(VENV_DIR)
-	$(VENV_BIN)/pip install $(TESTS_REQUIRE)
-	touch $@
+run: $(DEFAULT_VENV_BUILD)
+	$(DEFAULT_VENV_BIN)/markdown-up colorRamp.md
