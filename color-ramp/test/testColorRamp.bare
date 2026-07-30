@@ -406,7 +406,7 @@ function testColorRampRender():
             '', \
             'A tool for creating and editing color gradients.', \
             '', \
-            '[Color Ramp Library](index.html#url=colorRampLibrary.md)', \
+            '[Color Ramp Library](index.html#url=README.md)', \
             '', \
             '## Red\\-Green Diverging' \
         ]], \
