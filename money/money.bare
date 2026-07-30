@@ -1,11 +1,14 @@
 # Licensed under the MIT License
 # https://github.com/craigahobbs/markdown-up/blob/main/LICENSE
 
+include <args.bare>
 include <data.bare>
 include <dataLineChart.bare>
 include <dataTable.bare>
 include <pager.bare>
+include <schema.bare>
 include <schemaDoc.bare>
+include <schemaParser.bare>
 
 
 # The money application main entry point

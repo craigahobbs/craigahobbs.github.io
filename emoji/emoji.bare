@@ -1,7 +1,9 @@
 include <args.bare>
-include <dataTable.bare>
 include <forms.bare>
+include <markdown.bare>
+include <schema.bare>
 include <schemaDoc.bare>
+include <schemaParser.bare>
 
 
 async function emojiMain():

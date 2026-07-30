@@ -5,6 +5,8 @@ include <args.bare>
 include <data.bare>
 include <dataLineChart.bare>
 include <dataTable.bare>
+include <markdown.bare>
+include <url.bare>
 
 
 async function downloadsMain(options):

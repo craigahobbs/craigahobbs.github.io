@@ -4,6 +4,8 @@
 include <args.bare>
 include <draw.bare>
 include <forms.bare>
+include <schema.bare>
+include <schemaParser.bare>
 
 
 # Life application main entry point

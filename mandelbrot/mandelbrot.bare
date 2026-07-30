@@ -3,6 +3,7 @@
 
 include <args.bare>
 include <draw.bare>
+include <markdown.bare>
 
 
 function mandelbrotMain():
