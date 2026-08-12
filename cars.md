@@ -17,7 +17,9 @@
 
 ### Suggested Car Assignments
 
-Suggested car arrangements based on what we currently know:
+Suggested car arrangements based on what we currently know:  
+
+If you don’t see your name and need a ride, let us know — we have open seats and the ability to juggle.
 
 **From Yara’s – Steve (4 seats)**  
 - Rose  
@@ -65,7 +67,7 @@ Suggested car arrangements based on what we currently know:
 - Becca & Sam are driving (with Baby)  
 - Cory is driving  
 
-## Thursday
+## Thursday – Public Service
 
 **Location**  
 [Beth Or](https://maps.app.goo.gl/oyZWVhs41R3NCp586?g_st=ic)
@@ -77,4 +79,4 @@ Suggested car arrangements based on what we currently know:
 
 **Clothing**  
 - Come as you are  
-- Dress up or dress comfortably, as preferred  
+- Dress up or dress comfortably, as preferred
