@@ -1,69 +1,84 @@
-# Car Assignments
+# Liam’s Services Logistics
 
-## Event Details
+## Wednesday – Family Service
 
 **Location**  
 [Haym Salomon Memorial Park](https://www.haymsalomonmemorialpark.com)
 
-**Thursday Schedule**  
-- **6:00 PM** – Food at the synagogue  
-- **7:00 PM** – Service  
+**Timing**  
+- Be there at **10:30 AM** (arrive 30 minutes early)
 
-*(Beth or Thing)*
+**Attire**  
+- It will be very hot — take precautions so you do not pass out  
+- If you wish to help fill in the grave, dress accordingly  
+- Wear sunscreen  
 
-## Burial
+### Suggested Car Assignments
 
-- Arrive at **10:30 AM** (30 minutes early)
-- Travel time is approximately **40 minutes**
+The following are suggested riding assignments:
 
-## Confirm with Your Driver
+**Assumptions**  
+- Please let us know if a car is needed  
+- Becca and Sam are driving  
+- David and Max are driving  
 
-### Accord – Steve (from Yara’s)
-- Rose
-- Steve
-- Aaron
-- Yara
+**Yara’s – Steve (4 seats)**  
+- Rose  
+- Steve  
+- Aaron  
+- Yara  
 
-### CX-90 – Craig
-- Craig
-- Maya
-- Cade
-- Skylar
-- Matt
-- Toni
-- Mom
+**CX-90 – Craig (7 seats)**  
+- Craig  
+- Maya  
+- Cade  
+- Skylar  
+- Matt  
+- Toni  
+- Mom  
 
-### Bri J
-- Jason
-- Brina
-- Vox
+**Bri J (3 seats)**  
+- Jason  
+- Brina  
+- Vox  
 
-### Erik’s Minivan (Holiday Inn)  
-*Meet in the lobby*
-- Erik *(no one left behind)*
-- Darth
-- Beth
-- Doug
-- Cait
+**Holiday Inn – Erik (5 seats)**  
+*Meet in the lobby*  
+- Erik *(no one left behind)*  
+- Darth  
+- Beth  
+- Doug  
+- Cait  
 
-### Ben’s Van 7 (Fairfield)
-- Ben (FF)
-- Alex (FF)
-- Zach (FF)
+**Fairfield – Ben (3 seats)**  
+- Ben (FF)  
+- Alex (FF)  
+- Zach (FF)  
 
-### John
-- Allie
+**John (2 seats)**  
+- Allie  
 
-### David (R)
-- Maxine *(car?)*
+**David & Max (driving)**  
+- Maxine  
 
-### Becca, Sam, and Baby
-- *(Driving)*
+**Becca & Sam (driving)**  
+- Baby  
 
-### Guy – Staying (from Yara’s)
-- Tracey
-- ?Toni
-- ?Mom
+**Yara’s – Guy (staying)**  
+- Tracey  
+- ?Toni  
+- ?Mom  
 
-### Cory
-- Driving
+**Cory**  
+- Driving  
+
+## Thursday
+
+**Timing**  
+- Arrive as early as **6:00 PM**  
+- Service starts at **7:00 PM**  
+- Food will be available — eat and talk  
+
+**Clothing**  
+- Come as you are  
+- Dress up or dress comfortably, as preferred
