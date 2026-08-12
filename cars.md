@@ -84,4 +84,4 @@ The following are suggested riding assignments:
 
 **Clothing**  
 - Come as you are  
-- Dress up or dress comfortably, as preferred  
+- Dress up or dress comfortably, as preferred
