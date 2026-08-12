@@ -17,16 +17,16 @@
 
 The following are suggested riding assignments:
 
-**Assumptions**  
-- Please let us know if a car is needed  
-- Becca and Sam are driving  
-- David and Max are driving  
-
 **Yara’s – Steve (4 seats)**  
 - Rose  
 - Steve  
 - Aaron  
 - Yara  
+
+**Yara’s – Guy (staying)**  
+- Tracey  
+- ?Toni  
+- ?Mom  
 
 **CX-90 – Craig (7 seats)**  
 - Craig  
@@ -50,32 +50,23 @@ The following are suggested riding assignments:
 - Doug  
 - Cait  
 
-**Fairfield – Ben (3 seats)**  
+**Fairfield – Ben (5 seats)**  
 - Ben (FF)  
 - Alex (FF)  
 - Zach (FF)  
-
-**John (2 seats)**  
+- John  
 - Allie  
 
-**David & Max (driving)**  
-- Maxine  
-
-**Becca & Sam (driving)**  
-- Baby  
-
-**Yara’s – Guy (staying)**  
-- Tracey  
-- ?Toni  
-- ?Mom  
-
-**Cory**  
-- Driving  
+**Assumptions**  
+- Please let us know if a car is needed  
+- David & Max are driving  
+- Becca & Sam are driving (with Baby)  
+- Cory is driving  
 
 ## Thursday
 
 **Location**  
-[Map Link](https://maps.app.goo.gl/oyZWVhs41R3NCp586?g_st=ic)
+[Beth Or](https://maps.app.goo.gl/oyZWVhs41R3NCp586?g_st=ic)
 
 **Timing**  
 - Arrive as early as **6:00 PM**  
@@ -84,4 +75,4 @@ The following are suggested riding assignments:
 
 **Clothing**  
 - Come as you are  
-- Dress up or dress comfortably, as preferred
+- Dress up or dress comfortably, as preferred  
