@@ -1,34 +1,36 @@
 # Liam’s Services Logistics
 
-## Wednesday – Family Service
+## Wednesday – Private Family Service
 
 **Location**  
 [Haym Salomon Memorial Park](https://www.haymsalomonmemorialpark.com)
 
 **Timing**  
+- Service starts at **11:00 AM**
 - Be there at **10:30 AM** (arrive 30 minutes early)
 
 **Attire**  
 - It will be very hot — take precautions so you do not pass out  
-- If you wish to help fill in the grave, dress accordingly  
+- We believe there will be a tent, but please come prepared  
+- Helping with the burial is optional; if you wish to help fill in the grave, dress accordingly  
 - Wear sunscreen  
 
 ### Suggested Car Assignments
 
-The following are suggested riding assignments:
+Suggested car arrangements based on what we currently know:
 
-**Yara’s – Steve (4 seats)**  
+**From Yara’s – Steve (4 seats)**  
 - Rose  
 - Steve  
 - Aaron  
 - Yara  
 
-**Yara’s – Guy (staying)**  
+**From Yara’s – Guy (staying)**  
 - Tracey  
 - ?Toni  
 - ?Mom  
 
-**CX-90 – Craig (7 seats)**  
+**From Maya and Craig’s BNB – CX-90 (7 seats)**  
 - Craig  
 - Maya  
 - Cade  
@@ -37,12 +39,12 @@ The following are suggested riding assignments:
 - Toni  
 - Mom  
 
-**Bri J (3 seats)**  
+**From Bri & J (3 seats)**  
 - Jason  
 - Brina  
 - Vox  
 
-**Holiday Inn – Erik (5 seats)**  
+**From Holiday Inn – Erik (5 seats)**  
 *Meet in the lobby*  
 - Erik *(no one left behind)*  
 - Darth  
@@ -50,7 +52,7 @@ The following are suggested riding assignments:
 - Doug  
 - Cait  
 
-**Fairfield – Ben (5 seats)**  
+**From Fairfield – Ben (5 seats)**  
 - Ben (FF)  
 - Alex (FF)  
 - Zach (FF)  
@@ -58,7 +60,7 @@ The following are suggested riding assignments:
 - Allie  
 
 **Assumptions**  
-- Please let us know if a car is needed  
+- Please let us know if this is wrong or if a driver is needed  
 - David & Max are driving  
 - Becca & Sam are driving (with Baby)  
 - Cory is driving  
@@ -70,7 +72,7 @@ The following are suggested riding assignments:
 
 **Timing**  
 - Arrive as early as **6:00 PM**  
-- Service starts at **7:00 PM**  
+- Memorial with services to follow (starts at **7:00 PM**)  
 - Food will be available — eat and talk  
 
 **Clothing**  
