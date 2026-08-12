@@ -74,6 +74,9 @@ The following are suggested riding assignments:
 
 ## Thursday
 
+**Location**  
+[Map Link](https://maps.app.goo.gl/oyZWVhs41R3NCp586?g_st=ic)
+
 **Timing**  
 - Arrive as early as **6:00 PM**  
 - Service starts at **7:00 PM**  
@@ -81,4 +84,4 @@ The following are suggested riding assignments:
 
 **Clothing**  
 - Come as you are  
-- Dress up or dress comfortably, as preferred
+- Dress up or dress comfortably, as preferred  
