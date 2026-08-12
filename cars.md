@@ -15,7 +15,7 @@
 - Be there at **10:30 AM** (arrive 30 minutes early)
 
 **Attire**
-- It will be very hot — take precautions so you do not pass out
+- It will be very hot - take precautions so you do not pass out
 - There will be a tent and seats
 - Helping with the burial is optional; if you wish to help fill in the grave, dress accordingly
 - Wear sunscreen
@@ -23,7 +23,7 @@
 ### Suggested Car Assignments
 
 Suggested car arrangements based on what we currently know.
-If you don’t see your name and need a ride, let us know — we have open seats and the ability to juggle.
+If you don’t see your name and need a ride, let us know - we have open seats and the ability to juggle.
 
 **From Yara’s – Steve (4 seats)**
 - Rose
@@ -31,10 +31,8 @@ If you don’t see your name and need a ride, let us know — we have open seats
 - Aaron
 - Yara
 
-**From Yara’s – Guy (staying)**
+**From Yara’s – Guy**
 - Tracey
-- Toni
-- Mom
 
 **From Maya and Craig’s BNB – CX-90 (7 seats)**
 - Craig
@@ -43,7 +41,7 @@ If you don’t see your name and need a ride, let us know — we have open seats
 - Skylar
 - Matt
 - Toni
-- Mom
+- Flis
 
 **From Bri & J (3 seats)**
 - Jason
@@ -51,7 +49,9 @@ If you don’t see your name and need a ride, let us know — we have open seats
 - Vox
 
 **From Holiday Inn – Erik (5 seats)**
-*Meet in the lobby*
+
+Meet in the lobby
+
 - Erik
 - Darth
 - Beth
@@ -78,7 +78,7 @@ If you don’t see your name and need a ride, let us know — we have open seats
 **Timing**
 - Arrive as early as **6:00 PM**
 - Memorial with services to follow (starts at **7:00 PM**)
-- Food will be available — eat and talk
+- Food will be available - eat and talk
 
 **Clothing**
 - Come as you are
