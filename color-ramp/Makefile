@@ -38,10 +38,12 @@ test: $(DEFAULT_VENV_BUILD)
 	$(DEFAULT_VENV_BIN)/bare -d -m test/runTests.bare$(if $(TEST), -v vUnittestTest "'$(TEST)'")
 
 
-# Statically analyze (and execute) every script, standalone
+# Lint every script standalone. -x lints and executes (libraries + test files);
+# -s lints the test runners without executing them (that's `make test`).
 .PHONY: lint
 lint: $(DEFAULT_VENV_BUILD)
-	$(DEFAULT_VENV_BIN)/bare -x -m *.bare test/*.bare
+	$(DEFAULT_VENV_BIN)/bare -x -m *.bare test/test*.bare
+	$(DEFAULT_VENV_BIN)/bare -s -m test/runTests.bare
 
 
 # View the app in a browser (MarkdownUp local server)
