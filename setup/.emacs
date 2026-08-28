@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: nil; -*-
+
 ;; MacOS?
 (if (string= system-type "darwin")
     ;; set the path - https://www.emacswiki.org/emacs/ExecPath
@@ -73,7 +75,7 @@
      (tool-bar-lines . 0)
      (foreground-color . "white")
      (background-color . "black")))
- '(fill-column 100)
+ '(fill-column 120)
  '(global-auto-revert-mode t nil (autorevert))
  '(global-whitespace-mode t)
  '(indent-tabs-mode nil)
