@@ -132,6 +132,7 @@ $(eval $(call PROJECT_RULES, build, python-build, 'git@github.com:craigahobbs/py
 $(eval $(call PROJECT_RULES, build, python-template, 'git@github.com:craigahobbs/python-template.git', no-parallel))
 
 # Other projects
+$(eval $(call PROJECT_RULES, other, bare-script-c, 'git@github.com:craigahobbs/bare-script-c.git'))
 $(eval $(call PROJECT_RULES, other, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git'))
 $(eval $(call PROJECT_RULES, other, day-hikes, 'git@github.com:craigahobbs/day-hikes.git'))
 $(eval $(call PROJECT_RULES, other, hobbs-family-cookbook, 'git@github.com:craigahobbs/hobbs-family-cookbook.git'))
