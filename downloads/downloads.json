@@ -72364,5 +72364,83 @@
         "Language": "Python",
         "Date": "2026-09-04",
         "Downloads": 1600
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-09-05",
+        "Downloads": 184
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-09-05",
+        "Downloads": 21
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-09-05",
+        "Downloads": 5
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-09-05",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-09-05",
+        "Downloads": 7
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 61
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 170
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 1
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 1
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 29
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 2
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 231
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-09-05",
+        "Downloads": 935
     }
 ]
