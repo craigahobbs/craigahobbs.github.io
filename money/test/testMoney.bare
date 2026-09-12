@@ -1,0 +1,363 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <args.bare>
+include <dataLineChart.bare>
+include <dataTable.bare>
+include <schemaDoc.bare>
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../money.bare'
+
+
+#
+# Test helpers
+#
+
+
+# The test scenario's model text - two accounts, a one-time transfer between them, and a monthly
+# deposit. The "//" line comment is not JSON; it exercises the model text's comment stripping.
+testMoneyModelText = arrayJoin([ \
+    '{', \
+    '    "name": "Test",', \
+    '    "beginDate": "2024-01-01",', \
+    '    "endDate": "2024-04-01",', \
+    '    "accounts": [', \
+    '        {"name": "Checking", "balance": 100},', \
+    '        {"name": "Savings", "balance": 200}', \
+    '    ],', \
+    '    "transactions": [', \
+    '        // A one-time transfer from checking to savings', \
+    '        {', \
+    '            "date": "2024-01-15", "amount": -50, "description": "Transfer",', \
+    '            "account": "Checking", "destination": "Savings"', \
+    '        },', \
+    '        {', \
+    '            "date": "2024-02-01", "amount": 25, "description": "Income",', \
+    '            "account": "Checking", "repeat": {"period": "month"}', \
+    '        }', \
+    '    ]', \
+    '}' \
+], '\n')
+
+
+# The test scenario's model, as moneyPageReport parses it from the model text above
+function testMoneyModel():
+    return { \
+        'name': 'Test', \
+        'beginDate': datetimeNew(2024, 1, 1), \
+        'endDate': datetimeNew(2024, 4, 1), \
+        'accounts': [ \
+            {'name': 'Checking', 'balance': 100}, \
+            {'name': 'Savings', 'balance': 200} \
+        ], \
+        'transactions': [ \
+            { \
+                'date': datetimeNew(2024, 1, 15), 'amount': -50, 'description': 'Transfer', \
+                'account': 'Checking', 'destination': 'Savings' \
+            }, \
+            { \
+                'date': datetimeNew(2024, 2, 1), 'amount': 25, 'description': 'Income', \
+                'account': 'Checking', 'repeat': {'period': 'month'} \
+            } \
+        ] \
+    }
+endfunction
+
+
+# The test scenario's resolved transaction data (the moneyData result)
+function testMoneyData():
+    return [ \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 0, 'Description': '', 'Checking': 100, 'Savings': 200}, \
+        {'Date': datetimeNew(2024, 1, 15), 'Amount': -50, 'Description': 'Transfer', 'Checking': 50, 'Savings': 250}, \
+        {'Date': datetimeNew(2024, 2, 1), 'Amount': 25, 'Description': 'Income', 'Checking': 75, 'Savings': 250}, \
+        {'Date': datetimeNew(2024, 3, 1), 'Amount': 25, 'Description': 'Income', 'Checking': 100, 'Savings': 250}, \
+        {'Date': datetimeNew(2024, 4, 1), 'Amount': 25, 'Description': 'Income', 'Checking': 125, 'Savings': 250} \
+    ]
+endfunction
+
+
+# The report's expected render calls for the test scenario
+function testMoneyReportCalls():
+    lineData = []
+    for row in testMoneyData():
+        for accountName in ['Checking', 'Savings']:
+            arrayPush(lineData, { \
+                'Date': objectGet(row, 'Date'), \
+                'Account': accountName, \
+                'Balance': objectGet(row, accountName) \
+            })
+        endfor
+    endfor
+    lineChart = { \
+        'width': 900, \
+        'height': 300, \
+        'x': 'Date', \
+        'y': ['Balance'], \
+        'color': 'Account' \
+    }
+    table = { \
+        'datetime': 'day', \
+        'fields': ['Date', 'Checking', 'Savings', 'Amount', 'Description'], \
+        'formats': { \
+            'Amount': {'align': 'right'}, \
+            'Checking': {'align': 'right'}, \
+            'Savings': {'align': 'right'} \
+        }, \
+        'precision': 2, \
+        'trim': false \
+    }
+    return [ \
+        ['elementModelRender', [{'html': 'p', 'elem': dataLineChartElements(lineData, lineChart)}]], \
+        ['elementModelRender', [{'html': 'p', 'elem': dataTableElements(testMoneyData(), table)}]] \
+    ]
+endfunction
+
+
+# The pager navigation line rendered above every page
+function testMoneyNavCalls(page):
+    links = []
+    for pageName in ['About', 'Report', 'Schema']:
+        if pageName == page:
+            arrayPush(links, pageName)
+        elif pageName == 'Report':
+            arrayPush(links, '[Report](#var=)')
+        else:
+            arrayPush(links, '[' + pageName + "](#var.vPage='" + pageName + "')")
+        endif
+    endfor
+    return ['markdownPrint', [arrayJoin(links, '&nbsp;|&nbsp;'), '']]
+endfunction
+
+
+#
+# moneyMain tests
+#
+
+
+async function testMoneyMain():
+    unittestMockAll({'systemFetch': {'money.json': testMoneyModelText}})
+    moneyMain()
+    unittestDeepEqual(unittestMockEnd(), arrayExtend([ \
+        testMoneyNavCalls('Report'), \
+        ['systemFetch', ['money.json']], \
+        ['documentSetTitle', ['Money - Test']], \
+        ['markdownPrint', ['# Test', '']], \
+        ['markdownPrint', ['[Show Model](#var.vModel=true)']] \
+    ], testMoneyReportCalls()))
+endfunction
+unittestRunTest('testMoneyMain')
+
+
+# An application-supplied URL overrides the "url" argument's default
+async function testMoneyMainURL():
+    unittestMockAll({'systemFetch': {'other.json': testMoneyModelText}})
+    moneyMain('other.json')
+    unittestDeepEqual(unittestMockEnd(), arrayExtend([ \
+        testMoneyNavCalls('Report'), \
+        ['systemFetch', ['other.json']], \
+        ['documentSetTitle', ['Money - Test']], \
+        ['markdownPrint', ['# Test', '']], \
+        ['markdownPrint', ['[Show Model](#var.vModel=true)']] \
+    ], testMoneyReportCalls()))
+endfunction
+unittestRunTest('testMoneyMainURL')
+
+
+async function testMoneyMainSchema():
+    systemGlobalSet('vPage', 'Schema')
+    unittestMockAll()
+    moneyMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testMoneyNavCalls('Schema'), \
+        ['documentSetTitle', ['Money Schema']], \
+        ['markdownPrint', [schemaDocMarkdown(moneyTypes, 'Money')]] \
+    ])
+    systemGlobalSet('vPage', null)
+endfunction
+unittestRunTest('testMoneyMainSchema')
+
+
+#
+# moneyPageReport tests
+#
+
+
+# The "model" argument replaces the report with the un-stripped model text
+async function testMoneyPageReportModel():
+    systemGlobalSet('vModel', true)
+    unittestMockAll({'systemFetch': {'money.json': testMoneyModelText}})
+    moneyPageReport(null, argsParse(moneyArguments))
+    calls = unittestMockEnd()
+    systemGlobalSet('vModel', null)
+    unittestDeepEqual(calls, [ \
+        ['systemFetch', ['money.json']], \
+        ['documentSetTitle', ['Money - Test']], \
+        ['markdownPrint', ['# Test', '']], \
+        ['markdownPrint', ['[Hide Model](#var=)', '', '~~~', testMoneyModelText, '~~~']] \
+    ])
+endfunction
+unittestRunTest('testMoneyPageReportModel')
+
+
+# An un-named scenario titles the page "Money"
+async function testMoneyPageReportNoName():
+    modelText = '{' + \
+        '"beginDate": "2024-01-01", "endDate": "2024-01-02",' + \
+        '"accounts": [{"name": "Checking", "balance": 0}],' + \
+        '"transactions": [{"date": "2024-01-02", "amount": 1, "description": "D", "account": "Checking"}]' + \
+        '}'
+    unittestMockAll({'systemFetch': {'money.json': modelText}})
+    moneyPageReport(null, argsParse(moneyArguments))
+    calls = unittestMockEnd()
+    unittestDeepEqual(arraySlice(calls, 0, 4), [ \
+        ['systemFetch', ['money.json']], \
+        ['documentSetTitle', ['Money']], \
+        ['markdownPrint', ['# Money', '']], \
+        ['markdownPrint', ['[Show Model](#var.vModel=true)']] \
+    ])
+endfunction
+unittestRunTest('testMoneyPageReportNoName')
+
+
+# The model URL fails to load
+async function testMoneyPageReportFetchError():
+    unittestMockAll()
+    moneyPageReport(null, argsParse(moneyArguments))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['systemFetch', ['money.json']], \
+        ['documentSetTitle', ['Money']], \
+        ['markdownPrint', ['# Money', '']], \
+        ['markdownPrint', ['**Error:** Failed to load "money.json"']] \
+    ])
+endfunction
+unittestRunTest('testMoneyPageReportFetchError')
+
+
+# The model URL loads, but the model is invalid
+async function testMoneyPageReportInvalidModel():
+    unittestMockAll({'systemFetch': {'money.json': '{}'}})
+    moneyPageReport(null, argsParse(moneyArguments))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['systemFetch', ['money.json']], \
+        ['systemLogDebug', ['schema.bare: Required member "beginDate" missing']], \
+        ['documentSetTitle', ['Money']], \
+        ['markdownPrint', ['# Money', '']], \
+        ['markdownPrint', ['**Error:** Failed to load "money.json"']] \
+    ])
+endfunction
+unittestRunTest('testMoneyPageReportInvalidModel')
+
+
+#
+# moneyData tests
+#
+
+
+function testMoneyDataBasic():
+    unittestDeepEqual(moneyData(testMoneyModel()), testMoneyData())
+endfunction
+unittestRunTest('testMoneyDataBasic')
+
+
+# Each repeat period steps the transaction date by its own calendar unit
+function testMoneyDataRepeatDay():
+    model = { \
+        'beginDate': datetimeNew(2024, 1, 1), \
+        'endDate': datetimeNew(2024, 1, 10), \
+        'accounts': [{'name': 'A', 'balance': 0}], \
+        'transactions': [{ \
+            'date': datetimeNew(2024, 1, 1), 'amount': 1, 'description': 'Day', 'account': 'A', \
+            'repeat': {'period': 'day', 'multiple': 3} \
+        }] \
+    }
+    unittestDeepEqual(moneyData(model), [ \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 0, 'Description': '', 'A': 0}, \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 1, 'Description': 'Day', 'A': 1}, \
+        {'Date': datetimeNew(2024, 1, 4), 'Amount': 1, 'Description': 'Day', 'A': 2}, \
+        {'Date': datetimeNew(2024, 1, 7), 'Amount': 1, 'Description': 'Day', 'A': 3}, \
+        {'Date': datetimeNew(2024, 1, 10), 'Amount': 1, 'Description': 'Day', 'A': 4} \
+    ])
+endfunction
+unittestRunTest('testMoneyDataRepeatDay')
+
+
+function testMoneyDataRepeatWeek():
+    model = { \
+        'beginDate': datetimeNew(2024, 1, 1), \
+        'endDate': datetimeNew(2024, 1, 20), \
+        'accounts': [{'name': 'A', 'balance': 0}], \
+        'transactions': [{ \
+            'date': datetimeNew(2024, 1, 1), 'amount': 1, 'description': 'Week', 'account': 'A', \
+            'repeat': {'period': 'week'} \
+        }] \
+    }
+    unittestDeepEqual(moneyData(model), [ \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 0, 'Description': '', 'A': 0}, \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 1, 'Description': 'Week', 'A': 1}, \
+        {'Date': datetimeNew(2024, 1, 8), 'Amount': 1, 'Description': 'Week', 'A': 2}, \
+        {'Date': datetimeNew(2024, 1, 15), 'Amount': 1, 'Description': 'Week', 'A': 3} \
+    ])
+endfunction
+unittestRunTest('testMoneyDataRepeatWeek')
+
+
+# A repeat end date stops the transaction before the scenario's end date
+function testMoneyDataRepeatMonthEndDate():
+    model = { \
+        'beginDate': datetimeNew(2024, 1, 1), \
+        'endDate': datetimeNew(2025, 1, 1), \
+        'accounts': [{'name': 'A', 'balance': 0}], \
+        'transactions': [{ \
+            'date': datetimeNew(2024, 1, 1), 'amount': 1, 'description': 'Month', 'account': 'A', \
+            'repeat': {'period': 'month', 'multiple': 2, 'endDate': datetimeNew(2024, 5, 1)} \
+        }] \
+    }
+    unittestDeepEqual(moneyData(model), [ \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 0, 'Description': '', 'A': 0}, \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 1, 'Description': 'Month', 'A': 1}, \
+        {'Date': datetimeNew(2024, 3, 1), 'Amount': 1, 'Description': 'Month', 'A': 2}, \
+        {'Date': datetimeNew(2024, 5, 1), 'Amount': 1, 'Description': 'Month', 'A': 3} \
+    ])
+endfunction
+unittestRunTest('testMoneyDataRepeatMonthEndDate')
+
+
+# A repeating transaction that starts before the scenario contributes only its in-range occurrences
+function testMoneyDataRepeatYearBeforeBegin():
+    model = { \
+        'beginDate': datetimeNew(2024, 1, 1), \
+        'endDate': datetimeNew(2025, 6, 1), \
+        'accounts': [{'name': 'A', 'balance': 0}], \
+        'transactions': [{ \
+            'date': datetimeNew(2022, 6, 1), 'amount': 1, 'description': 'Year', 'account': 'A', \
+            'repeat': {'period': 'year'} \
+        }] \
+    }
+    unittestDeepEqual(moneyData(model), [ \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 0, 'Description': '', 'A': 0}, \
+        {'Date': datetimeNew(2024, 6, 1), 'Amount': 1, 'Description': 'Year', 'A': 1}, \
+        {'Date': datetimeNew(2025, 6, 1), 'Amount': 1, 'Description': 'Year', 'A': 2} \
+    ])
+endfunction
+unittestRunTest('testMoneyDataRepeatYearBeforeBegin')
+
+
+# A disabled transaction, and a non-repeating transaction past the scenario's end date, contribute
+# no rows
+function testMoneyDataSkipped():
+    model = { \
+        'beginDate': datetimeNew(2024, 1, 1), \
+        'endDate': datetimeNew(2024, 2, 1), \
+        'accounts': [{'name': 'A', 'balance': 10}], \
+        'transactions': [ \
+            {'date': datetimeNew(2024, 1, 5), 'amount': 1, 'description': 'Off', 'account': 'A', 'disabled': true}, \
+            {'date': datetimeNew(2024, 3, 1), 'amount': 1, 'description': 'Late', 'account': 'A'} \
+        ] \
+    }
+    unittestDeepEqual(moneyData(model), [ \
+        {'Date': datetimeNew(2024, 1, 1), 'Amount': 0, 'Description': '', 'A': 10} \
+    ])
+endfunction
+unittestRunTest('testMoneyDataSkipped')

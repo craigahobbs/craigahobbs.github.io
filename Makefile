@@ -11,12 +11,14 @@ help:
 clean:
 	$(MAKE) -C color-ramp clean
 	$(MAKE) -C downloads clean
+	$(MAKE) -C money clean
 
 
 .PHONY: commit
 commit:
 	$(MAKE) -C color-ramp commit
 	$(MAKE) -C downloads commit
+	$(MAKE) -C money commit
 
 
 .PHONY: gh-pages
@@ -28,3 +30,4 @@ gh-pages:
 superclean:
 	$(MAKE) -C color-ramp clean
 	$(MAKE) -C downloads superclean
+	$(MAKE) -C money clean

@@ -42,19 +42,24 @@ async function moneyPageReport(url, args):
 
     # Load the money model
     moneyTextOrig = systemFetch(url)
-    moneyText = regexReplace(regexNew('$\\s+//.*$', 'm'), moneyTextOrig, '')
-    moneyModel = schemaValidate(moneyTypes, "Money", jsonParse(moneyText))
+    moneyModel = null
+    if moneyTextOrig != null:
+        moneyText = regexReplace(regexNew('$\\s+//.*$', 'm'), moneyTextOrig, '')
+        moneyModel = schemaValidate(moneyTypes, "Money", jsonParse(moneyText))
+    endif
+
+    # Model loading error?
+    if moneyModel == null:
+        documentSetTitle('Money')
+        markdownPrint('# Money', '')
+        markdownPrint('**Error:** Failed to load "' + url + '"')
+        return
+    endif
 
     # Render the page title
     moneyName = objectGet(moneyModel, 'name')
     documentSetTitle('Money' + if(moneyName != null, ' - ' + moneyName, ''))
     markdownPrint('# ' + if(moneyName != null, moneyName, 'Money'), '')
-
-    # Model loading error?
-    if moneyModel == null:
-        markdownPrint('**Error:** Failed to load "' + url + '"')
-        return
-    endif
 
     # Display the money model?
     if objectGet(args, 'model'):
@@ -100,14 +105,9 @@ function moneyReport(moneyModel):
     dataLineChart(lineData, { \
         'width': 900, \
         'height': 300, \
-        'precision': 2, \
-        'datetime': 'day', \
         'x': 'Date', \
         'y': ['Balance'], \
-        'color': 'Account', \
-        'xTicks': {'count': 5}, \
-        'yTicks': {'count': 5}, \
-        'yLines': [{'value': 0}] \
+        'color': 'Account' \
     })
 
     # Render the table
