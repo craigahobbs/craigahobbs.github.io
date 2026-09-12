@@ -102,8 +102,6 @@ endfunction
 
 
 async function downloadsChartPage(args, options):
-    trailingDays = objectGet(args, 'days')
-
     # Render the title
     title = 'Downloads Chart'
     documentSetTitle(title)
@@ -115,14 +113,8 @@ async function downloadsChartPage(args, options):
         downloadsYearsControls(args) \
     )
 
-    # Compute the color legend order
+    # Load the package data
     data = downloadsDataLoad(args)
-    dataAverage = downloadsDataAverage(data, trailingDays)
-    dataSort(dataAverage, [['Downloads', true]])
-    colorOrder = []
-    for row in dataAverage:
-        arrayPush(colorOrder, objectGet(row, 'Unique'))
-    endfor
 
     # Add the featured column
     featuredMap = objectGet(options, 'featured') || {}
@@ -151,11 +143,7 @@ async function downloadsChartPage(args, options):
             'height': chartHeight, \
             'x': 'Month', \
             'y': ['Downloads'], \
-            'color': 'Unique', \
-            'colorOrder': colorOrder, \
-            'yTicks': {'start': 0, 'count': 5}, \
-            'precision': 0, \
-            'datetime': 'day' \
+            'color': 'Unique' \
         }, {'fontSize': fontSize})
     endfor
 
@@ -235,15 +223,12 @@ async function downloadsDashboard(args):
             'height': chartHeight, \
             'x': 'Month', \
             'y': ['Downloads'], \
-            'yTicks': {'start': 0}, \
             'xLines': [ \
                 {'value': downloadsDataAverageMinDate(dataMonthly, trailingDays, 'Month'), 'label': ''} \
             ], \
             'yLines': [ \
                 {'value': monthlyAverage} \
-            ], \
-            'datetime': 'day', \
-            'precision': 1 \
+            ] \
         }, {'fontSize': fontSize})
     endif
 
@@ -254,12 +239,9 @@ async function downloadsDashboard(args):
         'height': chartHeight, \
         'x': 'Date', \
         'y': ['Average Downloads', 'Downloads'], \
-        'yTicks': {'start': 0}, \
         'yLines': [ \
             {'value': if(averageDownloads != null, averageDownloads, monthlyAverage)} \
-        ], \
-        'datetime': 'day', \
-        'precision': 1 \
+        ] \
     }
     if averageDownloads != null:
         objectSet(dailyLineChart, 'xLines', [ \
