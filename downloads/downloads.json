@@ -74295,19 +74295,19 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-09-30",
-        "Downloads": 0
+        "Downloads": 146
     },
     {
         "Package": "element-model",
         "Language": "JavaScript",
         "Date": "2026-09-30",
-        "Downloads": 0
+        "Downloads": 2
     },
     {
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-09-30",
-        "Downloads": 0
+        "Downloads": 5
     },
     {
         "Package": "markdown-up",
@@ -74319,7 +74319,7 @@
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2026-09-30",
-        "Downloads": 0
+        "Downloads": 7
     },
     {
         "Package": "bare-script",
@@ -74368,5 +74368,83 @@
         "Language": "Python",
         "Date": "2026-09-30",
         "Downloads": 3187
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-10-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-10-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-10-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-10-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-10-01",
+        "Downloads": 0
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 145
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 100
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 1
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 2
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 18
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 4
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 805
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-10-01",
+        "Downloads": 3083
     }
 ]
