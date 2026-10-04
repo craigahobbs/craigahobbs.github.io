@@ -20,7 +20,7 @@ include Makefile.tool
 
 
 # Development dependencies
-TESTS_REQUIRE := bare-script pylint
+TESTS_REQUIRE := bare-script coverage pylint
 
 
 .PHONY: help
@@ -33,9 +33,19 @@ clean:
 	rm -rf Makefile.tool pylintrc
 
 
+# Run the unit tests (TEST="testName" runs one BareScript test); -d surfaces builtin debug logs
+test: $(DEFAULT_VENV_BUILD)
+	$(DEFAULT_VENV_BIN)/bare -d -m test/runTests.bare$(if $(TEST), -v vUnittestTest "'$(TEST)'")
+	$(DEFAULT_VENV_PYTHON) -m coverage run --branch --data-file=build/.coverage --include=downloads.py -m unittest discover -s test
+	$(DEFAULT_VENV_PYTHON) -m coverage report --data-file=build/.coverage --fail-under=100 -m
+
+
+# Lint every script standalone. -x lints and executes (libraries + test files);
+# -s lints the test runners without executing them (that's `make test`).
 lint: $(DEFAULT_VENV_BUILD)
-	$(DEFAULT_VENV_PYTHON) -m pylint downloads.py
-	$(DEFAULT_VENV_BIN)/bare -x -m downloads.bare
+	$(DEFAULT_VENV_PYTHON) -m pylint downloads.py test/test_downloads.py
+	$(DEFAULT_VENV_BIN)/bare -x -m *.bare test/test*.bare
+	$(DEFAULT_VENV_BIN)/bare -s -m test/runTests.bare
 
 
 .PHONY: data

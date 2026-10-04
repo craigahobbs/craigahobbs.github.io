@@ -45,7 +45,7 @@ def main():
 
     # Minimum date for which to keep data
     today = datetime.date.today()
-    date_min = today - (today - today.replace(year=today.year - args.years, month=1, day=1))
+    date_min = today.replace(year=today.year - args.years, month=1, day=1)
     date_min_iso = date_min.isoformat()
     date_max_iso = today.isoformat()
 
@@ -81,7 +81,7 @@ def main():
         package_existing = [row for row in package_data if row['Package'] == package_name and row['Language'] == package_language]
         package_data = [row for row in package_data if not (row['Package'] == package_name and row['Language'] == package_language)]
         package_dates = set(row['Date'] for row in package_updated)
-        package_data.extend(row for row in package_updated if row['Date'] < date_max_iso)
+        package_data.extend(row for row in package_updated if date_min_iso <= row['Date'] < date_max_iso)
         for row in package_existing:
             if row['Date'] not in package_dates and row['Date'] >= date_min_iso:
                 package_data.append(row)
@@ -108,5 +108,5 @@ def urlopen_json(url):
         return json.load(response)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': # pragma: no cover
     main()

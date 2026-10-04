@@ -1,0 +1,665 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <args.bare>
+include <dataLineChart.bare>
+include <dataTable.bare>
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../downloads.bare'
+
+
+#
+# Test helpers
+#
+
+
+# The test downloads.json rows - "alpha" is published in both languages, "beta" only in Python
+testDownloadsRows = [ \
+    ['alpha', 'Python', '2023-12-31', 100], \
+    ['alpha', 'Python', '2024-01-01', 1], \
+    ['alpha', 'Python', '2024-01-31', 2], \
+    ['alpha', 'Python', '2024-02-01', 3], \
+    ['beta', 'Python', '2024-02-01', 7], \
+    ['alpha', 'JavaScript', '2024-02-02', 10], \
+    ['alpha', 'Python', '2024-02-02', 4], \
+    ['alpha', 'JavaScript', '2024-02-03', 20], \
+    ['alpha', 'Python', '2024-02-03', 5] \
+]
+
+
+# The test downloads.json text
+function testDownloadsJSON():
+    rows = []
+    for row in testDownloadsRows:
+        arrayPush(rows, { \
+            'Package': arrayGet(row, 0), \
+            'Language': arrayGet(row, 1), \
+            'Date': arrayGet(row, 2), \
+            'Downloads': arrayGet(row, 3) \
+        })
+    endfor
+    return jsonStringify(rows, 4)
+endfunction
+
+
+# The test mock data
+function testDownloadsMockData():
+    return {'systemFetch': {'downloads.json': testDownloadsJSON()}}
+endfunction
+
+
+# The test data as loaded by downloadsDataLoad, optionally starting at a minimum date
+function testDownloadsData(minDate):
+    data = []
+    for row in testDownloadsRows:
+        package = arrayGet(row, 0)
+        language = arrayGet(row, 1)
+        date = datetimeISOParse(arrayGet(row, 2))
+        if minDate == null || date >= minDate:
+            arrayPush(data, { \
+                'Package': package, \
+                'Language': language, \
+                'Date': date, \
+                'Downloads': arrayGet(row, 3), \
+                'Unique': if(package == 'beta', 'beta', package + if(language == 'Python', ' (py)', ' (js)')) \
+            })
+        endif
+    endfor
+    return data
+endfunction
+
+
+# Helper to create a downloadsDataAverage/downloadsDataMonthly row
+function testDownloadsAggregateRow(package, language, unique, downloads, month):
+    row = {'Language': language, 'Package': package, 'Unique': unique, 'Downloads': downloads}
+    if month != null:
+        objectSet(row, 'Month', month)
+    endif
+    return row
+endfunction
+
+
+# Helper to reset the URL argument globals
+function testDownloadsResetGlobals():
+    for argument in downloadsArguments:
+        systemGlobalSet('v' + stringUpper(stringSlice(objectGet(argument, 'name'), 0, 1)) + stringSlice(objectGet(argument, 'name'), 1), null)
+    endfor
+endfunction
+
+
+# Helper to verify a windowSetResize callback has the same effect as the expected function
+async function testDownloadsVerifyResize(calls, expectedFn):
+    resizeFn = null
+    for call in calls:
+        if arrayGet(call, 0) == 'windowSetResize':
+            resizeFn = arrayGet(arrayGet(call, 1), 0)
+        endif
+    endfor
+
+    unittestMockAll(testDownloadsMockData())
+    expectedFn()
+    expected = unittestMockEnd()
+    unittestMockAll(testDownloadsMockData())
+    resizeFn()
+    unittestDeepEqual(unittestMockEnd(), expected)
+endfunction
+
+
+#
+# downloadsDataLoad
+#
+
+
+async function testDownloadsDataLoad():
+    unittestMockAll(testDownloadsMockData())
+    data = downloadsDataLoad()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['systemFetch', ['downloads.json']] \
+    ])
+    unittestDeepEqual(data, testDownloadsData())
+endfunction
+unittestRunTest('testDownloadsDataLoad')
+
+
+async function testDownloadsDataLoadFetchError():
+    unittestMockAll({})
+    data = downloadsDataLoad()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['systemFetch', ['downloads.json']], \
+        ['markdownPrint', ['', '**Error:** Failed to load downloads data']] \
+    ])
+    unittestEqual(data, null)
+endfunction
+unittestRunTest('testDownloadsDataLoadFetchError')
+
+
+#
+# downloadsDataAverage
+#
+
+
+function testDownloadsDataAverage():
+    # The 3-day trailing window is 2024-02-01 through 2024-02-03
+    unittestDeepEqual(downloadsDataAverage(testDownloadsData(), 3, true), [ \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12 * 30 / 3), \
+        testDownloadsAggregateRow('beta', 'Python', 'beta', 7 * 30 / 3), \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 * 30 / 3) \
+    ])
+    unittestDeepEqual(downloadsDataAverage(testDownloadsData(), 3, false), [ \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12 / 3), \
+        testDownloadsAggregateRow('beta', 'Python', 'beta', 7 / 3), \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 / 3) \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataAverage')
+
+
+function testDownloadsDataAverageZero():
+    # A package with no downloads in the trailing window has a zero average
+    unittestDeepEqual(downloadsDataAverage(testDownloadsData(), 1, true), [ \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 5 * 30), \
+        testDownloadsAggregateRow('beta', 'Python', 'beta', 0), \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 20 * 30) \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataAverageZero')
+
+
+function testDownloadsDataAverageMinDate():
+    unittestEqual(downloadsDataAverageMinDate(testDownloadsData(), 3), datetimeNew(2024, 1, 31))
+    unittestEqual( \
+        downloadsDataAverageMinDate([{'Month': datetimeNew(2024, 1, 1)}, {'Month': datetimeNew(2024, 2, 1)}], 3, 'Month'), \
+        datetimeNew(2024, 1, 29) \
+    )
+endfunction
+unittestRunTest('testDownloadsDataAverageMinDate')
+
+
+#
+# downloadsDataYears
+#
+
+
+function testDownloadsDataYears():
+    unittestDeepEqual(downloadsDataYears(testDownloadsData(), 1), testDownloadsData())
+
+    # The current year includes January 1st
+    data = downloadsDataYears(testDownloadsData(), 0)
+    unittestDeepEqual(data, testDownloadsData(datetimeNew(2024, 1, 1)))
+    unittestEqual(objectGet(arrayGet(data, 0), 'Date'), datetimeNew(2024, 1, 1))
+endfunction
+unittestRunTest('testDownloadsDataYears')
+
+
+#
+# downloadsDataMonthly
+#
+
+
+function testDownloadsDataMonthly():
+    unittestDeepEqual(downloadsDataMonthly(testDownloadsData()), [ \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 100, datetimeNew(2023, 12, 1)), \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 3, datetimeNew(2024, 1, 1)), \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12, datetimeNew(2024, 2, 1)), \
+        testDownloadsAggregateRow('beta', 'Python', 'beta', 7, datetimeNew(2024, 2, 1)), \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30, datetimeNew(2024, 2, 1)) \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataMonthly')
+
+
+function testDownloadsDataMonthlyCurrentMonth():
+    # The current (partial) month is excluded
+    today = datetimeToday()
+    lastMonth = datetimeNew(datetimeYear(today), datetimeMonth(today) - 1, 1)
+    data = [ \
+        {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': lastMonth, 'Downloads': 1}, \
+        {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': today, 'Downloads': 2} \
+    ]
+    unittestDeepEqual(downloadsDataMonthly(data), [ \
+        testDownloadsAggregateRow('beta', 'Python', 'beta', 1, lastMonth) \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataMonthlyCurrentMonth')
+
+
+#
+# downloadsYearsControls
+#
+
+
+function testDownloadsYearsControls():
+    unittestDeepEqual(downloadsYearsControls({'years': 0}), [ \
+        '**Showing:** Current', \
+        '([Fewer](#var.vYears=0) | ', \
+        '[More](#var=))' \
+    ])
+    unittestDeepEqual(downloadsYearsControls({'years': 1}), [ \
+        '**Showing:** 1 year', \
+        '([Fewer](#var.vYears=0) | ', \
+        '[More](#var.vYears=2))' \
+    ])
+    unittestDeepEqual(downloadsYearsControls({'years': 3}), [ \
+        '**Showing:** 3 years', \
+        '([Fewer](#var.vYears=2) | ', \
+        '[More](#var.vYears=4))' \
+    ])
+endfunction
+unittestRunTest('testDownloadsYearsControls')
+
+
+#
+# Index page
+#
+
+
+# The index page's downloads table elements
+function testDownloadsIndexTable(rows, total, linkPrefix, linkSuffix):
+    tableRows = []
+    for row in rows:
+        package = arrayGet(row, 0)
+        language = arrayGet(row, 1)
+        arrayPush(tableRows, { \
+            'Package': '[' + package + '](#' + linkPrefix + "var.vLanguage='" + language + "'&var.vName='" + package + "'" + \
+                if(linkSuffix, linkSuffix, '') + ')', \
+            'Language': if(language == 'Python', \
+                '[Python](https://pypi.org/project/' + package + '/)', \
+                '[JavaScript](https://www.npmjs.com/package/' + package + ')' \
+            ), \
+            'Unique': arrayGet(row, 2), \
+            'Downloads': arrayGet(row, 3) \
+        })
+    endfor
+    arrayPush(tableRows, {'Package': '**Total**', 'Language': '', 'Downloads': total})
+    return {'html': 'p', 'elem': dataTableElements(tableRows, { \
+        'fields': ['Package', 'Language', 'Downloads'], \
+        'formats': { \
+            'Package': {'markdown': true}, \
+            'Language': {'markdown': true}, \
+            'Downloads': {'align': 'right', 'header': 'Monthly Downloads'} \
+        }, \
+        'precision': 0 \
+    })}
+endfunction
+
+
+async function testDownloadsMainIndex():
+    systemGlobalSet('vDays', 3)
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['markdownPrint', [ \
+            '# Package Downloads', \
+            '', \
+            [ \
+                '**Showing:** 1 year', \
+                '([Fewer](#var.vDays=3&var.vYears=0) | ', \
+                '[More](#var.vDays=3&var.vYears=2))' \
+            ], \
+            '', \
+            "[Time Chart](#var.vDays=3&var.vPage='chart')" \
+        ]], \
+        ['documentSetTitle', ['Package Downloads']], \
+        ['systemFetch', ['downloads.json']], \
+        ['elementModelRender', [testDownloadsIndexTable([ \
+            ['alpha', 'JavaScript', 'alpha (js)', 300], \
+            ['alpha', 'Python', 'alpha (py)', 120], \
+            ['beta', 'Python', 'beta', 70] \
+        ], 490, 'var.vDays=3&')]] \
+    ])
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainIndex')
+
+
+async function testDownloadsMainIndexClamp():
+    # Out-of-range days and years are clamped to 1 day and the current year
+    systemGlobalSet('vDays', 0)
+    systemGlobalSet('vYears', -2)
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['markdownPrint', [ \
+            '# Package Downloads', \
+            '', \
+            [ \
+                '**Showing:** Current', \
+                '([Fewer](#var.vDays=0&var.vYears=0) | ', \
+                '[More](#var.vDays=0))' \
+            ], \
+            '', \
+            "[Time Chart](#var.vDays=0&var.vPage='chart'&var.vYears=-2)" \
+        ]], \
+        ['documentSetTitle', ['Package Downloads']], \
+        ['systemFetch', ['downloads.json']], \
+        ['elementModelRender', [testDownloadsIndexTable([ \
+            ['alpha', 'JavaScript', 'alpha (js)', 600], \
+            ['alpha', 'Python', 'alpha (py)', 150], \
+            ['beta', 'Python', 'beta', 0] \
+        ], 750, 'var.vDays=0&', '&var.vYears=-2')]] \
+    ])
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainIndexClamp')
+
+
+async function testDownloadsMainIndexFetchError():
+    unittestMockAll({})
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['markdownPrint', [ \
+            '# Package Downloads', \
+            '', \
+            [ \
+                '**Showing:** 1 year', \
+                '([Fewer](#var.vYears=0) | ', \
+                '[More](#var.vYears=2))' \
+            ], \
+            '', \
+            "[Time Chart](#var.vPage='chart')" \
+        ]], \
+        ['documentSetTitle', ['Package Downloads']], \
+        ['systemFetch', ['downloads.json']], \
+        ['markdownPrint', ['', '**Error:** Failed to load downloads data']] \
+    ])
+endfunction
+unittestRunTest('testDownloadsMainIndexFetchError')
+
+
+#
+# Chart page
+#
+
+
+# The chart page's header calls
+function testDownloadsChartHeader():
+    return [ \
+        ['documentSetTitle', ['Downloads Chart']], \
+        ['markdownPrint', [ \
+            '[Back](#var=)', \
+            '', \
+            '# Downloads Chart', \
+            '', \
+            [ \
+                '**Showing:** 1 year', \
+                "([Fewer](#var.vPage='chart'&var.vYears=0) | ", \
+                "[More](#var.vPage='chart'&var.vYears=2))" \
+            ] \
+        ]], \
+        ['systemFetch', ['downloads.json']] \
+    ]
+endfunction
+
+
+# The chart page's line chart elements
+function testDownloadsChart(title, data):
+    return ['elementModelRender', [{'html': 'p', 'elem': dataLineChartElements(data, { \
+        'title': title, \
+        'width': 960, \
+        'height': 288, \
+        'x': 'Month', \
+        'y': ['Downloads'], \
+        'color': 'Unique' \
+    }, {'fontSize': 16})}]]
+endfunction
+
+
+async function testDownloadsMainChart():
+    systemGlobalSet('vPage', 'chart')
+    options = {'featured': {'beta': {'Python': true}, 'alpha': {'JavaScript': false}}}
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain(options)
+    calls = unittestMockEnd()
+    unittestDeepEqual(calls, arrayExtend(testDownloadsChartHeader(), [ \
+        testDownloadsChart('Monthly Downloads (Featured)', [ \
+            testDownloadsAggregateRow('beta', 'Python', 'beta', 7, datetimeNew(2024, 2, 1)) \
+        ]), \
+        testDownloadsChart('Monthly Downloads', [ \
+            testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 100, datetimeNew(2023, 12, 1)), \
+            testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 3, datetimeNew(2024, 1, 1)), \
+            testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12, datetimeNew(2024, 2, 1)), \
+            testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30, datetimeNew(2024, 2, 1)) \
+        ]), \
+        ['windowSetResize', ['<function>']] \
+    ]))
+
+    # The resize callback re-renders the chart page
+    args = argsParse(downloadsArguments)
+    testDownloadsVerifyResize(calls, systemPartial(downloadsChartPage, args, options))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainChart')
+
+
+async function testDownloadsMainChartNoFeatured():
+    systemGlobalSet('vPage', 'chart')
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), arrayExtend(testDownloadsChartHeader(), [ \
+        testDownloadsChart('Monthly Downloads', downloadsDataMonthly(testDownloadsData())), \
+        ['windowSetResize', ['<function>']] \
+    ]))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainChartNoFeatured')
+
+
+async function testDownloadsMainChartFetchError():
+    systemGlobalSet('vPage', 'chart')
+    unittestMockAll({})
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), arrayExtend(testDownloadsChartHeader(), [ \
+        ['markdownPrint', ['', '**Error:** Failed to load downloads data']] \
+    ]))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainChartFetchError')
+
+
+#
+# Package dashboard page
+#
+
+
+# The package dashboard page's header calls
+function testDownloadsDashboardHeader(name, language, linkArgs, yearsControls):
+    title = name + ' (' + language + ') Downloads'
+    nameArgs = "var.vLanguage='" + language + "'&var.vName='" + name + "'"
+    return [ \
+        ['markdownPrint', [ \
+            '[Back](#' + if(linkArgs, linkArgs, 'var=') + ')', \
+            '', \
+            '# ' + name + ' \\(' + language + '\\) Downloads', \
+            '', \
+            if(yearsControls, yearsControls, [ \
+                '**Showing:** 1 year', \
+                '([Fewer](#' + if(linkArgs, linkArgs + '&', '') + nameArgs + '&var.vYears=0) | ', \
+                '[More](#' + if(linkArgs, linkArgs + '&', '') + nameArgs + '&var.vYears=2))' \
+            ]) \
+        ]], \
+        ['documentSetTitle', [title]], \
+        ['systemFetch', ['downloads.json']] \
+    ]
+endfunction
+
+
+# The package dashboard page's chart and table calls
+function testDownloadsDashboardCharts(name, dataMonthly, monthlyAverage, monthlyMinDate, data, dailyMinDate, tableRows):
+    return [ \
+        ['elementModelRender', [{'html': 'p', 'elem': dataLineChartElements(dataMonthly, { \
+            'title': 'Monthly Downloads - ' + name, \
+            'width': 768, \
+            'height': 240, \
+            'x': 'Month', \
+            'y': ['Downloads'], \
+            'xLines': [{'value': monthlyMinDate, 'label': ''}], \
+            'yLines': [{'value': monthlyAverage}] \
+        }, {'fontSize': 16})}]], \
+        ['elementModelRender', [{'html': 'p', 'elem': dataLineChartElements(data, { \
+            'title': 'Daily Downloads - ' + name, \
+            'width': 960, \
+            'height': 240, \
+            'x': 'Date', \
+            'y': ['Average Downloads', 'Downloads'], \
+            'xLines': [{'value': dailyMinDate, 'label': ''}], \
+            'yLines': [{'value': monthlyAverage / 30}] \
+        }, {'fontSize': 16})}]], \
+        ['elementModelRender', [{'html': 'p', 'elem': dataTableElements(tableRows, { \
+            'fields': ['Month', 'Downloads', '% Average'], \
+            'formats': { \
+                'Downloads': {'align': 'right'} \
+            }, \
+            'datetime': 'month', \
+            'precision': 0 \
+        })}]], \
+        ['windowSetResize', ['<function>']] \
+    ]
+endfunction
+
+
+async function testDownloadsMainDashboard():
+    systemGlobalSet('vName', 'alpha')
+    systemGlobalSet('vLanguage', 'Python')
+    systemGlobalSet('vDays', 3)
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    calls = unittestMockEnd()
+
+    # The package's daily data with the 3-day trailing average - the first full window ends 2024-01-02
+    data = dataFilter(testDownloadsData(), 'Package == "alpha" && Language == "Python"')
+    dataCalculatedField(data, 'Month', 'datetimeNew(datetimeYear(Date), datetimeMonth(Date), 1)')
+    objectSet(arrayGet(data, 2), 'Average Downloads', 2 / 3)
+    objectSet(arrayGet(data, 3), 'Average Downloads', 5 / 3)
+    objectSet(arrayGet(data, 4), 'Average Downloads', 9 / 3)
+    objectSet(arrayGet(data, 5), 'Average Downloads', 12 / 3)
+
+    unittestDeepEqual(calls, arrayExtend(testDownloadsDashboardHeader('alpha', 'Python', 'var.vDays=3'), \
+        testDownloadsDashboardCharts( \
+            'alpha', \
+            [ \
+                testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 100, datetimeNew(2023, 12, 1)), \
+                testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 3, datetimeNew(2024, 1, 1)), \
+                testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12, datetimeNew(2024, 2, 1)) \
+            ], \
+            120, \
+            datetimeNew(2024, 1, 29), \
+            data, \
+            datetimeNew(2024, 1, 31), \
+            [ \
+                {'Month': datetimeNew(2024, 2, 1), 'Downloads': 12, '% Average': '-90%'}, \
+                {'Month': datetimeNew(2024, 1, 1), 'Downloads': 3, '% Average': '-97.5%'}, \
+                {'Month': datetimeNew(2023, 12, 1), 'Downloads': 100, '% Average': '-16.7%'} \
+            ] \
+        ) \
+    ))
+
+    # The resize callback re-renders the dashboard page
+    args = argsParse(downloadsArguments)
+    testDownloadsVerifyResize(calls, systemPartial(downloadsDashboard, args))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainDashboard')
+
+
+async function testDownloadsMainDashboardCurrentYear():
+    # The trailing average uses the data before the current year, so it starts on January 1st
+    systemGlobalSet('vName', 'alpha')
+    systemGlobalSet('vLanguage', 'Python')
+    systemGlobalSet('vDays', 2)
+    systemGlobalSet('vYears', 0)
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    calls = unittestMockEnd()
+
+    # The package's current-year daily data with the 2-day trailing average
+    data = dataFilter(testDownloadsData(datetimeNew(2024, 1, 1)), 'Package == "alpha" && Language == "Python"')
+    dataCalculatedField(data, 'Month', 'datetimeNew(datetimeYear(Date), datetimeMonth(Date), 1)')
+    objectSet(arrayGet(data, 0), 'Average Downloads', (100 + 1) / 2)
+    objectSet(arrayGet(data, 1), 'Average Downloads', 2 / 2)
+    objectSet(arrayGet(data, 2), 'Average Downloads', (2 + 3) / 2)
+    objectSet(arrayGet(data, 3), 'Average Downloads', (3 + 4) / 2)
+    objectSet(arrayGet(data, 4), 'Average Downloads', (4 + 5) / 2)
+
+    nameArgs = "var.vDays=2&var.vLanguage='Python'&var.vName='alpha'"
+    unittestDeepEqual(calls, arrayExtend( \
+        testDownloadsDashboardHeader('alpha', 'Python', 'var.vDays=2&var.vYears=0', [ \
+            '**Showing:** Current', \
+            '([Fewer](#' + nameArgs + '&var.vYears=0) | ', \
+            '[More](#' + nameArgs + '))' \
+        ]), \
+        testDownloadsDashboardCharts( \
+            'alpha', \
+            [ \
+                testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 3, datetimeNew(2024, 1, 1)), \
+                testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12, datetimeNew(2024, 2, 1)) \
+            ], \
+            135, \
+            datetimeNew(2024, 1, 30), \
+            data, \
+            datetimeNew(2024, 2, 1), \
+            [ \
+                {'Month': datetimeNew(2024, 2, 1), 'Downloads': 12, '% Average': '-91.1%'}, \
+                {'Month': datetimeNew(2024, 1, 1), 'Downloads': 3, '% Average': '-97.8%'} \
+            ] \
+        ) \
+    ))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainDashboardCurrentYear')
+
+
+async function testDownloadsMainDashboardZeroAverage():
+    # The package has no downloads in the 1-day trailing window
+    systemGlobalSet('vName', 'beta')
+    systemGlobalSet('vLanguage', 'Python')
+    systemGlobalSet('vDays', 1)
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    calls = unittestMockEnd()
+
+    data = dataFilter(testDownloadsData(), 'Package == "beta"')
+    objectSet(arrayGet(data, 0), 'Month', datetimeNew(2024, 2, 1))
+    objectSet(arrayGet(data, 0), 'Average Downloads', 7)
+
+    unittestDeepEqual(calls, arrayExtend(testDownloadsDashboardHeader('beta', 'Python', 'var.vDays=1'), \
+        testDownloadsDashboardCharts( \
+            'beta', \
+            [testDownloadsAggregateRow('beta', 'Python', 'beta', 7, datetimeNew(2024, 2, 1))], \
+            0, \
+            datetimeNew(2024, 1, 31), \
+            data, \
+            datetimeNew(2024, 1, 31), \
+            [{'Month': datetimeNew(2024, 2, 1), 'Downloads': 7, '% Average': ''}] \
+        ) \
+    ))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainDashboardZeroAverage')
+
+
+async function testDownloadsMainDashboardUnknown():
+    systemGlobalSet('vName', 'gamma')
+    systemGlobalSet('vLanguage', 'Python')
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), arrayExtend(testDownloadsDashboardHeader('gamma', 'Python'), [ \
+        ['markdownPrint', ['', '**Error:** No data for package']] \
+    ]))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainDashboardUnknown')
+
+
+async function testDownloadsMainDashboardFetchError():
+    systemGlobalSet('vName', 'alpha')
+    systemGlobalSet('vLanguage', 'Python')
+    unittestMockAll({})
+    downloadsMain({})
+    unittestDeepEqual(unittestMockEnd(), arrayExtend(testDownloadsDashboardHeader('alpha', 'Python'), [ \
+        ['markdownPrint', ['', '**Error:** Failed to load downloads data']] \
+    ]))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainDashboardFetchError')

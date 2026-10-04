@@ -2,3 +2,4 @@
 /Makefile.tool
 /pylintrc
 .DS_Store
+__pycache__/

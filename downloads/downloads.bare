@@ -11,6 +11,8 @@ include <url.bare>
 
 async function downloadsMain(options):
     args = argsParse(downloadsArguments)
+    objectSet(args, 'days', mathMax(1, objectGet(args, 'days')))
+    objectSet(args, 'years', mathMax(0, objectGet(args, 'years')))
     page = objectGet(args, 'page')
     name = objectGet(args, 'name')
     language = objectGet(args, 'language')
@@ -54,7 +56,10 @@ async function downloadsIndex(args):
     documentSetTitle(title)
 
     # Load the package data
-    data = downloadsDataLoad(args)
+    data = downloadsDataLoad()
+    if data == null:
+        return
+    endif
     dataAverage = downloadsDataAverage(data, trailingDays, true)
 
     # Create links and compute total downloads
@@ -114,18 +119,19 @@ async function downloadsChartPage(args, options):
     )
 
     # Load the package data
-    data = downloadsDataLoad(args)
+    data = downloadsDataLoad()
+    if data == null:
+        return
+    endif
+    data = downloadsDataYears(data, objectGet(args, 'years'))
 
     # Add the featured column
-    featuredMap = objectGet(options, 'featured') || {}
-    if featuredMap:
-        dataCalculatedField( \
-            data, \
-            'Featured', \
-            'if(objectHas(featuredMap, Package), objectGet(objectGet(featuredMap, Package), Language, false), false)', \
-            {'featuredMap': featuredMap} \
-        )
-    endif
+    dataCalculatedField( \
+        data, \
+        'Featured', \
+        'if(objectHas(featuredMap, Package), objectGet(objectGet(featuredMap, Package), Language, false), false)', \
+        {'featuredMap': objectGet(options, 'featured', {})} \
+    )
 
     # First featured, then non-featured
     for isFeatured in [true, false]:
@@ -169,29 +175,36 @@ async function downloadsDashboard(args):
     documentSetTitle(title)
 
     # Load the package data
-    data = downloadsDataLoad(args)
+    data = downloadsDataLoad()
+    if data == null:
+        return
+    endif
 
-    # Filter to this package's data
+    # Filter to this package's data within the years
     filterExpr = 'Package == packageName && Language == packageLanguage'
     filterVars = {'packageName': name, 'packageLanguage': language}
-    data = dataFilter(data, filterExpr, filterVars)
+    dataYears = dataFilter(downloadsDataYears(data, objectGet(args, 'years')), filterExpr, filterVars)
+    if !dataYears:
+        markdownPrint('', '**Error:** No data for package')
+        return
+    endif
 
-    # Compute the monthly average
-    dataMonthly = downloadsDataMonthly(data)
-    monthlyAverageData = downloadsDataAverage(data, trailingDays, true)
+    # Compute the monthly average - use all data so the average matches the index page
+    monthlyAverageData = dataFilter(downloadsDataAverage(data, trailingDays, true), filterExpr, filterVars)
     monthlyAverage = objectGet(arrayGet(monthlyAverageData, 0), 'Downloads')
 
-    # Compute the minimum date
+    # Compute the first date with a full trailing window - use all of the package's data so the
+    # trailing average is available from the start of the years' data
+    data = dataFilter(data, filterExpr, filterVars)
     minDateData = dataAggregate(data, { \
         'measures': [ \
             {'field': 'Date', 'function': 'min'} \
         ] \
     })
     minDateMin = objectGet(arrayGet(minDateData, 0), 'Date')
-    minDate = datetimeNew(datetimeYear(minDateMin), datetimeMonth(minDateMin), datetimeDay(minDateMin) + trailingDays)
+    minDate = datetimeNew(datetimeYear(minDateMin), datetimeMonth(minDateMin), datetimeDay(minDateMin) + trailingDays - 1)
 
     # Compute the daily trailing average
-    averageDownloads = null
     trailingAverageSum = 0
     dataTrailingAverage = []
     for row in data:
@@ -200,17 +213,20 @@ async function downloadsDashboard(args):
         arrayPush(dataTrailingAverage, row)
         rowDate = objectGet(row, 'Date')
         dateTrailingAverage = datetimeNew(datetimeYear(rowDate), datetimeMonth(rowDate), datetimeDay(rowDate) - trailingDays)
-        while objectGet(arrayGet(dataTrailingAverage, 0), 'Date') < dateTrailingAverage:
+        while objectGet(arrayGet(dataTrailingAverage, 0), 'Date') <= dateTrailingAverage:
             trailingAverageSum = trailingAverageSum - objectGet(arrayGet(dataTrailingAverage, 0), 'Downloads', 0)
             arrayDelete(dataTrailingAverage, 0)
         endwhile
 
         # Add the average downloads field
-        averageDownloads = trailingAverageSum / trailingDays
         if rowDate >= minDate:
-            objectSet(row, 'Average Downloads', averageDownloads)
+            objectSet(row, 'Average Downloads', trailingAverageSum / trailingDays)
         endif
     endfor
+
+    # Render the years' data - its rows are the same objects, so they have the trailing average
+    data = dataYears
+    dataMonthly = downloadsDataMonthly(data)
 
     # Render the monthly line chart
     fontSize = documentFontSize()
@@ -233,29 +249,26 @@ async function downloadsDashboard(args):
     endif
 
     # Render the daily line chart
-    dailyLineChart = { \
+    dataLineChart(data, { \
         'title': 'Daily Downloads - ' + name, \
         'width': chartWidth, \
         'height': chartHeight, \
         'x': 'Date', \
         'y': ['Average Downloads', 'Downloads'], \
-        'yLines': [ \
-            {'value': if(averageDownloads != null, averageDownloads, monthlyAverage)} \
-        ] \
-    }
-    if averageDownloads != null:
-        objectSet(dailyLineChart, 'xLines', [ \
+        'xLines': [ \
             {'value': downloadsDataAverageMinDate(data, trailingDays), 'label': ''} \
-        ])
-    endif
-    dataLineChart(data, dailyLineChart, {'fontSize': fontSize})
+        ], \
+        'yLines': [ \
+            {'value': monthlyAverage / 30} \
+        ] \
+    }, {'fontSize': fontSize})
 
     # Render the monthly table by most recent
     if dataMonthly:
         dataSort(dataMonthly, [['Month', true]])
         dataCalculatedField( \
             dataMonthly, \
-            '% Average', 'numberToFixed((100 * (Downloads - monthlyAverage) / monthlyAverage), 1, true) + "%"', \
+            '% Average', 'if(monthlyAverage, numberToFixed((100 * (Downloads - monthlyAverage) / monthlyAverage), 1, true) + "%", "")', \
             {'monthlyAverage': monthlyAverage} \
         )
         dataTable(dataMonthly, { \
@@ -273,22 +286,15 @@ async function downloadsDashboard(args):
 endfunction
 
 
-async function downloadsDataLoad(args):
-    years = objectGet(args, 'years')
-
+async function downloadsDataLoad():
     # Fetch and validate the data
-    data = jsonParse(systemFetch('downloads.json'))
+    dataText = systemFetch('downloads.json')
+    data = if(dataText != null, jsonParse(dataText))
+    if data == null:
+        markdownPrint('', '**Error:** Failed to load downloads data')
+        return null
+    endif
     dataValidate(data, true)
-
-    # Reduce the data
-    maxDateData = dataAggregate(data, { \
-        'measures': [ \
-            {'field': 'Date', 'function': 'max'} \
-        ] \
-    })
-    maxDate = objectGet(arrayGet(maxDateData, 0), 'Date')
-    minDate = datetimeNew(datetimeYear(maxDate) - years, 1, 1)
-    data = dataFilter(data, 'Date > minDate', {'minDate': minDate})
 
     # Compute the unique package names
     nameLanguages = {}
@@ -318,6 +324,19 @@ async function downloadsDataLoad(args):
 endfunction
 
 
+function downloadsDataYears(data, years):
+    # Filter to the data on or after January 1st, "years" years before the most recent data
+    maxDateData = dataAggregate(data, { \
+        'measures': [ \
+            {'field': 'Date', 'function': 'max'} \
+        ] \
+    })
+    maxDate = objectGet(arrayGet(maxDateData, 0), 'Date')
+    minDate = datetimeNew(datetimeYear(maxDate) - years, 1, 1)
+    return dataFilter(data, 'Date >= minDate', {'minDate': minDate})
+endfunction
+
+
 function downloadsDataMonthly(data):
     # Filter-out the current month
     today = datetimeToday()
@@ -340,17 +359,21 @@ function downloadsDataMonthly(data):
 endfunction
 
 
-function downloadsDataAverage(data, trailingDays, monthly, maxDate):
-    # Filter the data
-    minDate = downloadsDataAverageMinDate(data, trailingDays, null, maxDate)
-    if maxDate:
-        dataFiltered = dataFilter(data, 'Date >= minDate && Date <= maxDate', {'minDate': minDate, 'maxDate': maxDate})
-    else:
-        dataFiltered = dataFilter(data, 'Date >= minDate', {'minDate': minDate})
-    endif
+function downloadsDataAverage(data, trailingDays, monthly):
+    # Zero the downloads outside the trailing window - every package gets an average, even if zero
+    minDate = downloadsDataAverageMinDate(data, trailingDays)
+    dataWindow = []
+    for row in data:
+        arrayPush(dataWindow, { \
+            'Language': objectGet(row, 'Language'), \
+            'Package': objectGet(row, 'Package'), \
+            'Unique': objectGet(row, 'Unique'), \
+            'Downloads': if(objectGet(row, 'Date') > minDate, objectGet(row, 'Downloads'), 0) \
+        })
+    endfor
 
     # Compute the average
-    dataAverage = dataAggregate(dataFiltered, { \
+    dataAverage = dataAggregate(dataWindow, { \
         'categories': ['Language', 'Package', 'Unique'], \
         'measures': [ \
             {'field': 'Downloads', 'function': 'sum'} \
@@ -367,15 +390,13 @@ function downloadsDataAverage(data, trailingDays, monthly, maxDate):
 endfunction
 
 
-function downloadsDataAverageMinDate(data, trailingDays, field, maxDate):
+function downloadsDataAverageMinDate(data, trailingDays, field):
     field = if(field, field, 'Date')
-    if !maxDate:
-        maxDateData = dataAggregate(data, { \
-            'measures': [ \
-                {'field': field, 'function': 'max'} \
-            ] \
-        })
-        maxDate = objectGet(arrayGet(maxDateData, 0), field)
-    endif
+    maxDateData = dataAggregate(data, { \
+        'measures': [ \
+            {'field': field, 'function': 'max'} \
+        ] \
+    })
+    maxDate = objectGet(arrayGet(maxDateData, 0), field)
     return datetimeNew(datetimeYear(maxDate), datetimeMonth(maxDate), datetimeDay(maxDate) - trailingDays)
 endfunction
