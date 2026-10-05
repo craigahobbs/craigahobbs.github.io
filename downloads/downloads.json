@@ -61839,7 +61839,7 @@
         "Package": "element-model",
         "Language": "JavaScript",
         "Date": "2026-04-24",
-        "Downloads": 0
+        "Downloads": 3
     },
     {
         "Package": "markdown-model",
@@ -63039,7 +63039,7 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-05-09",
-        "Downloads": 0
+        "Downloads": 7
     },
     {
         "Package": "markdown-up",
@@ -63051,7 +63051,7 @@
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2026-05-09",
-        "Downloads": 0
+        "Downloads": 14
     },
     {
         "Package": "bare-script",
@@ -63363,7 +63363,7 @@
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-05-13",
-        "Downloads": 0
+        "Downloads": 98
     },
     {
         "Package": "markdown-up",
@@ -74451,13 +74451,13 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-10-02",
-        "Downloads": 0
+        "Downloads": 171
     },
     {
         "Package": "element-model",
         "Language": "JavaScript",
         "Date": "2026-10-02",
-        "Downloads": 0
+        "Downloads": 2
     },
     {
         "Package": "markdown-model",
@@ -74475,7 +74475,7 @@
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2026-10-02",
-        "Downloads": 0
+        "Downloads": 2
     },
     {
         "Package": "bare-script",
@@ -74596,5 +74596,83 @@
         "Language": "Python",
         "Date": "2026-10-03",
         "Downloads": 736
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-10-04",
+        "Downloads": 198
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-10-04",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-10-04",
+        "Downloads": 4
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-10-04",
+        "Downloads": 1
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-10-04",
+        "Downloads": 3
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 109
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 87
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 3
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 11
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 15
+    },
+    {
+        "Package": "simple-git-changelog",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 1
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 214
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-10-04",
+        "Downloads": 1156
     }
 ]
