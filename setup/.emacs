@@ -1,43 +1,57 @@
-;;; -*- lexical-binding: nil; -*-
+;;; -*- lexical-binding: t; -*-
 
 ;; MacOS?
-(if (string= system-type "darwin")
-    ;; set the path - https://www.emacswiki.org/emacs/ExecPath
-    (let ((path-from-shell (replace-regexp-in-string
-                            "[ \t\n]*$" ""
-                            (shell-command-to-string "$SHELL --login -i -c 'echo $PATH'"))))
-      (setenv "PATH" path-from-shell)
-      (setq exec-path (split-string path-from-shell path-separator))
+(when (eq system-type 'darwin)
+  ;; set the path - https://www.emacswiki.org/emacs/ExecPath
+  (let ((path-from-shell (replace-regexp-in-string
+                          "[ \t\n]*$" ""
+                          (shell-command-to-string "$SHELL --login -i -c 'echo $PATH'"))))
+    (setenv "PATH" path-from-shell)
+    (setq exec-path (split-string path-from-shell path-separator)))
 
-      ;; set focus
-      (when (display-graphic-p)
-        (do-applescript "tell application \"emacs\" to activate")
-        )
-      )
-  )
+  ;; set focus
+  (when (display-graphic-p)
+    (do-applescript "tell application \"emacs\" to activate"))
 
-;; Activate packages
-(package-initialize)
+  ;; Override Emacs 31.1's -mmacosx-version-min=18.0, which clang rejects during native compilation
+  (when (and (fboundp 'native-comp-available-p) (native-comp-available-p))
+    (require 'comp)
+    (add-to-list 'native-comp-driver-options "-mmacosx-version-min=11")))
+
+;; Package install helpers - errors (e.g. no network) are reported but don't abort init
+(require 'package)
+(defun my-package-install (package)
+  "Install PACKAGE from the package archives, if not already installed."
+  (unless (package-installed-p package)
+    (condition-case err
+        (progn
+          (unless (assq package package-archive-contents)
+            (package-refresh-contents))
+          (package-install package))
+      (error (message "Failed to install %s: %s" package (error-message-string err))))))
+
+(defun my-package-install-url (package url)
+  "Install PACKAGE from the single-file package at URL, if not already installed."
+  (unless (package-installed-p package)
+    (condition-case err
+        (let ((mode-file (make-temp-file (symbol-name package) nil ".el")))
+          (unwind-protect
+              (progn
+                (url-copy-file url mode-file t)
+                (package-install-file mode-file))
+            (delete-file mode-file)))
+      (error (message "Failed to install %s: %s" package (error-message-string err))))))
 
 ;; js2-mode
-(unless (package-installed-p 'js2-mode)
-  (package-install `js2-mode))
+(my-package-install 'js2-mode)
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
 ;; barescript-mode
-(unless (package-installed-p 'barescript-mode)
-  (let ((mode-file (make-temp-file "barescript-mode")))
-    (url-copy-file "https://craigahobbs.github.io/bare-script/language/barescript-mode.el" mode-file t)
-    (package-install-file mode-file)
-    (delete-file mode-file)))
+(my-package-install-url 'barescript-mode "https://craigahobbs.github.io/bare-script/language/barescript-mode.el")
 (add-to-list 'auto-mode-alist '("\\.bare\\'" . barescript-mode))
 
 ;; schema-markdown-mode
-(unless (package-installed-p 'schema-markdown-mode)
-  (let ((mode-file (make-temp-file "schema-markdown-mode")))
-    (url-copy-file "https://craigahobbs.github.io/schema-markdown-js/language/schema-markdown-mode.el" mode-file t)
-    (package-install-file mode-file)
-    (delete-file mode-file)))
+(my-package-install-url 'schema-markdown-mode "https://craigahobbs.github.io/schema-markdown-js/language/schema-markdown-mode.el")
 (add-to-list 'auto-mode-alist '("\\.smd\\'" . schema-markdown-mode))
 
 ;; Markdown
@@ -47,7 +61,7 @@
 (savehist-mode 1)
 
 ;; Global toggle-lines command
-(global-set-key "\C-xt" 'toggle-truncate-lines)
+(global-set-key (kbd "C-x t") 'toggle-truncate-lines)
 
 ;; Enable global upcase/downcase commands
 (put 'downcase-region 'disabled nil)
