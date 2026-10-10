@@ -9,18 +9,12 @@ include <markdown.bare>
 include <url.bare>
 
 
-async function downloadsMain(options):
+async function downloadsMain():
     args = argsParse(downloadsArguments)
     objectSet(args, 'days', mathMax(1, objectGet(args, 'days')))
     objectSet(args, 'years', mathMax(0, objectGet(args, 'years')))
-    page = objectGet(args, 'page')
     name = objectGet(args, 'name')
     language = objectGet(args, 'language')
-
-    # Chart page?
-    if page == 'chart':
-        return downloadsChartPage(args, options)
-    endif
 
     # Package dashboard?
     if name != null && language != null:
@@ -33,9 +27,9 @@ endfunction
 
 
 downloadsArguments = argsValidate([ \
-    {'name': 'page'}, \
     {'name': 'name'}, \
     {'name': 'language'}, \
+    {'name': 'rank'}, \
     {'name': 'days', 'type': 'int', 'default': 90}, \
     {'name': 'years', 'type': 'int', 'default': 1} \
 ])
@@ -51,7 +45,10 @@ async function downloadsIndex(args):
         '', \
         downloadsYearsControls(args), \
         '', \
-        argsLink(downloadsArguments, 'Time Chart', {'page': 'chart'}) \
+        downloadsFilterControls(args, 'Language', 'language', \
+            [[null, 'All'], ['Python', 'Python'], ['JavaScript', 'JavaScript']]), \
+        '', \
+        downloadsFilterControls(args, 'Downloads', 'rank', [[null, 'All'], ['top', 'Top'], ['bottom', 'Bottom']]) \
     )
     documentSetTitle(title)
 
@@ -60,6 +57,11 @@ async function downloadsIndex(args):
     if data == null:
         return
     endif
+
+    # Render the trailing average line chart
+    downloadsChart(args, data)
+
+    # Compute the package monthly averages
     dataAverage = downloadsDataAverage(data, trailingDays, true)
 
     # Create links and compute total downloads
@@ -93,6 +95,9 @@ async function downloadsIndex(args):
         }, \
         'precision': 0 \
     })
+
+    # Redraw on resize
+    windowSetResize(systemPartial(downloadsIndex, args))
 endfunction
 
 
@@ -106,55 +111,73 @@ function downloadsYearsControls(args):
 endfunction
 
 
-async function downloadsChartPage(args, options):
-    # Render the title
-    title = 'Downloads Chart'
-    documentSetTitle(title)
-    markdownPrint( \
-        argsLink(downloadsArguments, 'Back', {'page': null}), \
-        '', \
-        '# ' + markdownEscape(title), \
-        '', \
-        downloadsYearsControls(args) \
-    )
+function downloadsFilterControls(args, label, argName, values):
+    # Link each [value, text] filter value - the current value is bold
+    argValue = objectGet(args, argName)
+    links = []
+    for value in values:
+        linkValue = arrayGet(value, 0)
+        linkText = arrayGet(value, 1)
+        if linkValue == argValue:
+            arrayPush(links, '**' + linkText + '**')
+        else:
+            arrayPush(links, argsLink(downloadsArguments, linkText, {argName: linkValue}))
+        endif
+    endfor
+    return '**' + label + ':** ' + arrayJoin(links, ' | ')
+endfunction
 
-    # Load the package data
-    data = downloadsDataLoad()
-    if data == null:
+
+# The index page chart's trailing average days
+downloadsChartDays = 30
+
+
+function downloadsChart(args, data):
+    # Filter to the language
+    language = objectGet(args, 'language')
+    if language != null:
+        data = dataFilter(data, 'Language == language', {'language': language})
+    endif
+
+    # Filter to the top or bottom half of the packages by trailing average - the top half gets the odd package
+    rank = objectGet(args, 'rank')
+    if rank == 'top' || rank == 'bottom':
+        dataRank = downloadsDataAverage(data, downloadsChartDays, false)
+        dataSort(dataRank, [['Downloads', true]])
+        countTop = mathCeil(arrayLength(dataRank) / 2)
+        rankUniques = {}
+        for row, ixRow in dataRank:
+            if (ixRow < countTop) == (rank == 'top'):
+                objectSet(rankUniques, objectGet(row, 'Unique'), true)
+            endif
+        endfor
+        data = dataFilter(data, 'objectHas(rankUniques, Unique)', {'rankUniques': rankUniques})
+    endif
+
+    # Compute the trailing average - use all data so the average is available from the start of the years'
+    # data - and filter to the years' rows with a positive trailing average (the log scale excludes the rest)
+    if data:
+        downloadsDataTrailingAverage(data, downloadsChartDays)
+        data = dataFilter(downloadsDataYears(data, objectGet(args, 'years')), '[Average Downloads] > 0')
+    endif
+    if !data:
+        markdownPrint('', '**Error:** No matching packages')
         return
     endif
-    data = downloadsDataYears(data, objectGet(args, 'years'))
 
-    # Add the featured column
-    dataCalculatedField( \
-        data, \
-        'Featured', \
-        'if(objectHas(featuredMap, Package), objectGet(objectGet(featuredMap, Package), Language, false), false)', \
-        {'featuredMap': objectGet(options, 'featured', {})} \
-    )
-
-    # First featured, then non-featured
-    for isFeatured in [true, false]:
-        # Create the chart
-        dataMonthly = downloadsDataMonthly(dataFilter(data, '!!Featured == isFeatured', {'isFeatured': isFeatured}))
-        if !dataMonthly:
-            continue
-        endif
-        fontSize = documentFontSize()
-        chartWidth = mathFloor(mathMin(1000, mathMax(600, windowWidth() - 4 * fontSize)))
-        chartHeight = mathFloor(0.3 * chartWidth)
-        dataLineChart(dataMonthly, { \
-            'title': 'Monthly Downloads' + if(isFeatured, ' (Featured)', ''), \
-            'width': chartWidth, \
-            'height': chartHeight, \
-            'x': 'Month', \
-            'y': ['Downloads'], \
-            'color': 'Unique' \
-        }, {'fontSize': fontSize})
-    endfor
-
-    # Redraw on resize
-    windowSetResize(systemPartial(downloadsChartPage, args, options))
+    # Render the trailing average line chart
+    fontSize = documentFontSize()
+    chartWidth = mathFloor(mathMin(1000, mathMax(600, windowWidth() - 4 * fontSize)))
+    chartHeight = mathFloor(0.5 * chartWidth)
+    dataLineChart(data, { \
+        'title': 'Daily Downloads (' + downloadsChartDays + '-Day Average)', \
+        'width': chartWidth, \
+        'height': chartHeight, \
+        'x': 'Date', \
+        'y': ['Average Downloads'], \
+        'color': 'Unique', \
+        'yScale': 'log' \
+    }, {'fontSize': fontSize})
 endfunction
 
 
@@ -193,36 +216,9 @@ async function downloadsDashboard(args):
     monthlyAverageData = dataFilter(downloadsDataAverage(data, trailingDays, true), filterExpr, filterVars)
     monthlyAverage = objectGet(arrayGet(monthlyAverageData, 0), 'Downloads')
 
-    # Compute the first date with a full trailing window - use all of the package's data so the
-    # trailing average is available from the start of the years' data
-    data = dataFilter(data, filterExpr, filterVars)
-    minDateData = dataAggregate(data, { \
-        'measures': [ \
-            {'field': 'Date', 'function': 'min'} \
-        ] \
-    })
-    minDateMin = objectGet(arrayGet(minDateData, 0), 'Date')
-    minDate = datetimeNew(datetimeYear(minDateMin), datetimeMonth(minDateMin), datetimeDay(minDateMin) + trailingDays - 1)
-
-    # Compute the daily trailing average
-    trailingAverageSum = 0
-    dataTrailingAverage = []
-    for row in data:
-        # Compute the trailing average
-        trailingAverageSum = trailingAverageSum + objectGet(row, 'Downloads', 0)
-        arrayPush(dataTrailingAverage, row)
-        rowDate = objectGet(row, 'Date')
-        dateTrailingAverage = datetimeNew(datetimeYear(rowDate), datetimeMonth(rowDate), datetimeDay(rowDate) - trailingDays)
-        while objectGet(arrayGet(dataTrailingAverage, 0), 'Date') <= dateTrailingAverage:
-            trailingAverageSum = trailingAverageSum - objectGet(arrayGet(dataTrailingAverage, 0), 'Downloads', 0)
-            arrayDelete(dataTrailingAverage, 0)
-        endwhile
-
-        # Add the average downloads field
-        if rowDate >= minDate:
-            objectSet(row, 'Average Downloads', trailingAverageSum / trailingDays)
-        endif
-    endfor
+    # Compute the daily trailing average - use all of the package's data so the trailing average is
+    # available from the start of the years' data
+    downloadsDataTrailingAverage(dataFilter(data, filterExpr, filterVars), trailingDays)
 
     # Render the years' data - its rows are the same objects, so they have the trailing average
     data = dataYears
@@ -387,6 +383,46 @@ function downloadsDataAverage(data, trailingDays, monthly):
     )
 
     return dataAverage
+endfunction
+
+
+function downloadsDataTrailingAverage(data, trailingDays):
+    # Group the rows by package - the rows are in date order
+    packageRows = {}
+    for row in data:
+        unique = objectGet(row, 'Unique')
+        rows = objectGet(packageRows, unique)
+        if rows == null:
+            objectSet(packageRows, unique, [row])
+        else:
+            arrayPush(rows, row)
+        endif
+    endfor
+
+    # Set each package's "Average Downloads" field on the rows with a full trailing window
+    for unique in objectKeys(packageRows):
+        rows = objectGet(packageRows, unique)
+        firstDate = objectGet(arrayGet(rows, 0), 'Date')
+        minDate = datetimeNew(datetimeYear(firstDate), datetimeMonth(firstDate), datetimeDay(firstDate) + trailingDays - 1)
+        trailingAverageSum = 0
+        dataTrailingAverage = []
+        for row in rows:
+            # Compute the trailing average
+            trailingAverageSum = trailingAverageSum + objectGet(row, 'Downloads', 0)
+            arrayPush(dataTrailingAverage, row)
+            rowDate = objectGet(row, 'Date')
+            dateTrailingAverage = datetimeNew(datetimeYear(rowDate), datetimeMonth(rowDate), datetimeDay(rowDate) - trailingDays)
+            while objectGet(arrayGet(dataTrailingAverage, 0), 'Date') <= dateTrailingAverage:
+                trailingAverageSum = trailingAverageSum - objectGet(arrayGet(dataTrailingAverage, 0), 'Downloads', 0)
+                arrayDelete(dataTrailingAverage, 0)
+            endwhile
+
+            # Add the average downloads field
+            if rowDate >= minDate:
+                objectSet(row, 'Average Downloads', trailingAverageSum / trailingDays)
+            endif
+        endfor
+    endfor
 endfunction
 
 

@@ -37,18 +37,21 @@ Data pipeline and front end are decoupled through a single JSON file:
   don't read it whole). It is updated nightly by `../.github/workflows/nightly-downloads.yml`, which runs
   `downloads.py` and commits as "downloads - update data" — that is what most git history consists of.
 - `index.html` → loads MarkdownUp with `downloads.md`, whose `markdown-script` block includes
-  `downloads.bare` and calls `downloadsMain` with options (e.g. the `featured` package map used to split
-  the time chart into featured/non-featured).
+  `downloads.bare` and calls `downloadsMain`.
 - `downloads.bare` — the BareScript app. URL arguments (`downloadsArguments`, via `args.bare`) select the
-  view: index table (monthly averages over trailing `days`), `page=chart` (monthly line charts for all
-  packages), or a per-package dashboard when `name` and `language` are set. All views share
-  `downloadsDataLoad` (fetches all of `downloads.json` and adds a `Unique` label that
-  disambiguates packages published under the same name in both languages with ` (py)`/` (js)`).
+  view: the index page, or a per-package dashboard when `name` and `language` are set. The index page
+  has a log-scale line chart of every package's 30-day trailing average (`downloadsChart`), optionally
+  filtered by `language` and by `rank` - the `top` or `bottom` half of the packages by their latest
+  30-day average - above a table of monthly averages over trailing `days` (the filters apply only to
+  the chart). All views share `downloadsDataLoad` (fetches all of `downloads.json` and adds a `Unique`
+  label that disambiguates packages published under the same name in both languages with ` (py)`/` (js)`).
 
 Trailing averages use the window (maxDate - days, maxDate] — exactly `days` days — and are computed from
 all loaded data *before* the `years` filter (`downloadsDataYears`), so averages don't depend on `years` and
-the daily chart's average line starts at the first displayed date. The BareScript tests pin these boundaries
-with a small fixture in `test/testDownloads.bare`; keep them passing when touching date math.
+the daily chart's average line starts at the first displayed date. The daily trailing averages (the
+dashboard's daily chart and the index page's chart) are computed per package by
+`downloadsDataTrailingAverage`. The BareScript tests pin these boundaries with a small fixture in
+`test/testDownloads.bare`; keep them passing when touching date math.
 
 To add a tracked package, add it to `PACKAGES` in `downloads.py`; the front end picks it up from the data.
 Use the `bare-script` skill when editing `downloads.bare`.
