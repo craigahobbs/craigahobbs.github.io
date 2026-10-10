@@ -249,6 +249,24 @@ endfunction
 unittestRunTest('testDownloadsDataTrailingAverageUnsorted')
 
 
+function testDownloadsDataTrailingAverageNull():
+    # Null and missing downloads count as zero - "beta" has 7 downloads on 2024-02-01, then null and missing
+    data = testDownloadsData()
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null})
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3)})
+    downloadsDataTrailingAverage(data, 2)
+    unittestDeepEqual(dataFilter(data, 'Package == "beta"'), [ \
+        {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 1), 'Downloads': 7}, \
+        { \
+            'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null, \
+            'Average Downloads': 7 / 2 \
+        }, \
+        {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3), 'Average Downloads': 0} \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataTrailingAverageNull')
+
+
 #
 # downloadsDataYears
 #

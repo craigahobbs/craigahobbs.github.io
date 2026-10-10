@@ -408,12 +408,13 @@ function downloadsDataTrailingAverage(data, trailingDays):
         trailingAverageSum = 0
         ixWindow = 0
         for row in rows:
-            # Compute the trailing average - the window is the package's rows from ixWindow through this row
-            trailingAverageSum = trailingAverageSum + objectGet(row, 'Downloads', 0)
+            # Compute the trailing average - the window is the package's rows from ixWindow through this row (null
+            # downloads count as zero)
+            trailingAverageSum = trailingAverageSum + (objectGet(row, 'Downloads') || 0)
             rowDate = objectGet(row, 'Date')
             dateTrailingAverage = datetimeNew(datetimeYear(rowDate), datetimeMonth(rowDate), datetimeDay(rowDate) - trailingDays)
             while objectGet(arrayGet(rows, ixWindow), 'Date') <= dateTrailingAverage:
-                trailingAverageSum = trailingAverageSum - objectGet(arrayGet(rows, ixWindow), 'Downloads', 0)
+                trailingAverageSum = trailingAverageSum - (objectGet(arrayGet(rows, ixWindow), 'Downloads') || 0)
                 ixWindow = ixWindow + 1
             endwhile
 
