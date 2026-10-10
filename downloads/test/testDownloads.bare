@@ -179,6 +179,20 @@ endfunction
 unittestRunTest('testDownloadsDataAverageZero')
 
 
+function testDownloadsDataAverageNull():
+    # Null and missing downloads are skipped
+    data = testDownloadsData()
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null})
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3)})
+    unittestDeepEqual(downloadsDataAverage(data, 3, false), [ \
+        testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12 / 3), \
+        testDownloadsAggregateRow('beta', 'Python', 'beta', 7 / 3), \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 / 3) \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataAverageNull')
+
+
 function testDownloadsDataAverageMinDate():
     unittestEqual(downloadsDataAverageMinDate(testDownloadsData(), 3), datetimeNew(2024, 1, 31))
     unittestEqual( \
@@ -187,6 +201,19 @@ function testDownloadsDataAverageMinDate():
     )
 endfunction
 unittestRunTest('testDownloadsDataAverageMinDate')
+
+
+function testDownloadsDataMaxDate():
+    # The rows need not be in date order
+    data = [ \
+        {'Date': datetimeNew(2024, 2, 1), 'Month': datetimeNew(2024, 1, 1)}, \
+        {'Date': datetimeNew(2024, 3, 1), 'Month': datetimeNew(2024, 2, 1)}, \
+        {'Date': datetimeNew(2024, 1, 1), 'Month': datetimeNew(2023, 12, 1)} \
+    ]
+    unittestEqual(downloadsDataMaxDate(data, 'Date'), datetimeNew(2024, 3, 1))
+    unittestEqual(downloadsDataMaxDate(data, 'Month'), datetimeNew(2024, 2, 1))
+endfunction
+unittestRunTest('testDownloadsDataMaxDate')
 
 
 #
@@ -209,6 +236,17 @@ function testDownloadsDataTrailingAverage():
     unittestDeepEqual(data, expected)
 endfunction
 unittestRunTest('testDownloadsDataTrailingAverage')
+
+
+function testDownloadsDataTrailingAverageUnsorted():
+    # The rows may be in any order - reversed rows get the same trailing averages, and keep their order
+    data = arrayReverse(testDownloadsData())
+    downloadsDataTrailingAverage(data, 2)
+    expected = testDownloadsData()
+    downloadsDataTrailingAverage(expected, 2)
+    unittestDeepEqual(data, arrayReverse(expected))
+endfunction
+unittestRunTest('testDownloadsDataTrailingAverageUnsorted')
 
 
 #

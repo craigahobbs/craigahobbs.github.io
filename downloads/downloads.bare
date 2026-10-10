@@ -283,37 +283,39 @@ endfunction
 
 
 async function downloadsDataLoad():
-    # Fetch and validate the data
+    # Fetch the data
     dataText = systemFetch('downloads.json')
     data = if(dataText != null, jsonParse(dataText))
     if data == null:
         markdownPrint('', '**Error:** Failed to load downloads data')
         return null
     endif
-    dataValidate(data, true)
 
-    # Compute the unique package names
+    # Collect each package name's languages
     nameLanguages = {}
     for row in data:
         name = objectGet(row, 'Package')
-        language = objectGet(row, 'Language')
         languages = objectGet(nameLanguages, name)
         if !languages:
-            objectSet(nameLanguages, name, {language: true})
-        else:
-            objectSet(languages, language, true)
+            languages = {}
+            objectSet(nameLanguages, name, languages)
         endif
+        objectSet(languages, objectGet(row, 'Language'), true)
     endfor
+
+    # Compute the unique package names - a name published in both languages gets a language suffix
+    for name in objectKeys(nameLanguages):
+        languages = objectGet(nameLanguages, name)
+        isShared = arrayLength(objectKeys(languages)) > 1
+        for language in objectKeys(languages):
+            objectSet(languages, language, if(!isShared, name, name + if(language == 'Python', ' (py)', ' (js)')))
+        endfor
+    endfor
+
+    # Parse the dates and set the unique package names
     for row in data:
-        name = objectGet(row, 'Package')
-        language = objectGet(row, 'Language')
-        if arrayLength(objectKeys(objectGet(nameLanguages, name))) == 1:
-            objectSet(row, 'Unique', name)
-        elif language == 'Python':
-            objectSet(row, 'Unique', name + ' (py)')
-        else:
-            objectSet(row, 'Unique', name + ' (js)')
-        endif
+        objectSet(row, 'Date', datetimeISOParse(objectGet(row, 'Date')))
+        objectSet(row, 'Unique', objectGet(objectGet(nameLanguages, objectGet(row, 'Package')), objectGet(row, 'Language')))
     endfor
 
     return data
@@ -322,12 +324,7 @@ endfunction
 
 function downloadsDataYears(data, years):
     # Filter to the data on or after January 1st, "years" years before the most recent data
-    maxDateData = dataAggregate(data, { \
-        'measures': [ \
-            {'field': 'Date', 'function': 'max'} \
-        ] \
-    })
-    maxDate = objectGet(arrayGet(maxDateData, 0), 'Date')
+    maxDate = downloadsDataMaxDate(data, 'Date')
     minDate = datetimeNew(datetimeYear(maxDate) - years, 1, 1)
     return dataFilter(data, 'Date >= minDate', {'minDate': minDate})
 endfunction
@@ -356,38 +353,41 @@ endfunction
 
 
 function downloadsDataAverage(data, trailingDays, monthly):
-    # Zero the downloads outside the trailing window - every package gets an average, even if zero
+    # Sum each package's downloads within the trailing window - every package gets an average, even if zero
     minDate = downloadsDataAverageMinDate(data, trailingDays)
-    dataWindow = []
+    dataAverage = []
+    packageAverages = {}
     for row in data:
-        arrayPush(dataWindow, { \
-            'Language': objectGet(row, 'Language'), \
-            'Package': objectGet(row, 'Package'), \
-            'Unique': objectGet(row, 'Unique'), \
-            'Downloads': if(objectGet(row, 'Date') > minDate, objectGet(row, 'Downloads'), 0) \
-        })
+        unique = objectGet(row, 'Unique')
+        average = objectGet(packageAverages, unique)
+        if average == null:
+            average = { \
+                'Language': objectGet(row, 'Language'), \
+                'Package': objectGet(row, 'Package'), \
+                'Unique': unique, \
+                'Downloads': 0 \
+            }
+            objectSet(packageAverages, unique, average)
+            arrayPush(dataAverage, average)
+        endif
+        downloads = objectGet(row, 'Downloads')
+        if downloads != null && objectGet(row, 'Date') > minDate:
+            objectSet(average, 'Downloads', objectGet(average, 'Downloads') + downloads)
+        endif
     endfor
 
     # Compute the average
-    dataAverage = dataAggregate(dataWindow, { \
-        'categories': ['Language', 'Package', 'Unique'], \
-        'measures': [ \
-            {'field': 'Downloads', 'function': 'sum'} \
-        ] \
-    })
-    dataCalculatedField( \
-        dataAverage, \
-        'Downloads', \
-        'if(monthly, Downloads * 30, Downloads) / trailingDays', \
-        {'trailingDays': trailingDays, 'monthly': monthly} \
-    )
+    for average in dataAverage:
+        downloads = objectGet(average, 'Downloads')
+        objectSet(average, 'Downloads', if(monthly, downloads * 30, downloads) / trailingDays)
+    endfor
 
     return dataAverage
 endfunction
 
 
 function downloadsDataTrailingAverage(data, trailingDays):
-    # Group the rows by package - the rows are in date order
+    # Group the rows by package
     packageRows = {}
     for row in data:
         unique = objectGet(row, 'Unique')
@@ -399,22 +399,22 @@ function downloadsDataTrailingAverage(data, trailingDays):
         endif
     endfor
 
-    # Set each package's "Average Downloads" field on the rows with a full trailing window
+    # Set each package's "Average Downloads" field on the rows with a full trailing window - the rows may be in
+    # any order, so each package's rows are sorted by date first
     for unique in objectKeys(packageRows):
-        rows = objectGet(packageRows, unique)
+        rows = dataSort(objectGet(packageRows, unique), [['Date']])
         firstDate = objectGet(arrayGet(rows, 0), 'Date')
         minDate = datetimeNew(datetimeYear(firstDate), datetimeMonth(firstDate), datetimeDay(firstDate) + trailingDays - 1)
         trailingAverageSum = 0
-        dataTrailingAverage = []
+        ixWindow = 0
         for row in rows:
-            # Compute the trailing average
+            # Compute the trailing average - the window is the package's rows from ixWindow through this row
             trailingAverageSum = trailingAverageSum + objectGet(row, 'Downloads', 0)
-            arrayPush(dataTrailingAverage, row)
             rowDate = objectGet(row, 'Date')
             dateTrailingAverage = datetimeNew(datetimeYear(rowDate), datetimeMonth(rowDate), datetimeDay(rowDate) - trailingDays)
-            while objectGet(arrayGet(dataTrailingAverage, 0), 'Date') <= dateTrailingAverage:
-                trailingAverageSum = trailingAverageSum - objectGet(arrayGet(dataTrailingAverage, 0), 'Downloads', 0)
-                arrayDelete(dataTrailingAverage, 0)
+            while objectGet(arrayGet(rows, ixWindow), 'Date') <= dateTrailingAverage:
+                trailingAverageSum = trailingAverageSum - objectGet(arrayGet(rows, ixWindow), 'Downloads', 0)
+                ixWindow = ixWindow + 1
             endwhile
 
             # Add the average downloads field
@@ -427,12 +427,18 @@ endfunction
 
 
 function downloadsDataAverageMinDate(data, trailingDays, field):
-    field = if(field, field, 'Date')
-    maxDateData = dataAggregate(data, { \
-        'measures': [ \
-            {'field': field, 'function': 'max'} \
-        ] \
-    })
-    maxDate = objectGet(arrayGet(maxDateData, 0), field)
+    maxDate = downloadsDataMaxDate(data, if(field, field, 'Date'))
     return datetimeNew(datetimeYear(maxDate), datetimeMonth(maxDate), datetimeDay(maxDate) - trailingDays)
+endfunction
+
+
+function downloadsDataMaxDate(data, field):
+    maxDate = null
+    for row in data:
+        date = objectGet(row, field)
+        if maxDate == null || date > maxDate:
+            maxDate = date
+        endif
+    endfor
+    return maxDate
 endfunction
