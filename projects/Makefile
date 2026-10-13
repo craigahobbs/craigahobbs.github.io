@@ -136,6 +136,7 @@ $(eval $(call PROJECT_RULES, other, bare-script-c, 'git@github.com:craigahobbs/b
 $(eval $(call PROJECT_RULES, other, craigahobbs.github.io, 'git@github.com:craigahobbs/craigahobbs.github.io.git'))
 $(eval $(call PROJECT_RULES, other, day-hikes, 'git@github.com:craigahobbs/day-hikes.git'))
 $(eval $(call PROJECT_RULES, other, hobbs-family-cookbook, 'git@github.com:craigahobbs/hobbs-family-cookbook.git'))
+$(eval $(call PROJECT_RULES, other, markowitz, 'git@github.com:craigahobbs/markowitz.git'))
 $(eval $(call PROJECT_RULES, other, npm-dependency-explorer, 'git@github.com:craigahobbs/npm-dependency-explorer.git'))
 $(eval $(call PROJECT_RULES, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
 $(eval $(call PROJECT_RULES, other, solar, 'git@github.com:craigahobbs/solar.git'))
