@@ -40,11 +40,12 @@ Data pipeline and front end are decoupled through a single JSON file:
   `downloads.bare` and calls `downloadsMain`.
 - `downloads.bare` — the BareScript app. URL arguments (`downloadsArguments`, via `args.bare`) select the
   view: the index page, or a per-package dashboard when `name` and `language` are set. The index page
-  has a log-scale line chart of every package's 30-day trailing average (`downloadsChart`), optionally
+  has a log-scale line chart of every package's trailing `days` average (`downloadsChart`), optionally
   filtered by `language` and by `rank` - the `top` or `bottom` half of the packages by their latest
-  30-day average - above a table of monthly averages over trailing `days` (the filters apply only to
-  the chart). All views share `downloadsDataLoad` (fetches all of `downloads.json` and adds a `Unique`
-  label that disambiguates packages published under the same name in both languages with ` (py)`/` (js)`).
+  trailing `days` average - above a table of monthly averages over trailing `days` (the filters apply
+  only to the chart). The `days` argument (default 90) is the window for every average on both views.
+  All views share `downloadsDataLoad` (fetches all of `downloads.json` and adds a `Unique` label that
+  disambiguates packages published under the same name in both languages with ` (py)`/` (js)`).
 
 Trailing averages use the window (maxDate - days, maxDate] — exactly `days` days — and are computed from
 all loaded data *before* the `years` filter (`downloadsDataYears`), so averages don't depend on `years` and

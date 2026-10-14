@@ -413,20 +413,24 @@ function testDownloadsIndexHeader(linkArgs):
 endfunction
 
 
+# The test data with trailing averages - averages are [row index, trailing average] pairs
+function testDownloadsAverageData(averages):
+    data = testDownloadsData()
+    for average in averages:
+        objectSet(arrayGet(data, arrayGet(average, 0)), 'Average Downloads', arrayGet(average, 1))
+    endfor
+    return data
+endfunction
+
+
 # The test data with the 30-day trailing average - only "alpha (py)" has a full window, the first ending 2024-01-29
 function testDownloadsChartData():
-    data = testDownloadsData()
-    objectSet(arrayGet(data, 2), 'Average Downloads', 2 / 30)
-    objectSet(arrayGet(data, 3), 'Average Downloads', (2 + 3) / 30)
-    objectSet(arrayGet(data, 6), 'Average Downloads', (2 + 3 + 4) / 30)
-    objectSet(arrayGet(data, 8), 'Average Downloads', (2 + 3 + 4 + 5) / 30)
-    return data
+    return testDownloadsAverageData([[2, 2 / 30], [3, (2 + 3) / 30], [6, (2 + 3 + 4) / 30], [8, (2 + 3 + 4 + 5) / 30]])
 endfunction
 
 
 # The index page's line chart elements - only the rows with a positive trailing average are charted
 function testDownloadsChart(data, days):
-    days = if(days, days, 30)
     return ['elementModelRender', [{'html': 'p', 'elem': dataLineChartElements(dataFilter(data, '[Average Downloads] > 0'), { \
         'title': 'Daily Downloads (' + days + '-Day Average)', \
         'width': 960, \
@@ -468,15 +472,15 @@ function testDownloadsIndexTable(rows, total, linkArgs):
 endfunction
 
 
-# The index page's calls - the table rows and total default to the 90-day monthly averages
+# The index page's calls - the table rows and total default to the 30-day monthly averages
 function testDownloadsIndexCalls(linkArgs, chartCalls, tableRows, tableTotal):
     if tableRows == null:
         tableRows = [ \
-            ['alpha', 'Python', 115 * 30 / 90], \
-            ['alpha', 'JavaScript', 30 * 30 / 90], \
-            ['beta', 'Python', 7 * 30 / 90] \
+            ['alpha', 'JavaScript', 30], \
+            ['alpha', 'Python', 2 + 3 + 4 + 5], \
+            ['beta', 'Python', 7] \
         ]
-        tableTotal = 115 * 30 / 90 + 7 * 30 / 90 + 30 * 30 / 90
+        tableTotal = 30 + 2 + 3 + 4 + 5 + 7
     endif
     return arrayExtend(arrayExtend(testDownloadsIndexHeader(linkArgs), chartCalls), [ \
         testDownloadsIndexTable(tableRows, tableTotal, linkArgs), \
@@ -486,13 +490,15 @@ endfunction
 
 
 async function testDownloadsMainIndex():
+    # The 3-day trailing averages - only "alpha (py)" has a full window, the first ending 2024-01-31
     systemGlobalSet('vDays', 3)
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
     calls = unittestMockEnd()
+    chartData = testDownloadsAverageData([[2, 2 / 3], [3, (2 + 3) / 3], [6, (2 + 3 + 4) / 3], [8, (3 + 4 + 5) / 3]])
     unittestDeepEqual(calls, testDownloadsIndexCalls( \
         {'days': 3}, \
-        [testDownloadsChart(testDownloadsChartData())], \
+        [testDownloadsChart(chartData, 3)], \
         [['alpha', 'JavaScript', 300], ['alpha', 'Python', 120], ['beta', 'Python', 70]], \
         490 \
     ))
@@ -505,16 +511,32 @@ endfunction
 unittestRunTest('testDownloadsMainIndex')
 
 
+async function testDownloadsMainIndexDefaultDays():
+    # The default 90-day trailing average - no package has a full window
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain()
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls( \
+        {}, \
+        [['markdownPrint', ['', '**Error:** No matching packages']]], \
+        [['alpha', 'Python', 115 * 30 / 90], ['alpha', 'JavaScript', 30 * 30 / 90], ['beta', 'Python', 7 * 30 / 90]], \
+        115 * 30 / 90 + 7 * 30 / 90 + 30 * 30 / 90 \
+    ))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainIndexDefaultDays')
+
+
 async function testDownloadsMainIndexClamp():
-    # Out-of-range days and years are clamped to 1 day and the current year - the current year's chart
-    # has the same trailing averages
+    # Out-of-range days and years are clamped to 1 day and the current year - every row has a 1-day trailing
+    # average, and the current year's chart excludes 2023
     systemGlobalSet('vDays', 0)
     systemGlobalSet('vYears', -2)
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
+    chartData = testDownloadsAverageData([[1, 1], [2, 2], [3, 3], [4, 7], [5, 10], [6, 4], [7, 20], [8, 5]])
     unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls( \
         {'days': 0, 'years': -2}, \
-        [testDownloadsChart(testDownloadsChartData())], \
+        [testDownloadsChart(dataFilter(chartData, 'Date >= minDate', {'minDate': datetimeNew(2024, 1, 1)}), 1)], \
         [['alpha', 'JavaScript', 600], ['alpha', 'Python', 150], ['beta', 'Python', 0]], \
         750 \
     ))
@@ -535,11 +557,12 @@ unittestRunTest('testDownloadsMainIndexFetchError')
 
 async function testDownloadsMainIndexLanguage():
     # Only the Python packages are charted - the table has every package
+    systemGlobalSet('vDays', 30)
     systemGlobalSet('vLanguage', 'Python')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'language': 'Python'}, [ \
-        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Language == "Python"')) \
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'language': 'Python'}, [ \
+        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Language == "Python"'), 30) \
     ]))
     testDownloadsResetGlobals()
 endfunction
@@ -548,11 +571,12 @@ unittestRunTest('testDownloadsMainIndexLanguage')
 
 async function testDownloadsMainIndexTop():
     # The 30-day averages are "alpha (js)" 30/30, "alpha (py)" 14/30, and "beta" 7/30 - the top half is two packages
+    systemGlobalSet('vDays', 30)
     systemGlobalSet('vRank', 'top')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'rank': 'top'}, [ \
-        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "alpha"')) \
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'rank': 'top'}, [ \
+        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "alpha"'), 30) \
     ]))
     testDownloadsResetGlobals()
 endfunction
@@ -562,18 +586,16 @@ unittestRunTest('testDownloadsMainIndexTop')
 async function testDownloadsMainIndexBottom():
     # Use a 1-day average so "beta" has a trailing average - the 2024-02-03 averages are "alpha (js)" 20,
     # "alpha (py)" 5, and "beta" 0, so the bottom half is "beta"
-    systemGlobalSet('downloadsChartDays', 1)
+    systemGlobalSet('vDays', 1)
     systemGlobalSet('vRank', 'bottom')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    calls = unittestMockEnd()
-
-    data = dataFilter(testDownloadsData(), 'Package == "beta"')
-    objectSet(arrayGet(data, 0), 'Average Downloads', 7)
-    unittestDeepEqual(calls, testDownloadsIndexCalls({'rank': 'bottom'}, [ \
-        testDownloadsChart(data, 1) \
-    ]))
-    systemGlobalSet('downloadsChartDays', 30)
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls( \
+        {'days': 1, 'rank': 'bottom'}, \
+        [testDownloadsChart(dataFilter(testDownloadsAverageData([[4, 7]]), 'Package == "beta"'), 1)], \
+        [['alpha', 'JavaScript', 600], ['alpha', 'Python', 150], ['beta', 'Python', 0]], \
+        750 \
+    ))
     testDownloadsResetGlobals()
 endfunction
 unittestRunTest('testDownloadsMainIndexBottom')
@@ -581,12 +603,13 @@ unittestRunTest('testDownloadsMainIndexBottom')
 
 async function testDownloadsMainIndexLanguageTop():
     # The rank is within the language - "alpha (py)" is the top Python package
+    systemGlobalSet('vDays', 30)
     systemGlobalSet('vLanguage', 'Python')
     systemGlobalSet('vRank', 'top')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'language': 'Python', 'rank': 'top'}, [ \
-        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "alpha" && Language == "Python"')) \
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'language': 'Python', 'rank': 'top'}, [ \
+        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "alpha" && Language == "Python"'), 30) \
     ]))
     testDownloadsResetGlobals()
 endfunction
@@ -595,10 +618,11 @@ unittestRunTest('testDownloadsMainIndexLanguageTop')
 
 async function testDownloadsMainIndexNoAverage():
     # "beta" has no 30-day trailing average - the table is still rendered
+    systemGlobalSet('vDays', 30)
     systemGlobalSet('vRank', 'bottom')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'rank': 'bottom'}, [ \
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'rank': 'bottom'}, [ \
         ['markdownPrint', ['', '**Error:** No matching packages']] \
     ]))
     testDownloadsResetGlobals()
@@ -607,10 +631,11 @@ unittestRunTest('testDownloadsMainIndexNoAverage')
 
 
 async function testDownloadsMainIndexLanguageUnknown():
+    systemGlobalSet('vDays', 30)
     systemGlobalSet('vLanguage', 'Ruby')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'language': 'Ruby'}, [ \
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'language': 'Ruby'}, [ \
         ['markdownPrint', ['', '**Error:** No matching packages']] \
     ]))
     testDownloadsResetGlobals()

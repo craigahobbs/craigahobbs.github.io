@@ -128,11 +128,9 @@ function downloadsFilterControls(args, label, argName, values):
 endfunction
 
 
-# The index page chart's trailing average days
-downloadsChartDays = 30
-
-
 function downloadsChart(args, data):
+    trailingDays = objectGet(args, 'days')
+
     # Filter to the language
     language = objectGet(args, 'language')
     if language != null:
@@ -142,7 +140,7 @@ function downloadsChart(args, data):
     # Filter to the top or bottom half of the packages by trailing average - the top half gets the odd package
     rank = objectGet(args, 'rank')
     if rank == 'top' || rank == 'bottom':
-        dataRank = downloadsDataAverage(data, downloadsChartDays, false)
+        dataRank = downloadsDataAverage(data, trailingDays, false)
         dataSort(dataRank, [['Downloads', true]])
         countTop = mathCeil(arrayLength(dataRank) / 2)
         rankUniques = {}
@@ -157,7 +155,7 @@ function downloadsChart(args, data):
     # Compute the trailing average - use all data so the average is available from the start of the years'
     # data - and filter to the years' rows with a positive trailing average (the log scale excludes the rest)
     if data:
-        downloadsDataTrailingAverage(data, downloadsChartDays)
+        downloadsDataTrailingAverage(data, trailingDays)
         data = dataFilter(downloadsDataYears(data, objectGet(args, 'years')), '[Average Downloads] > 0')
     endif
     if !data:
@@ -170,7 +168,7 @@ function downloadsChart(args, data):
     chartWidth = mathFloor(mathMin(1000, mathMax(600, windowWidth() - 4 * fontSize)))
     chartHeight = mathFloor(0.5 * chartWidth)
     dataLineChart(data, { \
-        'title': 'Daily Downloads (' + downloadsChartDays + '-Day Average)', \
+        'title': 'Daily Downloads (' + trailingDays + '-Day Average)', \
         'width': chartWidth, \
         'height': chartHeight, \
         'x': 'Date', \
