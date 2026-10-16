@@ -1,0 +1,166 @@
+# Spaceship Higgs-Boson physics - the ship's relativistic mission and its Higgs drive
+#
+# The ship accelerates at a constant proper acceleration to the voyage's midpoint, flips, and decelerates to arrive
+# at rest. Units are years, light-years, and c = 1 unless noted.
+
+
+# Physical constants (SI units)
+shbSpeedOfLight = 299792458
+shbStandardGravity = 9.80665
+shbJulianYear = 31557600
+shbLightYear = 9.4607304725808e15
+shbElectronVolt = 1.602176634e-19
+shbEarthGM = 3.986004418e14
+shbEarthRadiusKm = 6371
+shbAlphaCentauriLy = 4.37
+shbHiggsMassGeV = 125.1
+shbWorldEnergyJoules = 6.2e20
+
+
+# The ship's name
+shbShipName = 'ISV Scalar Dawn'
+
+
+# The ship's design parameters - rest mass (tonnes), the Higgs-suppressed inertial mass fraction, the drive
+# acceleration (g), and the parking orbit altitude (km)
+shbRestMassTonnes = 2000
+shbMassFraction = 0.001
+shbAccelG = 1
+shbOrbitAltitudeKm = 400
+
+
+# Hyperbolic functions
+function shbSinh(x):
+    ex = mathE() ** x
+    return (ex - 1 / ex) / 2
+endfunction
+
+
+function shbCosh(x):
+    ex = mathE() ** x
+    return (ex + 1 / ex) / 2
+endfunction
+
+
+function shbTanh(x):
+    e2x = mathE() ** (2 * x)
+    return (e2x - 1) / (e2x + 1)
+endfunction
+
+
+function shbAcosh(x):
+    return mathLn(x + mathSqrt(x * x - 1))
+endfunction
+
+
+# Convert an acceleration in g to light-years per year squared
+function shbAccelLy(accelG):
+    return accelG * shbStandardGravity * shbJulianYear * shbJulianYear / shbLightYear
+endfunction
+
+
+# Compute the mission profile for a constant proper acceleration (in g) - accelerate to the midpoint, flip, and
+# decelerate to arrive at rest
+function shbMission(accelG):
+    accel = shbAccelLy(accelG)
+    tauHalf = shbAcosh(1 + accel * shbAlphaCentauriLy / 2) / accel
+    rapidity = accel * tauHalf
+    return { \
+        'accel': accel, \
+        'tauHalf': tauHalf, \
+        'tauTotal': 2 * tauHalf, \
+        'tTotal': 2 * shbSinh(rapidity) / accel, \
+        'betaMax': shbTanh(rapidity), \
+        'gammaMax': shbCosh(rapidity), \
+        'massRatio': mathE() ** (2 * rapidity) \
+    }
+endfunction
+
+
+# Compute the mission state at a ship (proper) time, in years
+function shbMissionState(mission, tau):
+    accel = objectGet(mission, 'accel')
+    tauHalf = objectGet(mission, 'tauHalf')
+    tauTotal = objectGet(mission, 'tauTotal')
+    tau = mathMax(0, mathMin(tau, tauTotal))
+    firstHalf = tau < tauHalf
+
+    # The leg is the proper time from the nearest end of the voyage
+    tauLeg = if(firstHalf, tau, tauTotal - tau)
+    xLeg = (shbCosh(accel * tauLeg) - 1) / accel
+    tLeg = shbSinh(accel * tauLeg) / accel
+    return { \
+        'phase': if(tau >= tauTotal, 'arrived', if(firstHalf, 'accelerate', 'decelerate')), \
+        'tau': tau, \
+        't': if(firstHalf, tLeg, objectGet(mission, 'tTotal') - tLeg), \
+        'x': if(firstHalf, xLeg, shbAlphaCentauriLy - xLeg), \
+        'beta': shbTanh(accel * tauLeg), \
+        'gamma': shbCosh(accel * tauLeg) \
+    }
+endfunction
+
+
+# Compute the drive specifications for an acceleration (in g)
+function shbDriveSpecs(accelG):
+    mission = shbMission(accelG)
+    massKg = shbRestMassTonnes * 1000
+    effectiveKg = massKg * shbMassFraction
+    thrust = effectiveKg * accelG * shbStandardGravity
+    power = thrust * shbSpeedOfLight
+    massRatio = objectGet(mission, 'massRatio')
+    return { \
+        'mission': mission, \
+        'effectiveTonnes': effectiveKg / 1000, \
+        'thrust': thrust, \
+        'power': power, \
+        'higgsRate': power / (shbHiggsMassGeV * 1e9 * shbElectronVolt), \
+        'propellantTonnes': effectiveKg * (massRatio - 1) / 1000, \
+        'unsuppressedTonnes': massKg * (massRatio - 1) / 1000 \
+    }
+endfunction
+
+
+# Compute the parking orbit's velocity (m/s) and period (s)
+function shbOrbitParams():
+    radius = (shbEarthRadiusKm + shbOrbitAltitudeKm) * 1000
+    return { \
+        'velocity': mathSqrt(shbEarthGM / radius), \
+        'period': 2 * mathPi() * mathSqrt(radius * radius * radius / shbEarthGM) \
+    }
+endfunction
+
+
+# Format a number in scientific notation (e.g. "2.94 × 10²⁰")
+function shbFormatScientific(value):
+    exponent = mathFloor(mathLog(value, 10))
+    mantissa = value / 10 ** exponent
+    if mantissa >= 9.995:
+        mantissa = mantissa / 10
+        exponent = exponent + 1
+    endif
+    superscript = ''
+    for char in stringSplit(stringNew(exponent), ''):
+        superscript = superscript + objectGet(shbSuperscripts, char)
+    endfor
+    return numberToFixed(mantissa, 2) + ' × 10' + superscript
+endfunction
+
+
+shbSuperscripts = { \
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' \
+}
+
+
+# The round trip's Earth and crew (ship) time, in years
+function shbRoundTrip():
+    mission = shbMission(shbAccelG)
+    survey = shbSurveyMonths / 12
+    return { \
+        'earthYears': 2 * objectGet(mission, 'tTotal') + survey, \
+        'crewYears': 2 * objectGet(mission, 'tauTotal') + survey \
+    }
+endfunction
+
+
+# The months the ship spends in orbit at Alpha Centauri
+shbSurveyMonths = 6

@@ -1,0 +1,874 @@
+# Spaceship Higgs-Boson cinema - a cinematography library that executes films described by a cinema model
+#
+# A film is a sequence of scenes, each one continuous action at one location, covered by shots. A shot frames the
+# action on a set with a camera move - a static setup, a dolly, an orbit, or a track - eased in and out, and with
+# optional fades in from and out to black. The scene's cast is blocked on each set - on a mark, along a path of
+# marks, or in orbit - and plays beats, named moments of behavior that the film's actor renderers act on. The script
+# is the dialogue (the closed-caption talk track), the on-screen titles, and the sound cues.
+#
+# cinemaReel validates a film model and lays out its timeline. cinemaFrame describes the frame at a time - the scene,
+# the shot, the camera, the actors, the fade, the titles, and the dialogue - for the film's renderer to draw, and
+# cinemaOverlayElements renders the frame's letterbox, fade, titles, and closed captions as SVG element models.
+# cinemaSounds lists the sound cues between two times, and cinemaStoryboard lays out the film shot by shot. The library
+# knows nothing about drawing sets and actors - it describes what the camera sees, and the film draws it.
+
+include <schema.bare>
+include <schemaParser.bare>
+
+
+# The cinema model
+cinemaTypes = schemaParse( \
+    '# A film - a sequence of scenes', \
+    'struct CinemaFilm', \
+    '', \
+    "    # The film's title", \
+    '    string title', \
+    '', \
+    "    # The film's scenes, in order", \
+    '    CinemaScene[len > 0] scenes', \
+    '', \
+    '', \
+    '# A scene - continuous action at one location, covered by one or more shots', \
+    'struct CinemaScene', \
+    '', \
+    "    # The scene's name", \
+    '    string name', \
+    '', \
+    "    # The scene's chapter title", \
+    '    string title', \
+    '', \
+    '    # If false, the scene opens without a chapter title card (the default is true)', \
+    '    optional bool chapterCard', \
+    '', \
+    "    # The scene's shots, in order", \
+    '    CinemaShot[len > 0] shots', \
+    '', \
+    "    # The scene's cast and their blocking on each set", \
+    '    optional CinemaActor[] cast', \
+    '', \
+    "    # The scene's dialogue - the closed-caption talk track", \
+    '    optional CinemaLine[] dialogue', \
+    '', \
+    "    # The scene's on-screen titles", \
+    '    optional CinemaTitle[] titles', \
+    '', \
+    "    # The scene's sound cues", \
+    '    optional CinemaSound[] sounds', \
+    '', \
+    '', \
+    '# A shot - one continuous camera take', \
+    'struct CinemaShot', \
+    '', \
+    "    # The shot's duration, in seconds", \
+    '    float(> 0) duration', \
+    '', \
+    "    # The shot's framing", \
+    '    CinemaFraming framing', \
+    '', \
+    "    # The set the shot is filmed on - the film's renderer builds it", \
+    '    string set', \
+    '', \
+    "    # The set's lighting setup - the set defines its setups", \
+    '    optional string lighting', \
+    '', \
+    '    # The camera and its move', \
+    '    CinemaCamera camera', \
+    '', \
+    '    # The fade in from black at the start of the shot, in seconds (the default is a cut)', \
+    '    optional float(> 0) fadeIn', \
+    '', \
+    '    # The fade out to black at the end of the shot, in seconds (the default is a cut)', \
+    '    optional float(> 0) fadeOut', \
+    '', \
+    '', \
+    '# A shot framing', \
+    'enum CinemaFraming', \
+    '', \
+    '    # A wide shot that introduces the location', \
+    '    establishing', \
+    '', \
+    '    # The subject in full, in its surroundings', \
+    '    wide', \
+    '', \
+    '    # The subject from a middle distance', \
+    '    medium', \
+    '', \
+    "    # The subject fills the frame", \
+    '    closeUp', \
+    '', \
+    "    # Past a foreground subject to what it faces", \
+    '    overTheShoulder', \
+    '', \
+    '    # A detail of the action', \
+    '    insert', \
+    '', \
+    '', \
+    '# A camera and its move over the shot', \
+    'struct CinemaCamera', \
+    '', \
+    '    # The camera move', \
+    '    CinemaMove move', \
+    '', \
+    "    # The move's ease curve (the default is ease-in-out)", \
+    '    optional CinemaEase ease', \
+    '', \
+    "    # The lens's zoom factor (the default is 1)", \
+    '    optional float(> 0) lens', \
+    '', \
+    '    # Static and dolly - the eye and target positions (at the start of a dolly)', \
+    '    optional CinemaVector eye', \
+    '    optional CinemaVector target', \
+    '', \
+    '    # Dolly - the eye and target positions at the end of the move', \
+    '    optional CinemaVector eyeEnd', \
+    '    optional CinemaVector targetEnd', \
+    '', \
+    '    # Orbit and track - the actor the camera orbits or tracks', \
+    '    optional string subject', \
+    '', \
+    "    # Orbit - the orbit's center (if there's no subject), radius, and height, and the start and end angles", \
+    '    # (degrees, counterclockwise from +x seen from above)', \
+    '    optional CinemaVector center', \
+    '    optional float(> 0) radius', \
+    '    optional float height', \
+    '    optional float angle', \
+    '    optional float angleEnd', \
+    '', \
+    "    # Track - the eye's offset from the subject at the start and end of the move", \
+    '    optional CinemaVector offset', \
+    '    optional CinemaVector offsetEnd', \
+    '', \
+    "    # Orbit and track - the target's offset from the center or subject", \
+    '    optional CinemaVector targetOffset', \
+    '', \
+    '', \
+    '# A camera move', \
+    'enum CinemaMove', \
+    '', \
+    '    # The camera holds still', \
+    '    static', \
+    '', \
+    '    # The camera travels from one eye position and target to another', \
+    '    dolly', \
+    '', \
+    '    # The camera arcs around a subject', \
+    '    orbit', \
+    '', \
+    '    # The camera follows a moving subject', \
+    '    track', \
+    '', \
+    '', \
+    '# An ease curve', \
+    'enum CinemaEase', \
+    '    linear', \
+    '    easeIn', \
+    '    easeOut', \
+    '    easeInOut', \
+    '', \
+    '', \
+    "# An actor in a scene - the film's actor renderer draws it", \
+    'struct CinemaActor', \
+    '', \
+    "    # The actor's name", \
+    '    string name', \
+    '', \
+    '    # The set this blocking is for (the default is every set)', \
+    '    optional string set', \
+    '', \
+    "    # The actor's blocking - where it is and where it faces", \
+    '    CinemaBlocking blocking', \
+    '', \
+    "    # The actor's size on the set (the default is 1)", \
+    '    optional float(> 0) scale', \
+    '', \
+    "    # The actor's on-screen label", \
+    '    optional string label', \
+    '', \
+    "    # The actor's beats - named moments of behavior", \
+    '    optional CinemaBeat[] beats', \
+    '', \
+    '', \
+    "# An actor's blocking", \
+    'struct CinemaBlocking', \
+    '', \
+    '    # The blocking type', \
+    '    CinemaBlockingType type', \
+    '', \
+    "    # Mark - the actor's position and facing direction (the defaults are the origin and +x)", \
+    '    optional CinemaVector position', \
+    '    optional CinemaVector facing', \
+    '', \
+    "    # Path - the actor's marks, in time order - the actor faces its direction of travel", \
+    '    optional CinemaMark[len > 1] marks', \
+    '', \
+    "    # Orbit - the orbit's center, radius, period (seconds), starting angle (degrees), and inclination about the", \
+    '    # x-axis (degrees) - the actor faces its direction of travel', \
+    '    optional CinemaVector center', \
+    '    optional float(> 0) radius', \
+    '    optional float(> 0) period', \
+    '    optional float phase', \
+    '    optional float inclination', \
+    '', \
+    '', \
+    '# A blocking type', \
+    'enum CinemaBlockingType', \
+    '', \
+    '    # The actor stands on a mark', \
+    '    mark', \
+    '', \
+    '    # The actor moves along a path of marks', \
+    '    path', \
+    '', \
+    '    # The actor circles a center', \
+    '    orbit', \
+    '', \
+    '', \
+    '# A mark on an actor path', \
+    'struct CinemaMark', \
+    '', \
+    '    # The scene time the actor reaches the mark, in seconds', \
+    '    float(>= 0) at', \
+    '', \
+    "    # The mark's position", \
+    '    CinemaVector position', \
+    '', \
+    '', \
+    "# An actor's beat - a named moment of behavior", \
+    'struct CinemaBeat', \
+    '', \
+    "    # The beat's scene time, in seconds", \
+    '    float(>= 0) at', \
+    '', \
+    "    # The beat's name - the film's actor renderer acts on it", \
+    '    string name', \
+    '', \
+    '', \
+    '# A line of dialogue - shown as a closed caption', \
+    'struct CinemaLine', \
+    '', \
+    "    # The line's scene time and duration, in seconds", \
+    '    float(>= 0) at', \
+    '    float(> 0) duration', \
+    '', \
+    '    # The speaker', \
+    '    string speaker', \
+    '', \
+    "    # The line's text - \"{name}\" placeholders are filled from the film's variables", \
+    '    string text', \
+    '', \
+    '', \
+    '# An on-screen title', \
+    'struct CinemaTitle', \
+    '', \
+    "    # The title's scene time and duration, in seconds", \
+    '    float(>= 0) at', \
+    '    float(> 0) duration', \
+    '', \
+    "    # The title's style", \
+    '    CinemaTitleStyle style', \
+    '', \
+    "    # The title's text - \"{name}\" placeholders are filled from the film's variables", \
+    '    string text', \
+    '', \
+    '    # If true, the title holds to the end of the scene rather than fading out', \
+    '    optional bool hold', \
+    '', \
+    '', \
+    '# A title style', \
+    'enum CinemaTitleStyle', \
+    '', \
+    "    # The film's main title", \
+    '    main', \
+    '', \
+    '    # A subtitle beneath the main title', \
+    '    subtitle', \
+    '', \
+    '    # A credit beneath the subtitle', \
+    '    credit', \
+    '', \
+    '', \
+    '# A sound cue', \
+    'struct CinemaSound', \
+    '', \
+    "    # The cue's scene time, in seconds", \
+    '    float(>= 0) at', \
+    '', \
+    "    # The sound's name", \
+    '    string sound', \
+    '', \
+    '', \
+    '# A point or direction', \
+    'typedef float[len == 3] CinemaVector' \
+)
+
+
+# The chapter title card's duration, in seconds
+cinemaChapterSeconds = 3.5
+
+
+# Degrees to radians
+cinemaDeg = mathPi() / 180
+
+
+# Validate a film model and lay out its timeline - returns the reel, or null if the film model is invalid
+function cinemaReel(film):
+    filmValid = schemaValidate(cinemaTypes, 'CinemaFilm', film)
+    if filmValid == null:
+        return null
+    endif
+    scenes = []
+    time = 0
+    for scene in objectGet(filmValid, 'scenes'):
+        start = time
+        shotStarts = []
+        for shot in objectGet(scene, 'shots'):
+            arrayPush(shotStarts, time)
+            time = time + objectGet(shot, 'duration')
+        endfor
+        arrayPush(scenes, {'start': start, 'duration': time - start, 'shotStarts': shotStarts})
+    endfor
+    return {'film': filmValid, 'duration': time, 'scenes': scenes}
+endfunction
+
+
+# The film's running time, in seconds
+function cinemaDuration(reel):
+    return objectGet(reel, 'duration')
+endfunction
+
+
+# The number of scenes
+function cinemaSceneCount(reel):
+    return arrayLength(objectGet(reel, 'scenes'))
+endfunction
+
+
+# The index of the scene at a time
+function cinemaSceneIndex(reel, time):
+    index = 0
+    for scene, ixScene in objectGet(reel, 'scenes'):
+        if time >= objectGet(scene, 'start'):
+            index = ixScene
+        endif
+    endfor
+    return index
+endfunction
+
+
+# The start time of a scene, by index
+function cinemaSceneStart(reel, index):
+    return objectGet(arrayGet(objectGet(reel, 'scenes'), index), 'start')
+endfunction
+
+
+# The sound cues between two times - after the first, up to and including the second
+function cinemaSounds(reel, timeFrom, timeTo):
+    sounds = []
+    for scene, ixScene in objectGet(objectGet(reel, 'film'), 'scenes'):
+        start = cinemaSceneStart(reel, ixScene)
+        for cue in objectGet(scene, 'sounds', []):
+            cueTime = start + objectGet(cue, 'at')
+            if cueTime > timeFrom && cueTime <= timeTo:
+                arrayPush(sounds, objectGet(cue, 'sound'))
+            endif
+        endfor
+    endfor
+    return sounds
+endfunction
+
+
+# Describe the frame at a time - the scene, the shot, the camera ("eye", "target", and "lens"), the actors on the
+# shot's set by name ("position", "facing", "scale", "label", and "beats" - the time since each beat began), the fade
+# to black (0 to 1), the titles, and the dialogue. The variables function, variablesFn(frame), returns the values of
+# the "{name}" placeholders in titles and dialogue.
+function cinemaFrame(reel, time, variablesFn):
+    film = objectGet(reel, 'film')
+    time = mathMax(0, mathMin(cinemaDuration(reel), time))
+    sceneIndex = cinemaSceneIndex(reel, time)
+    sceneLayout = arrayGet(objectGet(reel, 'scenes'), sceneIndex)
+    scene = arrayGet(objectGet(film, 'scenes'), sceneIndex)
+    sceneTime = time - objectGet(sceneLayout, 'start')
+
+    # The shot
+    shotStarts = objectGet(sceneLayout, 'shotStarts')
+    shotIndex = 0
+    for shotStart, ixShot in shotStarts:
+        if time >= shotStart:
+            shotIndex = ixShot
+        endif
+    endfor
+    shot = arrayGet(objectGet(scene, 'shots'), shotIndex)
+    shotTime = time - arrayGet(shotStarts, shotIndex)
+    shotDuration = objectGet(shot, 'duration')
+    set = objectGet(shot, 'set')
+
+    # The cast on the shot's set
+    actors = {}
+    for actor in objectGet(scene, 'cast', []):
+        actorSet = objectGet(actor, 'set')
+        if actorSet == null || actorSet == set:
+            state = cinemaBlockingAt(objectGet(actor, 'blocking'), sceneTime)
+            beats = {}
+            for beat in objectGet(actor, 'beats', []):
+                if sceneTime >= objectGet(beat, 'at'):
+                    objectSet(beats, objectGet(beat, 'name'), sceneTime - objectGet(beat, 'at'))
+                endif
+            endfor
+            objectSet(state, 'beats', beats)
+            objectSet(state, 'scale', objectGet(actor, 'scale', 1))
+            objectSet(state, 'label', objectGet(actor, 'label'))
+            objectSet(actors, objectGet(actor, 'name'), state)
+        endif
+    endfor
+
+    # The fade in from or out to black
+    fade = 0
+    fadeIn = objectGet(shot, 'fadeIn')
+    if fadeIn != null && shotTime < fadeIn:
+        fade = 1 - shotTime / fadeIn
+    endif
+    fadeOut = objectGet(shot, 'fadeOut')
+    if fadeOut != null && shotDuration - shotTime < fadeOut:
+        fade = mathMax(fade, 1 - (shotDuration - shotTime) / fadeOut)
+    endif
+
+    frame = { \
+        'time': time, \
+        'sceneIndex': sceneIndex, \
+        'scene': objectGet(scene, 'name'), \
+        'sceneTitle': objectGet(scene, 'title'), \
+        'sceneTime': sceneTime, \
+        'sceneDuration': objectGet(sceneLayout, 'duration'), \
+        'shotIndex': shotIndex, \
+        'shotTime': shotTime, \
+        'framing': objectGet(shot, 'framing'), \
+        'set': set, \
+        'lighting': objectGet(shot, 'lighting'), \
+        'camera': cinemaCameraAt(objectGet(shot, 'camera'), actors, shotTime / shotDuration), \
+        'actors': actors, \
+        'fade': fade, \
+        'titles': [], \
+        'dialogue': null \
+    }
+
+    # The titles - the chapter title card, then the scene's titles
+    titles = objectGet(frame, 'titles')
+    if objectGet(scene, 'chapterCard', true) && sceneTime < cinemaChapterSeconds:
+        arrayPush(titles, { \
+            'style': 'chapter', \
+            'chapter': sceneIndex + 1, \
+            'text': objectGet(scene, 'title'), \
+            'opacity': cinemaFadeOpacity(sceneTime, cinemaChapterSeconds, false) \
+        })
+    endif
+    for title in objectGet(scene, 'titles', []):
+        titleTime = sceneTime - objectGet(title, 'at')
+        hold = objectGet(title, 'hold', false)
+        if titleTime >= 0 && (hold || titleTime < objectGet(title, 'duration')):
+            arrayPush(titles, { \
+                'style': objectGet(title, 'style'), \
+                'text': cinemaFill(objectGet(title, 'text'), frame, variablesFn), \
+                'opacity': cinemaFadeOpacity(titleTime, objectGet(title, 'duration'), hold) \
+            })
+        endif
+    endfor
+
+    # The dialogue
+    for line in objectGet(scene, 'dialogue', []):
+        lineTime = sceneTime - objectGet(line, 'at')
+        if lineTime >= 0 && lineTime < objectGet(line, 'duration'):
+            objectSet(frame, 'dialogue', { \
+                'speaker': objectGet(line, 'speaker'), \
+                'text': cinemaFill(objectGet(line, 'text'), frame, variablesFn) \
+            })
+        endif
+    endfor
+    return frame
+endfunction
+
+
+# The film's cast list, in order of first appearance - the "actors" (each with its "name", the titles of the "scenes"
+# it appears in, and its "beats"), and the "voices", the speaking roles (each with its "speaker", its count of
+# "lines", and the titles of the "scenes" it speaks in)
+function cinemaCast(reel):
+    actors = []
+    actorsByName = {}
+    voices = []
+    voicesBySpeaker = {}
+    for scene in objectGet(objectGet(reel, 'film'), 'scenes'):
+        title = objectGet(scene, 'title')
+        for actor in objectGet(scene, 'cast', []):
+            name = objectGet(actor, 'name')
+            entry = objectGet(actorsByName, name)
+            if entry == null:
+                entry = {'name': name, 'scenes': [], 'beats': []}
+                objectSet(actorsByName, name, entry)
+                arrayPush(actors, entry)
+            endif
+            cinemaAddUnique(objectGet(entry, 'scenes'), title)
+            for beat in objectGet(actor, 'beats', []):
+                cinemaAddUnique(objectGet(entry, 'beats'), objectGet(beat, 'name'))
+            endfor
+        endfor
+        for line in objectGet(scene, 'dialogue', []):
+            speaker = objectGet(line, 'speaker')
+            entry = objectGet(voicesBySpeaker, speaker)
+            if entry == null:
+                entry = {'speaker': speaker, 'lines': 0, 'scenes': []}
+                objectSet(voicesBySpeaker, speaker, entry)
+                arrayPush(voices, entry)
+            endif
+            objectSet(entry, 'lines', objectGet(entry, 'lines') + 1)
+            cinemaAddUnique(objectGet(entry, 'scenes'), title)
+        endfor
+    endfor
+    return {'actors': actors, 'voices': voices}
+endfunction
+
+
+# Add a value to an array, if it's not already in it
+function cinemaAddUnique(values, value):
+    if arrayIndexOf(values, value) < 0:
+        arrayPush(values, value)
+    endif
+endfunction
+
+
+# The film's storyboard - each scene ("index", "name", "title", "start", "duration", and "shots") with its shots in
+# order. Each shot has its "index", "start" and "duration" (seconds), "framing", "set", "lighting", camera "move",
+# "ease", and "lens", "fadeIn" and "fadeOut", and the "dialogue" (speaker and text), "sounds", and actor "beats" (actor
+# and beat) that fall within it. The variables function fills the dialogue's placeholders as in cinemaFrame.
+function cinemaStoryboard(reel, variablesFn):
+    storyboard = []
+    for scene, ixScene in objectGet(objectGet(reel, 'film'), 'scenes'):
+        layout = arrayGet(objectGet(reel, 'scenes'), ixScene)
+        sceneStart = objectGet(layout, 'start')
+        shots = []
+        for shot, ixShot in objectGet(scene, 'shots'):
+            shotStart = arrayGet(objectGet(layout, 'shotStarts'), ixShot) - sceneStart
+            shotEnd = shotStart + objectGet(shot, 'duration')
+            camera = objectGet(shot, 'camera')
+
+            # The dialogue spoken during the shot, filled at its first moment in the shot
+            dialogue = []
+            for line in objectGet(scene, 'dialogue', []):
+                lineStart = objectGet(line, 'at')
+                if lineStart < shotEnd && lineStart + objectGet(line, 'duration') > shotStart:
+                    frame = cinemaFrame(reel, sceneStart + mathMax(lineStart, shotStart), variablesFn)
+                    arrayPush(dialogue, {'speaker': objectGet(line, 'speaker'), 'text': cinemaFill(objectGet(line, 'text'), frame, variablesFn)})
+                endif
+            endfor
+
+            # The sound cues and the beats of the cast on the shot's set during the shot
+            sounds = []
+            for cue in objectGet(scene, 'sounds', []):
+                if objectGet(cue, 'at') >= shotStart && objectGet(cue, 'at') < shotEnd:
+                    arrayPush(sounds, objectGet(cue, 'sound'))
+                endif
+            endfor
+            beats = []
+            for actor in objectGet(scene, 'cast', []):
+                actorSet = objectGet(actor, 'set')
+                if actorSet == null || actorSet == objectGet(shot, 'set'):
+                    for beat in objectGet(actor, 'beats', []):
+                        if objectGet(beat, 'at') >= shotStart && objectGet(beat, 'at') < shotEnd:
+                            arrayPush(beats, {'actor': objectGet(actor, 'name'), 'beat': objectGet(beat, 'name')})
+                        endif
+                    endfor
+                endif
+            endfor
+
+            arrayPush(shots, { \
+                'index': ixShot, \
+                'start': sceneStart + shotStart, \
+                'duration': objectGet(shot, 'duration'), \
+                'framing': objectGet(shot, 'framing'), \
+                'set': objectGet(shot, 'set'), \
+                'lighting': objectGet(shot, 'lighting'), \
+                'move': objectGet(camera, 'move'), \
+                'ease': objectGet(camera, 'ease', 'easeInOut'), \
+                'lens': objectGet(camera, 'lens', 1), \
+                'fadeIn': objectGet(shot, 'fadeIn'), \
+                'fadeOut': objectGet(shot, 'fadeOut'), \
+                'dialogue': dialogue, \
+                'sounds': sounds, \
+                'beats': beats \
+            })
+        endfor
+        arrayPush(storyboard, { \
+            'index': ixScene, \
+            'name': objectGet(scene, 'name'), \
+            'title': objectGet(scene, 'title'), \
+            'start': sceneStart, \
+            'duration': objectGet(layout, 'duration'), \
+            'shots': shots \
+        })
+    endfor
+    return storyboard
+endfunction
+
+
+# An actor's position and facing direction on its blocking at a scene time
+function cinemaBlockingAt(blocking, time):
+    type = objectGet(blocking, 'type')
+    if type == 'orbit':
+        angle = (objectGet(blocking, 'phase', 0) + 360 * time / objectGet(blocking, 'period', 60)) * cinemaDeg
+        inclination = objectGet(blocking, 'inclination', 0) * cinemaDeg
+        radius = objectGet(blocking, 'radius', 1)
+        position = cinemaRotateX([radius * mathCos(angle), 0, -radius * mathSin(angle)], inclination)
+        return { \
+            'position': cinemaVecAdd(objectGet(blocking, 'center', [0, 0, 0]), position), \
+            'facing': cinemaRotateX([-mathSin(angle), 0, -mathCos(angle)], inclination) \
+        }
+    elif type == 'path':
+        marks = objectGet(blocking, 'marks')
+        ixMark = 1
+        while ixMark < arrayLength(marks) - 1 && time >= objectGet(arrayGet(marks, ixMark), 'at'):
+            ixMark = ixMark + 1
+        endwhile
+        markFrom = arrayGet(marks, ixMark - 1)
+        markTo = arrayGet(marks, ixMark)
+        span = objectGet(markTo, 'at') - objectGet(markFrom, 'at')
+        fraction = if(span > 0, mathMax(0, mathMin(1, (time - objectGet(markFrom, 'at')) / span)), 1)
+        return { \
+            'position': cinemaVecLerp(objectGet(markFrom, 'position'), objectGet(markTo, 'position'), fraction), \
+            'facing': cinemaVecDirection(objectGet(markFrom, 'position'), objectGet(markTo, 'position')) \
+        }
+    endif
+    return {'position': objectGet(blocking, 'position', [0, 0, 0]), 'facing': objectGet(blocking, 'facing', [1, 0, 0])}
+endfunction
+
+
+# The camera's eye, target, and lens at a shot's progress (0 to 1)
+function cinemaCameraAt(camera, actors, progress):
+    ease = cinemaEase(objectGet(camera, 'ease', 'easeInOut'), progress)
+    move = objectGet(camera, 'move')
+    subject = objectGet(actors, objectGet(camera, 'subject', ''))
+    subjectPosition = if(subject != null, objectGet(subject, 'position'), null)
+    if move == 'orbit':
+        center = if(subjectPosition != null, subjectPosition, objectGet(camera, 'center', [0, 0, 0]))
+        angleStart = objectGet(camera, 'angle', 0)
+        angle = (angleStart + (objectGet(camera, 'angleEnd', angleStart) - angleStart) * ease) * cinemaDeg
+        radius = objectGet(camera, 'radius', 10)
+        eye = cinemaVecAdd(center, [radius * mathCos(angle), objectGet(camera, 'height', 0), -radius * mathSin(angle)])
+        target = cinemaVecAdd(center, objectGet(camera, 'targetOffset', [0, 0, 0]))
+    elif move == 'track':
+        base = if(subjectPosition != null, subjectPosition, [0, 0, 0])
+        offset = objectGet(camera, 'offset', [0, 0, -10])
+        eye = cinemaVecAdd(base, cinemaVecLerp(offset, objectGet(camera, 'offsetEnd', offset), ease))
+        target = cinemaVecAdd(base, objectGet(camera, 'targetOffset', [0, 0, 0]))
+    else:
+        eye = objectGet(camera, 'eye', [0, 0, -10])
+        target = objectGet(camera, 'target', [0, 0, 0])
+        if move == 'dolly':
+            eye = cinemaVecLerp(eye, objectGet(camera, 'eyeEnd', eye), ease)
+            target = cinemaVecLerp(target, objectGet(camera, 'targetEnd', target), ease)
+        endif
+    endif
+    return {'eye': eye, 'target': target, 'lens': objectGet(camera, 'lens', 1)}
+endfunction
+
+
+# Apply an ease curve to a progress (0 to 1)
+function cinemaEase(curve, progress):
+    if curve == 'linear':
+        return progress
+    elif curve == 'easeIn':
+        return progress * progress
+    elif curve == 'easeOut':
+        return progress * (2 - progress)
+    endif
+    return progress * progress * (3 - 2 * progress)
+endfunction
+
+
+# The opacity of a title fading in and (unless it holds) out over its duration
+function cinemaFadeOpacity(time, duration, hold):
+    fadeSeconds = mathMin(0.8, duration / 4)
+    opacity = mathMin(1, time / fadeSeconds)
+    if !hold:
+        opacity = mathMin(opacity, (duration - time) / fadeSeconds)
+    endif
+    return mathMax(0, opacity)
+endfunction
+
+
+# Fill a text's "{name}" placeholders from the film's variables
+function cinemaFill(text, frame, variablesFn):
+    if variablesFn == null || stringIndexOf(text, '{') < 0:
+        return text
+    endif
+    variables = variablesFn(frame)
+    for name in objectKeys(variables):
+        text = stringReplace(text, '{' + name + '}', stringNew(objectGet(variables, name)))
+    endfor
+    return text
+endfunction
+
+
+#
+# Overlay
+#
+
+
+# The frame's cinematic overlay element models - the fade to black, the letterbox bars, the titles, and the closed
+# captions (white-on-black monospace lines with a "CC" badge). The options are "letterboxTop" and "letterboxBottom"
+# (pixels), and "fontFamily", "textColor", "accentColor", and "dimColor".
+function cinemaOverlayElements(frame, width, height, options):
+    barTop = objectGet(options, 'letterboxTop', 0)
+    barBottom = objectGet(options, 'letterboxBottom', 0)
+    fontFamily = objectGet(options, 'fontFamily', 'sans-serif')
+    textColor = objectGet(options, 'textColor', '#ffffff')
+    accentColor = objectGet(options, 'accentColor', '#ffffff')
+    dimColor = objectGet(options, 'dimColor', '#cccccc')
+    wide = width >= 760
+    elements = []
+
+    # The fade to black and the letterbox bars
+    fade = objectGet(frame, 'fade')
+    if fade > 0:
+        arrayPush(elements, {'svg': 'rect', 'attr': {'width': width, 'height': height, 'fill': '#000000', \
+            'opacity': numberToFixed(fade, 2)}})
+    endif
+    arrayPush(elements, \
+        {'svg': 'rect', 'attr': {'width': width, 'height': barTop, 'fill': '#000000'}}, \
+        {'svg': 'rect', 'attr': {'y': height - barBottom, 'width': width, 'height': barBottom, 'fill': '#000000'}} \
+    )
+
+    # The titles - chapter cards below the top bar, and the main title, subtitle, and credit stacked mid-frame
+    titleY = mathRound(height * 0.38)
+    for title in objectGet(frame, 'titles'):
+        style = objectGet(title, 'style')
+        text = objectGet(title, 'text')
+        if style == 'chapter':
+            titleElements = [ \
+                cinemaText('CHAPTER ' + objectGet(title, 'chapter'), width / 2, barTop + 56, 13, accentColor, true, fontFamily), \
+                cinemaText(text, width / 2, barTop + 96, mathMin(if(wide, 36, 26), width / 12), textColor, true, fontFamily) \
+            ]
+        elif style == 'main':
+            titleElements = cinemaText(stringUpper(text), width / 2, titleY, mathMin(if(wide, 48, 28), width / 15), textColor, true, \
+                fontFamily)
+        elif style == 'subtitle':
+            titleElements = cinemaText(stringUpper(text), width / 2, titleY + 38, mathMin(if(wide, 18, 14), width / 24), accentColor, \
+                true, fontFamily)
+        else:
+            titleElements = cinemaText(text, width / 2, titleY + 66, mathMin(14, width / 36), dimColor, false, fontFamily)
+        endif
+        arrayPush(elements, {'svg': 'g', 'attr': {'opacity': numberToFixed(objectGet(title, 'opacity'), 2)}, 'elem': titleElements})
+    endfor
+
+    # The closed captions, above the bottom bar
+    dialogue = objectGet(frame, 'dialogue')
+    if dialogue != null:
+        captionSize = if(wide, 22, 17)
+        charWidth = 0.6 * captionSize
+        lineHeight = captionSize + 10
+        maxChars = mathFloor(mathMin(900, width - 36) / charWidth) - 2
+        lines = cinemaWrapText('>> ' + stringUpper(objectGet(dialogue, 'speaker') + ': ' + objectGet(dialogue, 'text')), maxChars)
+        captionTop = height - barBottom - 14 - lineHeight * arrayLength(lines)
+        for line, ixLine in lines:
+            lineWidth = mathRound((stringLength(line) + 2) * charWidth * 10) / 10
+            lineY = captionTop + lineHeight * ixLine
+            arrayPush(elements, \
+                {'svg': 'rect', 'attr': {'x': mathRound((width - lineWidth) * 5) / 10, 'y': lineY, 'width': lineWidth, \
+                    'height': lineHeight, 'fill': 'rgba(0,0,0,0.85)'}}, \
+                {'svg': 'text', 'attr': {'x': mathRound(width * 5) / 10, 'y': lineY + captionSize + 2, \
+                    'font-family': 'Menlo, Consolas, monospace', 'font-size': captionSize, 'fill': '#ffffff', \
+                    'text-anchor': 'middle'}, 'elem': {'text': line}} \
+            )
+        endfor
+        arrayPush(elements, \
+            {'svg': 'rect', 'attr': {'x': 18, 'y': captionTop, 'width': 30, 'height': 20, 'rx': 3, 'fill': 'none', \
+                'stroke': textColor, 'stroke-width': 1.5}}, \
+            cinemaText('CC', 33, captionTop + 14.5, 11, textColor, true, fontFamily) \
+        )
+    endif
+    return {'svg': 'g', 'elem': elements}
+endfunction
+
+
+# A centered SVG text element model
+function cinemaText(text, x, y, size, fill, bold, fontFamily):
+    return { \
+        'svg': 'text', \
+        'attr': { \
+            'x': mathRound(x * 10) / 10, \
+            'y': mathRound(y * 10) / 10, \
+            'font-family': fontFamily, \
+            'font-size': size, \
+            'font-weight': if(bold, 'bold', 'normal'), \
+            'fill': fill, \
+            'text-anchor': 'middle' \
+        }, \
+        'elem': {'text': text} \
+    }
+endfunction
+
+
+# Wrap text to balanced lines of a maximum length
+function cinemaWrapText(text, maxChars):
+    lines = cinemaWrapLines(text, maxChars)
+    if arrayLength(lines) > 1:
+        balanced = cinemaWrapLines(text, mathCeil(stringLength(text) / arrayLength(lines)) + 6)
+        if arrayLength(balanced) == arrayLength(lines):
+            return balanced
+        endif
+    endif
+    return lines
+endfunction
+
+
+# Wrap text to lines of a maximum length
+function cinemaWrapLines(text, maxChars):
+    lines = []
+    line = ''
+    for word in stringSplit(text, ' '):
+        if line != '' && stringLength(line) + 1 + stringLength(word) > maxChars:
+            arrayPush(lines, line)
+            line = word
+        else:
+            line = line + if(line != '', ' ', '') + word
+        endif
+    endfor
+    arrayPush(lines, line)
+    return lines
+endfunction
+
+
+#
+# Vectors
+#
+
+
+function cinemaVecAdd(vecA, vecB):
+    return [arrayGet(vecA, 0) + arrayGet(vecB, 0), arrayGet(vecA, 1) + arrayGet(vecB, 1), arrayGet(vecA, 2) + arrayGet(vecB, 2)]
+endfunction
+
+
+function cinemaVecLerp(vecA, vecB, fraction):
+    return [ \
+        arrayGet(vecA, 0) + (arrayGet(vecB, 0) - arrayGet(vecA, 0)) * fraction, \
+        arrayGet(vecA, 1) + (arrayGet(vecB, 1) - arrayGet(vecA, 1)) * fraction, \
+        arrayGet(vecA, 2) + (arrayGet(vecB, 2) - arrayGet(vecA, 2)) * fraction \
+    ]
+endfunction
+
+
+# The unit direction from one point to another - +x if they're the same
+function cinemaVecDirection(vecFrom, vecTo):
+    x = arrayGet(vecTo, 0) - arrayGet(vecFrom, 0)
+    y = arrayGet(vecTo, 1) - arrayGet(vecFrom, 1)
+    z = arrayGet(vecTo, 2) - arrayGet(vecFrom, 2)
+    length = mathSqrt(x * x + y * y + z * z)
+    return if(length > 0, [x / length, y / length, z / length], [1, 0, 0])
+endfunction
+
+
+# Rotate a vector about the x-axis (radians)
+function cinemaRotateX(vec, angle):
+    cosAngle = mathCos(angle)
+    sinAngle = mathSin(angle)
+    y = arrayGet(vec, 1)
+    z = arrayGet(vec, 2)
+    return [arrayGet(vec, 0), y * cosAngle - z * sinAngle, y * sinAngle + z * cosAngle]
+endfunction

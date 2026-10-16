@@ -1,0 +1,306 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonCinema.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+# A test film - two scenes on two sets, with every camera move, blocking type, and script element
+testCinemaFilm = { \
+    'title': 'Test', \
+    'scenes': [ \
+        { \
+            'name': 'one', \
+            'title': 'One', \
+            'shots': [ \
+                {'duration': 4, 'framing': 'wide', 'set': 'stage', 'fadeIn': 1, \
+                    'camera': {'move': 'static', 'eye': [0, 0, -10], 'target': [0, 0, 0]}}, \
+                {'duration': 6, 'framing': 'closeUp', 'set': 'street', 'lighting': 'night', 'fadeOut': 2, 'camera': \
+                    {'move': 'dolly', 'ease': 'linear', 'lens': 1.5, 'eye': [0, 0, -10], 'eyeEnd': [0, 0, -4], \
+                        'target': [0, 0, 0], 'targetEnd': [0, 2, 0]}} \
+            ], \
+            'cast': [ \
+                {'name': 'hero', 'set': 'stage', 'blocking': {'type': 'mark', 'position': [1, 2, 3]}, 'beats': [{'at': 1, 'name': 'wave'}]}, \
+                {'name': 'hero', 'set': 'street', 'scale': 2, 'label': 'Hero', 'blocking': {'type': 'path', 'marks': [ \
+                    {'at': 4, 'position': [0, 0, 0]}, {'at': 6, 'position': [2, 0, 0]}, {'at': 8, 'position': [2, 0, 2]} \
+                ]}}, \
+                {'name': 'moon', 'blocking': {'type': 'orbit', 'center': [0, 0, 0], 'radius': 10, 'period': 40, 'phase': 90, 'inclination': 90}} \
+            ], \
+            'dialogue': [ \
+                {'at': 1, 'duration': 2, 'speaker': 'Hero', 'text': 'Hello, {name}.'}, \
+                {'at': 5, 'duration': 2, 'speaker': 'Hero', 'text': 'A plain line'} \
+            ], \
+            'titles': [{'at': 0.5, 'duration': 2, 'style': 'main', 'text': 'Test'}], \
+            'sounds': [{'at': 1, 'sound': 'beep'}, {'at': 5, 'sound': 'click'}] \
+        }, \
+        { \
+            'name': 'two', \
+            'title': 'Two', \
+            'chapterCard': false, \
+            'shots': [ \
+                {'duration': 5, 'framing': 'establishing', 'set': 'stage', 'camera': {'move': 'orbit', 'subject': 'hero', 'radius': 5, \
+                    'height': 2, 'angle': 0, 'angleEnd': 90, 'targetOffset': [0, 1, 0]}}, \
+                {'duration': 5, 'framing': 'medium', 'set': 'stage', 'camera': {'move': 'track', 'subject': 'hero', 'ease': 'easeIn', \
+                    'offset': [0, 0, -5], 'offsetEnd': [0, 0, -3]}}, \
+                {'duration': 2, 'framing': 'insert', 'set': 'stage', 'camera': {'move': 'orbit', 'ease': 'easeOut', 'center': [1, 1, 1]}} \
+            ], \
+            'cast': [ \
+                {'name': 'hero', 'blocking': {'type': 'path', 'marks': [{'at': 0, 'position': [4, 0, 0]}, {'at': 0, 'position': [4, 0, 0]}]}} \
+            ], \
+            'titles': [ \
+                {'at': 8, 'duration': 2, 'style': 'subtitle', 'text': 'Held', 'hold': true}, \
+                {'at': 10, 'duration': 2, 'style': 'credit', 'text': 'Credit for {name}'} \
+            ] \
+        } \
+    ] \
+}
+testCinemaReel = cinemaReel(testCinemaFilm)
+
+
+# The test film's variables
+function testCinemaVariables(frame):
+    return {'name': 'scene ' + objectGet(frame, 'scene')}
+endfunction
+
+
+function testCinemaReelLayout():
+    unittestEqual(cinemaDuration(testCinemaReel), 22)
+    unittestEqual(cinemaSceneCount(testCinemaReel), 2)
+    unittestDeepEqual(objectGet(testCinemaReel, 'scenes'), [ \
+        {'start': 0, 'duration': 10, 'shotStarts': [0, 4]}, \
+        {'start': 10, 'duration': 12, 'shotStarts': [10, 15, 20]} \
+    ])
+    unittestEqual(cinemaSceneIndex(testCinemaReel, 0), 0)
+    unittestEqual(cinemaSceneIndex(testCinemaReel, 9.9), 0)
+    unittestEqual(cinemaSceneIndex(testCinemaReel, 10), 1)
+    unittestEqual(cinemaSceneStart(testCinemaReel, 1), 10)
+
+    # An invalid film model has no reel
+    systemLogDebug('NOTICE: The following schema validation error is expected:')
+    unittestEqual(cinemaReel({'title': 'No scenes', 'scenes': []}), null)
+endfunction
+unittestRunTest('testCinemaReelLayout')
+
+
+function testCinemaSounds():
+    unittestDeepEqual(cinemaSounds(testCinemaReel, 0, 1), ['beep'])
+    unittestDeepEqual(cinemaSounds(testCinemaReel, 1, 4.9), [])
+    unittestDeepEqual(cinemaSounds(testCinemaReel, 0, 22), ['beep', 'click'])
+endfunction
+unittestRunTest('testCinemaSounds')
+
+
+function testCinemaFrameOpening():
+    # The opening - fading in from black, under the chapter card and the main title, the hero on its mark
+    frame = cinemaFrame(testCinemaReel, 0.5, testCinemaVariables)
+    unittestDeepEqual(frame, { \
+        'time': 0.5, \
+        'sceneIndex': 0, \
+        'scene': 'one', \
+        'sceneTitle': 'One', \
+        'sceneTime': 0.5, \
+        'sceneDuration': 10, \
+        'shotIndex': 0, \
+        'shotTime': 0.5, \
+        'framing': 'wide', \
+        'set': 'stage', \
+        'lighting': null, \
+        'camera': {'eye': [0, 0, -10], 'target': [0, 0, 0], 'lens': 1}, \
+        'actors': { \
+            'hero': {'position': [1, 2, 3], 'facing': [1, 0, 0], 'beats': {}, 'scale': 1, 'label': null}, \
+            'moon': objectGet(objectGet(frame, 'actors'), 'moon') \
+        }, \
+        'fade': 0.5, \
+        'titles': [ \
+            {'style': 'chapter', 'chapter': 1, 'text': 'One', 'opacity': 0.625}, \
+            {'style': 'main', 'text': 'Test', 'opacity': 0} \
+        ], \
+        'dialogue': null \
+    })
+
+    # The moon orbits, inclined 90 degrees (its orbit is in the x-y plane), starting at 90 degrees
+    moon = objectGet(objectGet(frame, 'actors'), 'moon')
+    unittestDeepEqual(testRoundVec(objectGet(moon, 'position')), [-0.784591, 9.969173, 0])
+    unittestDeepEqual(testRoundVec(objectGet(moon, 'facing')), [-0.996917, -0.078459, 0])
+
+    # A beat, and dialogue with its variables filled
+    frame = cinemaFrame(testCinemaReel, 1.5, testCinemaVariables)
+    unittestDeepEqual(objectGet(objectGet(objectGet(frame, 'actors'), 'hero'), 'beats'), {'wave': 0.5})
+    unittestDeepEqual(objectGet(frame, 'dialogue'), {'speaker': 'Hero', 'text': 'Hello, scene one.'})
+
+    # Without variables, placeholders stay
+    frame = cinemaFrame(testCinemaReel, 1.5)
+    unittestDeepEqual(objectGet(frame, 'dialogue'), {'speaker': 'Hero', 'text': 'Hello, {name}.'})
+endfunction
+unittestRunTest('testCinemaFrameOpening')
+
+
+function testCinemaFrameDolly():
+    # Midway through the dolly, the hero walking its path on the street set, fading out to black
+    frame = cinemaFrame(testCinemaReel, 9, null)
+    unittestEqual(objectGet(frame, 'shotIndex'), 1)
+    unittestEqual(objectGet(frame, 'set'), 'street')
+    unittestEqual(objectGet(frame, 'lighting'), 'night')
+    unittestDeepEqual(objectGet(frame, 'camera'), {'eye': [0, 0, -5], 'target': [0, 5 / 3, 0], 'lens': 1.5})
+    unittestEqual(objectGet(frame, 'fade'), 0.5)
+    unittestDeepEqual(objectGet(frame, 'actors'), { \
+        'hero': {'position': [2, 0, 2], 'facing': [0, 0, 1], 'beats': {}, 'scale': 2, 'label': 'Hero'}, \
+        'moon': objectGet(objectGet(frame, 'actors'), 'moon') \
+    })
+    unittestDeepEqual(objectGet(frame, 'titles'), [])
+
+    # Earlier on the path
+    frame = cinemaFrame(testCinemaReel, 5, null)
+    unittestDeepEqual(objectGet(objectGet(objectGet(frame, 'actors'), 'hero'), 'position'), [1, 0, 0])
+    unittestDeepEqual(objectGet(frame, 'dialogue'), {'speaker': 'Hero', 'text': 'A plain line'})
+endfunction
+unittestRunTest('testCinemaFrameDolly')
+
+
+function testCinemaFrameOrbitAndTrack():
+    # Orbiting the hero - no chapter card
+    frame = cinemaFrame(testCinemaReel, 12.5, null)
+    camera = objectGet(frame, 'camera')
+    unittestDeepEqual(testRoundVec(objectGet(camera, 'eye')), [7.535534, 2, -3.535534])
+    unittestDeepEqual(objectGet(camera, 'target'), [4, 1, 0])
+    unittestDeepEqual(objectGet(frame, 'titles'), [])
+
+    # Tracking the hero
+    frame = cinemaFrame(testCinemaReel, 17.5, null)
+    unittestDeepEqual(objectGet(frame, 'camera'), {'eye': [4, 0, -4.5], 'target': [4, 0, 0], 'lens': 1})
+
+    # Orbiting a center with the defaults, under the held subtitle and the credit
+    frame = cinemaFrame(testCinemaReel, 20.5, testCinemaVariables)
+    unittestDeepEqual(objectGet(frame, 'camera'), {'eye': [11, 1, 1], 'target': [1, 1, 1], 'lens': 1})
+    unittestDeepEqual(objectGet(frame, 'titles'), [ \
+        {'style': 'subtitle', 'text': 'Held', 'opacity': 1}, \
+        {'style': 'credit', 'text': 'Credit for scene two', 'opacity': 1} \
+    ])
+
+    # The held title holds at the end; times past the end are the end
+    frame = cinemaFrame(testCinemaReel, 30, null)
+    unittestEqual(objectGet(frame, 'time'), 22)
+    unittestDeepEqual(objectGet(frame, 'titles'), [{'style': 'subtitle', 'text': 'Held', 'opacity': 1}])
+endfunction
+unittestRunTest('testCinemaFrameOrbitAndTrack')
+
+
+function testCinemaBlockingAt():
+    path = {'type': 'path', 'marks': [{'at': 2, 'position': [0, 0, 0]}, {'at': 4, 'position': [0, 4, 0]}]}
+    unittestDeepEqual(cinemaBlockingAt(path, 0), {'position': [0, 0, 0], 'facing': [0, 1, 0]})
+    unittestDeepEqual(cinemaBlockingAt(path, 3), {'position': [0, 2, 0], 'facing': [0, 1, 0]})
+    unittestDeepEqual(cinemaBlockingAt(path, 9), {'position': [0, 4, 0], 'facing': [0, 1, 0]})
+    unittestDeepEqual(cinemaBlockingAt({'type': 'mark'}, 5), {'position': [0, 0, 0], 'facing': [1, 0, 0]})
+    orbit = cinemaBlockingAt({'type': 'orbit'}, 15)
+    unittestDeepEqual(testRoundVec(objectGet(orbit, 'position')), [0, 0, -1])
+    unittestDeepEqual(testRoundVec(objectGet(orbit, 'facing')), [-1, 0, 0])
+endfunction
+unittestRunTest('testCinemaBlockingAt')
+
+
+function testCinemaEase():
+    unittestEqual(cinemaEase('linear', 0.25), 0.25)
+    unittestEqual(cinemaEase('easeIn', 0.5), 0.25)
+    unittestEqual(cinemaEase('easeOut', 0.5), 0.75)
+    unittestEqual(cinemaEase('easeInOut', 0.25), 0.15625)
+    unittestEqual(cinemaFadeOpacity(0.4, 4, false), 0.5)
+    unittestEqual(cinemaFadeOpacity(3.5, 4, false), 0.625)
+    unittestEqual(cinemaFadeOpacity(3.5, 4, true), 1)
+    unittestEqual(cinemaFadeOpacity(5, 4, false), 0)
+endfunction
+unittestRunTest('testCinemaEase')
+
+
+function testCinemaOverlayElements():
+    options = {'letterboxTop': 40, 'letterboxBottom': 60, 'fontFamily': 'serif', 'textColor': 'white', 'accentColor': 'cyan', \
+        'dimColor': 'gray'}
+
+    # The opening - the fade, the letterbox, the chapter card, and the main title
+    overlay = cinemaOverlayElements(cinemaFrame(testCinemaReel, 0.5, null), 1000, 600, options)
+    elements = objectGet(overlay, 'elem')
+    unittestDeepEqual(arraySlice(elements, 0, 3), [ \
+        {'svg': 'rect', 'attr': {'width': 1000, 'height': 600, 'fill': '#000000', 'opacity': '0.50'}}, \
+        {'svg': 'rect', 'attr': {'width': 1000, 'height': 40, 'fill': '#000000'}}, \
+        {'svg': 'rect', 'attr': {'y': 540, 'width': 1000, 'height': 60, 'fill': '#000000'}} \
+    ])
+    unittestDeepEqual(arrayGet(elements, 3), {'svg': 'g', 'attr': {'opacity': '0.63'}, 'elem': [ \
+        cinemaText('CHAPTER 1', 500, 96, 13, 'cyan', true, 'serif'), \
+        cinemaText('One', 500, 136, 36, 'white', true, 'serif') \
+    ]})
+    unittestDeepEqual(arrayGet(elements, 4), {'svg': 'g', 'attr': {'opacity': '0.00'}, 'elem': \
+        cinemaText('TEST', 500, 228, 48, 'white', true, 'serif')})
+
+    # Dialogue - closed captions with the "CC" badge
+    overlay = cinemaOverlayElements(cinemaFrame(testCinemaReel, 1.5, testCinemaVariables), 1000, 600, options)
+    unittestDeepEqual(testTexts(overlay), ['CHAPTER 1', 'One', 'TEST', '>> HERO: HELLO, SCENE ONE.', 'CC'])
+
+    # The subtitle and credit on a narrow screen, with no fade or letterbox options
+    overlay = cinemaOverlayElements(cinemaFrame(testCinemaReel, 20.5, testCinemaVariables), 400, 600, {})
+    elements = objectGet(overlay, 'elem')
+    unittestDeepEqual(arraySlice(elements, 2), [ \
+        {'svg': 'g', 'attr': {'opacity': '1.00'}, 'elem': cinemaText('HELD', 200, 266, 14, '#ffffff', true, 'sans-serif')}, \
+        {'svg': 'g', 'attr': {'opacity': '1.00'}, 'elem': cinemaText('Credit for scene two', 200, 294, 400 / 36, '#cccccc', false, 'sans-serif')} \
+    ])
+endfunction
+unittestRunTest('testCinemaOverlayElements')
+
+
+function testCinemaWrapText():
+    unittestDeepEqual(cinemaWrapText('SHORT', 20), ['SHORT'])
+    unittestDeepEqual(cinemaWrapText('ONE TWO THREE FOUR', 9), ['ONE TWO', 'THREE', 'FOUR'])
+
+    # Two lines are balanced, unless balancing adds a line
+    unittestDeepEqual(cinemaWrapText('AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH IIII JJ', 44), \
+        ['AAAA BBBB CCCC DDDD EEEE FFFF', 'GGGG HHHH IIII JJ'])
+    unittestDeepEqual(cinemaWrapText('SUPERCALIFRAGILISTIC IS LONG', 5), ['SUPERCALIFRAGILISTIC', 'IS', 'LONG'])
+endfunction
+unittestRunTest('testCinemaWrapText')
+
+
+function testCinemaVectors():
+    unittestDeepEqual(cinemaVecAdd([1, 2, 3], [4, 5, 6]), [5, 7, 9])
+    unittestDeepEqual(cinemaVecLerp([0, 0, 0], [2, 4, 6], 0.5), [1, 2, 3])
+    unittestDeepEqual(cinemaVecDirection([1, 1, 1], [1, 1, 3]), [0, 0, 1])
+    unittestDeepEqual(cinemaVecDirection([1, 1, 1], [1, 1, 1]), [1, 0, 0])
+    unittestDeepEqual(testRoundVec(cinemaRotateX([0, 1, 0], cinemaDeg * 90)), [0, 0, 1])
+endfunction
+unittestRunTest('testCinemaVectors')
+
+
+function testCinemaStoryboard():
+    storyboard = cinemaStoryboard(testCinemaReel, testCinemaVariables)
+    unittestEqual(arrayLength(storyboard), 2)
+    sceneOne = arrayGet(storyboard, 0)
+    unittestDeepEqual(objectGet(sceneOne, 'shots'), [ \
+        { \
+            'index': 0, 'start': 0, 'duration': 4, 'framing': 'wide', 'set': 'stage', 'lighting': null, 'move': 'static', \
+            'ease': 'easeInOut', 'lens': 1, 'fadeIn': 1, 'fadeOut': null, \
+            'dialogue': [{'speaker': 'Hero', 'text': 'Hello, scene one.'}], 'sounds': ['beep'], 'beats': [{'actor': 'hero', 'beat': 'wave'}] \
+        }, \
+        { \
+            'index': 1, 'start': 4, 'duration': 6, 'framing': 'closeUp', 'set': 'street', 'lighting': 'night', 'move': 'dolly', \
+            'ease': 'linear', 'lens': 1.5, 'fadeIn': null, 'fadeOut': 2, \
+            'dialogue': [{'speaker': 'Hero', 'text': 'A plain line'}], 'sounds': ['click'], 'beats': [] \
+        } \
+    ])
+    sceneTwo = arrayGet(storyboard, 1)
+    unittestDeepEqual([objectGet(sceneTwo, 'index'), objectGet(sceneTwo, 'name'), objectGet(sceneTwo, 'title'), \
+        objectGet(sceneTwo, 'start'), objectGet(sceneTwo, 'duration'), arrayLength(objectGet(sceneTwo, 'shots'))], [1, 'two', 'Two', 10, 12, 3])
+    unittestDeepEqual(objectGet(arrayGet(objectGet(sceneTwo, 'shots'), 2), 'start'), 20)
+endfunction
+unittestRunTest('testCinemaStoryboard')
+
+
+function testCinemaCast():
+    unittestDeepEqual(cinemaCast(testCinemaReel), { \
+        'actors': [ \
+            {'name': 'hero', 'scenes': ['One', 'Two'], 'beats': ['wave']}, \
+            {'name': 'moon', 'scenes': ['One'], 'beats': []} \
+        ], \
+        'voices': [{'speaker': 'Hero', 'lines': 2, 'scenes': ['One']}] \
+    })
+    values = ['a']
+    cinemaAddUnique(values, 'a')
+    cinemaAddUnique(values, 'b')
+    unittestDeepEqual(values, ['a', 'b'])
+endfunction
+unittestRunTest('testCinemaCast')

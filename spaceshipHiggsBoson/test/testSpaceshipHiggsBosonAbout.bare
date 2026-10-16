@@ -1,0 +1,24 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonAbout.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+function testAboutMarkdown():
+    lines = shbAboutMarkdown()
+    unittestEqual(arrayGet(lines, 0), '## The ISV Scalar Dawn')
+    for line in [ \
+        '## The Drive', \
+        '## The Mission', \
+        '## Why It Matters', \
+        '| Thrust | 19.6 kN |', \
+        '| Higgs bosons decayed per second | 2.93 × 10²⁰ |', \
+        '| Ship time, each way | 3.58 years |', \
+        '| Earth time, each way | 6.00 years |', \
+        '| Round trip, Earth time | 12.5 years |', \
+        '| Round trip, crew time | 7.7 years |' \
+    ]:
+        unittestEqual(arrayIndexOf(lines, line) >= 0, true)
+    endfor
+endfunction
+unittestRunTest('testAboutMarkdown')

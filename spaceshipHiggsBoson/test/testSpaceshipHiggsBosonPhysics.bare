@@ -1,0 +1,91 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonPhysics.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+function testHyperbolic():
+    unittestEqual(numberToFixed(shbSinh(1), 6), '1.175201')
+    unittestEqual(numberToFixed(shbCosh(1), 6), '1.543081')
+    unittestEqual(numberToFixed(shbTanh(1), 6), '0.761594')
+    unittestEqual(numberToFixed(shbAcosh(shbCosh(1.5)), 6), '1.500000')
+endfunction
+unittestRunTest('testHyperbolic')
+
+
+function testMission():
+    mission = shbMission(1)
+    unittestEqual(numberToFixed(objectGet(mission, 'accel'), 4), '1.0323')
+    unittestEqual(numberToFixed(objectGet(mission, 'tauTotal'), 3), '3.582')
+    unittestEqual(numberToFixed(objectGet(mission, 'tTotal'), 3), '6.003')
+    unittestEqual(numberToFixed(objectGet(mission, 'betaMax'), 4), '0.9517')
+    unittestEqual(numberToFixed(objectGet(mission, 'gammaMax'), 3), '3.256')
+    unittestEqual(numberToFixed(objectGet(mission, 'massRatio'), 2), '40.37')
+
+    # Faster acceleration - a shorter voyage closer to c
+    fast = shbMission(5)
+    unittestEqual(numberToFixed(objectGet(fast, 'tauTotal'), 3), '1.240')
+    unittestEqual(objectGet(fast, 'betaMax') > objectGet(mission, 'betaMax'), true)
+endfunction
+unittestRunTest('testMission')
+
+
+function testMissionState():
+    mission = shbMission(1)
+    unittestDeepEqual(shbMissionState(mission, -1), {'phase': 'accelerate', 'tau': 0, 't': 0, 'x': 0, 'beta': 0, 'gamma': 1})
+
+    accelerating = shbMissionState(mission, 1)
+    unittestEqual(objectGet(accelerating, 'phase'), 'accelerate')
+    unittestEqual(numberToFixed(objectGet(accelerating, 'x'), 4), '0.5636')
+    unittestEqual(numberToFixed(objectGet(accelerating, 't'), 4), '1.1873')
+    unittestEqual(numberToFixed(objectGet(accelerating, 'beta'), 4), '0.7748')
+
+    decelerating = shbMissionState(mission, 3)
+    unittestEqual(objectGet(decelerating, 'phase'), 'decelerate')
+    unittestEqual(numberToFixed(objectGet(decelerating, 'x'), 4), '4.1896')
+    unittestEqual(numberToFixed(objectGet(decelerating, 't'), 4), '5.3844')
+
+    arrived = shbMissionState(mission, 10)
+    unittestEqual(objectGet(arrived, 'phase'), 'arrived')
+    unittestEqual(objectGet(arrived, 'x'), 4.37)
+    unittestEqual(objectGet(arrived, 't'), objectGet(mission, 'tTotal'))
+    unittestEqual(objectGet(arrived, 'beta'), 0)
+endfunction
+unittestRunTest('testMissionState')
+
+
+function testDriveSpecs():
+    specs = shbDriveSpecs(1)
+    unittestEqual(objectGet(specs, 'effectiveTonnes'), 2)
+    unittestEqual(numberToFixed(objectGet(specs, 'thrust'), 1), '19613.3')
+    unittestEqual(numberToFixed(objectGet(specs, 'power') / 1e12, 3), '5.880')
+    unittestEqual(shbFormatScientific(objectGet(specs, 'higgsRate')), '2.93 × 10²⁰')
+    unittestEqual(numberToFixed(objectGet(specs, 'propellantTonnes'), 2), '78.74')
+    unittestEqual(numberToFixed(objectGet(specs, 'unsuppressedTonnes'), 0), '78740')
+endfunction
+unittestRunTest('testDriveSpecs')
+
+
+function testOrbitParams():
+    orbit = shbOrbitParams()
+    unittestEqual(numberToFixed(objectGet(orbit, 'velocity'), 1), '7672.6')
+    unittestEqual(numberToFixed(objectGet(orbit, 'period') / 60, 2), '92.41')
+endfunction
+unittestRunTest('testOrbitParams')
+
+
+function testRoundTrip():
+    roundTrip = shbRoundTrip()
+    unittestEqual(numberToFixed(objectGet(roundTrip, 'earthYears'), 3), '12.505')
+    unittestEqual(numberToFixed(objectGet(roundTrip, 'crewYears'), 3), '7.665')
+endfunction
+unittestRunTest('testRoundTrip')
+
+
+function testFormatScientific():
+    unittestEqual(shbFormatScientific(2.93e20), '2.93 × 10²⁰')
+    unittestEqual(shbFormatScientific(999999), '1.00 × 10⁶')
+    unittestEqual(shbFormatScientific(1.6e-22), '1.60 × 10⁻²²')
+    unittestEqual(shbFormatScientific(31415.9), '3.14 × 10⁴')
+endfunction
+unittestRunTest('testFormatScientific')

@@ -1,0 +1,626 @@
+# Spaceship Higgs-Boson - a simulation of a spaceship powered by a Higgs-Boson drive
+#
+# The ISV Scalar Dawn is a theoretical spacecraft that uses the Higgs boson twice. Its Higgs factory ring produces
+# Higgs bosons whose coherent excitation of the Higgs field suppresses the ship's inertial mass, and the bosons'
+# decay products, collimated by a magnetic nozzle, are its exhaust. The application has three pages - a film of the
+# ship's round trip to Alpha Centauri with a closed-caption talk track, a 3D ship viewer, and an about page. The 3D
+# renderer adjusts its detail to the machine's measured performance.
+#
+# The application's parts:
+#
+# - spaceshipHiggsBosonCinema.bare - the cinematography library that executes films from a cinema model
+# - spaceshipHiggsBosonFilm.bare - the film of the voyage, in the cinema model, and its sets and cast
+# - spaceshipHiggsBosonStoryboard.bare - the storyboard page - the film, shot by shot
+# - spaceshipHiggsBosonCast.bare - the cast page - the film's actors, voices, and locations
+# - spaceshipHiggsBosonModels.bare - the detail levels, meshes, and scene objects
+# - spaceshipHiggsBosonRender.bare - the 3D renderer
+# - spaceshipHiggsBosonPhysics.bare - the mission and drive physics
+# - spaceshipHiggsBosonAbout.bare - the about page
+
+include <args.bare>
+include <markdown.bare>
+include 'spaceshipHiggsBosonAbout.bare'
+include 'spaceshipHiggsBosonFilm.bare'
+include 'spaceshipHiggsBosonCast.bare'
+include 'spaceshipHiggsBosonStoryboard.bare'
+
+
+# The application title
+shbTitle = 'Spaceship Higgs-Boson'
+
+
+# The application's URL arguments
+shbArguments = argsValidate([ \
+    {'name': 'page', 'default': 'video'}, \
+    {'name': 'quality'} \
+])
+
+
+# The application's pages
+shbPages = [ \
+    {'name': 'video', 'title': 'Video'}, \
+    {'name': 'storyboard', 'title': 'Storyboard'}, \
+    {'name': 'cast', 'title': 'Cast'}, \
+    {'name': 'viewer', 'title': 'Viewer'}, \
+    {'name': 'about', 'title': 'About'} \
+]
+
+
+# The local storage key of the user settings
+shbSettingsKey = 'spaceshipHiggsBoson'
+
+
+# The application's render anchor element ID, the header height, the animation tick period, and the per-frame
+# rendering budget (milliseconds)
+shbAnchorId = 'spaceshipHiggsBoson-anchor'
+shbHeaderHeight = 36
+shbTickMs = 40
+
+
+# The detail settings - automatic, or a fixed detail level
+shbQualitySettings = ['auto', 'low', 'medium', 'high', 'ultra']
+
+
+# The application state - set by spaceshipHiggsBosonMain
+shbState = null
+
+
+# The application main entry point
+function spaceshipHiggsBosonMain():
+    args = argsParse(shbArguments)
+    page = objectGet(args, 'page')
+    settings = shbSettingsLoad()
+    quality = stringLower(objectGet(args, 'quality', objectGet(settings, 'quality')))
+    documentSetTitle(shbTitle)
+    elementModelRender(shbHeaderElements(page))
+
+    # Unknown page?
+    if shbPageGet(page) == null:
+        markdownPrint('', '**Error:** Unknown page "' + markdownEscape(page) + '"')
+        return
+    endif
+
+    # The storyboard, cast, and about pages are static
+    size = shbCanvasSize()
+    if page == 'storyboard':
+        shbStoryboardRender(objectGet(size, 'width'), shbOnStoryboardPlay)
+        return
+    elif page == 'cast':
+        shbCastRender(objectGet(size, 'width'))
+        return
+    elif page == 'about':
+        shbAboutRender(objectGet(size, 'width'))
+        return
+    endif
+
+    # Detect the rendering detail level, unless it's set explicitly
+    level = arrayIndexOf(shbQualitySettings, quality) - 1
+    if level < 0:
+        quality = 'auto'
+        level = shbQualityDetect(objectGet(size, 'width'), objectGet(size, 'height'))
+    endif
+
+    # Initialize the application state, restoring the page's playback state
+    state = { \
+        'page': page, \
+        'quality': quality, \
+        'level': level, \
+        'perf': shbPerfNew(), \
+        'lastTick': null, \
+        'time': 0, \
+        'playing': true, \
+        'yaw': shbViewerYaw, \
+        'pitch': shbViewerPitch, \
+        'zoom': 1, \
+        'spin': 0, \
+        'autoRotate': objectGet(settings, 'autoRotate'), \
+        'drive': objectGet(settings, 'drive'), \
+        'labels': objectGet(settings, 'labels'), \
+        'sound': objectGet(settings, 'sound') \
+    }
+    objectAssign(state, shbPlaybackLoad(page))
+    systemGlobalSet('shbState', state)
+
+    # Render the controls overlay, then the page below the reset anchor
+    elementModelRender(shbOverlayElements(page))
+    elementModelRender({'html': 'div', 'attr': {'id': shbAnchorId, 'style': 'display: none;'}})
+    windowSetResize(shbRender)
+    documentSetKeyDown(shbOnKeyDown)
+    shbRender()
+endfunction
+
+
+# The default user settings
+shbSettingsDefault = {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true}
+
+
+# The default playback state of each page - the video's position and play state, and the viewer's camera
+shbPlaybackDefault = { \
+    'video': {'time': 0, 'playing': true}, \
+    'viewer': {'yaw': shbViewerYaw, 'pitch': shbViewerPitch, 'zoom': 1, 'spin': 0} \
+}
+
+
+# Load values from storage - invalid or missing values are the defaults
+function shbStorageLoad(storageGetFn, key, defaults):
+    text = storageGetFn(key)
+    saved = if(text != null, jsonParse(text), null)
+    values = objectCopy(defaults)
+    if systemType(saved) == 'object':
+        for name in objectKeys(defaults):
+            value = objectGet(saved, name)
+            if systemType(value) == systemType(objectGet(defaults, name)):
+                objectSet(values, name, value)
+            endif
+        endfor
+    endif
+    return values
+endfunction
+
+
+# The state's values of the default values' names, as JSON
+function shbStorageValues(defaults):
+    values = {}
+    for name in objectKeys(defaults):
+        objectSet(values, name, objectGet(shbState, name))
+    endfor
+    return jsonStringify(values)
+endfunction
+
+
+# Load the user settings from local storage
+function shbSettingsLoad():
+    return shbStorageLoad(localStorageGet, shbSettingsKey, shbSettingsDefault)
+endfunction
+
+
+# Save the user settings to local storage
+function shbSettingsSave():
+    localStorageSet(shbSettingsKey, shbStorageValues(shbSettingsDefault))
+endfunction
+
+
+# Load a page's playback state from session storage
+function shbPlaybackLoad(page):
+    return shbStorageLoad(sessionStorageGet, shbSettingsKey + '-' + page, objectGet(shbPlaybackDefault, page))
+endfunction
+
+
+# Save the page's playback state to session storage
+function shbPlaybackSave():
+    page = objectGet(shbState, 'page')
+    sessionStorageSet(shbSettingsKey + '-' + page, shbStorageValues(objectGet(shbPlaybackDefault, page)))
+endfunction
+
+
+# Get a page's information object - null if the page is unknown
+function shbPageGet(page):
+    for pageInfo in shbPages:
+        if objectGet(pageInfo, 'name') == page:
+            return pageInfo
+        endif
+    endfor
+    return null
+endfunction
+
+
+# The one-row header element model - the bold title and the text menu
+function shbHeaderElements(page):
+    items = [{'html': 'b', 'attr': {'style': 'font-size: 1.15em;'}, 'elem': {'text': shbTitle}}]
+    for pageInfo in shbPages:
+        name = objectGet(pageInfo, 'name')
+        title = objectGet(pageInfo, 'title')
+        if name == page:
+            arrayPush(items, {'html': 'span', 'attr': {'style': 'text-decoration: underline 2px; text-underline-offset: 5px;'}, \
+                'elem': {'text': title}})
+        else:
+            arrayPush(items, {'html': 'a', 'attr': {'href': argsURL(shbArguments, {'page': name})}, 'elem': {'text': title}})
+        endif
+    endfor
+    return {'html': 'div', 'attr': {'style': 'display: flex; align-items: baseline; column-gap: 1.25em; ' + \
+        'height: ' + (shbHeaderHeight - 8) + 'px; line-height: ' + (shbHeaderHeight - 8) + 'px; margin-bottom: 8px; ' + \
+        'overflow: hidden; white-space: nowrap;'}, 'elem': items}
+endfunction
+
+
+# The full-screen canvas size - the window less MarkdownUp's 1.5em document border and the header
+function shbCanvasSize():
+    border = 3 * documentFontSize()
+    return { \
+        'width': mathMax(320, windowWidth() - border), \
+        'height': mathMax(320, windowHeight() - border - shbHeaderHeight) \
+    }
+endfunction
+
+
+# Render the current page below the reset anchor
+function shbRender():
+    size = shbCanvasSize()
+    width = objectGet(size, 'width')
+    height = objectGet(size, 'height')
+    shbPlaybackSave()
+    documentSetReset(shbAnchorId)
+    if objectGet(shbState, 'page') == 'video':
+        letterboxBottom = 22 + 38 * shbControlRows('video', width)
+        elementModelRender(shbFilmFrame(objectGet(shbState, 'time'), objectGet(shbState, 'level'), width, height, \
+            letterboxBottom, shbStatusText(shbState)))
+    else:
+        elementModelRender(shbViewerFrame(shbState, width, height))
+    endif
+
+    shbScheduleTick()
+endfunction
+
+
+# Schedule the next animation tick when playing. Event handlers that don't render call it too, since MarkdownUp
+# cancels the pending timeout after each event.
+function shbScheduleTick():
+    if objectGet(shbState, 'playing'):
+        windowSetTimeout(shbTick, shbTickMs)
+    endif
+endfunction
+
+
+# The animation tick - adapt the detail level, advance the clocks, and re-render
+function shbTick():
+    now = datetimeNow()
+    lastTick = objectGet(shbState, 'lastTick')
+    objectSet(shbState, 'lastTick', now)
+    if lastTick != null:
+        shbQualityAdapt(shbState, now - lastTick - shbTickMs)
+    endif
+
+    # The video plays its sound cues and stops at its end; the viewer turns the ship when auto-rotating
+    page = objectGet(shbState, 'page')
+    timePrevious = objectGet(shbState, 'time')
+    time = timePrevious + shbTickMs / 1000
+    if page == 'video':
+        duration = cinemaDuration(shbReel)
+        if time >= duration:
+            time = duration
+            objectSet(shbState, 'playing', false)
+        endif
+        if objectGet(shbState, 'sound'):
+            for sound in cinemaSounds(shbReel, timePrevious, time):
+                windowPlaySound(sound)
+            endfor
+        endif
+    endif
+    objectSet(shbState, 'time', time)
+    if page == 'viewer' && objectGet(shbState, 'autoRotate'):
+        objectSet(shbState, 'spin', (objectGet(shbState, 'spin') + 12 * shbTickMs / 1000) % 360)
+    endif
+    shbRender()
+endfunction
+
+
+# Video play/pause click handler - playing the finished video restarts it
+function shbOnPlay():
+    playing = !objectGet(shbState, 'playing')
+    objectSet(shbState, 'playing', playing)
+    objectSet(shbState, 'lastTick', null)
+    if playing && objectGet(shbState, 'time') >= cinemaDuration(shbReel):
+        objectSet(shbState, 'time', 0)
+    endif
+    shbRender()
+endfunction
+
+
+# Storyboard still click handler - play the film from a time
+function shbOnStoryboardPlay(time):
+    sessionStorageSet(shbSettingsKey + '-video', jsonStringify({'time': time, 'playing': true}))
+    windowSetLocation(argsURL(shbArguments, {'page': 'video'}))
+endfunction
+
+
+# Video restart click handler
+function shbOnRestart():
+    objectSet(shbState, 'time', 0)
+    objectSet(shbState, 'playing', true)
+    objectSet(shbState, 'lastTick', null)
+    shbRender()
+endfunction
+
+
+# Video chapter click handler - previous goes to the start of the scene, or to the previous scene when near the
+# start; next goes to the next scene, or to the end
+function shbOnChapter(direction):
+    time = objectGet(shbState, 'time')
+    index = cinemaSceneIndex(shbReel, time)
+    if direction < 0:
+        index = if(time - cinemaSceneStart(shbReel, index) < 2 && index > 0, index - 1, index)
+        time = cinemaSceneStart(shbReel, index)
+    else:
+        time = if(index < cinemaSceneCount(shbReel) - 1, cinemaSceneStart(shbReel, index + 1), cinemaDuration(shbReel))
+    endif
+    objectSet(shbState, 'time', time)
+    objectSet(shbState, 'lastTick', null)
+    shbRender()
+endfunction
+
+
+# Viewer camera rotate click handler (degrees)
+function shbOnRotate(yawDelta, pitchDelta):
+    objectSet(shbState, 'yaw', (objectGet(shbState, 'yaw') + yawDelta) % 360)
+    objectSet(shbState, 'pitch', mathMax(-80, mathMin(80, objectGet(shbState, 'pitch') + pitchDelta)))
+    shbRender()
+endfunction
+
+
+# Viewer camera zoom click handler
+function shbOnZoom(factor):
+    objectSet(shbState, 'zoom', mathMax(0.4, mathMin(4, objectGet(shbState, 'zoom') * factor)))
+    shbRender()
+endfunction
+
+
+# Viewer reset click handler
+function shbOnReset():
+    objectAssign(shbState, objectGet(shbPlaybackDefault, 'viewer'))
+    shbRender()
+endfunction
+
+
+# Toggle click handler - the video's "sound", and the viewer's "autoRotate", "drive", or "labels"
+function shbOnToggle(name):
+    objectSet(shbState, name, !objectGet(shbState, name))
+    shbSettingsSave()
+    shbRender()
+endfunction
+
+
+# Detail click handler - cycle through automatic and the fixed detail levels
+function shbOnQuality():
+    index = (arrayIndexOf(shbQualitySettings, objectGet(shbState, 'quality')) + 1) % arrayLength(shbQualitySettings)
+    objectSet(shbState, 'quality', arrayGet(shbQualitySettings, index))
+    if index > 0:
+        objectSet(shbState, 'level', index - 1)
+    endif
+    objectSet(shbState, 'perf', shbPerfNew())
+    shbSettingsSave()
+    shbRender()
+endfunction
+
+
+# Keyboard handler - an unmapped key keeps the animation running
+function shbOnKeyDown(event):
+    handler = objectGet(objectGet(shbKeys, objectGet(shbState, 'page')), stringLower(objectGet(event, 'key')))
+    if handler != null:
+        handler()
+    else:
+        shbScheduleTick()
+    endif
+endfunction
+
+
+# The keyboard shortcuts of each page - key to handler
+shbKeys = { \
+    'video': { \
+        ' ': shbOnPlay, \
+        'arrowleft': systemPartial(shbOnChapter, -1), \
+        'arrowright': systemPartial(shbOnChapter, 1), \
+        'r': shbOnRestart, \
+        'm': systemPartial(shbOnToggle, 'sound'), \
+        'q': shbOnQuality \
+    }, \
+    'viewer': { \
+        'arrowleft': systemPartial(shbOnRotate, -15, 0), \
+        'arrowright': systemPartial(shbOnRotate, 15, 0), \
+        'arrowup': systemPartial(shbOnRotate, 0, 10), \
+        'arrowdown': systemPartial(shbOnRotate, 0, -10), \
+        '+': systemPartial(shbOnZoom, 1.25), \
+        '=': systemPartial(shbOnZoom, 1.25), \
+        '-': systemPartial(shbOnZoom, 0.8), \
+        '_': systemPartial(shbOnZoom, 0.8), \
+        ' ': systemPartial(shbOnToggle, 'autoRotate'), \
+        'd': systemPartial(shbOnToggle, 'drive'), \
+        'l': systemPartial(shbOnToggle, 'labels'), \
+        'r': shbOnReset, \
+        'q': shbOnQuality \
+    } \
+}
+
+
+# Measure the machine's rendering speed with a benchmark scene and pick the starting detail level
+function shbQualityDetect(width, height):
+    mesh = []
+    shbMeshSphere(mesh, [0, 0, 0], 5, 16, 32, shbMeshProps([90, 140, 220], 0.1, 1, false, 0.5), null)
+    start = datetimeNow()
+    scene = shbSceneNew(shbCamera({'yaw': 20, 'pitch': 10, 'zoom': 1}, [0, 0, 0], 20, width, height), [-1, 0.3, 0.2])
+    shbSceneAddMesh(scene, mesh, shbMatRotY(0), [0, 0, 0])
+    shbSceneElements(scene)
+    elapsed = datetimeNow() - start
+    return shbQualityPick(mathMax(elapsed, 1) / arrayLength(mesh), width * height)
+endfunction
+
+
+# A detail level's frame budget - the rendering time per frame, beyond the tick period, that meets the level's frame
+# rate target (milliseconds)
+function shbFrameBudget(level):
+    return 1000 / objectGet(arrayGet(shbQualityLevels, level), 'fps') - shbTickMs
+endfunction
+
+
+# Pick the highest detail level whose estimated frame time fits its budget. Small (mobile) screens are limited to
+# medium detail, and very large screens to high detail.
+function shbQualityPick(msPerFace, pixels):
+    level = if(pixels < 400000, 1, if(pixels > 4000000, 2, 3))
+    while level > 0 && objectGet(arrayGet(shbQualityLevels, level), 'faces') * msPerFace > shbFrameBudget(level):
+        level = level - 1
+    endwhile
+    return level
+endfunction
+
+
+# Create a new frame performance tracker
+function shbPerfNew():
+    return {'average': null, 'samples': 0, 'fastFrames': 0}
+endfunction
+
+
+# Adapt the automatic detail level to a measured frame cost (the tick interval beyond the tick period) - drop a
+# level when frames are over its budget, and raise a level after a sustained run of frames fast enough that the next
+# level's estimated cost (scaled by its face count) fits comfortably in its budget
+function shbQualityAdapt(state, frameMs):
+    if objectGet(state, 'quality') != 'auto' || frameMs > 1000:
+        return
+    endif
+    perf = objectGet(state, 'perf')
+    average = objectGet(perf, 'average')
+    average = if(average == null, frameMs, 0.85 * average + 0.15 * frameMs)
+    samples = objectGet(perf, 'samples') + 1
+    objectSet(perf, 'average', average)
+    objectSet(perf, 'samples', samples)
+
+    level = objectGet(state, 'level')
+    levelNext = mathMin(level + 1, arrayLength(shbQualityLevels) - 1)
+    averageNext = average * objectGet(arrayGet(shbQualityLevels, levelNext), 'faces') / \
+        objectGet(arrayGet(shbQualityLevels, level), 'faces')
+    if samples >= 8 && average > shbFrameBudget(level) && level > 0:
+        objectSet(state, 'level', level - 1)
+        objectSet(state, 'perf', shbPerfNew())
+    elif levelNext > level && averageNext < 0.8 * shbFrameBudget(levelNext):
+        fastFrames = objectGet(perf, 'fastFrames') + 1
+        objectSet(perf, 'fastFrames', fastFrames)
+        if fastFrames >= 50:
+            objectSet(state, 'level', level + 1)
+            objectSet(state, 'perf', shbPerfNew())
+        endif
+    else:
+        objectSet(perf, 'fastFrames', 0)
+    endif
+endfunction
+
+
+# The detail button text
+function shbQualityText(state):
+    levelName = objectGet(arrayGet(shbQualityLevels, objectGet(state, 'level')), 'name')
+    return 'Detail: ' + levelName + if(objectGet(state, 'quality') == 'auto', ' (auto)', '')
+endfunction
+
+
+# The frame rate text
+function shbFrameRateText(state):
+    average = objectGet(objectGet(state, 'perf'), 'average')
+    if average == null || !objectGet(state, 'playing'):
+        return ''
+    endif
+    return numberToFixed(1000 / (shbTickMs + mathMax(0, average)), 0) + ' fps'
+endfunction
+
+
+# The viewer frame's SVG element model
+function shbViewerFrame(state, width, height):
+    level = objectGet(state, 'level')
+    scene = shbViewerScene(state, level, width, height)
+    return shbSvg(scene, arrayGet(shbQualityLevels, level), width, height, 'The ' + shbShipName + ' spacecraft', \
+        shbViewerHud(state, width, height))
+endfunction
+
+
+# The status text - the detail level, the frame rate or paused, and the video's sound off
+function shbStatusText(state):
+    frameRate = shbFrameRateText(state)
+    return shbQualityText(state) + if(!objectGet(state, 'playing'), ' · Paused', if(frameRate != '', ' · ' + frameRate, '')) + \
+        if(objectGet(state, 'page') == 'video' && !objectGet(state, 'sound'), ' · Sound off', '')
+endfunction
+
+
+# The viewer heads-up display element model - the specifications panel, status, and keyboard help
+function shbViewerHud(state, width, height):
+    specs = shbDriveSpecs(shbAccelG)
+    rows = [ \
+        ['Rest mass', shbRestMassTonnes + ' t'], \
+        ['Inertial mass in bubble', numberToFixed(objectGet(specs, 'effectiveTonnes'), 1) + ' t'], \
+        ['Thrust at 1 g', numberToFixed(objectGet(specs, 'thrust') / 1000, 1) + ' kN'], \
+        ['Exhaust beam power', numberToFixed(objectGet(specs, 'power') / 1e12, 2) + ' TW'], \
+        ['Higgs bosons per second', shbFormatScientific(objectGet(specs, 'higgsRate'))], \
+        ['Drive', if(objectGet(state, 'drive'), 'Running', 'Off')] \
+    ]
+
+    # The panel - top-right on wide screens, top-left on narrow screens
+    hud = []
+    wide = width >= 760
+    panelWidth = mathMin(300, width - 36)
+    panelX = if(wide, width - panelWidth - 18, 18)
+    arrayPush(hud, {'svg': 'rect', 'attr': {'x': panelX, 'y': 18, 'width': panelWidth, \
+        'height': 36 + 21 * arrayLength(rows), 'rx': 8, 'fill': shbPanelFill, 'stroke': shbPanelStroke}})
+    arrayPush(hud, shbSvgText(shbShipName, panelX + 14, 42, 14, shbAccentColor, 'start', true))
+    for row, ixRow in rows:
+        rowY = 66 + 21 * ixRow
+        arrayPush(hud, shbSvgText(arrayGet(row, 0), panelX + 14, rowY, 13, shbTextDim, 'start', false))
+        arrayPush(hud, shbSvgText(arrayGet(row, 1), panelX + panelWidth - 14, rowY, 13, shbTextColor, 'end', true))
+    endfor
+
+    # The status line and keyboard help, above the overlay controls
+    controlsTop = height - 14 - 38 * shbControlRows('viewer', width)
+    arrayPush(hud, shbSvgText(shbStatusText(state), width - 18, controlsTop - 8, 12, shbTextDim, 'end', false))
+    if wide:
+        arrayPush(hud, shbSvgText('Keys: arrows rotate · +/- zoom · space auto-rotate · D drive · L labels · R reset · Q detail', \
+            18, controlsTop - 8, 12, shbTextDim, 'start', false))
+    endif
+    return {'svg': 'g', 'elem': hud}
+endfunction
+
+
+# The control buttons of a page - [text, onClick] arrays
+function shbControls(page):
+    if page == 'video':
+        return [ \
+            ['Play / Pause', shbOnPlay], \
+            ['Restart', shbOnRestart], \
+            ['Previous chapter', systemPartial(shbOnChapter, -1)], \
+            ['Next chapter', systemPartial(shbOnChapter, 1)], \
+            ['Sound', systemPartial(shbOnToggle, 'sound')], \
+            ['Detail', shbOnQuality] \
+        ]
+    endif
+    return [ \
+        ['Rotate left', systemPartial(shbOnRotate, -15, 0)], \
+        ['Rotate right', systemPartial(shbOnRotate, 15, 0)], \
+        ['Tilt up', systemPartial(shbOnRotate, 0, 10)], \
+        ['Tilt down', systemPartial(shbOnRotate, 0, -10)], \
+        ['Zoom in', systemPartial(shbOnZoom, 1.25)], \
+        ['Zoom out', systemPartial(shbOnZoom, 0.8)], \
+        ['Auto-rotate', systemPartial(shbOnToggle, 'autoRotate')], \
+        ['Drive', systemPartial(shbOnToggle, 'drive')], \
+        ['Labels', systemPartial(shbOnToggle, 'labels')], \
+        ['Reset view', shbOnReset], \
+        ['Detail', shbOnQuality] \
+    ]
+endfunction
+
+
+# Estimate the number of rows the overlay controls wrap to
+function shbControlRows(page, width):
+    rows = 1
+    rowWidth = 0
+    for control in shbControls(page):
+        itemWidth = drawTextWidth(arrayGet(control, 0), 13) + 24
+        if rowWidth > 0 && rowWidth + itemWidth > width - 36:
+            rows = rows + 1
+            rowWidth = 0
+        endif
+        rowWidth = rowWidth + itemWidth + 8
+    endfor
+    return rows
+endfunction
+
+
+# The controls overlay element model - the control buttons along the bottom of the canvas
+function shbOverlayElements(page):
+    buttons = []
+    for control in shbControls(page):
+        arrayPush(buttons, {'html': 'a', 'attr': {'style': shbButtonStyle}, 'callback': {'click': arrayGet(control, 1)}, \
+            'elem': {'text': arrayGet(control, 0)}})
+    endfor
+    offset = 'calc(1.5em + 18px)'
+    return {'html': 'div', 'attr': {'style': 'position: absolute; z-index: 1; left: ' + offset + '; right: ' + offset + \
+        '; bottom: calc(1.5em + 12px); display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; font-family: ' + \
+        shbFontFamily + '; justify-content: ' + if(page == 'video', 'center', 'flex-start') + ';'}, 'elem': buttons}
+endfunction
+
+
+shbButtonStyle = 'display: inline-block; padding: 5px 11px; border-radius: 6px; background: rgba(8,14,34,0.78); ' + \
+    'border: 1px solid rgba(127,216,255,0.4); color: rgba(225,235,255,0.95); cursor: pointer; user-select: none; ' + \
+    '-webkit-user-select: none; line-height: 1.3;'

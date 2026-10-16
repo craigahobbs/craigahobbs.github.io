@@ -1,0 +1,55 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonCast.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+function testCastRender():
+    testMockAll()
+    shbCastRender(976)
+    callLog = unittestMockEnd()
+
+    # The introduction and the starring actors
+    unittestDeepEqual(arrayGet(callLog, 0), ['markdownPrint', ['', 'The cast of Spaceship Higgs\\-Boson, in order of appearance.']])
+    unittestDeepEqual(arrayGet(callLog, 1), ['markdownPrint', ['', '## Starring']])
+    unittestDeepEqual(testTexts(arrayGet(arrayGet(callLog, 2), 1)), [ \
+        'ISV Scalar Dawn', \
+        "As herself - humanity's first starship", \
+        'Scenes: Construction, Countdown, Outbound, α Centauri, Homeward, Home', \
+        'Beats: assemble, bubble, ignite, turnover' \
+    ])
+
+    # The voices
+    unittestDeepEqual(arraySlice(callLog, 3, 16), [ \
+        ['markdownPrint', ['', '## Voices', '', '| Voice | Role | Lines | Scenes |', '| --- | --- | ---: | --- |']], \
+        ['markdownPrint', ['| Narrator | The narrator | 6 | Title, Construction, Home |']], \
+        ['markdownPrint', ['| Engineer | Construction engineer, Earth orbit | 1 | Construction |']], \
+        ['markdownPrint', ['| Commander | Mission commander, ISV Scalar Dawn | 4 | Construction, α Centauri, Homeward |']], \
+        ['markdownPrint', ['| Flight | Flight director, Mission Control | 4 | Countdown, Outbound, Homeward |']], \
+        ['markdownPrint', ['| Collider | Higgs factory ring controller, Mission Control | 1 | Countdown |']], \
+        ['markdownPrint', ['| Field | Field modulator officer, Mission Control | 1 | Countdown |']], \
+        ['markdownPrint', ['| FIDO | Flight dynamics officer, Mission Control | 5 | Countdown, Outbound, Homeward |']], \
+        ['markdownPrint', ['| Launch | Launch control, Mission Control | 4 | Countdown, Outbound |']], \
+        ['markdownPrint', ['| CAPCOM | Capsule communicator, Mission Control | 5 | Outbound, α Centauri, Homeward, Home |']], \
+        ['markdownPrint', ['| Surgeon | Flight surgeon, Mission Control | 2 | Outbound, Homeward |']], \
+        ['markdownPrint', ['| Science | Science officer, ISV Scalar Dawn | 2 | α Centauri |']], \
+        ['markdownPrint', ['', '## Locations']] \
+    ])
+
+    # The locations - each card's bold name, and its scenes
+    locations = []
+    for card in objectGet(arrayGet(arrayGet(arrayGet(callLog, 16), 1), 0), 'elem'):
+        notes = arrayGet(objectGet(card, 'elem'), 1)
+        arrayPush(locations, testTexts(notes))
+    endfor
+    unittestDeepEqual(locations, [ \
+        ['Earth orbit, close', 'Scenes: Title, Construction, Countdown, Home'], \
+        ['Earth orbit, wide', 'Scenes: Construction, Home'], \
+        ['Interstellar space', 'Scenes: Outbound, Homeward'], \
+        ['α Centauri Ab, close', 'Scenes: α Centauri'], \
+        ['α Centauri Ab, wide', 'Scenes: α Centauri'], \
+        ['The stars', 'Scenes: The End'] \
+    ])
+    unittestEqual(arrayLength(callLog), 17)
+endfunction
+unittestRunTest('testCastRender')

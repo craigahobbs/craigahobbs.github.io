@@ -1,0 +1,89 @@
+# Spaceship Higgs-Boson cast page - the film's cast list - its starring actors, its voices, and its locations
+
+include <markdown.bare>
+include 'spaceshipHiggsBosonFilm.bare'
+
+
+# The cast page's portrait and still width (pixels) and detail level
+shbCastPictureWidth = 320
+shbCastLevel = 1
+
+
+# Render the cast page
+function shbCastRender(width):
+    cast = cinemaCast(shbReel)
+    pictureWidth = mathMin(shbCastPictureWidth, width)
+    pictureHeight = mathRound(pictureWidth * 9 / 16)
+    markdownPrint('', 'The cast of ' + markdownEscape(objectGet(objectGet(shbReel, 'film'), 'title')) + ', in order of appearance.')
+
+    # The starring actors
+    markdownPrint('', '## Starring')
+    cards = []
+    for actor in objectGet(cast, 'actors'):
+        billing = objectGet(shbFilmBilling, objectGet(actor, 'name'))
+        portraitFn = objectGet(billing, 'portraitFn')
+        arrayPush(cards, shbCastCard(portraitFn(pictureWidth, pictureHeight), pictureWidth, [ \
+            {'html': 'b', 'elem': {'text': objectGet(billing, 'name')}}, \
+            shbCastNote(objectGet(billing, 'role')), \
+            shbCastNote('Scenes: ' + arrayJoin(objectGet(actor, 'scenes'), ', ')), \
+            shbCastNote('Beats: ' + arrayJoin(objectGet(actor, 'beats'), ', ')) \
+        ]))
+    endfor
+    elementModelRender(shbCastCards(cards))
+
+    # The voices
+    markdownPrint('', '## Voices', '', '| Voice | Role | Lines | Scenes |', '| --- | --- | ---: | --- |')
+    for voice in objectGet(cast, 'voices'):
+        speaker = objectGet(voice, 'speaker')
+        markdownPrint('| ' + markdownEscape(speaker) + ' | ' + markdownEscape(objectGet(shbFilmVoices, speaker)) + ' | ' + \
+            objectGet(voice, 'lines') + ' | ' + markdownEscape(arrayJoin(objectGet(voice, 'scenes'), ', ')) + ' |')
+    endfor
+
+    # The locations - each set's first shot, and the scenes filmed on it
+    locations = []
+    locationsBySet = {}
+    for scene in cinemaStoryboard(shbReel, null):
+        for shot in objectGet(scene, 'shots'):
+            set = objectGet(shot, 'set')
+            location = objectGet(locationsBySet, set)
+            if location == null:
+                location = {'set': set, 'shot': shot, 'scenes': []}
+                objectSet(locationsBySet, set, location)
+                arrayPush(locations, location)
+            endif
+            cinemaAddUnique(objectGet(location, 'scenes'), objectGet(scene, 'title'))
+        endfor
+    endfor
+    markdownPrint('', '## Locations')
+    cards = []
+    for location in locations:
+        shot = objectGet(location, 'shot')
+        still = shbFilmStill(objectGet(shot, 'start') + objectGet(shot, 'duration') / 2, shbCastLevel, pictureWidth, pictureHeight)
+        arrayPush(cards, shbCastCard(still, pictureWidth, [ \
+            {'html': 'b', 'elem': {'text': objectGet(shbFilmSetNames, objectGet(location, 'set'))}}, \
+            shbCastNote('Scenes: ' + arrayJoin(objectGet(location, 'scenes'), ', ')) \
+        ]))
+    endfor
+    elementModelRender(shbCastCards(cards))
+endfunction
+
+
+# A row of cast cards that wraps to the page width
+function shbCastCards(cards):
+    return {'html': 'div', 'attr': {'style': 'display: flex; flex-wrap: wrap; gap: 20px; margin-top: 0.6em;'}, 'elem': cards}
+endfunction
+
+
+# A cast card element model - a picture and its notes
+function shbCastCard(picture, width, notes):
+    return {'html': 'div', 'attr': {'style': 'width: ' + width + 'px; font-size: 0.85em; line-height: 1.4;'}, 'elem': [ \
+        {'html': 'div', 'attr': {'style': 'margin-bottom: 0.4em;'}, 'elem': picture}, \
+        notes \
+    ]}
+endfunction
+
+
+# A cast note element model
+function shbCastNote(text):
+    return {'html': 'div', 'elem': {'text': text}}
+endfunction

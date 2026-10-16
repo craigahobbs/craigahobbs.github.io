@@ -1,0 +1,606 @@
+# Spaceship Higgs-Boson film - the voyage of the ISV Scalar Dawn, in the cinema model, and its sets and cast
+#
+# The film's sets, each with its own coordinates:
+#
+# - earthClose - the ship at the origin, heading +x, in a 400 km orbit over a 1:1000 scale Earth (so the view from the
+#   ship matches a real orbit), with the Earth's surface 37.7 units below. Its lighting setups are "sunrise" (the sun
+#   rising over the horizon ahead) and "day".
+# - earthWide - the Earth at the origin, with the ship (enlarged) in a 400 km orbit
+# - voyage - the ship at the origin, traveling +x from its origin body behind to its destination ahead
+# - alphaClose - the ship at the origin over the gas giant Alpha Centauri Ab, which fills the sky
+# - alphaWide - Alpha Centauri Ab at the origin, with the ship (enlarged) in orbit
+# - end - the stars
+#
+# The ship's beats are "assemble" (its modules fly in and dock), "bubble" (the mass-suppression bubble forms),
+# "ignite" (the drive fires), and "turnover" (the ship flips to decelerate).
+
+include 'spaceshipHiggsBosonCinema.bare'
+include 'spaceshipHiggsBosonModels.bare'
+
+
+# The Earth close-up set's Earth radius and the ship's altitude above it, in set units - a 400 km orbit at 1:1000
+shbCloseEarthRadius = 600
+shbCloseAltitude = shbCloseEarthRadius * shbOrbitAltitudeKm / shbEarthRadiusKm
+
+
+# The wide sets' orbits - the Earth's display radius plus 400 km, and the gas giant's radius and orbit radius
+shbWideOrbitRadius = shbEarthDisplayRadius * (shbEarthRadiusKm + shbOrbitAltitudeKm) / shbEarthRadiusKm
+shbGiantRadius = 30
+shbGiantOrbitRadius = 36
+
+
+# The ship's modules fly in to dock from these offsets, in assembly order
+shbAssemblyOffsets = [[0, -16, 0], [18, 0, 0], [0, 16, 0], [0, 0, 16], [0, 0, -16], [-16, 8, 0], [-20, 0, 0]]
+
+
+# The ship's blocking - on its mark at the origin, or in orbit on a wide set (enlarged)
+shbShipOnMark = {'type': 'mark'}
+shbShipInEarthOrbit = {'type': 'orbit', 'center': [0, 0, 0], 'radius': shbWideOrbitRadius, 'period': 32}
+shbShipInGiantOrbit = {'type': 'orbit', 'center': [0, 0, 0], 'radius': shbGiantOrbitRadius, 'period': 20, 'inclination': -28.65}
+shbShipEnlarged = shbShipName + ' (enlarged)'
+
+
+# The wide Earth orbit camera - it orbits above the Earth between two angles, following the ship along the near side
+# of its orbit
+function shbEarthWideCamera(angle, angleEnd):
+    return {'move': 'orbit', 'ease': 'linear', 'center': [0, -1, 0], 'radius': 17.34, 'height': 13.54, 'angle': angle, \
+        'angleEnd': angleEnd}
+endfunction
+
+
+# The voyages' camera setup looking back past the ship at its departure, and their shots alongside and looking ahead
+# past the ship to its destination
+shbVoyageDeparture = {'move': 'dolly', 'eye': [15, 3, 11], 'eyeEnd': [9, 1.5, 7], 'target': [-6, -0.5, 0], 'targetEnd': [-5, -0.5, 0]}
+shbVoyageAlongside = {'duration': 15, 'framing': 'wide', 'set': 'voyage', 'fadeIn': 0.5, 'camera': \
+    {'move': 'dolly', 'eye': [-8, 9, 25], 'eyeEnd': [9, 4, 22], 'target': [3, 0, 0], 'targetEnd': [1, 0, 0]}}
+shbVoyageAhead = {'duration': 14, 'framing': 'overTheShoulder', 'set': 'voyage', 'fadeIn': 0.5, 'camera': \
+    {'move': 'dolly', 'eye': [-17, 4, -11], 'eyeEnd': [-11, 2.5, -8], 'target': [8, 0, 0], 'targetEnd': [8, 0.5, 0]}}
+
+
+# The voyages' cast - the ship fires its drive, and flips at the midpoint to decelerate
+shbVoyageCast = [{'name': 'ship', 'blocking': shbShipOnMark, 'beats': [{'at': 0, 'name': 'ignite'}, {'at': 18, 'name': 'turnover'}]}]
+
+
+# The film
+shbFilmModel = { \
+    'title': 'Spaceship Higgs-Boson', \
+    'scenes': [ \
+        { \
+            'name': 'title', \
+            'title': 'Title', \
+            'chapterCard': false, \
+            'shots': [ \
+                {'duration': 12, 'framing': 'establishing', 'set': 'earthClose', 'lighting': 'sunrise', 'fadeIn': 2, 'camera': \
+                    {'move': 'dolly', 'eye': [-44, 2, 30], 'eyeEnd': [-32, 8, 20], 'target': [12, -10, 0], 'targetEnd': [12, -3, 0]}} \
+            ], \
+            'titles': [ \
+                {'at': 1.5, 'duration': 10, 'style': 'main', 'text': 'Spaceship Higgs-Boson'}, \
+                {'at': 1.5, 'duration': 10, 'style': 'subtitle', 'text': 'The Voyage of the ' + shbShipName}, \
+                {'at': 1.5, 'duration': 10, 'style': 'credit', 'text': 'A theoretical mission to α Centauri'} \
+            ], \
+            'dialogue': [ \
+                {'at': 1, 'duration': 5, 'speaker': 'Narrator', 'text': 'Every human who has ever lived has lived under one sun.'}, \
+                {'at': 6, 'duration': 5.5, 'speaker': 'Narrator', 'text': 'This is the story of the ship that changed that.'} \
+            ], \
+            'sounds': [ \
+                {'at': 1.5, 'sound': 'noteC4'}, {'at': 2, 'sound': 'noteE4'}, {'at': 2.5, 'sound': 'noteG4'}, {'at': 3, 'sound': 'noteC5'} \
+            ] \
+        }, \
+        { \
+            'name': 'construction', \
+            'title': 'Construction', \
+            'shots': [ \
+                {'duration': 9, 'framing': 'medium', 'set': 'earthClose', 'lighting': 'day', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [30, 12, 32], 'eyeEnd': [14, 7, 34], 'target': [-3, -1, 0], 'targetEnd': [-1, 0, 0]}}, \
+                {'duration': 9, 'framing': 'establishing', 'set': 'earthWide', 'fadeIn': 0.5, \
+                    'camera': shbEarthWideCamera(108.5, 159.2)}, \
+                {'duration': 8, 'framing': 'wide', 'set': 'earthClose', 'lighting': 'sunrise', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [-36, 4, 20], 'eyeEnd': [-28, 6, 15], 'target': [7, -3, 0], 'targetEnd': [7, -1.5, 0]}} \
+            ], \
+            'cast': [ \
+                {'name': 'ship', 'set': 'earthClose', 'blocking': shbShipOnMark, 'beats': [{'at': 0, 'name': 'assemble'}]}, \
+                {'name': 'ship', 'set': 'earthWide', 'blocking': shbShipInEarthOrbit, 'scale': 0.1, 'label': shbShipEnlarged, \
+                    'beats': [{'at': 0, 'name': 'assemble'}]} \
+            ], \
+            'dialogue': [ \
+                {'at': 0, 'duration': 5, 'speaker': 'Narrator', 'text': "Humanity's first starship takes shape in Earth orbit."}, \
+                {'at': 5, 'duration': 5, 'speaker': 'Narrator', 'text': 'First, the 64-meter spine.'}, \
+                {'at': 10, 'duration': 5.5, 'speaker': 'Engineer', 'text': 'Higgs factory ring locked in.'}, \
+                {'at': 15.5, 'duration': 5.5, 'speaker': 'Narrator', 'text': 'Then the decay chamber and the nozzle.'}, \
+                {'at': 21, 'duration': 5, 'speaker': 'Commander', 'text': 'All modules secured. Ready for the final poll.'} \
+            ], \
+            'sounds': [ \
+                {'at': 4, 'sound': 'click'}, {'at': 6.6, 'sound': 'click'}, {'at': 9.2, 'sound': 'click'}, {'at': 11.8, 'sound': 'click'}, \
+                {'at': 14.4, 'sound': 'click'}, {'at': 17, 'sound': 'click'}, {'at': 19.6, 'sound': 'click'} \
+            ] \
+        }, \
+        { \
+            'name': 'countdown', \
+            'title': 'Countdown', \
+            'shots': [ \
+                {'duration': 7, 'framing': 'medium', 'set': 'earthClose', 'lighting': 'day', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [28, -3, 24], 'eyeEnd': [18, -1, 17], 'target': [-2, -3, 0], 'targetEnd': [-1, -2, 0]}}, \
+                {'duration': 7, 'framing': 'wide', 'set': 'earthClose', 'lighting': 'day', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [-38, 7, 9], 'eyeEnd': [-27, 4, 6], 'target': [7, -1, 0], 'targetEnd': [6, -1, 0]}} \
+            ], \
+            'cast': [ \
+                {'name': 'ship', 'blocking': shbShipOnMark, 'beats': [{'at': 5, 'name': 'bubble'}]} \
+            ], \
+            'dialogue': [ \
+                {'at': 0, 'duration': 2.5, 'speaker': 'Flight', 'text': 'Final poll for ignition.'}, \
+                {'at': 2.5, 'duration': 2.5, 'speaker': 'Collider', 'text': 'Ring at full luminosity. Go.'}, \
+                {'at': 5, 'duration': 2.5, 'speaker': 'Field', 'text': 'Bubble forming. Go.'}, \
+                {'at': 7.5, 'duration': 2, 'speaker': 'FIDO', 'text': 'Trajectory locked. Go.'}, \
+                {'at': 9.5, 'duration': 1.5, 'speaker': 'Flight', 'text': 'Go for ignition.'}, \
+                {'at': 11, 'duration': 1, 'speaker': 'Launch', 'text': 'T-minus 3...'}, \
+                {'at': 12, 'duration': 1, 'speaker': 'Launch', 'text': 'T-minus 2...'}, \
+                {'at': 13, 'duration': 1, 'speaker': 'Launch', 'text': 'T-minus 1...'} \
+            ], \
+            'sounds': [ \
+                {'at': 0.1, 'sound': 'beep'}, {'at': 10, 'sound': 'blip'}, {'at': 11, 'sound': 'blip'}, {'at': 12, 'sound': 'blip'}, \
+                {'at': 13, 'sound': 'blip'} \
+            ] \
+        }, \
+        { \
+            'name': 'outbound', \
+            'title': 'Outbound', \
+            'shots': [ \
+                {'duration': 7, 'framing': 'overTheShoulder', 'set': 'voyage', 'camera': shbVoyageDeparture}, \
+                shbVoyageAlongside, \
+                shbVoyageAhead \
+            ], \
+            'cast': shbVoyageCast, \
+            'dialogue': [ \
+                {'at': 0, 'duration': 4, 'speaker': 'Launch', 'text': 'Ignition! Scalar Dawn is underway.'}, \
+                {'at': 4, 'duration': 5, 'speaker': 'CAPCOM', 'text': 'Bubble stable. Mass at 0.1 percent.'}, \
+                {'at': 9, 'duration': 5, 'speaker': 'FIDO', 'text': 'Velocity {velocity} c and climbing.'}, \
+                {'at': 14, 'duration': 4, 'speaker': 'Surgeon', 'text': 'Crew time runs {gamma} times slower.'}, \
+                {'at': 18, 'duration': 4, 'speaker': 'Flight', 'text': 'Turnover complete. Braking.'}, \
+                {'at': 22, 'duration': 9, 'speaker': 'CAPCOM', 'text': 'Signal delay now {delay} years.'}, \
+                {'at': 31, 'duration': 5, 'speaker': 'FIDO', 'text': 'Final approach to Alpha Centauri.'} \
+            ], \
+            'sounds': [{'at': 0.05, 'sound': 'explosion'}, {'at': 0.4, 'sound': 'powerup'}, {'at': 18, 'sound': 'blip'}] \
+        }, \
+        { \
+            'name': 'alpha', \
+            'title': 'α Centauri', \
+            'shots': [ \
+                {'duration': 8, 'framing': 'overTheShoulder', 'set': 'alphaClose', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [26, 10, 30], 'eyeEnd': [17, 7, 23], 'target': [-5, -4, -9], 'targetEnd': [-4, -3, -8]}}, \
+                {'duration': 8, 'framing': 'establishing', 'set': 'alphaWide', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [70, 34, 100], 'eyeEnd': [30, 38, 112], 'target': [0, 0, 0], 'targetEnd': [8, 0, 0]}}, \
+                {'duration': 8, 'framing': 'wide', 'set': 'alphaWide', 'fadeIn': 0.5, 'camera': \
+                    {'move': 'dolly', 'eye': [104, 5, -66], 'eyeEnd': [84, 4, -92], 'target': [0, 6, 0], 'targetEnd': [0, 4, 0]}} \
+            ], \
+            'cast': [ \
+                {'name': 'ship', 'set': 'alphaClose', 'blocking': {'type': 'mark', 'facing': [mathCos(0.4), 0, -mathSin(0.4)]}}, \
+                {'name': 'ship', 'set': 'alphaWide', 'blocking': shbShipInGiantOrbit, 'scale': 0.15, 'label': shbShipEnlarged} \
+            ], \
+            'dialogue': [ \
+                {'at': 0, 'duration': 5, 'speaker': 'CAPCOM', 'text': 'Arrived at Alpha Centauri - {earthLeg} years for us, {shipLeg} for them.'}, \
+                {'at': 5, 'duration': 5, 'speaker': 'Commander', 'text': 'In orbit. Two suns in the sky.'}, \
+                {'at': 10, 'duration': 5, 'speaker': 'Science', 'text': 'Month two. Probes are down on three moons.'}, \
+                {'at': 15, 'duration': 5, 'speaker': 'Science', 'text': 'Month four. The first spectra are headed home.'}, \
+                {'at': 20, 'duration': 4, 'speaker': 'Commander', 'text': 'Survey complete. Coming home.'} \
+            ], \
+            'sounds': [{'at': 0.5, 'sound': 'success'}] \
+        }, \
+        { \
+            'name': 'homeward', \
+            'title': 'Homeward', \
+            'shots': [ \
+                {'duration': 7, 'framing': 'overTheShoulder', 'set': 'voyage', 'fadeIn': 0.5, 'camera': shbVoyageDeparture}, \
+                shbVoyageAlongside, \
+                shbVoyageAhead \
+            ], \
+            'cast': shbVoyageCast, \
+            'dialogue': [ \
+                {'at': 0, 'duration': 4, 'speaker': 'Commander', 'text': 'Ignition. We are coming home.'}, \
+                {'at': 4, 'duration': 5, 'speaker': 'FIDO', 'text': 'The Sun is dead ahead.'}, \
+                {'at': 9, 'duration': 9, 'speaker': 'Surgeon', 'text': 'Crew healthy after {crewYears} years.'}, \
+                {'at': 18, 'duration': 4, 'speaker': 'Flight', 'text': 'Turnover for home.'}, \
+                {'at': 22, 'duration': 10, 'speaker': 'CAPCOM', 'text': 'Earth says welcome back.'}, \
+                {'at': 32, 'duration': 4, 'speaker': 'FIDO', 'text': 'Final approach to Earth.'} \
+            ], \
+            'sounds': [{'at': 0.05, 'sound': 'explosion'}, {'at': 0.4, 'sound': 'powerup'}, {'at': 18, 'sound': 'blip'}] \
+        }, \
+        { \
+            'name': 'home', \
+            'title': 'Home', \
+            'shots': [ \
+                {'duration': 7, 'framing': 'establishing', 'set': 'earthWide', 'fadeIn': 0.5, \
+                    'camera': shbEarthWideCamera(1.7, 41.1)}, \
+                {'duration': 7, 'framing': 'wide', 'set': 'earthClose', 'lighting': 'sunrise', 'fadeIn': 0.5, 'fadeOut': 1, 'camera': \
+                    {'move': 'dolly', 'eye': [-36, 4, 20], 'eyeEnd': [-30, 7, 16], 'target': [7, -3, 0], 'targetEnd': [7, -1, 0]}} \
+            ], \
+            'cast': [ \
+                {'name': 'ship', 'set': 'earthWide', 'blocking': shbShipInEarthOrbit, 'scale': 0.1, 'label': shbShipEnlarged}, \
+                {'name': 'ship', 'set': 'earthClose', 'blocking': shbShipOnMark} \
+            ], \
+            'dialogue': [ \
+                {'at': 0, 'duration': 7, 'speaker': 'CAPCOM', 'text': 'Welcome home - {roundEarth} years for us, {roundCrew} for you.'}, \
+                {'at': 7, 'duration': 7, 'speaker': 'Narrator', 'text': 'The first voyage to another star is complete.'} \
+            ], \
+            'sounds': [{'at': 0.5, 'sound': 'success'}] \
+        }, \
+        { \
+            'name': 'end', \
+            'title': 'The End', \
+            'chapterCard': false, \
+            'shots': [ \
+                {'duration': 8, 'framing': 'wide', 'set': 'end', 'camera': \
+                    {'move': 'orbit', 'ease': 'linear', 'radius': 10, 'angle': 270, 'angleEnd': 254}} \
+            ], \
+            'titles': [ \
+                {'at': 0, 'duration': 2, 'style': 'main', 'text': 'Spaceship Higgs-Boson', 'hold': true}, \
+                {'at': 0, 'duration': 2, 'style': 'subtitle', 'text': 'The End', 'hold': true}, \
+                {'at': 0, 'duration': 2, 'style': 'credit', 'text': 'The voyage of the ' + shbShipName + ' - a theoretical mission', \
+                    'hold': true} \
+            ], \
+            'sounds': [{'at': 0.5, 'sound': 'noteC4'}, {'at': 1, 'sound': 'noteG4'}, {'at': 1.5, 'sound': 'noteC5'}] \
+        } \
+    ] \
+}
+
+
+# The film's reel - the validated film model and its timeline
+shbReel = cinemaReel(shbFilmModel)
+
+
+# The names of the film's sets
+shbFilmSetNames = { \
+    'earthClose': 'Earth orbit, close', \
+    'earthWide': 'Earth orbit, wide', \
+    'voyage': 'Interstellar space', \
+    'alphaClose': 'α Centauri Ab, close', \
+    'alphaWide': 'α Centauri Ab, wide', \
+    'end': 'The stars' \
+}
+
+
+# The film's speaking roles
+shbFilmVoices = { \
+    'Narrator': 'The narrator', \
+    'Engineer': 'Construction engineer, Earth orbit', \
+    'Commander': 'Mission commander, ' + shbShipName, \
+    'Flight': 'Flight director, Mission Control', \
+    'Collider': 'Higgs factory ring controller, Mission Control', \
+    'Field': 'Field modulator officer, Mission Control', \
+    'FIDO': 'Flight dynamics officer, Mission Control', \
+    'Launch': 'Launch control, Mission Control', \
+    'CAPCOM': 'Capsule communicator, Mission Control', \
+    'Surgeon': 'Flight surgeon, Mission Control', \
+    'Science': 'Science officer, ' + shbShipName \
+}
+
+
+# The film frame's SVG element model at a time - the letterbox bottom is the height of the bottom bar (with the
+# player's controls), and the status is the player's status text
+function shbFilmFrame(time, level, width, height, letterboxBottom, status):
+    quality = arrayGet(shbQualityLevels, level)
+    frame = cinemaFrame(shbReel, time, shbFilmVariables)
+    scene = shbFilmScene(frame, quality, shbMeshes(level), width, height)
+
+    # The cinematic overlay and the player's heads-up display
+    overlay = cinemaOverlayElements(frame, width, height, { \
+        'letterboxTop': 44, \
+        'letterboxBottom': letterboxBottom, \
+        'fontFamily': shbFontFamily, \
+        'textColor': shbTextColor, \
+        'accentColor': shbAccentColor, \
+        'dimColor': shbTextDim \
+    })
+    return shbSvg(scene, quality, width, height, 'Film - ' + objectGet(frame, 'sceneTitle'), \
+        [overlay, shbFilmHud(frame, width, height, letterboxBottom, status)])
+endfunction
+
+
+# A still of the film at a time, for the storyboard - the frame with its titles, but without fades, letterbox, or
+# captions
+function shbFilmStill(time, level, width, height):
+    quality = arrayGet(shbQualityLevels, level)
+    frame = cinemaFrame(shbReel, time, shbFilmVariables)
+    objectSet(frame, 'fade', 0)
+    objectSet(frame, 'dialogue', null)
+    scene = shbFilmScene(frame, quality, shbMeshes(level), width, height)
+    overlay = cinemaOverlayElements(frame, width, height, \
+        {'fontFamily': shbFontFamily, 'textColor': shbTextColor, 'accentColor': shbAccentColor, 'dimColor': shbTextDim})
+    return shbSvg(scene, quality, width, height, 'Still - ' + objectGet(frame, 'sceneTitle'), overlay)
+endfunction
+
+
+# The 3D scene of a film frame - its set and its cast, through the frame's camera
+function shbFilmScene(frame, quality, meshes, width, height):
+    frameCamera = objectGet(frame, 'camera')
+    camera = shbCameraLookAt(objectGet(frameCamera, 'eye'), objectGet(frameCamera, 'target'), width, height, \
+        objectGet(frameCamera, 'lens'))
+
+    # The set
+    set = objectGet(frame, 'set')
+    if set == 'earthClose':
+        scene = shbFilmEarthClose(frame, camera, quality, meshes)
+    elif set == 'earthWide':
+        scene = shbFilmEarthWide(frame, camera, quality, meshes)
+    elif set == 'voyage':
+        scene = shbFilmVoyage(frame, camera, quality, meshes)
+    elif set == 'alphaClose' || set == 'alphaWide':
+        scene = shbFilmAlpha(frame, camera, quality, meshes)
+    else:
+        scene = shbSceneNew(camera, [0, 0, -1])
+        shbSceneAddStarfield(scene, quality, 0)
+    endif
+
+    # The cast
+    ship = objectGet(objectGet(frame, 'actors'), 'ship')
+    if ship != null:
+        shbFilmShip(scene, frame, ship, quality, meshes)
+    endif
+    return scene
+endfunction
+
+
+# The ship's portrait - a three-quarter view with the drive running
+function shbFilmShipPortrait(width, height):
+    state = {'yaw': shbViewerYaw, 'pitch': shbViewerPitch, 'zoom': 1.2, 'spin': 0, 'time': 1, 'drive': true, 'labels': false}
+    return shbSvg(shbViewerScene(state, 1, width, height), arrayGet(shbQualityLevels, 1), width, height, shbShipName, null)
+endfunction
+
+
+# The film's billing - its actors' screen names, roles, and portrait functions, portraitFn(width, height)
+shbFilmBilling = { \
+    'ship': {'name': shbShipName, 'role': "As herself - humanity's first starship", 'portraitFn': shbFilmShipPortrait} \
+}
+
+
+# Format a film time as minutes and seconds (e.g. "2:05")
+function shbFilmTime(seconds):
+    wholeSeconds = mathFloor(seconds)
+    remainder = wholeSeconds % 60
+    return mathFloor(wholeSeconds / 60) + ':' + if(remainder < 10, '0', '') + remainder
+endfunction
+
+
+# The film's variables - the values of the dialogue's "{name}" placeholders
+function shbFilmVariables(frame):
+    mission = shbMission(shbAccelG)
+    roundTrip = shbRoundTrip()
+    variables = { \
+        'earthLeg': numberToFixed(objectGet(mission, 'tTotal'), 1), \
+        'shipLeg': numberToFixed(objectGet(mission, 'tauTotal'), 1), \
+        'roundEarth': numberToFixed(objectGet(roundTrip, 'earthYears'), 1), \
+        'roundCrew': numberToFixed(objectGet(roundTrip, 'crewYears'), 1) \
+    }
+    scene = objectGet(frame, 'scene')
+    if scene == 'outbound' || scene == 'homeward':
+        missionState = shbFilmVoyageState(frame)
+        objectAssign(variables, { \
+            'velocity': numberToFixed(objectGet(missionState, 'beta'), 2), \
+            'gamma': numberToFixed(objectGet(missionState, 'gamma'), 2), \
+            'delay': numberToFixed(objectGet(missionState, 'x'), 1), \
+            'crewYears': numberToFixed(objectGet(mission, 'tauTotal') + shbSurveyMonths / 12 + objectGet(missionState, 'tau'), 1) \
+        })
+    endif
+    return variables
+endfunction
+
+
+# The mission state of a voyage scene's frame - the voyage's ship time scales to the scene's duration
+function shbFilmVoyageState(frame):
+    mission = shbMission(shbAccelG)
+    tau = objectGet(mission, 'tauTotal') * objectGet(frame, 'sceneTime') / objectGet(frame, 'sceneDuration')
+    return shbMissionState(mission, tau)
+endfunction
+
+
+#
+# Sets
+#
+
+
+# The Earth close-up set - the curve of the Earth below, the atmosphere glowing along the horizon, under a high sun
+# or a sun rising over the horizon ahead
+function shbFilmEarthClose(frame, camera, quality, meshes):
+    frameCamera = objectGet(frame, 'camera')
+    eye = objectGet(frameCamera, 'eye')
+    target = objectGet(frameCamera, 'target')
+    sunrise = objectGet(frame, 'lighting') == 'sunrise'
+    if sunrise:
+        heading = shbVecNormalize([arrayGet(target, 0) - arrayGet(eye, 0), 0, arrayGet(target, 2) - arrayGet(eye, 2)])
+        heading = shbMatApply(shbMatRotY(0.25), heading)
+        elevation = -0.5 + 0.035 * objectGet(frame, 'shotTime')
+        sunDirection = shbVecAdd(shbVecScale(heading, mathCos(elevation)), [0, mathSin(elevation), 0])
+    else:
+        sunDirection = shbVecNormalize([0.35, 0.85, 0.4])
+    endif
+    scene = shbSceneNew(camera, sunDirection)
+    shbSceneAddStarfield(scene, quality, 0)
+    shbSceneAddSun(scene, sunDirection, if(sunrise, 0.9, 0.5), 'url(#shbSunGlow)', '#fffdf4', null)
+
+    # The Earth below - its polar axis along z, so the ship flies an equatorial ground track that starts over Africa
+    # - turning beneath the ship. Only the band of the surface near the ship is drawn.
+    earthCenter = [0, -(shbCloseEarthRadius + shbCloseAltitude), 0]
+    earthRotation = shbMatMul(shbMatMul(shbMatRotZ(objectGet(frame, 'time') * 0.02), shbMatRotX(-shbPi / 2)), shbMatRotY(-90 * shbDeg))
+    earthMatrix = shbMatScale(earthRotation, shbCloseEarthRadius)
+    belowShip = [arrayGet(earthRotation, 3), arrayGet(earthRotation, 4), arrayGet(earthRotation, 5)]
+    shipLon = mathAtan2(-arrayGet(belowShip, 2), arrayGet(belowShip, 0)) / shbDeg
+    shbSceneAddMesh(scene, shbBandWindow(objectGet(meshes, 'earthBand'), shipLon), earthMatrix, earthCenter)
+    cloudBand = objectGet(meshes, 'cloudBand')
+    if cloudBand != null:
+        shbSceneAddMesh(scene, shbBandWindow(cloudBand, shipLon), shbMatScale(earthRotation, shbCloseEarthRadius * 1.0015), \
+            earthCenter)
+    endif
+    shbSceneAddHorizon(scene, earthCenter, shbCloseEarthRadius * 1.002, eye, if(objectGet(quality, 'glow'), 'url(#shbGlow)', null))
+    return scene
+endfunction
+
+
+# The Earth wide set - the Earth and the ship's orbit, lit over the camera's left shoulder so the Earth is a sunlit
+# globe
+function shbFilmEarthWide(frame, camera, quality, meshes):
+    scene = shbSceneNew(camera, shbCameraToWorld(camera, [-0.55, 0.5, -0.65]))
+    shbSceneAddStarfield(scene, quality, 0)
+    shbSceneAddEarth(scene, meshes, [0, 0, 0], objectGet(frame, 'time'), 1)
+
+    # The orbit path
+    orbitPoints = []
+    segment = 0
+    while segment < 90:
+        angle = segment * 4 * shbDeg
+        arrayPush(orbitPoints, [shbWideOrbitRadius * mathCos(angle), 0, -shbWideOrbitRadius * mathSin(angle)])
+        segment = segment + 1
+    endwhile
+    shbSceneAddPath(scene, orbitPoints, 'rgba(255,210,120,0.5)', 1, '5 4', false, null)
+    return scene
+endfunction
+
+
+# The voyage set - outbound to Alpha Centauri and homeward to Earth. Earth recedes into the distance (compressed for
+# display), and Alpha Centauri A and B are points of light until the ship arrives.
+function shbFilmVoyage(frame, camera, quality, meshes):
+    homeward = objectGet(frame, 'scene') == 'homeward'
+    missionState = shbFilmVoyageState(frame)
+    fraction = objectGet(missionState, 'x') / shbAlphaCentauriLy
+    earthFraction = if(homeward, 1 - fraction, fraction)
+    alphaFraction = 1 - earthFraction
+
+    # The sunlight comes from the camera's side; the Sun itself is drawn near the Earth
+    earthSide = if(homeward, 1, -1)
+    scene = shbSceneNew(camera, if(homeward, [-0.7, 0.35, 0.6], [0.7, 0.35, 0.6]))
+    shbSceneAddStarfield(scene, quality, objectGet(missionState, 'beta'))
+    shbSceneAddSun(scene, [earthSide, 0.06, 0.1], 0.15 + 0.85 * (1 - mathSqrt(earthFraction)), 'url(#shbSunGlow)', '#fffdf4', null)
+
+    # Earth, receding behind or approaching ahead
+    earthX = earthSide * (30 + 4000 * mathSqrt(earthFraction))
+    shbSceneAddEarth(scene, meshes, [earthX, 0, 0], objectGet(frame, 'time'), 1)
+    shbSceneAddLabel(scene, [earthX, shbEarthDisplayRadius + 1.5, 0], 'Earth')
+
+    # Alpha Centauri A and B, brightening as the ship nears them
+    alphaScale = 0.08 + 0.5 * (1 - alphaFraction) ** 6
+    shbSceneAddSun(scene, [-earthSide, 0.01, 0], alphaScale, 'url(#shbSunGlow)', '#fff6dc', 'α Centauri A & B')
+    shbSceneAddSun(scene, [-earthSide, -0.004, 0.006], alphaScale * 0.7, 'url(#shbStarB)', '#ffd6a8', null)
+
+    # The course
+    shbSceneAddPath(scene, [[-400, 0, 0], [-60, 0, 0], [-15, 0, 0], [15, 0, 0], [60, 0, 0], [400, 0, 0]], \
+        'rgba(255,210,120,0.4)', 1, '6 5', true, null)
+    return scene
+endfunction
+
+
+# The Alpha Centauri sets - the gas giant Alpha Centauri Ab and its rings, under two suns, filling the sky on the
+# close-up set
+function shbFilmAlpha(frame, camera, quality, meshes):
+    sunDirection = [0.8, 0.3, 0.3]
+    scene = shbSceneNew(camera, sunDirection)
+    shbSceneAddStarfield(scene, quality, 0)
+    shbSceneAddSun(scene, sunDirection, 0.8, 'url(#shbSunGlow)', '#fffdf4', 'α Centauri A')
+    shbSceneAddSun(scene, [0.25, 0.3, 0.92], 0.4, 'url(#shbStarB)', '#ffd6a8', 'α Centauri B')
+
+    # The planet and its rings
+    close = objectGet(frame, 'set') == 'alphaClose'
+    planetRadius = if(close, 2000, shbGiantRadius)
+    planetCenter = if(close, [-500, -1500, -1900], [0, 0, 0])
+    planetRotation = shbMatRotY(objectGet(frame, 'sceneTime') * 0.02)
+    shbSceneAddMesh(scene, objectGet(meshes, 'giant'), shbMatScale(planetRotation, planetRadius), planetCenter)
+    shbSceneAddMesh(scene, objectGet(meshes, 'giantRings'), shbMatScale(shbMatMul(shbMatRotX(0.35), planetRotation), \
+        planetRadius), planetCenter)
+    if !close:
+        shbSceneAddLabel(scene, [0, shbGiantRadius + 1, 0], 'α Centauri Ab')
+    endif
+    return scene
+endfunction
+
+
+#
+# Cast
+#
+
+
+# Draw the ship actor - its modules docking when it's assembling, its bubble and drive by its beats, and flipped
+# after its turnover
+function shbFilmShip(scene, frame, actor, quality, meshes):
+    beats = objectGet(actor, 'beats')
+    scale = objectGet(actor, 'scale')
+    facing = objectGet(actor, 'facing')
+    if objectHas(beats, 'turnover'):
+        facing = shbVecScale(facing, -1)
+    endif
+    matrix = shbMatScale(shbFacingMatrix(facing), scale)
+    position = objectGet(actor, 'position')
+    if objectHas(beats, 'assemble'):
+        assembly = objectGet(beats, 'assemble')
+        for part, ixPart in objectGet(meshes, 'shipParts'):
+            progress = (assembly - 1 - 2.6 * ixPart) / 3
+            if progress > 0:
+                ease = 1 - (1 - mathMin(1, progress)) ** 3
+                offset = shbMatApply(matrix, shbVecScale(arrayGet(shbAssemblyOffsets, ixPart), 1 - ease))
+                shbSceneAddMesh(scene, part, matrix, shbVecAdd(position, offset))
+            endif
+        endfor
+    else:
+        ignite = objectHas(beats, 'ignite')
+        shbSceneAddShip(scene, meshes, quality, matrix, position, objectGet(frame, 'time'), ignite || objectHas(beats, 'bubble'), ignite)
+    endif
+    label = objectGet(actor, 'label')
+    if label != null:
+        shbSceneAddLabel(scene, shbVecAdd(position, [0, 7 * scale, 0]), label)
+    endif
+endfunction
+
+
+#
+# Heads-up display
+#
+
+
+# The film's heads-up display element model - the scene and status in the top bar, the telemetry, and the timeline
+# with scene marks along the top of the bottom bar
+function shbFilmHud(frame, width, height, letterboxBottom, status):
+    sceneCount = cinemaSceneCount(shbReel)
+    hud = [ \
+        shbSvgText((objectGet(frame, 'sceneIndex') + 1) + ' / ' + sceneCount + ' · ' + objectGet(frame, 'sceneTitle'), \
+            18, 28, 13, shbAccentColor, 'start', true), \
+        shbSvgText(status, width - 18, 28, 12, shbTextDim, 'end', false) \
+    ]
+    telemetry = shbFilmTelemetry(frame)
+    if width >= 760 && telemetry != '':
+        arrayPush(hud, shbSvgText(telemetry, width / 2, 28, 13, shbTextColor, 'middle', true))
+    endif
+
+    # The timeline
+    duration = cinemaDuration(shbReel)
+    trackY = height - letterboxBottom + 8
+    trackWidth = width - 36
+    arrayPush(hud, \
+        {'svg': 'rect', 'attr': {'x': 18, 'y': trackY, 'width': trackWidth, 'height': 3, 'fill': 'rgba(127,216,255,0.2)'}}, \
+        {'svg': 'rect', 'attr': {'x': 18, 'y': trackY, 'width': shbRound(trackWidth * objectGet(frame, 'time') / duration), \
+            'height': 3, 'fill': shbAccentColor}} \
+    )
+    sceneIndex = 1
+    while sceneIndex < sceneCount:
+        arrayPush(hud, {'svg': 'rect', 'attr': {'x': shbRound(18 + trackWidth * cinemaSceneStart(shbReel, sceneIndex) / duration), \
+            'y': trackY - 3, 'width': 2, 'height': 9, 'fill': shbTextDim}})
+        sceneIndex = sceneIndex + 1
+    endwhile
+    return {'svg': 'g', 'elem': hud}
+endfunction
+
+
+# The film's telemetry text - the countdown clock, the voyage's relativity, or the months in orbit - empty when
+# there's none
+function shbFilmTelemetry(frame):
+    scene = objectGet(frame, 'scene')
+    sceneTime = objectGet(frame, 'sceneTime')
+    if scene == 'countdown':
+        seconds = mathCeil(objectGet(frame, 'sceneDuration') - sceneTime)
+        return 'T-00:00:' + if(seconds < 10, '0', '') + seconds
+    elif scene == 'outbound' || scene == 'homeward':
+        missionState = shbFilmVoyageState(frame)
+        return 'v ' + numberToFixed(objectGet(missionState, 'beta'), 3) + ' c · γ ' + \
+            numberToFixed(objectGet(missionState, 'gamma'), 2) + ' · ship ' + numberToFixed(objectGet(missionState, 'tau'), 2) + \
+            ' yr · Earth ' + numberToFixed(objectGet(missionState, 't'), 2) + ' yr'
+    elif scene == 'alpha':
+        return 'Month ' + mathMax(1, mathCeil(sceneTime / objectGet(frame, 'sceneDuration') * shbSurveyMonths)) + ' of ' + \
+            shbSurveyMonths + ' in orbit'
+    endif
+    return ''
+endfunction

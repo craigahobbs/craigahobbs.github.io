@@ -1,0 +1,92 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonModels.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+function testSurfaces():
+    # The land map
+    unittestEqual(shbLandAt(51.5, 359.9), true)
+    unittestEqual(shbLandAt(0, 200), false)
+    unittestEqual(shbLandAt(-89, 0), true)
+    unittestEqual(shbLandAt(90, -1), false)
+
+    # Ocean, with sea ice in the high Arctic
+    ocean = shbEarthSurface(0, 200, 2, 2)
+    unittestEqual(objectGet(ocean, 'specular'), 0.55)
+    unittestEqual(objectGet(ocean, 'night'), null)
+    unittestEqual(testColorClass(objectGet(ocean, 'color')), 'blue')
+    arctic = shbEarthSurface(80, 180, 2, 2)
+    unittestEqual(numberToFixed(objectGet(arctic, 'specular'), 3), '0.165')
+    unittestEqual(testColorClass(objectGet(arctic, 'color')), 'white')
+
+    # Land by region - ice (Antarctica and Greenland), desert (the Sahara), rainforest (the Amazon), forest (Europe),
+    # and tundra (Siberia)
+    unittestEqual(testColorClass(objectGet(shbEarthSurface(-80, 0, 2, 2), 'color')), 'white')
+    unittestEqual(testColorClass(objectGet(shbEarthSurface(72, 318, 2, 2), 'color')), 'white')
+    sahara = shbEarthSurface(23, 10, 2, 2)
+    unittestEqual(objectGet(sahara, 'specular'), 0)
+    unittestEqual(testColorClass(objectGet(sahara, 'color')), 'tan')
+    unittestEqual(testColorClass(objectGet(shbEarthSurface(-4, 296, 2, 2), 'color')), 'green')
+    unittestEqual(testColorClass(objectGet(shbEarthSurface(48, 10, 2, 2), 'color')), 'green')
+    unittestEqual(testColorClass(objectGet(shbEarthSurface(62, 100, 2, 2), 'color')), 'green')
+
+    # A coastal face blends land and ocean
+    coast = shbEarthSurface(50, 357, 8, 8)
+    unittestEqual(objectGet(coast, 'specular') > 0 && objectGet(coast, 'specular') < 0.55, true)
+
+    # City lights are on land only
+    lit = 0
+    lat = -49
+    while lat < 60:
+        lon = 1
+        while lon < 360:
+            surface = shbEarthSurface(lat, lon, 2, 2)
+            if objectGet(surface, 'night') != null:
+                lit = lit + 1
+                unittestEqual(objectGet(surface, 'specular') < 0.25, true)
+            endif
+            lon = lon + 4
+        endwhile
+        lat = lat + 4
+    endwhile
+    unittestEqual(lit > 50, true)
+
+    # Clouds and the gas giant
+    unittestEqual(shbCloudSurface(30, 30), null)
+    unittestEqual(numberToFixed(objectGet(shbCloudSurface(0, 0), 'alpha'), 3), '0.347')
+    unittestDeepEqual(shbGiantSurface(-22, 40), {'color': [206, 112, 78]})
+    unittestDeepEqual(shbGiantSurface(10, 0), {'color': [226, 204, 160]})
+endfunction
+unittestRunTest('testSurfaces')
+
+
+function testMeshes():
+    low = shbMeshes(0)
+    unittestEqual(shbMeshes(0), low)
+    unittestEqual(objectGet(low, 'clouds'), null)
+    unittestEqual(arrayLength(objectGet(low, 'earth')), 800)
+    unittestEqual(arrayLength(objectGet(low, 'shipParts')), 7)
+    unittestEqual(arrayLength(objectGet(low, 'ship')), 185)
+    unittestEqual(arrayLength(objectGet(low, 'giant')), 800)
+    unittestEqual(arrayLength(objectGet(low, 'giantRings')), 40)
+    unittestEqual(objectHas(arrayGet(objectGet(low, 'earth'), 0), 'night'), false)
+
+    ultra = shbMeshes(3)
+    unittestEqual(arrayLength(objectGet(ultra, 'earth')), 3872)
+    unittestEqual(arrayLength(objectGet(ultra, 'ship')), 1107)
+    unittestEqual(arrayLength(objectGet(ultra, 'clouds')) > 500, true)
+    unittestEqual(objectGet(arrayGet(objectGet(ultra, 'plume'), 0), 'filter'), 'url(#shbGlow)')
+endfunction
+unittestRunTest('testMeshes')
+
+
+function testStarField():
+    stars = shbStarField(30, 7)
+    unittestEqual(arrayLength(stars), 30)
+    unittestDeepEqual(shbStarField(30, 7), stars)
+    for star in stars:
+        unittestEqual(numberToFixed(shbVecLength(objectGet(star, 'direction')), 6), '1.000000')
+    endfor
+endfunction
+unittestRunTest('testStarField')

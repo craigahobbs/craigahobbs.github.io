@@ -1,0 +1,52 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonStoryboard.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+function testStoryboardRender():
+    testMockAll()
+    shbStoryboardRender(976, shbOnStoryboardPlay)
+    callLog = unittestMockEnd()
+
+    # The introduction, then each scene's heading and panels
+    unittestDeepEqual(arrayGet(callLog, 0), ['markdownPrint', ['', \
+        'The film, shot by shot - 18 shots in 8 scenes, 2:50. Click a still to play the film from its shot.']])
+    headings = []
+    for call in callLog:
+        if arrayGet(call, 0) == 'markdownPrint' && arrayLength(arrayGet(call, 1)) == 2 && stringStartsWith(arrayGet(arrayGet(call, 1), 1), '## '):
+            arrayPush(headings, arrayGet(arrayGet(call, 1), 1))
+        endif
+    endfor
+    unittestDeepEqual(headings, ['## 1. Title (0:00)', '## 2. Construction (0:12)', '## 3. Countdown (0:38)', '## 4. Outbound (0:52)', \
+        '## 5. α Centauri (1:28)', '## 6. Homeward (1:52)', '## 7. Home (2:28)', '## 8. The End (2:42)'])
+    unittestEqual(arrayLength(callLog), 17)
+
+    # The outbound scene's first panel - its notes
+    panels = objectGet(arrayGet(arrayGet(arrayGet(callLog, 8), 1), 0), 'elem')
+    notes = arrayGet(objectGet(arrayGet(panels, 0), 'elem'), 1)
+    unittestDeepEqual(testTexts(notes), [ \
+        'Shot 4.1 · 0:52 · 7 s', \
+        'Over-the-shoulder shot · Interstellar space', \
+        'Dolly, ease in and out', \
+        'Action: ignite (ship)', \
+        'LAUNCH: ', 'Ignition! Scalar Dawn is underway.', \
+        'CAPCOM: ', 'Bubble stable. Mass at 0.1 percent.', \
+        'Sound: explosion, powerup' \
+    ])
+endfunction
+unittestRunTest('testStoryboardRender')
+
+
+function testStoryboardPanel():
+    # A panel's lens, fades, and a shot without action or sound
+    scene = {'index': 0}
+    shot = {'index': 1, 'start': 3, 'duration': 2, 'framing': 'insert', 'set': 'end', 'lighting': null, 'move': 'track', \
+        'ease': 'linear', 'lens': 1.5, 'fadeIn': 0.5, 'fadeOut': 1, 'dialogue': [], 'sounds': [], 'beats': []}
+    panel = shbStoryboardPanel(scene, shot, 160, shbOnStoryboardPlay)
+    unittestEqual(objectGet(objectGet(panel, 'attr'), 'style'), 'width: 160px; font-size: 0.85em; line-height: 1.4;')
+    unittestDeepEqual(testTexts(arrayGet(objectGet(panel, 'elem'), 1)), [ \
+        'Shot 1.2 · 0:03 · 2 s', 'Insert · The stars', 'Tracking shot, linear, lens 1.5x, fade in 0.5 s, fade out 1 s' \
+    ])
+endfunction
+unittestRunTest('testStoryboardPanel')

@@ -1,0 +1,23 @@
+include <unittest.bare>
+include <unittestMock.bare>
+
+
+# Start coverage
+unittestCoverageStart()
+
+# Test includes
+include 'testSpaceshipHiggsBoson.bare'
+include 'testSpaceshipHiggsBosonAbout.bare'
+include 'testSpaceshipHiggsBosonCast.bare'
+include 'testSpaceshipHiggsBosonCinema.bare'
+include 'testSpaceshipHiggsBosonFilm.bare'
+include 'testSpaceshipHiggsBosonModels.bare'
+include 'testSpaceshipHiggsBosonPhysics.bare'
+include 'testSpaceshipHiggsBosonRender.bare'
+include 'testSpaceshipHiggsBosonStoryboard.bare'
+
+# Stop coverage
+unittestCoverageStop()
+
+# Test report
+return unittestReport({'coverageExclude': ['runTests.bare'], 'coverageMin': 100})

@@ -1,0 +1,182 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonFilm.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+# The film frame's overlay and heads-up display text at a time
+function testFilmTexts(time):
+    svg = shbFilmFrame(time, 0, 976, 684, 60, 'Status')
+    return testTexts(arrayGet(objectGet(objectGet(svg, 'elem'), 'elem'), 3))
+endfunction
+
+
+function testFilmReel():
+    unittestEqual(shbReel != null, true)
+    unittestEqual(cinemaDuration(shbReel), 170)
+    titles = []
+    for scene in objectGet(objectGet(shbReel, 'film'), 'scenes'):
+        arrayPush(titles, objectGet(scene, 'title'))
+    endfor
+    unittestDeepEqual(titles, ['Title', 'Construction', 'Countdown', 'Outbound', 'α Centauri', 'Homeward', 'Home', 'The End'])
+    unittestDeepEqual(testShotStarts(), [0, 12, 21, 30, 38, 45, 52, 59, 74, 88, 96, 104, 112, 119, 134, 148, 155, 162])
+endfunction
+unittestRunTest('testFilmReel')
+
+
+function testFilmTitleAndConstruction():
+    unittestDeepEqual(testFilmTexts(3), [ \
+        'SPACESHIP HIGGS-BOSON', 'THE VOYAGE OF THE ISV SCALAR DAWN', 'A theoretical mission to α Centauri', \
+        '>> NARRATOR: EVERY HUMAN WHO HAS EVER', 'LIVED HAS LIVED UNDER ONE SUN.', 'CC', '1 / 8 · Title', 'Status' \
+    ])
+    unittestDeepEqual(testFilmTexts(13), [ \
+        'CHAPTER 2', 'Construction', ">> NARRATOR: HUMANITY'S FIRST STARSHIP TAKES SHAPE IN EARTH ORBIT.", 'CC', \
+        '2 / 8 · Construction', 'Status' \
+    ])
+    unittestDeepEqual(testFilmTexts(25), ['>> ENGINEER: HIGGS FACTORY RING LOCKED IN.', 'CC', '2 / 8 · Construction', 'Status'])
+endfunction
+unittestRunTest('testFilmTitleAndConstruction')
+
+
+function testFilmCountdown():
+    unittestDeepEqual(testFilmTexts(46), ['>> FIDO: TRAJECTORY LOCKED. GO.', 'CC', '3 / 8 · Countdown', 'Status', 'T-00:00:06'])
+    unittestDeepEqual(testFilmTexts(50.5), ['>> LAUNCH: T-MINUS 2...', 'CC', '3 / 8 · Countdown', 'Status', 'T-00:00:02'])
+endfunction
+unittestRunTest('testFilmCountdown')
+
+
+function testFilmVoyages():
+    unittestDeepEqual(testFilmTexts(58), [ \
+        '>> CAPCOM: BUBBLE STABLE. MASS AT 0.1 PERCENT.', 'CC', '4 / 8 · Outbound', 'Status', \
+        'v 0.549 c · γ 1.20 · ship 0.60 yr · Earth 0.64 yr' \
+    ])
+    unittestDeepEqual(testFilmTexts(82), [ \
+        '>> CAPCOM: SIGNAL DELAY NOW 4.2 YEARS.', 'CC', '4 / 8 · Outbound', 'Status', \
+        'v 0.549 c · γ 1.20 · ship 2.99 yr · Earth 5.37 yr' \
+    ])
+    unittestDeepEqual(testFilmTexts(130), [ \
+        '>> FLIGHT: TURNOVER FOR HOME.', 'CC', '6 / 8 · Homeward', 'Status', 'v 0.952 c · γ 3.26 · ship 1.79 yr · Earth 3.00 yr' \
+    ])
+endfunction
+unittestRunTest('testFilmVoyages')
+
+
+function testFilmAlphaHomeAndEnd():
+    unittestDeepEqual(testFilmTexts(97), [ \
+        '>> COMMANDER: IN ORBIT. TWO SUNS IN THE SKY.', 'CC', '5 / 8 · α Centauri', 'Status', 'Month 3 of 6 in orbit' \
+    ])
+    unittestDeepEqual(testFilmTexts(151), [ \
+        'CHAPTER 7', 'Home', '>> CAPCOM: WELCOME HOME - 12.5 YEARS FOR US, 7.7 FOR YOU.', 'CC', '7 / 8 · Home', 'Status' \
+    ])
+    unittestDeepEqual(testFilmTexts(170), [ \
+        'SPACESHIP HIGGS-BOSON', 'THE END', 'The voyage of the ISV Scalar Dawn - a theoretical mission', '8 / 8 · The End', 'Status' \
+    ])
+endfunction
+unittestRunTest('testFilmAlphaHomeAndEnd')
+
+
+function testFilmEveryShot():
+    # Every shot renders at every detail level
+    for level in [0, 3]:
+        for shotStart in testShotStarts():
+            svg = shbFilmFrame(shotStart + 3, level, 976, 684, 60, 'Status')
+            unittestEqual(objectGet(objectGet(svg, 'elem'), 'svg'), 'svg')
+        endfor
+    endfor
+endfunction
+unittestRunTest('testFilmEveryShot')
+
+
+function testFilmVariables():
+    unittestDeepEqual(shbFilmVariables(cinemaFrame(shbReel, 5)), \
+        {'earthLeg': '6.0', 'shipLeg': '3.6', 'roundEarth': '12.5', 'roundCrew': '7.7'})
+    unittestDeepEqual(shbFilmVariables(cinemaFrame(shbReel, 62)), { \
+        'earthLeg': '6.0', 'shipLeg': '3.6', 'roundEarth': '12.5', 'roundCrew': '7.7', \
+        'velocity': '0.77', 'gamma': '1.58', 'delay': '0.6', 'crewYears': '5.1' \
+    })
+endfunction
+unittestRunTest('testFilmVariables')
+
+
+function testFilmVoyageState():
+    unittestEqual(objectGet(shbFilmVoyageState(cinemaFrame(shbReel, 52)), 'tau'), 0)
+    unittestEqual(objectGet(shbFilmVoyageState(cinemaFrame(shbReel, 69.9)), 'phase'), 'accelerate')
+    unittestEqual(objectGet(shbFilmVoyageState(cinemaFrame(shbReel, 70.1)), 'phase'), 'decelerate')
+    unittestEqual(objectGet(shbFilmVoyageState(cinemaFrame(shbReel, 87.99)), 'phase'), 'decelerate')
+endfunction
+unittestRunTest('testFilmVoyageState')
+
+
+function testFilmTelemetry():
+    unittestEqual(shbFilmTelemetry(cinemaFrame(shbReel, 5)), '')
+    unittestEqual(shbFilmTelemetry(cinemaFrame(shbReel, 42)), 'T-00:00:10')
+    unittestEqual(shbFilmTelemetry(cinemaFrame(shbReel, 51.5)), 'T-00:00:01')
+    unittestEqual(shbFilmTelemetry(cinemaFrame(shbReel, 62)), 'v 0.773 c · γ 1.58 · ship 1.00 yr · Earth 1.18 yr')
+    unittestEqual(shbFilmTelemetry(cinemaFrame(shbReel, 88)), 'Month 1 of 6 in orbit')
+    unittestEqual(shbFilmTelemetry(cinemaFrame(shbReel, 111)), 'Month 6 of 6 in orbit')
+endfunction
+unittestRunTest('testFilmTelemetry')
+
+
+function testFilmShip():
+    # The ship's beats - assembling, the bubble, the drive, and the turnover (flipped)
+    level = 1
+    quality = arrayGet(shbQualityLevels, level)
+    meshes = shbMeshes(level)
+    camera = shbCameraLookAt([0, 5, 30], [0, 0, 0], 400, 300)
+    counts = []
+    for beats in [{'assemble': 1.5}, {'assemble': 30}, {}, {'bubble': 1}, {'ignite': 1}, {'ignite': 20, 'turnover': 2}]:
+        scene = shbSceneNew(camera, [0, 1, 0])
+        actor = {'position': [0, 0, 0], 'facing': [1, 0, 0], 'scale': 1, 'label': null, 'beats': beats}
+        shbFilmShip(scene, cinemaFrame(shbReel, 60), actor, quality, meshes)
+        arrayPush(counts, arrayLength(objectGet(scene, 'items')) > 0)
+    endfor
+    unittestDeepEqual(counts, [true, true, true, true, true, true])
+
+    # The label
+    scene = shbSceneNew(camera, [0, 1, 0])
+    actor = {'position': [0, 0, 0], 'facing': [1, 0, 0], 'scale': 0.5, 'label': 'Ship', 'beats': {}}
+    shbFilmShip(scene, cinemaFrame(shbReel, 60), actor, quality, meshes)
+    unittestEqual(objectGet(arrayGet(objectGet(scene, 'labels'), 0), 'text'), 'Ship')
+endfunction
+unittestRunTest('testFilmShip')
+
+
+function testFilmStill():
+    # A still has the titles, but no fade, letterbox, or captions
+    still = shbFilmStill(0.5, 0, 320, 180)
+    svg = objectGet(still, 'elem')
+    unittestDeepEqual([objectGet(objectGet(svg, 'attr'), 'width'), objectGet(objectGet(svg, 'attr'), 'aria-label')], [320, 'Still - Title'])
+    unittestDeepEqual(testTexts(arrayGet(objectGet(svg, 'elem'), 3)), [])
+    unittestDeepEqual(testTexts(arrayGet(objectGet(objectGet(shbFilmStill(3, 0, 320, 180), 'elem'), 'elem'), 3)), \
+        ['SPACESHIP HIGGS-BOSON', 'THE VOYAGE OF THE ISV SCALAR DAWN', 'A theoretical mission to α Centauri'])
+endfunction
+unittestRunTest('testFilmStill')
+
+
+function testFilmCredits():
+    # Every actor is billed, every voice has a role, and every set has a name
+    cast = cinemaCast(shbReel)
+    for actor in objectGet(cast, 'actors'):
+        unittestEqual(objectHas(shbFilmBilling, objectGet(actor, 'name')), true)
+    endfor
+    for voice in objectGet(cast, 'voices'):
+        unittestEqual(objectHas(shbFilmVoices, objectGet(voice, 'speaker')), true)
+    endfor
+    for scene in cinemaStoryboard(shbReel, null):
+        for shot in objectGet(scene, 'shots'):
+            unittestEqual(objectHas(shbFilmSetNames, objectGet(shot, 'set')), true)
+        endfor
+    endfor
+    portrait = shbFilmShipPortrait(320, 180)
+    unittestEqual(objectGet(objectGet(objectGet(portrait, 'elem'), 'attr'), 'aria-label'), 'ISV Scalar Dawn')
+endfunction
+unittestRunTest('testFilmCredits')
+
+
+function testFilmTime():
+    unittestEqual(shbFilmTime(0), '0:00')
+    unittestEqual(shbFilmTime(9.9), '0:09')
+    unittestEqual(shbFilmTime(125), '2:05')
+endfunction
+unittestRunTest('testFilmTime')

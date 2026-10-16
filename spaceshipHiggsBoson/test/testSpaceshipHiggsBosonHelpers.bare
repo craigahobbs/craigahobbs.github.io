@@ -1,0 +1,210 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBoson.bare'
+
+
+# A fixed clock, so frame timing and detail detection are deterministic
+function testClock():
+    return datetimeNew(2026, 10, 14)
+endfunction
+
+
+# Return a value - for mocking
+function testReturn(value):
+    return value
+endfunction
+
+
+# Mock all functions with externalities, and the clock
+function testMockAll(data):
+    unittestMockAll(data)
+    unittestMockOne('datetimeNow', testClock)
+endfunction
+
+
+# Set the application state for a page, with overrides
+function testStateSet(page, overrides):
+    state = { \
+        'page': page, \
+        'quality': 'low', \
+        'level': 0, \
+        'perf': shbPerfNew(), \
+        'lastTick': null, \
+        'time': 0, \
+        'playing': true, \
+        'yaw': shbViewerYaw, \
+        'pitch': shbViewerPitch, \
+        'zoom': 1, \
+        'spin': 0, \
+        'autoRotate': true, \
+        'drive': true, \
+        'labels': true, \
+        'sound': true \
+    }
+    if overrides != null:
+        objectAssign(state, overrides)
+    endif
+    systemGlobalSet('shbState', state)
+    return state
+endfunction
+
+
+# The expected playback state save call of a render
+function testPlaybackCall(state):
+    names = if(objectGet(state, 'page') == 'video', ['time', 'playing'], ['yaw', 'pitch', 'zoom', 'spin'])
+    values = {}
+    for name in names:
+        objectSet(values, name, objectGet(state, name))
+    endfor
+    return ['sessionStorageSet', ['spaceshipHiggsBoson-' + objectGet(state, 'page'), jsonStringify(values)]]
+endfunction
+
+
+# Classify a color as white, tan, green, or blue
+function testColorClass(color):
+    red = arrayGet(color, 0)
+    green = arrayGet(color, 1)
+    blue = arrayGet(color, 2)
+    if mathMin(red, green, blue) > 180:
+        return 'white'
+    elif red > green && green > blue:
+        return 'tan'
+    elif green > red && green > blue:
+        return 'green'
+    endif
+    return 'blue'
+endfunction
+
+
+# Round a vector's components to millionths
+function testRoundVec(vec):
+    return [mathRound(arrayGet(vec, 0) * 1e6) / 1e6 + 0, mathRound(arrayGet(vec, 1) * 1e6) / 1e6 + 0, \
+        mathRound(arrayGet(vec, 2) * 1e6) / 1e6 + 0]
+endfunction
+
+
+# Run the application's main entry point for a page, at low detail
+function testRenderMain(page):
+    systemGlobalSet('vPage', page)
+    systemGlobalSet('vQuality', 'low')
+    spaceshipHiggsBosonMain()
+    systemGlobalSet('vPage', null)
+    systemGlobalSet('vQuality', null)
+endfunction
+
+
+# The film frame the player renders for a video state (the mocked canvas size)
+function testFilmFrame(state):
+    return shbFilmFrame(objectGet(state, 'time'), objectGet(state, 'level'), 976, 684, 22 + 38 * shbControlRows('video', 976), \
+        shbStatusText(state))
+endfunction
+
+
+# The start times of the film's shots
+function testShotStarts():
+    starts = []
+    for scene in objectGet(shbReel, 'scenes'):
+        arrayExtend(starts, objectGet(scene, 'shotStarts'))
+    endfor
+    return starts
+endfunction
+
+
+# A test scene - a 100 x 100 view along +z from 10 units, lit head-on
+function testSceneNew():
+    return shbSceneNew(shbCamera({'yaw': 0, 'pitch': 0, 'zoom': 1}, [0, 0, 0], 10, 100, 100), [0, 0, -1])
+endfunction
+
+
+# Collect the text of an element model's text nodes, in order
+function testTexts(model, texts):
+    texts = if(texts != null, texts, [])
+    type = systemType(model)
+    if type == 'array':
+        for item in model:
+            testTexts(item, texts)
+        endfor
+    elif type == 'object':
+        if objectHas(model, 'text'):
+            arrayPush(texts, objectGet(model, 'text'))
+        endif
+        testTexts(objectGet(model, 'elem'), texts)
+    endif
+    return texts
+endfunction
+
+
+# Find the click callback of the element whose text is "text"
+function testFindClick(model, text):
+    type = systemType(model)
+    if type == 'array':
+        for item in model:
+            found = testFindClick(item, text)
+            if found != null:
+                return found
+            endif
+        endfor
+    elif type == 'object':
+        elem = objectGet(model, 'elem')
+        callback = objectGet(model, 'callback')
+        if callback != null && systemType(elem) == 'object' && objectGet(elem, 'text') == text:
+            return objectGet(callback, 'click')
+        endif
+        return testFindClick(elem, text)
+    endif
+    return null
+endfunction
+
+
+# Collect the click callbacks of an element model, in order
+function testFindClicks(model, clicks):
+    clicks = if(clicks != null, clicks, [])
+    type = systemType(model)
+    if type == 'array':
+        for item in model:
+            testFindClicks(item, clicks)
+        endfor
+    elif type == 'object':
+        callback = objectGet(model, 'callback')
+        if callback != null:
+            arrayPush(clicks, objectGet(callback, 'click'))
+        endif
+        testFindClicks(objectGet(model, 'elem'), clicks)
+    endif
+    return clicks
+endfunction
+
+
+# Find the first callback argument of a mocked function call in a call log - null if there's none
+function testFindCallback(callLog, funcName):
+    for call in callLog:
+        if arrayGet(call, 0) == funcName:
+            return arrayGet(arrayGet(call, 1), 0)
+        endif
+    endfor
+endfunction
+
+
+# Assert that two functions have the same mocked side effects, each from the same starting state
+function testSameEffect(actualFn, expectedFn, setupFn):
+    setupFn()
+    testMockAll()
+    expectedFn()
+    expected = unittestMockEnd()
+    expectedState = jsonStringify(shbState)
+    setupFn()
+    testMockAll()
+    actualFn()
+    unittestDeepEqual(unittestMockEnd(), expected)
+    unittestEqual(jsonStringify(shbState), expectedState)
+endfunction
+
+
+# Assert that the click callback of a rendered control has the same effect as the expected function
+function testVerifyClick(renderFn, text, expectedFn, setupFn):
+    testMockAll()
+    renderFn()
+    found = testFindClick(unittestMockEnd(), text)
+    unittestEqual(found != null, true)
+    testSameEffect(found, expectedFn, setupFn)
+endfunction

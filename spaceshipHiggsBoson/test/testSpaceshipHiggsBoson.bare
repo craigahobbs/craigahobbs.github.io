@@ -1,0 +1,829 @@
+include <args.bare>
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBoson.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+# The mocked canvas size (window 1024 x 768, less 3 * 16px of document border and the 36px header)
+testWidth = 976
+testHeight = 684
+testAnchor = {'html': 'div', 'attr': {'id': 'spaceshipHiggsBoson-anchor', 'style': 'display: none;'}}
+
+
+#
+# Page renders
+#
+
+
+function testMainVideo():
+    testMockAll()
+    spaceshipHiggsBosonMain()
+    callLog = unittestMockEnd()
+    actualState = jsonStringify(shbState)
+
+    # Detail detection with the fixed clock picks the highest level
+    state = testStateSet('video', {'quality': 'auto', 'level': 3})
+    unittestEqual(actualState, jsonStringify(state))
+    unittestDeepEqual(callLog, [ \
+        ['documentSetTitle', ['Spaceship Higgs-Boson']], \
+        ['elementModelRender', [shbHeaderElements('video')]], \
+        ['elementModelRender', [shbOverlayElements('video')]], \
+        ['elementModelRender', [testAnchor]], \
+        ['windowSetResize', ['<function>']], \
+        ['documentSetKeyDown', ['<function>']], \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+endfunction
+unittestRunTest('testMainVideo')
+
+
+function testMainSettings():
+    systemGlobalSet('vPage', 'viewer')
+    testMockAll()
+    localStorageSet('spaceshipHiggsBoson', '{"quality": "high", "drive": false, "labels": "no", "extra": 1}')
+    spaceshipHiggsBosonMain()
+    callLog = unittestMockEnd()
+    actualState = jsonStringify(shbState)
+
+    # The saved detail and drive settings are restored; the invalid labels setting is the default
+    state = testStateSet('viewer', {'quality': 'high', 'level': 2, 'drive': false})
+    unittestEqual(actualState, jsonStringify(state))
+    unittestDeepEqual(arraySlice(callLog, 0, 3), [ \
+        ['localStorageSet', ['spaceshipHiggsBoson', '{"quality": "high", "drive": false, "labels": "no", "extra": 1}']], \
+        ['documentSetTitle', ['Spaceship Higgs-Boson']], \
+        ['elementModelRender', [shbHeaderElements('viewer')]] \
+    ])
+
+    # The URL argument overrides the saved detail setting
+    systemGlobalSet('vQuality', 'low')
+    testMockAll()
+    localStorageSet('spaceshipHiggsBoson', '{"quality": "high"}')
+    spaceshipHiggsBosonMain()
+    unittestMockEnd()
+    unittestEqual(objectGet(shbState, 'level'), 0)
+    systemGlobalSet('vPage', null)
+    systemGlobalSet('vQuality', null)
+endfunction
+unittestRunTest('testMainSettings')
+
+
+function testSettingsLoad():
+    testMockAll()
+    unittestDeepEqual(shbSettingsLoad(), {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true})
+    localStorageSet('spaceshipHiggsBoson', '[1, 2]')
+    unittestDeepEqual(shbSettingsLoad(), {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true})
+    localStorageSet('spaceshipHiggsBoson', '{"autoRotate": false, "quality": "ultra"}')
+    unittestDeepEqual(shbSettingsLoad(), {'quality': 'ultra', 'autoRotate': false, 'drive': true, 'labels': true, 'sound': true})
+    unittestMockEnd()
+endfunction
+unittestRunTest('testSettingsLoad')
+
+
+function testMainViewer():
+    systemGlobalSet('vPage', 'viewer')
+    systemGlobalSet('vQuality', 'Medium')
+    testMockAll()
+    spaceshipHiggsBosonMain()
+    callLog = unittestMockEnd()
+    actualState = jsonStringify(shbState)
+
+    state = testStateSet('viewer', {'quality': 'medium', 'level': 1})
+    unittestEqual(actualState, jsonStringify(state))
+    unittestDeepEqual(callLog, [ \
+        ['documentSetTitle', ['Spaceship Higgs-Boson']], \
+        ['elementModelRender', [shbHeaderElements('viewer')]], \
+        ['elementModelRender', [shbOverlayElements('viewer')]], \
+        ['elementModelRender', [testAnchor]], \
+        ['windowSetResize', ['<function>']], \
+        ['documentSetKeyDown', ['<function>']], \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+    systemGlobalSet('vPage', null)
+    systemGlobalSet('vQuality', null)
+endfunction
+unittestRunTest('testMainViewer')
+
+
+function testMainAbout():
+    systemGlobalSet('vPage', 'about')
+    testMockAll()
+    spaceshipHiggsBosonMain()
+    callLog = unittestMockEnd()
+    imageState = {'yaw': 30, 'pitch': 22, 'zoom': 1.15, 'spin': 0, 'time': 1, 'drive': true, 'labels': true}
+    image = shbSvg(shbViewerScene(imageState, 2, 960, 400), arrayGet(shbQualityLevels, 2), 960, 400, \
+        'The ISV Scalar Dawn spacecraft', null)
+    unittestDeepEqual(callLog, [ \
+        ['documentSetTitle', ['Spaceship Higgs-Boson']], \
+        ['elementModelRender', [shbHeaderElements('about')]], \
+        ['elementModelRender', [image]], \
+        ['markdownPrint', [shbAboutMarkdown()]] \
+    ])
+    systemGlobalSet('vPage', null)
+endfunction
+unittestRunTest('testMainAbout')
+
+
+function testMainStoryboardAndCast():
+    # The storyboard and cast pages are static - no state, controls, or animation
+    for page in ['storyboard', 'cast']:
+        systemGlobalSet('vPage', page)
+        testMockAll()
+        spaceshipHiggsBosonMain()
+        callLog = unittestMockEnd()
+        unittestDeepEqual(arraySlice(callLog, 0, 2), [ \
+            ['documentSetTitle', ['Spaceship Higgs-Boson']], \
+            ['elementModelRender', [shbHeaderElements(page)]] \
+        ])
+        for call in callLog:
+            unittestEqual(arrayIndexOf(['markdownPrint', 'elementModelRender', 'documentSetTitle'], arrayGet(call, 0)) >= 0, true)
+        endfor
+    endfor
+    systemGlobalSet('vPage', null)
+endfunction
+unittestRunTest('testMainStoryboardAndCast')
+
+
+function testOnStoryboardPlay():
+    testMockAll()
+    shbOnStoryboardPlay(52)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['spaceshipHiggsBoson-video', '{"playing":true,"time":52}']], \
+        ['windowSetLocation', ['#var=']] \
+    ])
+endfunction
+unittestRunTest('testOnStoryboardPlay')
+
+
+function testStoryboardBindings():
+    # Each still plays the film from its shot's start
+    testMockAll()
+    testRenderMain('storyboard')
+    clicks = testFindClicks(unittestMockEnd())
+    shotStarts = testShotStarts()
+    unittestEqual(arrayLength(clicks), arrayLength(shotStarts))
+    for click, ixClick in clicks:
+        testSameEffect(click, systemPartial(shbOnStoryboardPlay, arrayGet(shotStarts, ixClick)), systemPartial(testStateSet, 'video', null))
+    endfor
+endfunction
+unittestRunTest('testStoryboardBindings')
+
+
+function testMainUnknownPage():
+    systemGlobalSet('vPage', '<b>warp</b>')
+    testMockAll()
+    spaceshipHiggsBosonMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['Spaceship Higgs-Boson']], \
+        ['elementModelRender', [shbHeaderElements('<b>warp</b>')]], \
+        ['markdownPrint', ['', '**Error:** Unknown page "\\<b\\>warp\\</b\\>"']] \
+    ])
+    systemGlobalSet('vPage', null)
+endfunction
+unittestRunTest('testMainUnknownPage')
+
+
+function testHeaderElements():
+    unittestDeepEqual(shbHeaderElements('viewer'), { \
+        'html': 'div', \
+        'attr': {'style': 'display: flex; align-items: baseline; column-gap: 1.25em; height: 28px; line-height: 28px; ' + \
+            'margin-bottom: 8px; overflow: hidden; white-space: nowrap;'}, \
+        'elem': [ \
+            {'html': 'b', 'attr': {'style': 'font-size: 1.15em;'}, 'elem': {'text': 'Spaceship Higgs-Boson'}}, \
+            {'html': 'a', 'attr': {'href': '#var='}, 'elem': {'text': 'Video'}}, \
+            {'html': 'a', 'attr': {'href': "#var.vPage='storyboard'"}, 'elem': {'text': 'Storyboard'}}, \
+            {'html': 'a', 'attr': {'href': "#var.vPage='cast'"}, 'elem': {'text': 'Cast'}}, \
+            {'html': 'span', 'attr': {'style': 'text-decoration: underline 2px; text-underline-offset: 5px;'}, \
+                'elem': {'text': 'Viewer'}}, \
+            {'html': 'a', 'attr': {'href': "#var.vPage='about'"}, 'elem': {'text': 'About'}} \
+        ] \
+    })
+endfunction
+unittestRunTest('testHeaderElements')
+
+
+function testOverlayElements():
+    unittestDeepEqual(testTexts(shbOverlayElements('video')), \
+        ['Play / Pause', 'Restart', 'Previous chapter', 'Next chapter', 'Sound', 'Detail'])
+    unittestDeepEqual(testTexts(shbOverlayElements('viewer')), [ \
+        'Rotate left', 'Rotate right', 'Tilt up', 'Tilt down', 'Zoom in', 'Zoom out', 'Auto-rotate', 'Drive', 'Labels', \
+        'Reset view', 'Detail' \
+    ])
+    style = objectGet(objectGet(shbOverlayElements('viewer'), 'attr'), 'style')
+    unittestEqual(stringIndexOf(style, 'position: absolute;') >= 0, true)
+    unittestEqual(stringIndexOf(style, 'justify-content: flex-start;') >= 0, true)
+endfunction
+unittestRunTest('testOverlayElements')
+
+
+function testRenderVideoShots():
+    # Every shot renders - the Earth orbit close-ups, wide shots, and sunrises, the voyage cuts, and the Alpha Centauri
+    # cuts
+    for shotStart in testShotStarts():
+        time = shotStart + 3
+        state = testStateSet('video', {'time': time, 'level': 1})
+        testMockAll()
+        shbRender()
+        callLog = unittestMockEnd()
+        unittestDeepEqual(callLog, [ \
+            testPlaybackCall(state), \
+            ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+            ['elementModelRender', [testFilmFrame(state)]], \
+            ['windowSetTimeout', ['<function>', 40]] \
+        ])
+    endfor
+endfunction
+unittestRunTest('testRenderVideoShots')
+
+
+function testRenderVideoNarrow():
+    state = testStateSet('video', {'time': 58, 'level': 2})
+    testMockAll()
+    unittestMockOne('windowWidth', systemPartial(testReturn, 448))
+    shbRender()
+    callLog = unittestMockEnd()
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [shbFilmFrame(58, 2, 400, testHeight, 22 + 38 * shbControlRows('video', 400), 'Detail: High')]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+
+    # Narrow screens have no telemetry and wrap the captions shorter
+    texts = testTexts(arrayGet(arrayGet(arrayGet(callLog, 2), 1), 0))
+    unittestDeepEqual(arraySlice(texts, arrayLength(texts) - 5), [ \
+        '>> CAPCOM: BUBBLE STABLE.', 'MASS AT 0.1 PERCENT.', 'CC', '4 / 8 · Outbound', 'Detail: High' \
+    ])
+endfunction
+unittestRunTest('testRenderVideoNarrow')
+
+
+function testRenderViewer():
+    state = testStateSet('viewer', {'time': 2, 'spin': 40, 'level': 3, 'quality': 'auto', 'perf': {'average': 10}})
+    testMockAll()
+    shbRender()
+    callLog = unittestMockEnd()
+    svg = shbViewerFrame(state, testWidth, testHeight)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [svg]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+    unittestDeepEqual(testTexts(svg), [ \
+        'Command module', 'Higgs factory ring', 'Radiators', 'Higgs decay chamber', 'Magnetic nozzle', \
+        'Mass-suppression bubble', \
+        'ISV Scalar Dawn', \
+        'Rest mass', '2000 t', \
+        'Inertial mass in bubble', '2.0 t', \
+        'Thrust at 1 g', '19.6 kN', \
+        'Exhaust beam power', '5.88 TW', \
+        'Higgs bosons per second', '2.93 × 10²⁰', \
+        'Drive', 'Running', \
+        'Detail: Ultra (auto) · 20 fps', \
+        'Keys: arrows rotate · +/- zoom · space auto-rotate · D drive · L labels · R reset · Q detail' \
+    ])
+endfunction
+unittestRunTest('testRenderViewer')
+
+
+function testRenderViewerPlain():
+    state = testStateSet('viewer', {'drive': false, 'labels': false})
+    testMockAll()
+    unittestMockOne('windowWidth', systemPartial(testReturn, 548))
+    shbRender()
+    callLog = unittestMockEnd()
+    svg = shbViewerFrame(state, 500, testHeight)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [svg]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+
+    # No labels, the drive off, and no keyboard help on a narrow screen
+    texts = testTexts(svg)
+    unittestEqual(arrayGet(texts, 0), 'ISV Scalar Dawn')
+    unittestDeepEqual(arraySlice(texts, arrayLength(texts) - 3), ['Drive', 'Off', 'Detail: Low'])
+endfunction
+unittestRunTest('testRenderViewerPlain')
+
+
+#
+# Named handlers
+#
+
+
+function testTickVideo():
+    state = testStateSet('video', {'time': 10, 'quality': 'auto', 'lastTick': testClock() + (-70)})
+    testMockAll()
+    shbTick()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'time'), 10.04)
+    unittestEqual(objectGet(state, 'lastTick'), testClock())
+    unittestDeepEqual(objectGet(state, 'perf'), {'average': 30, 'samples': 1, 'fastFrames': 0})
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+endfunction
+unittestRunTest('testTickVideo')
+
+
+function testTickVideoEnd():
+    state = testStateSet('video', {'time': 169.98})
+    testMockAll()
+    shbTick()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'time'), 170)
+    unittestEqual(objectGet(state, 'playing'), false)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]] \
+    ])
+endfunction
+unittestRunTest('testTickVideoEnd')
+
+
+function testTickVideoSounds():
+    # The tick plays the sound cues it passes - a module docks at 16 seconds
+    testStateSet('video', {'time': 15.98})
+    sounds = []
+    testMockAll()
+    unittestMockOne('windowPlaySound', systemPartial(arrayPush, sounds))
+    shbTick()
+    unittestMockEnd()
+    unittestDeepEqual(sounds, ['click'])
+
+    # ... unless the sound is off
+    state = testStateSet('video', {'time': 15.98, 'sound': false})
+    sounds = []
+    testMockAll()
+    unittestMockOne('windowPlaySound', systemPartial(arrayPush, sounds))
+    shbTick()
+    unittestMockEnd()
+    unittestDeepEqual(sounds, [])
+    unittestEqual(shbStatusText(state), 'Detail: Low · Sound off')
+endfunction
+unittestRunTest('testTickVideoSounds')
+
+
+function testTickViewer():
+    state = testStateSet('viewer', {'spin': 359.9})
+    testMockAll()
+    shbTick()
+    callLog = unittestMockEnd()
+    unittestEqual(numberToFixed(objectGet(state, 'spin'), 2), '0.38')
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+
+    # No auto-rotate
+    objectSet(state, 'autoRotate', false)
+    testMockAll()
+    shbTick()
+    unittestMockEnd()
+    unittestEqual(numberToFixed(objectGet(state, 'spin'), 2), '0.38')
+endfunction
+unittestRunTest('testTickViewer')
+
+
+function testOnPlay():
+    state = testStateSet('video', {'time': 50, 'lastTick': testClock()})
+    testMockAll()
+    shbOnPlay()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'playing'), false)
+    unittestEqual(objectGet(state, 'lastTick'), null)
+    unittestEqual(objectGet(state, 'time'), 50)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]] \
+    ])
+
+    # Resume
+    testMockAll()
+    shbOnPlay()
+    unittestMockEnd()
+    unittestEqual(objectGet(state, 'playing'), true)
+    unittestEqual(objectGet(state, 'time'), 50)
+endfunction
+unittestRunTest('testOnPlay')
+
+
+function testOnPlayReplay():
+    state = testStateSet('video', {'time': 170, 'playing': false})
+    testMockAll()
+    shbOnPlay()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'playing'), true)
+    unittestEqual(objectGet(state, 'time'), 0)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+endfunction
+unittestRunTest('testOnPlayReplay')
+
+
+function testOnRestart():
+    state = testStateSet('video', {'time': 90, 'playing': false, 'lastTick': testClock()})
+    testMockAll()
+    shbOnRestart()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'time'), 0)
+    unittestEqual(objectGet(state, 'playing'), true)
+    unittestEqual(objectGet(state, 'lastTick'), null)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+endfunction
+unittestRunTest('testOnRestart')
+
+
+function testOnChapter():
+    state = testStateSet('video', {'time': 50, 'playing': false, 'lastTick': testClock()})
+    testMockAll()
+    shbOnChapter(1)
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'time'), 52)
+    unittestEqual(objectGet(state, 'lastTick'), null)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]] \
+    ])
+
+    # Previous - near a chapter's start goes to the previous chapter, else to the chapter's start
+    expected = [[-1, 89, 52], [-1, 50, 38], [-1, 1, 0], [1, 164, 170], [1, 170, 170]]
+    for step in expected:
+        objectSet(state, 'time', arrayGet(step, 1))
+        testMockAll()
+        shbOnChapter(arrayGet(step, 0))
+        unittestMockEnd()
+        unittestEqual(objectGet(state, 'time'), arrayGet(step, 2))
+    endfor
+endfunction
+unittestRunTest('testOnChapter')
+
+
+function testOnRotate():
+    state = testStateSet('viewer', {'yaw': 350, 'pitch': 75})
+    testMockAll()
+    shbOnRotate(15, 10)
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'yaw'), 5)
+    unittestEqual(objectGet(state, 'pitch'), 80)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+    testMockAll()
+    shbOnRotate(0, -200)
+    unittestMockEnd()
+    unittestEqual(objectGet(state, 'pitch'), -80)
+endfunction
+unittestRunTest('testOnRotate')
+
+
+function testOnZoom():
+    state = testStateSet('viewer', {'zoom': 3.5})
+    testMockAll()
+    shbOnZoom(1.25)
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'zoom'), 4)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+    objectSet(state, 'zoom', 0.45)
+    testMockAll()
+    shbOnZoom(0.8)
+    unittestMockEnd()
+    unittestEqual(objectGet(state, 'zoom'), 0.4)
+endfunction
+unittestRunTest('testOnZoom')
+
+
+function testOnReset():
+    state = testStateSet('viewer', {'yaw': 100, 'pitch': -40, 'zoom': 2, 'spin': 90})
+    testMockAll()
+    shbOnReset()
+    callLog = unittestMockEnd()
+    unittestDeepEqual([objectGet(state, 'yaw'), objectGet(state, 'pitch'), objectGet(state, 'zoom'), objectGet(state, 'spin')], \
+        [30, 22, 1, 0])
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+endfunction
+unittestRunTest('testOnReset')
+
+
+function testOnToggle():
+    state = testStateSet('viewer', null)
+    for name in ['autoRotate', 'drive', 'labels']:
+        testMockAll()
+        shbOnToggle(name)
+        callLog = unittestMockEnd()
+        unittestEqual(objectGet(state, name), false)
+        unittestDeepEqual(callLog, [ \
+            ['localStorageSet', ['spaceshipHiggsBoson', jsonStringify({'quality': 'low', 'autoRotate': objectGet(state, 'autoRotate'), \
+                'drive': objectGet(state, 'drive'), 'labels': objectGet(state, 'labels'), 'sound': true})]], \
+            testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+            ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
+            ['windowSetTimeout', ['<function>', 40]] \
+        ])
+    endfor
+endfunction
+unittestRunTest('testOnToggle')
+
+
+function testOnQuality():
+    state = testStateSet('video', {'quality': 'auto', 'level': 2, 'playing': false, \
+        'perf': {'average': 5, 'samples': 4, 'fastFrames': 4}})
+
+    # Cycle auto -> low -> medium -> high -> ultra -> auto
+    for setting in [['low', 0], ['medium', 1], ['high', 2], ['ultra', 3], ['auto', 3]]:
+        testMockAll()
+        shbOnQuality()
+        callLog = unittestMockEnd()
+        unittestEqual(objectGet(state, 'quality'), arrayGet(setting, 0))
+        unittestEqual(objectGet(state, 'level'), arrayGet(setting, 1))
+        unittestDeepEqual(objectGet(state, 'perf'), shbPerfNew())
+        unittestDeepEqual(callLog, [ \
+            ['localStorageSet', ['spaceshipHiggsBoson', jsonStringify({'quality': arrayGet(setting, 0), 'autoRotate': true, \
+                'drive': true, 'labels': true, 'sound': true})]], \
+            testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+            ['elementModelRender', [testFilmFrame(state)]] \
+        ])
+    endfor
+endfunction
+unittestRunTest('testOnQuality')
+
+
+function testOnKeyDownVideo():
+    setup = systemPartial(testStateSet, 'video', {'time': 50, 'playing': false})
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': ' '}), shbOnPlay, setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowLeft'}), systemPartial(shbOnChapter, -1), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowRight'}), systemPartial(shbOnChapter, 1), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'R'}), shbOnRestart, setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'M'}), systemPartial(shbOnToggle, 'sound'), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'q'}), shbOnQuality, setup)
+endfunction
+unittestRunTest('testOnKeyDownVideo')
+
+
+function testOnKeyDownViewer():
+    setup = systemPartial(testStateSet, 'viewer', null)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowLeft'}), systemPartial(shbOnRotate, -15, 0), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowRight'}), systemPartial(shbOnRotate, 15, 0), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowUp'}), systemPartial(shbOnRotate, 0, 10), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowDown'}), systemPartial(shbOnRotate, 0, -10), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': '+'}), systemPartial(shbOnZoom, 1.25), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': '='}), systemPartial(shbOnZoom, 1.25), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': '-'}), systemPartial(shbOnZoom, 0.8), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': '_'}), systemPartial(shbOnZoom, 0.8), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': ' '}), systemPartial(shbOnToggle, 'autoRotate'), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'D'}), systemPartial(shbOnToggle, 'drive'), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'l'}), systemPartial(shbOnToggle, 'labels'), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'r'}), shbOnReset, setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'Q'}), shbOnQuality, setup)
+endfunction
+unittestRunTest('testOnKeyDownViewer')
+
+
+function testOnKeyDownUnhandled():
+    # An unhandled key keeps the animation running...
+    for page in ['video', 'viewer']:
+        testStateSet(page, null)
+        testMockAll()
+        shbOnKeyDown({'key': 'x'})
+        unittestDeepEqual(unittestMockEnd(), [['windowSetTimeout', ['<function>', 40]]])
+    endfor
+
+    # ... and does nothing when paused
+    testStateSet('video', {'playing': false})
+    testMockAll()
+    shbOnKeyDown({'key': 'x'})
+    unittestDeepEqual(unittestMockEnd(), [])
+endfunction
+unittestRunTest('testOnKeyDownUnhandled')
+
+
+#
+# Callback bindings
+#
+
+
+function testVideoBindings():
+    render = systemPartial(testRenderMain, 'video')
+    setup = systemPartial(testStateSet, 'video', {'time': 50, 'playing': false})
+    testVerifyClick(render, 'Play / Pause', shbOnPlay, setup)
+    testVerifyClick(render, 'Restart', shbOnRestart, setup)
+    testVerifyClick(render, 'Previous chapter', systemPartial(shbOnChapter, -1), setup)
+    testVerifyClick(render, 'Next chapter', systemPartial(shbOnChapter, 1), setup)
+    testVerifyClick(render, 'Sound', systemPartial(shbOnToggle, 'sound'), setup)
+    testVerifyClick(render, 'Detail', shbOnQuality, setup)
+endfunction
+unittestRunTest('testVideoBindings')
+
+
+function testViewerBindings():
+    render = systemPartial(testRenderMain, 'viewer')
+    setup = systemPartial(testStateSet, 'viewer', {'time': 3, 'spin': 20})
+    testVerifyClick(render, 'Rotate left', systemPartial(shbOnRotate, -15, 0), setup)
+    testVerifyClick(render, 'Rotate right', systemPartial(shbOnRotate, 15, 0), setup)
+    testVerifyClick(render, 'Tilt up', systemPartial(shbOnRotate, 0, 10), setup)
+    testVerifyClick(render, 'Tilt down', systemPartial(shbOnRotate, 0, -10), setup)
+    testVerifyClick(render, 'Zoom in', systemPartial(shbOnZoom, 1.25), setup)
+    testVerifyClick(render, 'Zoom out', systemPartial(shbOnZoom, 0.8), setup)
+    testVerifyClick(render, 'Auto-rotate', systemPartial(shbOnToggle, 'autoRotate'), setup)
+    testVerifyClick(render, 'Drive', systemPartial(shbOnToggle, 'drive'), setup)
+    testVerifyClick(render, 'Labels', systemPartial(shbOnToggle, 'labels'), setup)
+    testVerifyClick(render, 'Reset view', shbOnReset, setup)
+    testVerifyClick(render, 'Detail', shbOnQuality, setup)
+endfunction
+unittestRunTest('testViewerBindings')
+
+
+function testWindowBindings():
+    testMockAll()
+    testRenderMain('viewer')
+    callLog = unittestMockEnd()
+    setup = systemPartial(testStateSet, 'viewer', {'time': 3})
+    testSameEffect(testFindCallback(callLog, 'windowSetResize'), shbRender, setup)
+    testSameEffect(testFindCallback(callLog, 'windowSetTimeout'), shbTick, setup)
+    keyDown = testFindCallback(callLog, 'documentSetKeyDown')
+    testSameEffect(systemPartial(keyDown, {'key': 'ArrowUp'}), systemPartial(shbOnKeyDown, {'key': 'ArrowUp'}), setup)
+endfunction
+unittestRunTest('testWindowBindings')
+
+
+#
+# Detail detection and adaptation
+#
+
+
+function testQualityDetect():
+    testMockAll()
+    unittestEqual(shbQualityDetect(testWidth, testHeight), 3)
+    unittestEqual(shbQualityDetect(500, 500), 1)
+    unittestDeepEqual(unittestMockEnd(), [])
+endfunction
+unittestRunTest('testQualityDetect')
+
+
+function testQualityPick():
+    pixels = testWidth * testHeight
+    unittestEqual(shbQualityPick(0.009, pixels), 3)
+    unittestEqual(shbQualityPick(0.011, pixels), 2)
+    unittestEqual(shbQualityPick(0.015, pixels), 1)
+    unittestEqual(shbQualityPick(1, pixels), 0)
+    unittestEqual(shbQualityPick(0.001, 300000), 1)
+    unittestEqual(shbQualityPick(0.001, 5000000), 2)
+endfunction
+unittestRunTest('testQualityPick')
+
+
+function testQualityAdaptFixed():
+    state = {'quality': 'high', 'level': 2, 'perf': shbPerfNew()}
+    shbQualityAdapt(state, 100)
+    unittestDeepEqual(state, {'quality': 'high', 'level': 2, 'perf': shbPerfNew()})
+
+    # Throttled frames (e.g. a background tab) are ignored
+    objectSet(state, 'quality', 'auto')
+    shbQualityAdapt(state, 1500)
+    unittestDeepEqual(state, {'quality': 'auto', 'level': 2, 'perf': shbPerfNew()})
+endfunction
+unittestRunTest('testQualityAdaptFixed')
+
+
+function testFrameBudget():
+    # The frame rate targets - Low 12 fps, Medium 10, High 8, and Ultra 7
+    unittestDeepEqual([numberToFixed(shbFrameBudget(0), 1), shbFrameBudget(1), shbFrameBudget(2), numberToFixed(shbFrameBudget(3), 1)], \
+        ['43.3', 60, 85, '102.9'])
+endfunction
+unittestRunTest('testFrameBudget')
+
+
+function testQualityAdaptDown():
+    # High's budget is 85 ms
+    state = {'quality': 'auto', 'level': 2, 'perf': shbPerfNew()}
+    frame = 0
+    while frame < 7:
+        shbQualityAdapt(state, 100)
+        frame = frame + 1
+    endwhile
+    unittestEqual(objectGet(state, 'level'), 2)
+    unittestDeepEqual(objectGet(state, 'perf'), {'average': 100, 'samples': 7, 'fastFrames': 0})
+    shbQualityAdapt(state, 100)
+    unittestDeepEqual(state, {'quality': 'auto', 'level': 1, 'perf': shbPerfNew()})
+
+    # The lowest level stays
+    objectSet(state, 'level', 0)
+    frame = 0
+    while frame < 10:
+        shbQualityAdapt(state, 100)
+        frame = frame + 1
+    endwhile
+    unittestEqual(objectGet(state, 'level'), 0)
+endfunction
+unittestRunTest('testQualityAdaptDown')
+
+
+function testQualityAdaptUp():
+    # From Medium, High's estimated cost (twice Medium's faces) must fit in 80% of its 85 ms budget
+    state = {'quality': 'auto', 'level': 1, 'perf': shbPerfNew()}
+    frame = 0
+    while frame < 49:
+        shbQualityAdapt(state, 2)
+        frame = frame + 1
+    endwhile
+    unittestEqual(objectGet(state, 'level'), 1)
+    unittestEqual(objectGet(objectGet(state, 'perf'), 'fastFrames'), 49)
+
+    # A slower frame resets the fast-frame run
+    shbQualityAdapt(state, 300)
+    unittestEqual(objectGet(objectGet(state, 'perf'), 'fastFrames'), 0)
+    perf = objectGet(state, 'perf')
+    objectSet(perf, 'average', 2)
+    objectSet(perf, 'fastFrames', 49)
+    shbQualityAdapt(state, 2)
+    unittestDeepEqual(state, {'quality': 'auto', 'level': 2, 'perf': shbPerfNew()})
+
+    # The highest level stays
+    objectSet(state, 'level', 3)
+    frame = 0
+    while frame < 60:
+        shbQualityAdapt(state, 2)
+        frame = frame + 1
+    endwhile
+    unittestEqual(objectGet(state, 'level'), 3)
+    unittestEqual(objectGet(objectGet(state, 'perf'), 'fastFrames'), 0)
+endfunction
+unittestRunTest('testQualityAdaptUp')
+
+
+function testQualityText():
+    unittestEqual(shbQualityText({'quality': 'auto', 'level': 2}), 'Detail: High (auto)')
+    unittestEqual(shbQualityText({'quality': 'ultra', 'level': 3}), 'Detail: Ultra')
+    unittestEqual(shbFrameRateText({'playing': true, 'perf': {'average': 10}}), '20 fps')
+    unittestEqual(shbFrameRateText({'playing': true, 'perf': {'average': -5}}), '25 fps')
+    unittestEqual(shbFrameRateText({'playing': true, 'perf': {'average': null}}), '')
+    unittestEqual(shbFrameRateText({'playing': false, 'perf': {'average': 10}}), '')
+    unittestEqual(shbStatusText({'quality': 'low', 'level': 0, 'playing': false, 'perf': {'average': 10}}), 'Detail: Low · Paused')
+    unittestEqual(shbStatusText({'quality': 'low', 'level': 0, 'playing': true, 'perf': {'average': 10}}), 'Detail: Low · 20 fps')
+    unittestEqual(shbStatusText({'quality': 'low', 'level': 0, 'playing': true, 'perf': {'average': null}}), 'Detail: Low')
+endfunction
+unittestRunTest('testQualityText')
+
+
+#
+# Pages
+#
+
+
+function testPageHelpers():
+    unittestEqual(shbPageGet('warp'), null)
+    unittestEqual(objectGet(shbPageGet('about'), 'title'), 'About')
+    unittestEqual(shbControlRows('video', testWidth), 1)
+    unittestEqual(shbControlRows('viewer', testWidth), 1)
+    unittestEqual(shbControlRows('viewer', 400), 3)
+
+    # The canvas is at least 320 pixels square
+    testMockAll()
+    unittestMockOne('windowWidth', systemPartial(testReturn, 200))
+    unittestMockOne('windowHeight', systemPartial(testReturn, 200))
+    unittestDeepEqual(shbCanvasSize(), {'width': 320, 'height': 320})
+    unittestMockEnd()
+endfunction
+unittestRunTest('testPageHelpers')
+
+

@@ -1,0 +1,308 @@
+include <unittest.bare>
+include <unittestMock.bare>
+include '../spaceshipHiggsBosonRender.bare'
+include 'testSpaceshipHiggsBosonHelpers.bare'
+
+
+function testVectors():
+    unittestDeepEqual(shbVecAdd([1, 2, 3], [4, 5, 6]), [5, 7, 9])
+    unittestDeepEqual(shbVecSub([1, 2, 3], [4, 5, 6]), [-3, -3, -3])
+    unittestDeepEqual(shbVecScale([1, 2, 3], 2), [2, 4, 6])
+    unittestEqual(shbVecDot([1, 2, 3], [4, 5, 6]), 32)
+    unittestDeepEqual(shbVecCross([1, 0, 0], [0, 1, 0]), [0, 0, 1])
+    unittestEqual(shbVecLength([3, 4, 0]), 5)
+    unittestDeepEqual(shbVecNormalize([0, 0, 2]), [0, 0, 1])
+endfunction
+unittestRunTest('testVectors')
+
+
+function testMatrices():
+    quarter = shbPi / 2
+    unittestDeepEqual(testRoundVec(shbMatApply(shbMatRotX(quarter), [0, 1, 0])), [0, 0, 1])
+    unittestDeepEqual(testRoundVec(shbMatApply(shbMatRotY(quarter), [1, 0, 0])), [0, 0, -1])
+    unittestDeepEqual(shbMatScale([1, 0, 0, 0, 1, 0, 0, 0, 1], 3), [3, 0, 0, 0, 3, 0, 0, 0, 3])
+    both = shbMatMul(shbMatRotX(quarter), shbMatRotY(quarter))
+    unittestDeepEqual(testRoundVec(shbMatApply(both, [1, 0, 0])), [0, 1, 0])
+endfunction
+unittestRunTest('testMatrices')
+
+
+function testCamera():
+    camera = shbCamera({'yaw': 0, 'pitch': 0, 'zoom': 2}, [1, 0, 0], 10, 200, 100)
+    unittestDeepEqual(camera, { \
+        'matrix': [1, 0, 0, 0, 1, 0, 0, 0, 1], 'target': [1, 0, 0], 'distance': 10, 'cx': 100, 'cy': 50, 'focal': 200 \
+    })
+    unittestDeepEqual(shbCameraPoint(camera, [1, 1, 0]), [0, 1, 10])
+    unittestDeepEqual(shbProject(camera, [0, 1, 10]), [100, 30])
+    unittestEqual(shbProject(camera, [0, 1, 0.2]), null)
+    unittestDeepEqual(shbProjectDirection(camera, [0, 0.5, 1]), [100, -50])
+    unittestEqual(shbProjectDirection(camera, [0, 0, -1]), null)
+endfunction
+unittestRunTest('testCamera')
+
+
+function testCameraLookAt():
+    camera = shbCameraLookAt([0, 10, -10], [0, 0, 0], 200, 100)
+    unittestEqual(numberToFixed(objectGet(camera, 'distance'), 4), '14.1421')
+    unittestDeepEqual(testRoundVec(shbCameraPoint(camera, [0, 10, -10])), [0, 0, 0])
+    unittestDeepEqual(testRoundVec(shbCameraPoint(camera, [0, 0, 0])), [0, 0, 14.142136])
+    unittestDeepEqual(testRoundVec(shbMatApply(shbMatRotZ(shbPi / 2), [1, 0, 0])), [0, 1, 0])
+endfunction
+unittestRunTest('testCameraLookAt')
+
+
+function testClipNear():
+    unittestDeepEqual(shbClipNear([[0, 0, 1], [1, 0, 1], [0, 1, 1]]), [[0, 0, 1], [1, 0, 1], [0, 1, 1]])
+    unittestDeepEqual(shbClipNear([[0, 0, -1], [1, 0, -1], [0, 1, -1]]), [])
+    unittestDeepEqual(shbClipNear([[0, 0, -1.5], [0, 2, 2.5], [2, 0, 2.5]]), [[1, 0, 0.5], [0, 1, 0.5], [0, 2, 2.5], [2, 0, 2.5]])
+
+    # A face crossing the near plane is clipped, not dropped
+    scene = testSceneNew()
+    shbSceneAddFace(scene, shbMeshProps([100, 100, 100], 1, 1, false, 0), [[0, 0, -1.5], [2, 0, 2.5], [0, 2, 2.5]])
+    unittestEqual(arrayLength(objectGet(scene, 'items')), 1)
+endfunction
+unittestRunTest('testClipNear')
+
+
+function testSceneAddFace():
+    scene = testSceneNew()
+    props = shbMeshProps([100, 200, 50], 0.5, 1, false, 0)
+    front = [[0, 0, 10], [0, 1, 10], [1, 0, 10]]
+    back = [[0, 0, 10], [1, 0, 10], [0, 1, 10]]
+
+    # A face toward the camera, lit head-on
+    shbSceneAddFace(scene, props, front)
+    unittestDeepEqual(objectGet(scene, 'items'), [{ \
+        'z': 10, 'tag': 'path', 'd': 'M50 50L50 40L60 50Z', \
+        'attr': {'fill': 'rgb(100,200,50)', 'stroke': 'rgb(100,200,50)', 'stroke-width': 0.6, 'stroke-linejoin': 'round', 'filter': null}, \
+        'key': 'prgb(100,200,50)rgb(100,200,50)null' \
+    }])
+
+    # Culled - a back face, a degenerate face, and a face behind the camera
+    shbSceneAddFace(scene, props, back)
+    shbSceneAddFace(scene, props, [[0, 0, 10], [0, 0, 10], [1, 0, 10]])
+    shbSceneAddFace(scene, props, [[0, 0, 0.1], [0, 1, 0.1], [1, 0, 0.1]])
+    unittestEqual(arrayLength(objectGet(scene, 'items')), 1)
+
+    # The back of a double-sided face is wound in reverse and lit from its back side
+    shbSceneAddFace(scene, shbMeshProps([100, 100, 100], 0.5, 1, true, 0), back)
+    item = arrayGet(objectGet(scene, 'items'), 1)
+    unittestEqual(objectGet(item, 'd'), 'M50 40L60 50L50 50Z')
+    unittestEqual(objectGet(objectGet(item, 'attr'), 'fill'), 'rgb(100,100,100)')
+endfunction
+unittestRunTest('testSceneAddFace')
+
+
+function testSceneAddFaceShading():
+    scene = testSceneNew()
+    front = [[0, 0, 10], [0, 1, 10], [1, 0, 10]]
+
+    # Specular highlight
+    shbSceneAddFace(scene, shbMeshProps([100, 100, 100], 0, 1, false, 0.5), front)
+
+    # A translucent face and a sunlit-only face
+    shbSceneAddFace(scene, shbMeshProps([100, 100, 100], 1, 0.5, false, 0), front)
+    shbSceneAddFace(scene, shbMeshPropsMerge(shbMeshProps([100, 100, 100], 1, 0.5, false, 0), {'alphaLit': true}), front)
+    fills = []
+    for item in objectGet(scene, 'items'):
+        arrayPush(fills, objectGet(objectGet(item, 'attr'), 'fill'))
+    endfor
+    unittestDeepEqual(fills, ['rgb(227,227,227)', 'rgba(100,100,100,0.50)', 'rgba(100,100,100,0.50)'])
+
+    # Lit from behind - night emission shows, and a sunlit-only face is hidden
+    dark = testSceneNew()
+    objectSet(dark, 'light', [0, 0, 1])
+    shbSceneAddFace(dark, shbMeshPropsMerge(shbMeshProps([100, 100, 100], 0, 1, false, 0), {'night': [50, 40, 30]}), front)
+    shbSceneAddFace(dark, shbMeshPropsMerge(shbMeshProps([100, 100, 100], 1, 0.5, false, 0), {'alphaLit': true}), front)
+    unittestEqual(arrayLength(objectGet(dark, 'items')), 1)
+    unittestEqual(objectGet(objectGet(arrayGet(objectGet(dark, 'items'), 0), 'attr'), 'fill'), 'rgb(50,40,30)')
+endfunction
+unittestRunTest('testSceneAddFaceShading')
+
+
+function testSceneAddPath():
+    scene = testSceneNew()
+    points = [[0, 0, 0], [1, 0, 0], [1, 1, 0]]
+    shbSceneAddPath(scene, points, 'red', 1, 'none', true, null)
+    unittestEqual(arrayLength(objectGet(scene, 'items')), 2)
+    unittestEqual(objectGet(arrayGet(objectGet(scene, 'items'), 0), 'd'), 'M50 50L60 50')
+
+    # Closed paths add the closing segment; segments behind the camera are skipped
+    shbSceneAddPath(scene, points, 'red', 1, 'none', false, null, 3)
+    unittestEqual(arrayLength(objectGet(scene, 'items')), 5)
+    shbSceneAddPath(scene, [[0, 0, -20], [1, 0, 0]], 'red', 1, 'none', true, null)
+    unittestEqual(arrayLength(objectGet(scene, 'items')), 5)
+endfunction
+unittestRunTest('testSceneAddPath')
+
+
+function testSceneAddMarkers():
+    scene = testSceneNew()
+    shbSceneAddGlow(scene, [0, 0, 0], 1, 'white', 2)
+    shbSceneAddGlow(scene, [0, 0, -20], 1, 'white', 2)
+    shbSceneAddLabel(scene, [1, 0, 0], 'Here')
+    shbSceneAddLabel(scene, [0, 0, -20], 'Behind')
+    shbSceneAddSun(scene, [0, 0, 1], 1, 'url(#shbSunGlow)', '#fffdf4', 'Sun')
+    shbSceneAddSun(scene, [0, 0, 1], 0.5, 'url(#shbStarB)', '#ffd6a8', null)
+    shbSceneAddSun(scene, [0, 0, -1], 1, 'url(#shbSunGlow)', '#fffdf4', 'Hidden')
+    unittestDeepEqual(objectGet(scene, 'items'), [ \
+        {'z': 12, 'tag': 'circle', 'd': null, 'attr': {'cx': 50, 'cy': 50, 'r': 10.1, 'fill': 'white'}, 'key': null}, \
+        {'z': 999999999, 'tag': 'circle', 'd': null, 'attr': {'cx': 50, 'cy': 50, 'r': 140, 'fill': 'url(#shbSunGlow)'}, 'key': null}, \
+        {'z': 999999999, 'tag': 'circle', 'd': null, 'attr': {'cx': 50, 'cy': 50, 'r': 14, 'fill': '#fffdf4'}, 'key': null}, \
+        {'z': 999999999, 'tag': 'circle', 'd': null, 'attr': {'cx': 50, 'cy': 50, 'r': 70, 'fill': 'url(#shbStarB)'}, 'key': null}, \
+        {'z': 999999999, 'tag': 'circle', 'd': null, 'attr': {'cx': 50, 'cy': 50, 'r': 9, 'fill': '#ffd6a8'}, 'key': null} \
+    ])
+    unittestDeepEqual(objectGet(scene, 'labels'), [{'x': 60, 'y': 50, 'text': 'Here'}, {'x': 50, 'y': 50, 'text': 'Sun'}])
+endfunction
+unittestRunTest('testSceneAddMarkers')
+
+
+function testSceneAddStars():
+    scene = testSceneNew()
+    shbSceneAddStars(scene, arraySlice(shbStars, 0, 100), 0)
+    count = arrayLength(objectGet(scene, 'stars'))
+    unittestEqual(count > 10 && count < 100, true)
+
+    # Stars render first, in order, ahead of the depth-sorted items
+    shbSceneAddItem(scene, 5, 'circle', null, {'r': 1}, null)
+    elements = shbSceneElements(scene)
+    unittestDeepEqual(arrayGet(elements, 0), {'svg': 'circle', 'attr': arrayGet(objectGet(scene, 'stars'), 0)})
+    unittestDeepEqual(arrayGet(elements, count), {'svg': 'circle', 'attr': {'r': 1}})
+
+    # At relativistic speed, the forward (+x) sky crowds ahead and brightens
+    ahead = testSceneNew()
+    objectSet(objectGet(ahead, 'camera'), 'matrix', shbMatRotY(-shbPi / 2))
+    shbSceneAddStars(ahead, arraySlice(shbStars, 0, 100), 0)
+    aheadRest = arrayLength(objectGet(ahead, 'stars'))
+    ahead = testSceneNew()
+    objectSet(objectGet(ahead, 'camera'), 'matrix', shbMatRotY(-shbPi / 2))
+    shbSceneAddStars(ahead, arraySlice(shbStars, 0, 100), 0.9)
+    unittestEqual(arrayLength(objectGet(ahead, 'stars')) > aheadRest, true)
+endfunction
+unittestRunTest('testSceneAddStars')
+
+
+function testAberrate():
+    unittestDeepEqual(shbAberrate([1, 0, 0], 0.5), {'direction': [1, 0, 0], 'doppler': 1.732050807568877})
+    sideways = shbAberrate([0, 1, 0], 0.5)
+    unittestDeepEqual(testRoundVec(objectGet(sideways, 'direction')), [0.5, 0.866025, 0])
+    unittestEqual(numberToFixed(objectGet(sideways, 'doppler'), 4), '1.1547')
+    unittestEqual(numberToFixed(objectGet(shbAberrate([-1, 0, 0], 0.5), 'doppler'), 4), '0.5774')
+endfunction
+unittestRunTest('testAberrate')
+
+
+function testColors():
+    unittestEqual(shbStarColor(1, 1), 'rgb(255,255,255)')
+    unittestEqual(shbStarColor(1, 2), 'rgb(203,218,255)')
+    unittestEqual(shbStarColor(0.5, 0.5), 'rgba(255,161,131,0.50)')
+    unittestEqual(shbColor([300, -5, 12.4], 1), 'rgb(255,0,12)')
+    unittestEqual(shbRound(12.345), 12.3)
+endfunction
+unittestRunTest('testColors')
+
+
+function testSceneElements():
+    scene = testSceneNew()
+    attr = {'fill': 'red'}
+    shbSceneAddItem(scene, 5, 'path', 'M1 1Z', attr, 'a')
+    shbSceneAddItem(scene, 4, 'path', 'M2 2Z', attr, 'a')
+    shbSceneAddItem(scene, 3, 'circle', null, {'r': 1}, null)
+    shbSceneAddItem(scene, 9, 'path', 'M0 0Z', attr, 'a')
+    arrayPush(objectGet(scene, 'labels'), {'x': 10, 'y': 20, 'text': 'Left'}, {'x': 95, 'y': 20, 'text': 'Right'})
+    unittestDeepEqual(shbSceneElements(scene), [ \
+        {'svg': 'path', 'attr': {'fill': 'red', 'd': 'M0 0ZM1 1ZM2 2Z'}}, \
+        {'svg': 'circle', 'attr': {'r': 1}}, \
+        {'svg': 'path', 'attr': {'d': 'M10 20l10 -10', 'stroke': shbTextDim, 'fill': 'none'}}, \
+        shbSvgText('Left', 23, 7, 13, shbTextColor, 'start', false), \
+        {'svg': 'path', 'attr': {'d': 'M95 20l-10 -10', 'stroke': shbTextDim, 'fill': 'none'}}, \
+        shbSvgText('Right', 82, 7, 13, shbTextColor, 'end', false) \
+    ])
+endfunction
+unittestRunTest('testSceneElements')
+
+
+function testSvgDefs():
+    defs = shbSvgDefs(false)
+    unittestEqual(arrayLength(objectGet(defs, 'elem')), 7)
+    unittestDeepEqual(arrayGet(objectGet(defs, 'elem'), 0), shbSvgRadial('shbSpace', \
+        [[0, '#0e1638', 1], [0.6, '#060a1c', 1], [1, '#020309', 1]]))
+    unittestDeepEqual(shbSvgRadial('g', [[0, 'red', 1]]), {'svg': 'radialGradient', 'attr': {'id': 'g'}, \
+        'elem': [{'svg': 'stop', 'attr': {'offset': 0, 'stop-color': 'red', 'stop-opacity': 1}}]})
+    unittestEqual(objectGet(arrayGet(objectGet(shbSvgDefs(true), 'elem'), 7), 'svg'), 'filter')
+endfunction
+unittestRunTest('testSvgDefs')
+
+
+function testMeshPrimitives():
+    props = shbMeshProps([1, 2, 3], 0.1, 1, false, 0)
+    unittestDeepEqual(props, {'color': [1, 2, 3], 'ambient': 0.1, 'alpha': 1, 'double': false, 'specular': 0, 'shininess': 24})
+
+    # Faces are wound outward
+    mesh = []
+    shbMeshFace(mesh, [[0, 0, 1], [0, 1, 1], [1, 0, 1]], [0, 0, 0], props)
+    unittestDeepEqual(objectGet(arrayGet(mesh, 0), 'pts'), [[1, 0, 1], [0, 1, 1], [0, 0, 1]])
+    mesh = []
+    shbMeshFrustum(mesh, 0, 1, 1, 1, 8, props)
+    unittestEqual(arrayLength(mesh), 8)
+    unittestEqual(arrayLength(objectGet(arrayGet(mesh, 0), 'pts')), 4)
+    mesh = []
+    shbMeshFrustum(mesh, 0, 1, 1, 0, 8, props)
+    unittestEqual(arrayLength(objectGet(arrayGet(mesh, 0), 'pts')), 3)
+    mesh = []
+    shbMeshDisk(mesh, 0, 1, 6, [1, 0, 0], props)
+    unittestEqual(arrayLength(objectGet(arrayGet(mesh, 0), 'pts')), 6)
+    mesh = []
+    shbMeshBox(mesh, [0, 0, 0], [1, 1, 1], props)
+    unittestEqual(arrayLength(mesh), 6)
+    mesh = []
+    shbMeshTorus(mesh, 0, 2, 0.5, 8, 4, props)
+    unittestEqual(arrayLength(mesh), 32)
+    mesh = []
+    shbMeshSphere(mesh, [0, 0, 0], 1, 4, 8, props, null)
+    unittestEqual(arrayLength(mesh), 32)
+    mesh = []
+    shbMeshAnnulus(mesh, 1, 2, 12, props)
+    unittestEqual(arrayLength(mesh), 12)
+    unittestEqual(arrayGet(shbVecCross(shbVecSub(arrayGet(objectGet(arrayGet(mesh, 0), 'pts'), 1), \
+        arrayGet(objectGet(arrayGet(mesh, 0), 'pts'), 0)), shbVecSub(arrayGet(objectGet(arrayGet(mesh, 0), 'pts'), 2), \
+        arrayGet(objectGet(arrayGet(mesh, 0), 'pts'), 0))), 1) > 0, true)
+    unittestDeepEqual(testRoundVec(shbSpherePoint([0, 0, 0], 2, 90, 0)), [0, 2, 0])
+    unittestEqual(shbFract(2.25), 0.25)
+endfunction
+unittestRunTest('testMeshPrimitives')
+
+
+function testFacingMatrix():
+    unittestDeepEqual(shbFacingMatrix([2, 0, 0]), [1, 0, 0, 0, 1, 0, 0, 0, 1])
+    unittestDeepEqual(shbFacingMatrix([-1, 0, 0]), [-1, 0, 0, 0, 1, 0, 0, 0, -1])
+    unittestDeepEqual(testRoundVec(shbMatApply(shbFacingMatrix([0, 0, 1]), [1, 0, 0])), [0, 0, 1])
+
+    # Straight up has no side - the side defaults to +z
+    unittestDeepEqual(shbMatApply(shbFacingMatrix([0, 1, 0]), [1, 0, 0]), [0, 1, 0])
+endfunction
+unittestRunTest('testFacingMatrix')
+
+
+function testCameraToWorld():
+    camera = shbCameraLookAt([10, 0, 0], [0, 0, 0], 100, 100, 2)
+    unittestEqual(objectGet(camera, 'focal'), 200)
+    unittestDeepEqual(testRoundVec(shbCameraToWorld(camera, [0, 0, 1])), [-1, 0, 0])
+    unittestDeepEqual(testRoundVec(shbCameraToWorld(camera, [0, 1, 0])), [0, 1, 0])
+endfunction
+unittestRunTest('testCameraToWorld')
+
+
+function testBandWindow():
+    columns = []
+    column = 0
+    while column < 36:
+        arrayPush(columns, ['face' + column])
+        column = column + 1
+    endwhile
+    unittestDeepEqual(shbBandWindow(columns, 180), ['face13', 'face14', 'face15', 'face16', 'face17', 'face18', 'face19', \
+        'face20', 'face21', 'face22'])
+    unittestDeepEqual(shbBandWindow(columns, 5), ['face32', 'face33', 'face34', 'face35', 'face0', 'face1', 'face2', 'face3', \
+        'face4'])
+endfunction
+unittestRunTest('testBandWindow')

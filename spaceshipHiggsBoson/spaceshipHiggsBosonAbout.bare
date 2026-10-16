@@ -1,0 +1,157 @@
+# Spaceship Higgs-Boson about page - the ship's design, the physics of its drive, and its mission
+
+include 'spaceshipHiggsBosonModels.bare'
+include 'spaceshipHiggsBosonPhysics.bare'
+
+
+# Render the about page - a ship rendering and the design and mission description
+function shbAboutRender(width):
+    imageWidth = mathMin(width, 960)
+    state = {'yaw': shbViewerYaw, 'pitch': shbViewerPitch, 'zoom': 1.15, 'spin': 0, 'time': 1, 'drive': true, 'labels': true}
+    scene = shbViewerScene(state, 2, imageWidth, 400)
+    elementModelRender(shbSvg(scene, arrayGet(shbQualityLevels, 2), imageWidth, 400, 'The ' + shbShipName + ' spacecraft', null))
+    markdownPrint(shbAboutMarkdown())
+endfunction
+
+
+# The about page Markdown
+function shbAboutMarkdown():
+    specs = shbDriveSpecs(shbAccelG)
+    mission = objectGet(specs, 'mission')
+    orbit = shbOrbitParams()
+    roundTrip = shbRoundTrip()
+    return [ \
+        '## The ' + shbShipName, \
+        '', \
+        'The *' + shbShipName + '* is a theoretical starship that uses the Higgs boson twice: as the key to the field ' + \
+            'that gives matter its mass - which it modulates to shed inertia - and as the particle whose decay it ' + \
+            'exhausts for thrust. It is built in a ' + shbOrbitAltitudeKm + ' km Earth orbit (' + \
+            numberToFixed(objectGet(orbit, 'velocity') / 1000, 2) + ' km/s, one orbit every ' + \
+            numberToFixed(objectGet(orbit, 'period') / 60, 1) + ' minutes) and is 134 meters from nose to nozzle.', \
+        '', \
+        '| Component | Function |', \
+        '| --- | --- |', \
+        "| Command module | The forward habitat for a crew of six, shielded by the ship's water reserves |", \
+        '| Higgs factory ring | A compact 54-meter electron-positron collider at 240 GeV that produces Higgs bosons by ' + \
+            'Higgs-strahlung (e⁺e⁻ → ZH) |', \
+        '| Field modulator spokes | Inject the Higgs bosons into the bubble in phase, sustaining the field depression |', \
+        "| Mass-suppression bubble | An ellipsoidal region of depressed Higgs vacuum that reduces the ship's inertial " + \
+            'mass to ' + numberToFixed(shbMassFraction * 100, 1) + '% |', \
+        '| Radiators | Reject the waste heat of the collider and the decay chamber |', \
+        '| Higgs decay chamber | Each Higgs boson decays in about 1.6 × 10⁻²² s (H → bb̄, WW*, gg, ττ, γγ); the ' + \
+            'chamber converts the hadronic products to photons and charged leptons |', \
+        '| Magnetic nozzle | Superconducting coils and a photon mirror collimate the decay products into the exhaust ' + \
+            'beam |', \
+        '', \
+        '## The Drive', \
+        '', \
+        'In the Standard Model, elementary particles acquire their rest mass from their coupling to the Higgs ' + \
+            "field's vacuum expectation value of about 246 GeV. The design's speculative premise is that a dense, " + \
+            'coherent population of Higgs bosons - the quanta of that field - can locally depress the vacuum value ' + \
+            'inside a field bubble, lowering the inertial mass of everything within it. Suppressing the inertial mass ' + \
+            'by a factor of ' + numberToFixed(1 / shbMassFraction, 0) + ' cuts the thrust, the beam power, and the ' + \
+            'propellant needed for a given acceleration by the same factor.', \
+        '', \
+        "Known physics does not allow this. The Higgs field supplies only about 1% of a proton's mass - the rest is " + \
+            'the binding energy of the strong force - so the design assumes a hypothetical Higgs-gluon resonance that ' + \
+            'suppresses both. The *' + shbShipName + '* is a thought experiment, not an engineering proposal.', \
+        '', \
+        '| Drive parameter | Value |', \
+        '| --- | --- |', \
+        '| Rest mass | ' + shbRestMassTonnes + ' t |', \
+        '| Inertial mass inside the bubble | ' + numberToFixed(objectGet(specs, 'effectiveTonnes'), 1) + ' t |', \
+        '| Acceleration | ' + shbAccelG + ' g (Earth-normal gravity for the crew) |', \
+        '| Thrust | ' + numberToFixed(objectGet(specs, 'thrust') / 1000, 1) + ' kN |', \
+        '| Exhaust beam power | ' + numberToFixed(objectGet(specs, 'power') / 1e12, 2) + ' TW |', \
+        '| Higgs bosons decayed per second | ' + shbFormatScientific(objectGet(specs, 'higgsRate')) + ' |', \
+        '| Propellant mass-energy per leg, with the Higgs drive | ' + \
+            numberToFixed(objectGet(specs, 'propellantTonnes'), 1) + ' t |', \
+        '| Propellant mass-energy per leg, without it | ' + numberToFixed(objectGet(specs, 'unsuppressedTonnes'), 0) + ' t |', \
+        '', \
+        'The propellant figures are for an ideal photon rocket, whose mass ratio is e raised to the total rapidity ' + \
+            'of the leg.', \
+        '', \
+        '## How the Drive Works', \
+        '', \
+        '### 1. Making Higgs bosons', \
+        '', \
+        'The Higgs factory ring collides electrons and positrons at a combined 240 GeV - just above the 216 GeV ' + \
+            'needed to make a Z boson (91.2 GeV) and a Higgs boson (125.1 GeV) together. This "Higgs-strahlung" ' + \
+            'reaction, e⁺e⁻ → ZH, is how proposed Earth-bound Higgs factories plan to make about a million Higgs ' + \
+            'bosons over their entire runs. The drive needs ' + shbFormatScientific(objectGet(specs, 'higgsRate')) + \
+            ' every second - the output of about ' + shbFormatScientific(objectGet(specs, 'higgsRate') / 1e6) + \
+            ' entire Higgs factory runs, each second - so the ring is the most speculative engineering on the ship.', \
+        '', \
+        '### 2. Shedding inertia', \
+        '', \
+        'In the Higgs mechanism, an elementary particle' + "'s mass is set by its coupling (y) to the Higgs field's " + \
+            'vacuum expectation value (v ≈ 246 GeV): m = y·v/√2. The W and Z boson masses scale with v too. The ' + \
+            'field modulator spokes inject the bosons into the bubble in phase, and the design assumes that this ' + \
+            'coherent excitation lowers v inside the bubble - by a factor of ' + numberToFixed(1 / shbMassFraction, 0) + \
+            ', with a hypothetical resonance that suppresses the strong-force binding energy that makes up most of a ' + \
+            "proton's mass. Every force on the ship then produces " + numberToFixed(1 / shbMassFraction, 0) + \
+            ' times the acceleration: F = (' + shbMassFraction + ' m₀)·a.', \
+        '', \
+        '### 3. Thrust from decay', \
+        '', \
+        'A Higgs boson lives about 1.6 × 10⁻²² seconds (its decay width is about 4.1 MeV). Most decay to a bottom ' + \
+            'quark pair (58%), W bosons (21%), gluons (8%), tau leptons (6%), charm quarks (3%), Z bosons (3%), or ' + \
+            'photons (0.2%). The decay chamber thermalizes the hadronic products into light and fast charged ' + \
+            'particles, and the magnetic nozzle and photon mirror direct them aft. An exhaust moving at nearly the ' + \
+            'speed of light gives the most thrust per joule a rocket can have - F = P/c - so ' + \
+            numberToFixed(objectGet(specs, 'power') / 1e12, 2) + ' TW of beam power yields ' + \
+            numberToFixed(objectGet(specs, 'thrust') / 1000, 1) + ' kN of thrust.', \
+        '', \
+        '### 4. Relativistic flight', \
+        '', \
+        'At a constant proper acceleration a, the ship' + "'s velocity, Lorentz factor, distance, and Earth time " + \
+            'follow from the time τ on the ship' + "'s clocks:", \
+        '', \
+        '- v = c·tanh(aτ/c)', \
+        '- γ = cosh(aτ/c)', \
+        '- x = (c²/a)·(cosh(aτ/c) - 1)', \
+        '- t = (c/a)·sinh(aτ/c)', \
+        '', \
+        'Accelerating at 1 g to the midpoint and braking at 1 g, each leg takes ' + \
+            numberToFixed(objectGet(mission, 'tauTotal'), 2) + ' years on the ship and ' + \
+            numberToFixed(objectGet(mission, 'tTotal'), 2) + ' years on Earth. The propellant for one leg - ' + \
+            numberToFixed(objectGet(specs, 'propellantTonnes'), 1) + ' t, converted entirely to energy by E = mc² - ' + \
+            'is ' + shbFormatScientific(objectGet(specs, 'propellantTonnes') * 1000 * shbSpeedOfLight * shbSpeedOfLight) + \
+            ' joules, about ' + numberToFixed(objectGet(specs, 'propellantTonnes') * 1000 * shbSpeedOfLight * \
+            shbSpeedOfLight / shbWorldEnergyJoules, 0) + ' years of all the energy humanity uses today. Without the ' + \
+            'Higgs drive, it would be ' + numberToFixed(1 / shbMassFraction, 0) + ' times more.', \
+        '', \
+        '## The Mission', \
+        '', \
+        'The *' + shbShipName + '* accelerates at a constant 1 g to the midpoint of the ' + shbAlphaCentauriLy + \
+            '-light-year voyage, flips, and decelerates at 1 g to arrive at rest. It spends ' + shbSurveyMonths + \
+            ' months in orbit of α Centauri Ab - a candidate gas giant in the habitable zone of α Centauri A - and ' + \
+            'returns the same way.', \
+        '', \
+        '| Mission parameter | Value |', \
+        '| --- | --- |', \
+        '| Ship time, each way | ' + numberToFixed(objectGet(mission, 'tauTotal'), 2) + ' years |', \
+        '| Earth time, each way | ' + numberToFixed(objectGet(mission, 'tTotal'), 2) + ' years |', \
+        '| Peak velocity | ' + numberToFixed(objectGet(mission, 'betaMax'), 4) + ' c |', \
+        '| Peak Lorentz factor | ' + numberToFixed(objectGet(mission, 'gammaMax'), 3) + ' |', \
+        '| Time in orbit at α Centauri | ' + shbSurveyMonths + ' months |', \
+        '| Round trip, Earth time | ' + numberToFixed(objectGet(roundTrip, 'earthYears'), 1) + ' years |', \
+        '| Round trip, crew time | ' + numberToFixed(objectGet(roundTrip, 'crewYears'), 1) + ' years |', \
+        '', \
+        '## Why It Matters', \
+        '', \
+        '- **The first human presence at another star.** Every person who has ever lived has seen only one sun up ' + \
+            'close. The crew of the *' + shbShipName + '* would see two.', \
+        '- **Relativity you can shake hands with.** The crew returns ' + \
+            numberToFixed(objectGet(roundTrip, 'earthYears') - objectGet(roundTrip, 'crewYears'), 1) + \
+            ' years younger than their stay-at-home twins - time dilation measured not with atomic clocks, but in ' + \
+            'birthdays.', \
+        '- **Science at the source.** Six months of close study of α Centauri Ab, its moons, and the habitable ' + \
+            'zones of two Sun-like stars would answer questions that telescopes can only pose.', \
+        "- **Mastery of mass itself.** A technology that tunes the Higgs field would reshape energy, transport, and " + \
+            'materials on Earth long before it carried anyone to the stars.', \
+        '- **A civilization with a longer horizon.** Messages from the crew take ' + shbAlphaCentauriLy + \
+            ' years to arrive. A mission like this asks a society to plan, fund, and wait across decades - and to ' + \
+            'still be listening when the answer comes home.' \
+    ]
+endfunction

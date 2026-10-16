@@ -1,0 +1,109 @@
+# Spaceship Higgs-Boson storyboard page - the film, shot by shot - each shot's still, with its production notes: its
+# timing, framing, set and lighting, camera move, action, dialogue, and sound
+
+include <markdown.bare>
+include 'spaceshipHiggsBosonFilm.bare'
+
+
+# The storyboard's still width (pixels) and detail level
+shbStoryboardStillWidth = 320
+shbStoryboardLevel = 1
+
+
+# The storyboard's names of the cinema model's framings, camera moves, and ease curves
+shbStoryboardFramings = { \
+    'establishing': 'Establishing shot', \
+    'wide': 'Wide shot', \
+    'medium': 'Medium shot', \
+    'closeUp': 'Close-up', \
+    'overTheShoulder': 'Over-the-shoulder shot', \
+    'insert': 'Insert' \
+}
+shbStoryboardMoves = {'static': 'Static camera', 'dolly': 'Dolly', 'orbit': 'Orbit', 'track': 'Tracking shot'}
+shbStoryboardEases = {'linear': 'linear', 'easeIn': 'ease in', 'easeOut': 'ease out', 'easeInOut': 'ease in and out'}
+
+
+# Render the storyboard page - the play function, onPlay(time), plays the film from a shot's start
+function shbStoryboardRender(width, onPlay):
+    storyboard = cinemaStoryboard(shbReel, shbFilmVariables)
+    shotCount = 0
+    for scene in storyboard:
+        shotCount = shotCount + arrayLength(objectGet(scene, 'shots'))
+    endfor
+    markdownPrint( \
+        '', \
+        'The film, shot by shot - ' + shotCount + ' shots in ' + arrayLength(storyboard) + ' scenes, ' + \
+            shbFilmTime(cinemaDuration(shbReel)) + '. Click a still to play the film from its shot.' \
+    )
+
+    # Each scene's shots, as panels that wrap to the page width
+    stillWidth = mathMin(shbStoryboardStillWidth, width)
+    for scene in storyboard:
+        markdownPrint('', '## ' + (objectGet(scene, 'index') + 1) + '. ' + markdownEscape(objectGet(scene, 'title')) + ' (' + \
+            shbFilmTime(objectGet(scene, 'start')) + ')')
+        panels = []
+        for shot in objectGet(scene, 'shots'):
+            arrayPush(panels, shbStoryboardPanel(scene, shot, stillWidth, onPlay))
+        endfor
+        elementModelRender({'html': 'div', 'attr': {'style': 'display: flex; flex-wrap: wrap; gap: 20px; margin-top: 0.6em;'}, \
+            'elem': panels})
+    endfor
+endfunction
+
+
+# A storyboard panel element model - the shot's still (click it to play the film from the shot) and its notes
+function shbStoryboardPanel(scene, shot, stillWidth, onPlay):
+    start = objectGet(shot, 'start')
+    duration = objectGet(shot, 'duration')
+    still = shbFilmStill(start + duration / 2, shbStoryboardLevel, stillWidth, mathRound(stillWidth * 9 / 16))
+
+    # The shot's notes - its number and timing, framing, set and lighting, and camera move
+    lighting = objectGet(shot, 'lighting')
+    lens = objectGet(shot, 'lens')
+    fadeIn = objectGet(shot, 'fadeIn')
+    fadeOut = objectGet(shot, 'fadeOut')
+    notes = [ \
+        {'html': 'b', 'elem': {'text': 'Shot ' + (objectGet(scene, 'index') + 1) + '.' + (objectGet(shot, 'index') + 1) + ' · ' + \
+            shbFilmTime(start) + ' · ' + duration + ' s'}}, \
+        shbStoryboardNote(objectGet(shbStoryboardFramings, objectGet(shot, 'framing')) + ' · ' + \
+            objectGet(shbFilmSetNames, objectGet(shot, 'set')) + if(lighting != null, ', ' + lighting, '')), \
+        shbStoryboardNote(objectGet(shbStoryboardMoves, objectGet(shot, 'move')) + ', ' + \
+            objectGet(shbStoryboardEases, objectGet(shot, 'ease')) + if(lens != 1, ', lens ' + lens + 'x', '') + \
+            if(fadeIn != null, ', fade in ' + fadeIn + ' s', '') + if(fadeOut != null, ', fade out ' + fadeOut + ' s', '')) \
+    ]
+
+    # The action, dialogue, and sound
+    beats = []
+    for beat in objectGet(shot, 'beats'):
+        arrayPush(beats, objectGet(beat, 'beat') + ' (' + objectGet(beat, 'actor') + ')')
+    endfor
+    if arrayLength(beats):
+        arrayPush(notes, shbStoryboardNote('Action: ' + arrayJoin(beats, ', ')))
+    endif
+    for line in objectGet(shot, 'dialogue'):
+        arrayPush(notes, {'html': 'div', 'elem': [ \
+            {'html': 'b', 'elem': {'text': stringUpper(objectGet(line, 'speaker')) + ': '}}, \
+            {'html': 'i', 'elem': {'text': objectGet(line, 'text')}} \
+        ]})
+    endfor
+    sounds = objectGet(shot, 'sounds')
+    if arrayLength(sounds):
+        arrayPush(notes, shbStoryboardNote('Sound: ' + arrayJoin(sounds, ', ')))
+    endif
+
+    return {'html': 'div', 'attr': {'style': 'width: ' + stillWidth + 'px; font-size: 0.85em; line-height: 1.4;'}, 'elem': [ \
+        { \
+            'html': 'div', \
+            'attr': {'style': 'cursor: pointer; margin-bottom: 0.4em;', 'title': 'Play the film from this shot'}, \
+            'callback': {'click': systemPartial(onPlay, start)}, \
+            'elem': still \
+        }, \
+        notes \
+    ]}
+endfunction
+
+
+# A storyboard note element model
+function shbStoryboardNote(text):
+    return {'html': 'div', 'elem': {'text': text}}
+endfunction

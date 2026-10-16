@@ -1,0 +1,867 @@
+# Spaceship Higgs-Boson rendering - a painter's algorithm 3D renderer with flat shading and specular highlights
+#
+# A scene is a camera, a light, and items - SVG element tags and attributes with a depth - that render back to front
+# as an SVG element model. Meshes are arrays of faces, built from the mesh primitives.
+
+include <draw.bare>
+
+
+# Rendering constants
+shbPi = mathPi()
+shbDeg = shbPi / 180
+shbNearPlane = 0.5
+shbFarDepth = 1e9
+shbFontFamily = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+shbTextColor = 'rgba(225,235,255,0.95)'
+shbTextDim = 'rgba(170,190,225,0.85)'
+shbAccentColor = '#7fd8ff'
+shbPanelFill = 'rgba(8,14,34,0.72)'
+shbPanelStroke = 'rgba(127,216,255,0.35)'
+
+
+# The faces of a surface band's columns within 44 degrees of longitude of a longitude
+function shbBandWindow(columns, lon):
+    count = arrayLength(columns)
+    step = 360 / count
+    faces = []
+    column = mathFloor((lon - 44) / step)
+    while column <= mathFloor((lon + 44) / step):
+        arrayExtend(faces, arrayGet(columns, ((column % count) + count) % count))
+        column = column + 1
+    endwhile
+    return faces
+endfunction
+
+
+# Create a camera that looks at a target from a distance, rotated by the state's yaw and pitch (degrees) - a
+# positive pitch looks down from above
+function shbCamera(state, target, distance, width, height):
+    return { \
+        'matrix': shbMatMul(shbMatRotX(-objectGet(state, 'pitch') * shbDeg), shbMatRotY(objectGet(state, 'yaw') * shbDeg)), \
+        'target': target, \
+        'distance': distance, \
+        'cx': width / 2, \
+        'cy': height / 2, \
+        'focal': mathMin(width, height) * objectGet(state, 'zoom') \
+    }
+endfunction
+
+
+# Create a camera at an eye point looking at a target (no roll), with an optional lens zoom (the default is 1)
+function shbCameraLookAt(eye, target, width, height, zoom):
+    offset = shbVecSub(eye, target)
+    level = mathSqrt(arrayGet(offset, 0) ** 2 + arrayGet(offset, 2) ** 2)
+    yaw = mathAtan2(arrayGet(offset, 0), -arrayGet(offset, 2)) / shbDeg
+    pitch = mathAtan2(arrayGet(offset, 1), level) / shbDeg
+    return shbCamera({'yaw': yaw, 'pitch': pitch, 'zoom': if(zoom != null, zoom, 1)}, target, shbVecLength(offset), width, height)
+endfunction
+
+
+# Rotate a camera-space direction to world space
+function shbCameraToWorld(camera, direction):
+    matrix = objectGet(camera, 'matrix')
+    return shbMatApply([ \
+        arrayGet(matrix, 0), arrayGet(matrix, 3), arrayGet(matrix, 6), \
+        arrayGet(matrix, 1), arrayGet(matrix, 4), arrayGet(matrix, 7), \
+        arrayGet(matrix, 2), arrayGet(matrix, 5), arrayGet(matrix, 8) \
+    ], direction)
+endfunction
+
+
+# Transform a world point to camera space - the eye is at the origin looking along +z
+function shbCameraPoint(camera, point):
+    view = shbMatApply(objectGet(camera, 'matrix'), shbVecSub(point, objectGet(camera, 'target')))
+    return [arrayGet(view, 0), arrayGet(view, 1), arrayGet(view, 2) + objectGet(camera, 'distance')]
+endfunction
+
+
+# Project a camera-space point to the screen - null if it's behind the near plane
+function shbProject(camera, point):
+    z = arrayGet(point, 2)
+    if z < shbNearPlane:
+        return null
+    endif
+    scale = objectGet(camera, 'focal') / z
+    return [objectGet(camera, 'cx') + arrayGet(point, 0) * scale, objectGet(camera, 'cy') - arrayGet(point, 1) * scale]
+endfunction
+
+
+# Project a direction (a point at infinity) to the screen - null if it's behind the camera
+function shbProjectDirection(camera, direction):
+    view = shbMatApply(objectGet(camera, 'matrix'), direction)
+    z = arrayGet(view, 2)
+    if z < 0.05:
+        return null
+    endif
+    scale = objectGet(camera, 'focal') / z
+    return [objectGet(camera, 'cx') + arrayGet(view, 0) * scale, objectGet(camera, 'cy') - arrayGet(view, 1) * scale]
+endfunction
+
+
+# Create a new scene - scene items are SVG element tags and attributes with a depth, and the stars (at the far depth)
+# are circle attributes
+function shbSceneNew(camera, lightDirection):
+    return { \
+        'camera': camera, \
+        'light': shbVecNormalize(shbMatApply(objectGet(camera, 'matrix'), lightDirection)), \
+        'stars': [], \
+        'items': [], \
+        'labels': [] \
+    }
+endfunction
+
+
+# Add a mesh to a scene with a model matrix and position
+function shbSceneAddMesh(scene, mesh, matrix, position):
+    camera = objectGet(scene, 'camera')
+    modelMatrix = shbMatMul(objectGet(camera, 'matrix'), matrix)
+    offset = shbCameraPoint(camera, position)
+
+    # The model-to-camera transform, unpacked for the inner loops
+    m0 = arrayGet(modelMatrix, 0)
+    m1 = arrayGet(modelMatrix, 1)
+    m2 = arrayGet(modelMatrix, 2)
+    m3 = arrayGet(modelMatrix, 3)
+    m4 = arrayGet(modelMatrix, 4)
+    m5 = arrayGet(modelMatrix, 5)
+    m6 = arrayGet(modelMatrix, 6)
+    m7 = arrayGet(modelMatrix, 7)
+    m8 = arrayGet(modelMatrix, 8)
+    ox = arrayGet(offset, 0)
+    oy = arrayGet(offset, 1)
+    oz = arrayGet(offset, 2)
+    for face in mesh:
+        # Cull back faces before transforming their points
+        if !objectGet(face, 'double'):
+            center = objectGet(face, 'center')
+            cx = arrayGet(center, 0)
+            cy = arrayGet(center, 1)
+            cz = arrayGet(center, 2)
+            normal = objectGet(face, 'normal')
+            nx = arrayGet(normal, 0)
+            ny = arrayGet(normal, 1)
+            nz = arrayGet(normal, 2)
+            if (m0 * nx + m1 * ny + m2 * nz) * (m0 * cx + m1 * cy + m2 * cz + ox) + \
+                (m3 * nx + m4 * ny + m5 * nz) * (m3 * cx + m4 * cy + m5 * cz + oy) + \
+                (m6 * nx + m7 * ny + m8 * nz) * (m6 * cx + m7 * cy + m8 * cz + oz) >= 0:
+                continue
+            endif
+        endif
+        points = []
+        for point in objectGet(face, 'pts'):
+            x = arrayGet(point, 0)
+            y = arrayGet(point, 1)
+            z = arrayGet(point, 2)
+            arrayPush(points, [m0 * x + m1 * y + m2 * z + ox, m3 * x + m4 * y + m5 * z + oy, m6 * x + m7 * y + m8 * z + oz])
+        endfor
+        shbSceneAddFace(scene, face, points)
+    endfor
+endfunction
+
+
+# Add a mesh face (camera-space points) to a scene - back faces of single-sided faces are culled
+function shbSceneAddFace(scene, face, points):
+    # The face normal, its length, and which way it faces (the eye is at the origin)
+    pointFirst = arrayGet(points, 0)
+    pointSecond = arrayGet(points, 1)
+    pointThird = arrayGet(points, 2)
+    x0 = arrayGet(pointFirst, 0)
+    y0 = arrayGet(pointFirst, 1)
+    z0 = arrayGet(pointFirst, 2)
+    ax = arrayGet(pointSecond, 0) - x0
+    ay = arrayGet(pointSecond, 1) - y0
+    az = arrayGet(pointSecond, 2) - z0
+    bx = arrayGet(pointThird, 0) - x0
+    by = arrayGet(pointThird, 1) - y0
+    bz = arrayGet(pointThird, 2) - z0
+    nx = ay * bz - az * by
+    ny = az * bx - ax * bz
+    nz = ax * by - ay * bx
+    normal = [nx, ny, nz]
+    normalLength = mathSqrt(nx * nx + ny * ny + nz * nz)
+    facing = nx * x0 + ny * y0 + nz * z0
+    if normalLength == 0 || (facing >= 0 && !objectGet(face, 'double')):
+        return
+    endif
+
+    # Clip the face to the near plane and project its points - the back of a double-sided face is wound in reverse
+    camera = objectGet(scene, 'camera')
+    backFace = facing >= 0
+    clipped = if(backFace, arrayReverse(arrayCopy(points)), points)
+    for point in clipped:
+        if arrayGet(point, 2) < shbNearPlane:
+            clipped = shbClipNear(clipped)
+            break
+        endif
+    endfor
+    count = arrayLength(clipped)
+    if count < 3:
+        return
+    endif
+    focal = objectGet(camera, 'focal')
+    screenX = objectGet(camera, 'cx')
+    screenY = objectGet(camera, 'cy')
+    pathData = ''
+    sumX = 0
+    sumY = 0
+    sumZ = 0
+    for point in clipped:
+        x = arrayGet(point, 0)
+        y = arrayGet(point, 1)
+        z = arrayGet(point, 2)
+        scale = focal / z
+        pathData = pathData + if(pathData == '', 'M', 'L') + (mathRound((screenX + x * scale) * 10) / 10) + ' ' + \
+            (mathRound((screenY - y * scale) * 10) / 10)
+        sumX = sumX + x
+        sumY = sumY + y
+        sumZ = sumZ + z
+    endfor
+    inverseCount = 1 / count
+    center = [sumX * inverseCount, sumY * inverseCount, sumZ * inverseCount]
+
+    # Shading - diffuse, night-side emission (city lights), and specular highlights
+    normalUnit = shbVecScale(normal, if(backFace, -1, 1) / normalLength)
+    light = objectGet(scene, 'light')
+    diffuse = mathMax(0, shbVecDot(normalUnit, light))
+    ambient = objectGet(face, 'ambient')
+    brightness = ambient + (1 - ambient) * diffuse
+    color = shbVecScale(objectGet(face, 'color'), brightness)
+    night = objectGet(face, 'night')
+    if night != null:
+        color = shbVecAdd(color, shbVecScale(night, (1 - mathMin(1, diffuse * 4)) ** 2))
+    endif
+    specular = objectGet(face, 'specular')
+    if specular > 0 && diffuse > 0:
+        halfway = shbVecNormalize(shbVecSub(light, shbVecNormalize(center)))
+        highlight = 255 * specular * mathMax(0, shbVecDot(normalUnit, halfway)) ** objectGet(face, 'shininess')
+        color = shbVecAdd(color, [highlight, highlight, highlight])
+    endif
+    alpha = objectGet(face, 'alpha')
+    if objectGet(face, 'alphaLit'):
+        # Sunlit-only faces (clouds) fade into the night side
+        alpha = alpha * mathMin(1, diffuse * 3)
+        if alpha < 0.03:
+            return
+        endif
+    endif
+    fill = shbColor(color, alpha)
+    stroke = if(alpha < 1, 'none', fill)
+    filter = objectGet(face, 'filter')
+    shbSceneAddItem(scene, arrayGet(center, 2), 'path', pathData + 'Z', \
+        {'fill': fill, 'stroke': stroke, 'stroke-width': 0.6, 'stroke-linejoin': 'round', 'filter': filter}, \
+        'p' + fill + stroke + filter)
+endfunction
+
+
+# Clip a camera-space polygon to the near plane (Sutherland-Hodgman)
+function shbClipNear(points):
+    clipped = []
+    pointPrev = arrayGet(points, arrayLength(points) - 1)
+    for point in points:
+        inside = arrayGet(point, 2) >= shbNearPlane
+        if inside != (arrayGet(pointPrev, 2) >= shbNearPlane):
+            fraction = (shbNearPlane - arrayGet(pointPrev, 2)) / (arrayGet(point, 2) - arrayGet(pointPrev, 2))
+            pointClip = shbVecAdd(pointPrev, shbVecScale(shbVecSub(point, pointPrev), fraction))
+            arraySet(pointClip, 2, shbNearPlane)
+            arrayPush(clipped, pointClip)
+        endif
+        if inside:
+            arrayPush(clipped, point)
+        endif
+        pointPrev = point
+    endfor
+    return clipped
+endfunction
+
+
+# Add an item to a scene - items with the same non-null merge key are merged into one path when adjacent
+function shbSceneAddItem(scene, z, tag, pathData, attr, mergeKey):
+    arrayPush(objectGet(scene, 'items'), {'z': z, 'tag': tag, 'd': pathData, 'attr': attr, 'key': mergeKey})
+endfunction
+
+
+# Add a world-space polyline to a scene, closed unless "open" is true, with an optional depth offset
+function shbSceneAddPath(scene, points, stroke, strokeWidth, dash, open, filter, dashOffset, depthOffset):
+    camera = objectGet(scene, 'camera')
+    attr = { \
+        'fill': 'none', \
+        'stroke': stroke, \
+        'stroke-width': strokeWidth, \
+        'stroke-dasharray': dash, \
+        'stroke-dashoffset': dashOffset, \
+        'stroke-linecap': 'round', \
+        'filter': filter \
+    }
+    mergeKey = 'l' + stroke + strokeWidth + dash + dashOffset + filter
+    pointPrev = shbCameraPoint(camera, arrayGet(points, if(open, 0, arrayLength(points) - 1)))
+    for worldPoint, ixPoint in points:
+        point = shbCameraPoint(camera, worldPoint)
+        if !open || ixPoint > 0:
+            screenPrev = shbProject(camera, pointPrev)
+            screen = shbProject(camera, point)
+            if screenPrev != null && screen != null:
+                shbSceneAddItem(scene, (arrayGet(pointPrev, 2) + arrayGet(point, 2)) / 2 + if(depthOffset != null, depthOffset, 0), 'path', \
+                    'M' + shbRound(arrayGet(screenPrev, 0)) + ' ' + shbRound(arrayGet(screenPrev, 1)) + \
+                    'L' + shbRound(arrayGet(screen, 0)) + ' ' + shbRound(arrayGet(screen, 1)), attr, mergeKey)
+            endif
+        endif
+        pointPrev = point
+    endfor
+endfunction
+
+
+# Add a glow disc of a world radius to a scene - the depth offset places it behind (+) or in front of (-) its body
+function shbSceneAddGlow(scene, center, radius, fill, depthOffset):
+    camera = objectGet(scene, 'camera')
+    point = shbCameraPoint(camera, center)
+    screen = shbProject(camera, point)
+    if screen != null:
+        z = arrayGet(point, 2)
+        shbSceneAddItem(scene, z + depthOffset, 'circle', null, { \
+            'cx': shbRound(arrayGet(screen, 0)), \
+            'cy': shbRound(arrayGet(screen, 1)), \
+            'r': shbRound(objectGet(camera, 'focal') * radius / mathSqrt(mathMax(z * z - radius * radius, 1))), \
+            'fill': fill \
+        }, null)
+    endif
+endfunction
+
+
+# Add a text label at a world point to a scene
+function shbSceneAddLabel(scene, worldPoint, text):
+    camera = objectGet(scene, 'camera')
+    screen = shbProject(camera, shbCameraPoint(camera, worldPoint))
+    if screen != null:
+        arrayPush(objectGet(scene, 'labels'), {'x': arrayGet(screen, 0), 'y': arrayGet(screen, 1), 'text': text})
+    endif
+endfunction
+
+
+# Add a sun in a direction to a scene, scaled by its apparent size, with an optional label
+function shbSceneAddSun(scene, direction, scale, glowFill, coreColor, label):
+    screen = shbProjectDirection(objectGet(scene, 'camera'), direction)
+    if screen != null:
+        x = shbRound(arrayGet(screen, 0))
+        y = shbRound(arrayGet(screen, 1))
+        shbSceneAddItem(scene, shbFarDepth - 1, 'circle', null, \
+            {'cx': x, 'cy': y, 'r': shbRound(140 * scale), 'fill': glowFill}, null)
+        shbSceneAddItem(scene, shbFarDepth - 1, 'circle', null, \
+            {'cx': x, 'cy': y, 'r': shbRound(4 + 10 * scale), 'fill': coreColor}, null)
+        if label != null:
+            arrayPush(objectGet(scene, 'labels'), {'x': x, 'y': y, 'text': label})
+        endif
+    endif
+endfunction
+
+
+# Add stars ("direction" and "brightness") to a scene, aberrated and Doppler-shifted for a ship velocity (+x) of beta
+function shbSceneAddStars(scene, stars, beta):
+    camera = objectGet(scene, 'camera')
+    sceneStars = objectGet(scene, 'stars')
+    for star in stars:
+        direction = objectGet(star, 'direction')
+        doppler = 1
+        if beta > 0:
+            aberrated = shbAberrate(direction, beta)
+            direction = objectGet(aberrated, 'direction')
+            doppler = objectGet(aberrated, 'doppler')
+        endif
+        screen = shbProjectDirection(camera, direction)
+        level = mathMin(1, objectGet(star, 'brightness') * mathSqrt(doppler))
+        if screen != null && level >= 0.05:
+            arrayPush(sceneStars, { \
+                'cx': shbRound(arrayGet(screen, 0)), \
+                'cy': shbRound(arrayGet(screen, 1)), \
+                'r': shbRound(0.4 + 1.3 * level), \
+                'fill': shbStarColor(level, doppler) \
+            })
+        endif
+    endfor
+endfunction
+
+
+# Relativistic aberration and Doppler factor of a star direction for a ship velocity (+x) of beta
+function shbAberrate(direction, beta):
+    cosTheta = arrayGet(direction, 0)
+    cosApparent = (cosTheta + beta) / (1 + beta * cosTheta)
+    sinApparent = mathSqrt(mathMax(0, 1 - cosApparent * cosApparent))
+    perpY = arrayGet(direction, 1)
+    perpZ = arrayGet(direction, 2)
+    perpLength = mathSqrt(perpY * perpY + perpZ * perpZ)
+    perpScale = if(perpLength > 0, sinApparent / perpLength, 0)
+    gamma = 1 / mathSqrt(1 - beta * beta)
+    return { \
+        'direction': [cosApparent, perpY * perpScale, perpZ * perpScale], \
+        'doppler': 1 / (gamma * (1 - beta * cosApparent)) \
+    }
+endfunction
+
+
+# The color of a star of a brightness level, blue-shifted (doppler > 1) or red-shifted (doppler < 1)
+function shbStarColor(level, doppler):
+    blueShift = doppler >= 1
+    tint = if(blueShift, [150, 180, 255], [255, 130, 90])
+    mix = if(blueShift, mathMin(1, (doppler - 1) / 2), mathMin(1, (1 - doppler) * 1.5))
+    white = [255, 255, 255]
+    return shbColor(shbVecAdd(white, shbVecScale(shbVecSub(tint, white), mix)), level)
+endfunction
+
+
+# Sort comparator for scene items - farthest first
+function shbItemCompare(itemA, itemB):
+    return objectGet(itemB, 'z') - objectGet(itemA, 'z')
+endfunction
+
+
+# Render a scene's items, back to front, as SVG element models
+function shbSceneElements(scene):
+    # The stars first - they're all at the far depth, so they stay out of the depth sort
+    elements = []
+    for starAttr in objectGet(scene, 'stars'):
+        arrayPush(elements, {'svg': 'circle', 'attr': starAttr})
+    endfor
+
+    # Then the scene items, back to front
+    lastKey = null
+    lastAttr = null
+    for item in arraySort(objectGet(scene, 'items'), shbItemCompare):
+        key = objectGet(item, 'key')
+        if key != null && key == lastKey:
+            objectSet(lastAttr, 'd', objectGet(lastAttr, 'd') + objectGet(item, 'd'))
+        else:
+            lastAttr = objectCopy(objectGet(item, 'attr'))
+            if key != null:
+                objectSet(lastAttr, 'd', objectGet(item, 'd'))
+            endif
+            arrayPush(elements, {'svg': objectGet(item, 'tag'), 'attr': lastAttr})
+        endif
+        lastKey = key
+    endfor
+
+    # The labels - leading left near the right edge
+    width = 2 * objectGet(objectGet(scene, 'camera'), 'cx')
+    for label in objectGet(scene, 'labels'):
+        x = shbRound(objectGet(label, 'x'))
+        y = shbRound(objectGet(label, 'y'))
+        text = objectGet(label, 'text')
+        textWidth = drawTextWidth(text, 13)
+        flip = x + 13 + textWidth > width - 8 && x - 13 - textWidth >= 8
+        lead = if(flip, -10, 10)
+        arrayPush(elements, \
+            {'svg': 'path', 'attr': {'d': 'M' + x + ' ' + y + 'l' + lead + ' -10', 'stroke': shbTextDim, 'fill': 'none'}}, \
+            shbSvgText(text, x + 1.3 * lead, y - 13, 13, shbTextColor, if(flip, 'end', 'start'), false) \
+        )
+    endfor
+    return elements
+endfunction
+
+
+# The SVG gradient and filter definitions
+function shbSvgDefs(glow):
+    defs = [ \
+        shbSvgRadial('shbSpace', [[0, '#0e1638', 1], [0.6, '#060a1c', 1], [1, '#020309', 1]]), \
+        shbSvgRadial('shbAtmosphere', [[0.82, '#78b4ff', 0], [0.9, '#78b4ff', 0.6], [1, '#78b4ff', 0]]), \
+        shbSvgRadial('shbHaze', [[0.6, '#a0d0ff', 0], [1, '#a0d0ff', 0.45]]), \
+        shbSvgRadial('shbSunGlow', [[0, '#ffffff', 1], [0.1, '#fff4d0', 0.9], [0.35, '#ffd890', 0.28], [1, '#ffd890', 0]]), \
+        shbSvgRadial('shbStarB', [[0, '#fff0e0', 1], [0.3, '#ffbe78', 0.6], [1, '#ffbe78', 0]]), \
+        shbSvgRadial('shbEngine', [[0, '#ffffff', 0.95], [0.25, '#d8b8ff', 0.7], [1, '#8a5cff', 0]]), \
+        shbSvgRadial('shbParticle', [[0, '#ffffff', 1], [0.35, '#8cf0ff', 0.85], [1, '#8cf0ff', 0]]) \
+    ]
+    if glow:
+        arrayPush(defs, { \
+            'svg': 'filter', \
+            'attr': {'id': 'shbGlow', 'x': '-50%', 'y': '-50%', 'width': '200%', 'height': '200%'}, \
+            'elem': [ \
+                {'svg': 'feGaussianBlur', 'attr': {'stdDeviation': 3, 'result': 'blur'}}, \
+                {'svg': 'feMerge', 'elem': [ \
+                    {'svg': 'feMergeNode', 'attr': {'in': 'blur'}}, \
+                    {'svg': 'feMergeNode', 'attr': {'in': 'SourceGraphic'}} \
+                ]} \
+            ] \
+        })
+    endif
+    return {'svg': 'defs', 'elem': defs}
+endfunction
+
+
+# A radial gradient element model - stops are [offset, color, opacity] arrays
+function shbSvgRadial(id, stops):
+    stopElements = []
+    for stop in stops:
+        arrayPush(stopElements, {'svg': 'stop', 'attr': { \
+            'offset': arrayGet(stop, 0), 'stop-color': arrayGet(stop, 1), 'stop-opacity': arrayGet(stop, 2)}})
+    endfor
+    return {'svg': 'radialGradient', 'attr': {'id': id}, 'elem': stopElements}
+endfunction
+
+
+# The full-screen SVG element model of a scene and its heads-up display
+function shbSvg(scene, quality, width, height, ariaLabel, hud):
+    return {'html': 'div', 'elem': { \
+        'svg': 'svg', \
+        'attr': { \
+            'width': width, \
+            'height': height, \
+            'role': 'img', \
+            'aria-label': ariaLabel, \
+            'style': 'display: block; user-select: none; -webkit-user-select: none;' \
+        }, \
+        'elem': [ \
+            shbSvgDefs(objectGet(quality, 'glow')), \
+            {'svg': 'rect', 'attr': {'width': width, 'height': height, 'fill': 'url(#shbSpace)'}}, \
+            shbSceneElements(scene), \
+            hud \
+        ] \
+    }}
+endfunction
+
+
+# Compute a CSS color from an RGB array and an alpha
+function shbColor(rgb, alpha):
+    red = mathRound(mathMax(0, mathMin(255, arrayGet(rgb, 0))))
+    green = mathRound(mathMax(0, mathMin(255, arrayGet(rgb, 1))))
+    blue = mathRound(mathMax(0, mathMin(255, arrayGet(rgb, 2))))
+    if alpha < 1:
+        return 'rgba(' + red + ',' + green + ',' + blue + ',' + numberToFixed(alpha, 2, true) + ')'
+    endif
+    return 'rgb(' + red + ',' + green + ',' + blue + ')'
+endfunction
+
+
+# Round a screen coordinate to tenths of a pixel
+function shbRound(value):
+    return mathRound(value * 10) / 10
+endfunction
+
+
+# An SVG text element model
+function shbSvgText(text, x, y, size, fill, anchor, bold):
+    return { \
+        'svg': 'text', \
+        'attr': { \
+            'x': shbRound(x), \
+            'y': shbRound(y), \
+            'font-family': shbFontFamily, \
+            'font-size': size, \
+            'font-weight': if(bold, 'bold', 'normal'), \
+            'fill': fill, \
+            'text-anchor': anchor \
+        }, \
+        'elem': {'text': text} \
+    }
+endfunction
+
+
+function shbVecAdd(vecA, vecB):
+    return [arrayGet(vecA, 0) + arrayGet(vecB, 0), arrayGet(vecA, 1) + arrayGet(vecB, 1), arrayGet(vecA, 2) + arrayGet(vecB, 2)]
+endfunction
+
+
+function shbVecSub(vecA, vecB):
+    return [arrayGet(vecA, 0) - arrayGet(vecB, 0), arrayGet(vecA, 1) - arrayGet(vecB, 1), arrayGet(vecA, 2) - arrayGet(vecB, 2)]
+endfunction
+
+
+function shbVecScale(vec, scale):
+    return [arrayGet(vec, 0) * scale, arrayGet(vec, 1) * scale, arrayGet(vec, 2) * scale]
+endfunction
+
+
+function shbVecDot(vecA, vecB):
+    return arrayGet(vecA, 0) * arrayGet(vecB, 0) + arrayGet(vecA, 1) * arrayGet(vecB, 1) + arrayGet(vecA, 2) * arrayGet(vecB, 2)
+endfunction
+
+
+function shbVecCross(vecA, vecB):
+    ax = arrayGet(vecA, 0)
+    ay = arrayGet(vecA, 1)
+    az = arrayGet(vecA, 2)
+    bx = arrayGet(vecB, 0)
+    by = arrayGet(vecB, 1)
+    bz = arrayGet(vecB, 2)
+    return [ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx]
+endfunction
+
+
+function shbVecLength(vec):
+    return mathSqrt(shbVecDot(vec, vec))
+endfunction
+
+
+function shbVecNormalize(vec):
+    return shbVecScale(vec, 1 / shbVecLength(vec))
+endfunction
+
+
+# The rotation matrix that turns +x to a facing direction, keeping +y up (as near as it can)
+function shbFacingMatrix(facing):
+    forward = shbVecNormalize(facing)
+    side = shbVecCross(forward, [0, 1, 0])
+    side = if(shbVecLength(side) > 0, shbVecNormalize(side), [0, 0, 1])
+    up = shbVecCross(side, forward)
+    return [ \
+        arrayGet(forward, 0), arrayGet(up, 0), arrayGet(side, 0), \
+        arrayGet(forward, 1), arrayGet(up, 1), arrayGet(side, 1), \
+        arrayGet(forward, 2), arrayGet(up, 2), arrayGet(side, 2) \
+    ]
+endfunction
+
+
+function shbMatRotX(angle):
+    cosAngle = mathCos(angle)
+    sinAngle = mathSin(angle)
+    return [1, 0, 0, 0, cosAngle, -sinAngle, 0, sinAngle, cosAngle]
+endfunction
+
+
+function shbMatRotY(angle):
+    cosAngle = mathCos(angle)
+    sinAngle = mathSin(angle)
+    return [cosAngle, 0, sinAngle, 0, 1, 0, -sinAngle, 0, cosAngle]
+endfunction
+
+
+function shbMatRotZ(angle):
+    cosAngle = mathCos(angle)
+    sinAngle = mathSin(angle)
+    return [cosAngle, -sinAngle, 0, sinAngle, cosAngle, 0, 0, 0, 1]
+endfunction
+
+
+function shbMatScale(matrix, scale):
+    scaled = []
+    for value in matrix:
+        arrayPush(scaled, value * scale)
+    endfor
+    return scaled
+endfunction
+
+
+function shbMatMul(matA, matB):
+    product = []
+    row = 0
+    while row < 3:
+        column = 0
+        while column < 3:
+            arrayPush(product, \
+                arrayGet(matA, row * 3) * arrayGet(matB, column) + \
+                arrayGet(matA, row * 3 + 1) * arrayGet(matB, 3 + column) + \
+                arrayGet(matA, row * 3 + 2) * arrayGet(matB, 6 + column))
+            column = column + 1
+        endwhile
+        row = row + 1
+    endwhile
+    return product
+endfunction
+
+
+function shbMatApply(matrix, vec):
+    x = arrayGet(vec, 0)
+    y = arrayGet(vec, 1)
+    z = arrayGet(vec, 2)
+    return [ \
+        arrayGet(matrix, 0) * x + arrayGet(matrix, 1) * y + arrayGet(matrix, 2) * z, \
+        arrayGet(matrix, 3) * x + arrayGet(matrix, 4) * y + arrayGet(matrix, 5) * z, \
+        arrayGet(matrix, 6) * x + arrayGet(matrix, 7) * y + arrayGet(matrix, 8) * z \
+    ]
+endfunction
+
+
+# Create mesh face properties
+function shbMeshProps(color, ambient, alpha, doubleSided, specular):
+    return {'color': color, 'ambient': ambient, 'alpha': alpha, 'double': doubleSided, 'specular': specular, 'shininess': 24}
+endfunction
+
+
+# Merge face properties
+function shbMeshPropsMerge(props, overrides):
+    merged = objectCopy(props)
+    objectAssign(merged, overrides)
+    return merged
+endfunction
+
+
+# Add a face to a mesh, wound so its normal points away from the inner point (null for the x-axis)
+function shbMeshFace(mesh, points, inner, props):
+    pointFirst = arrayGet(points, 0)
+    normal = shbVecCross(shbVecSub(arrayGet(points, 1), pointFirst), shbVecSub(arrayGet(points, 2), pointFirst))
+    center = [0, 0, 0]
+    for point in points:
+        center = shbVecAdd(center, point)
+    endfor
+    center = shbVecScale(center, 1 / arrayLength(points))
+    inner = if(inner != null, inner, [arrayGet(center, 0), 0, 0])
+    if shbVecDot(normal, shbVecSub(center, inner)) < 0:
+        arrayReverse(points)
+        normal = shbVecScale(normal, -1)
+    endif
+    arrayPush(mesh, shbMeshPropsMerge(props, {'pts': points, 'normal': normal, 'center': center}))
+endfunction
+
+
+# Add a frustum about the x-axis to a mesh - a zero end radius makes a cone
+function shbMeshFrustum(mesh, x0, x1, radius0, radius1, segments, props):
+    segment = 0
+    while segment < segments:
+        angle0 = 2 * shbPi * segment / segments
+        angle1 = 2 * shbPi * (segment + 1) / segments
+        points = [ \
+            [x0, radius0 * mathCos(angle0), radius0 * mathSin(angle0)], \
+            [x0, radius0 * mathCos(angle1), radius0 * mathSin(angle1)], \
+            [x1, radius1 * mathCos(angle1), radius1 * mathSin(angle1)] \
+        ]
+        if radius1 > 0:
+            arrayPush(points, [x1, radius1 * mathCos(angle0), radius1 * mathSin(angle0)])
+        endif
+        shbMeshFace(mesh, points, null, props)
+        segment = segment + 1
+    endwhile
+endfunction
+
+
+# Add a disk about the x-axis to a mesh
+function shbMeshDisk(mesh, x, radius, segments, inner, props):
+    points = []
+    segment = 0
+    while segment < segments:
+        angle = 2 * shbPi * segment / segments
+        arrayPush(points, [x, radius * mathCos(angle), radius * mathSin(angle)])
+        segment = segment + 1
+    endwhile
+    shbMeshFace(mesh, points, inner, props)
+endfunction
+
+
+# Add a flat annulus in the x-z plane to a mesh
+function shbMeshAnnulus(mesh, radiusInner, radiusOuter, segments, props):
+    segment = 0
+    while segment < segments:
+        angle0 = 2 * shbPi * segment / segments
+        angle1 = 2 * shbPi * (segment + 1) / segments
+        shbMeshFace(mesh, [ \
+            [radiusInner * mathCos(angle0), 0, radiusInner * mathSin(angle0)], \
+            [radiusOuter * mathCos(angle0), 0, radiusOuter * mathSin(angle0)], \
+            [radiusOuter * mathCos(angle1), 0, radiusOuter * mathSin(angle1)], \
+            [radiusInner * mathCos(angle1), 0, radiusInner * mathSin(angle1)] \
+        ], [0, -1, 0], props)
+        segment = segment + 1
+    endwhile
+endfunction
+
+
+# Add an axis-aligned box to a mesh
+function shbMeshBox(mesh, pointMin, pointMax, props):
+    x0 = arrayGet(pointMin, 0)
+    y0 = arrayGet(pointMin, 1)
+    z0 = arrayGet(pointMin, 2)
+    x1 = arrayGet(pointMax, 0)
+    y1 = arrayGet(pointMax, 1)
+    z1 = arrayGet(pointMax, 2)
+    inner = shbVecScale(shbVecAdd(pointMin, pointMax), 0.5)
+    shbMeshFace(mesh, [[x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]], inner, props)
+    shbMeshFace(mesh, [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]], inner, props)
+    shbMeshFace(mesh, [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]], inner, props)
+    shbMeshFace(mesh, [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]], inner, props)
+    shbMeshFace(mesh, [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]], inner, props)
+    shbMeshFace(mesh, [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], inner, props)
+endfunction
+
+
+# Add a torus about the x-axis to a mesh
+function shbMeshTorus(mesh, xCenter, radiusMajor, radiusMinor, segmentsMajor, segmentsMinor, props):
+    major = 0
+    while major < segmentsMajor:
+        angle0 = 2 * shbPi * major / segmentsMajor
+        angle1 = 2 * shbPi * (major + 1) / segmentsMajor
+        angleMid = (angle0 + angle1) / 2
+        inner = [xCenter, radiusMajor * mathCos(angleMid), radiusMajor * mathSin(angleMid)]
+        minor = 0
+        while minor < segmentsMinor:
+            tube0 = 2 * shbPi * minor / segmentsMinor
+            tube1 = 2 * shbPi * (minor + 1) / segmentsMinor
+            shbMeshFace(mesh, [ \
+                shbTorusPoint(xCenter, radiusMajor, radiusMinor, angle0, tube0), \
+                shbTorusPoint(xCenter, radiusMajor, radiusMinor, angle1, tube0), \
+                shbTorusPoint(xCenter, radiusMajor, radiusMinor, angle1, tube1), \
+                shbTorusPoint(xCenter, radiusMajor, radiusMinor, angle0, tube1) \
+            ], inner, props)
+            minor = minor + 1
+        endwhile
+        major = major + 1
+    endwhile
+endfunction
+
+
+function shbTorusPoint(xCenter, radiusMajor, radiusMinor, angle, tube):
+    radius = radiusMajor + radiusMinor * mathCos(tube)
+    return [xCenter + radiusMinor * mathSin(tube), radius * mathCos(angle), radius * mathSin(angle)]
+endfunction
+
+
+# Add a latitude/longitude sphere to a mesh. The optional surface function returns each face's property overrides
+# from its center latitude and longitude (degrees), or null to omit the face.
+function shbMeshSphere(mesh, center, radius, bands, segments, props, surfaceFn):
+    band = 0
+    while band < bands:
+        lat0 = -90 + 180 * band / bands
+        lat1 = -90 + 180 * (band + 1) / bands
+        segment = 0
+        while segment < segments:
+            lon0 = 360 * segment / segments
+            lon1 = 360 * (segment + 1) / segments
+            if band == 0:
+                points = [shbSpherePoint(center, radius, lat0, lon0), shbSpherePoint(center, radius, lat1, lon1), \
+                    shbSpherePoint(center, radius, lat1, lon0)]
+            elif band == bands - 1:
+                points = [shbSpherePoint(center, radius, lat0, lon0), shbSpherePoint(center, radius, lat0, lon1), \
+                    shbSpherePoint(center, radius, lat1, lon0)]
+            else:
+                points = [shbSpherePoint(center, radius, lat0, lon0), shbSpherePoint(center, radius, lat0, lon1), \
+                    shbSpherePoint(center, radius, lat1, lon1), shbSpherePoint(center, radius, lat1, lon0)]
+            endif
+            surface = if(surfaceFn != null, surfaceFn((lat0 + lat1) / 2, (lon0 + lon1) / 2, lat1 - lat0, lon1 - lon0), {})
+            if surface != null:
+                shbMeshFace(mesh, points, center, shbMeshPropsMerge(props, surface))
+            endif
+            segment = segment + 1
+        endwhile
+        band = band + 1
+    endwhile
+endfunction
+
+
+function shbSpherePoint(center, radius, lat, lon):
+    cosLat = mathCos(lat * shbDeg)
+    return shbVecAdd(center, \
+        [radius * cosLat * mathCos(lon * shbDeg), radius * mathSin(lat * shbDeg), -radius * cosLat * mathSin(lon * shbDeg)])
+endfunction
+
+
+# The fractional part of a number
+function shbFract(value):
+    return value - mathFloor(value)
+endfunction
+
+
+# Create a unit sphere's band within 44 degrees of the equator, as columns of longitude of faces
+function shbMeshSphereBand(step, props, surfaceFn):
+    columns = []
+    lon = 0
+    while lon < 360:
+        column = []
+        lat = -44
+        while lat < 44:
+            surface = surfaceFn(lat + step / 2, lon + step / 2, step, step)
+            if surface != null:
+                shbMeshFace(column, [ \
+                    shbSpherePoint([0, 0, 0], 1, lat, lon), shbSpherePoint([0, 0, 0], 1, lat, lon + step), \
+                    shbSpherePoint([0, 0, 0], 1, lat + step, lon + step), shbSpherePoint([0, 0, 0], 1, lat + step, lon) \
+                ], [0, 0, 0], shbMeshPropsMerge(props, surface))
+            endif
+            lat = lat + step
+        endwhile
+        arrayPush(columns, column)
+        lon = lon + step
+    endwhile
+    return columns
+endfunction

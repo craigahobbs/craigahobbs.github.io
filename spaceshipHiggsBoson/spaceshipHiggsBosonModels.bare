@@ -1,0 +1,506 @@
+# Spaceship Higgs-Boson models - the detail levels and the meshes of the ship, the Earth, the gas giant Alpha
+# Centauri Ab, and the starfield, and the scene objects built from them
+
+include 'spaceshipHiggsBosonPhysics.bare'
+include 'spaceshipHiggsBosonRender.bare'
+
+
+# The rendering detail levels - "fps" is the level's frame rate target, and "faces" is the approximate face count of
+# a frame
+shbQualityLevels = [ \
+    { \
+        'name': 'Low', 'fps': 12, 'faces': 2000, 'bandStep': 4, 'stars': 300, 'earthBands': 20, 'earthSegments': 40, 'clouds': false, \
+        'cities': false, 'specular': false, 'segments': 10, 'ringMajor': 18, 'ringMinor': 4, 'sphereBands': 5, \
+        'sphereSegments': 8, 'shipDetail': false, 'particles': 0, 'glow': false \
+    }, \
+    { \
+        'name': 'Medium', 'fps': 10, 'faces': 3800, 'bandStep': 3, 'stars': 600, 'earthBands': 28, 'earthSegments': 56, 'clouds': false, \
+        'cities': true, 'specular': true, 'segments': 14, 'ringMajor': 24, 'ringMinor': 6, 'sphereBands': 6, \
+        'sphereSegments': 12, 'shipDetail': true, 'particles': 12, 'glow': false \
+    }, \
+    { \
+        'name': 'High', 'fps': 8, 'faces': 7500, 'bandStep': 2.5, 'stars': 1000, 'earthBands': 36, 'earthSegments': 72, 'clouds': true, \
+        'cities': true, 'specular': true, 'segments': 18, 'ringMajor': 32, 'ringMinor': 8, 'sphereBands': 8, \
+        'sphereSegments': 16, 'shipDetail': true, 'particles': 24, 'glow': true \
+    }, \
+    { \
+        'name': 'Ultra', 'fps': 7, 'faces': 10500, 'bandStep': 2, 'stars': 1600, 'earthBands': 44, 'earthSegments': 88, 'clouds': true, \
+        'cities': true, 'specular': true, 'segments': 24, 'ringMajor': 48, 'ringMinor': 10, 'sphereBands': 10, \
+        'sphereSegments': 20, 'shipDetail': true, 'particles': 40, 'glow': true \
+    } \
+]
+
+
+# The Earth's display radius and its turning rate (radians per second)
+shbEarthDisplayRadius = 6
+shbEarthSpin = 2 * shbPi / 90
+
+
+# The viewer's default camera angles (degrees)
+shbViewerYaw = 30
+shbViewerPitch = 22
+
+
+# The ship component labels and their anchor points (ship coordinates)
+shbShipLabels = [ \
+    {'text': 'Command module', 'point': [4.6, 0.8, 0]}, \
+    {'text': 'Higgs factory ring', 'point': [1.4, 3, 0]}, \
+    {'text': 'Radiators', 'point': [-0.8, 0, 3.3]}, \
+    {'text': 'Higgs decay chamber', 'point': [-3.4, -1.1, 0]}, \
+    {'text': 'Magnetic nozzle', 'point': [-6.6, 1.7, 0]}, \
+    {'text': 'Mass-suppression bubble', 'point': [0, -3.8, 0]} \
+]
+
+
+# The ship viewer scene for a camera state ("yaw", "pitch", "zoom", "spin", "time", "drive", and "labels")
+function shbViewerScene(state, level, width, height):
+    quality = arrayGet(shbQualityLevels, level)
+    camera = shbCamera(state, [0, 0, 0], 24, width, height)
+    scene = shbSceneNew(camera, [-0.45, 0.6, -0.65])
+    shbSceneAddStarfield(scene, quality, 0)
+    shipMatrix = shbMatRotY(objectGet(state, 'spin') * shbDeg)
+    driveOn = objectGet(state, 'drive')
+    shbSceneAddShip(scene, shbMeshes(level), quality, shipMatrix, [0, 0, 0], objectGet(state, 'time'), driveOn, driveOn)
+    if objectGet(state, 'labels'):
+        for label in shbShipLabels:
+            shbSceneAddLabel(scene, shbMatApply(shipMatrix, objectGet(label, 'point')), objectGet(label, 'text'))
+        endfor
+    endif
+    return scene
+endfunction
+
+
+# Add the Earth, its clouds, and its atmosphere to a scene, scaled from its display radius
+function shbSceneAddEarth(scene, meshes, position, time, scale):
+    radius = shbEarthDisplayRadius * scale
+    shbSceneAddGlow(scene, position, radius * 1.13, 'url(#shbAtmosphere)', radius)
+    shbSceneAddMesh(scene, objectGet(meshes, 'earth'), shbMatScale(shbMatRotY(time * shbEarthSpin), scale), position)
+    clouds = objectGet(meshes, 'clouds')
+    if clouds != null:
+        shbSceneAddMesh(scene, clouds, shbMatScale(shbMatRotY(time * shbEarthSpin * 1.3), scale), position)
+    endif
+    shbSceneAddGlow(scene, position, radius * 1.02, 'url(#shbHaze)', -radius * 0.98)
+endfunction
+
+
+# Add the atmosphere's glow along a planet's horizon, as seen from an eye point, to a scene
+function shbSceneAddHorizon(scene, center, radius, eye, glowFilter):
+    toEye = shbVecSub(eye, center)
+    distance = shbVecLength(toEye)
+    ratio = radius / distance
+    circleCenter = shbVecAdd(center, shbVecScale(toEye, ratio * ratio))
+    circleRadius = radius * mathSqrt(1 - ratio * ratio)
+    axisA = shbVecNormalize(shbVecCross(toEye, [0, 0, 1]))
+    axisB = shbVecNormalize(shbVecCross(toEye, axisA))
+    points = []
+    segment = 0
+    while segment < 120:
+        angle = segment * 3 * shbDeg
+        arrayPush(points, shbVecAdd(circleCenter, shbVecAdd(shbVecScale(axisA, circleRadius * mathCos(angle)), \
+            shbVecScale(axisB, circleRadius * mathSin(angle)))))
+        segment = segment + 1
+    endwhile
+    depthOffset = -0.15 * radius
+    shbSceneAddPath(scene, points, 'rgba(90,150,255,0.35)', 16, 'none', false, glowFilter, null, depthOffset)
+    shbSceneAddPath(scene, points, 'rgba(150,205,255,0.9)', 3, 'none', false, null, null, depthOffset)
+endfunction
+
+
+# Add the ship to a scene - with its mass-suppression bubble and particles, and its exhaust plume
+function shbSceneAddShip(scene, meshes, quality, matrix, position, time, bubbleOn, plumeOn):
+    shbSceneAddMesh(scene, objectGet(meshes, 'ship'), matrix, position)
+    glowFilter = if(objectGet(quality, 'glow'), 'url(#shbGlow)', null)
+
+    # The Higgs factory ring's glow
+    ringPoints = []
+    segment = 0
+    while segment < 24:
+        angle = segment * 15 * shbDeg
+        arrayPush(ringPoints, shbVecAdd(shbMatApply(matrix, [1.4, 2.7 * mathCos(angle), 2.7 * mathSin(angle)]), position))
+        segment = segment + 1
+    endwhile
+    pulse = 0.5 + 0.5 * mathSin(time * 4)
+    shbSceneAddPath(scene, ringPoints, 'rgba(120,230,255,' + numberToFixed(0.15 + 0.2 * pulse, 2) + ')', \
+        3 + 2 * pulse, 'none', false, glowFilter)
+
+    # Exhaust plume and engine glow
+    if plumeOn:
+        shbSceneAddMesh(scene, objectGet(meshes, 'plume'), matrix, position)
+        shbSceneAddGlow(scene, shbVecAdd(shbMatApply(matrix, [-6.9, 0, 0]), position), 2.6, 'url(#shbEngine)', -0.5)
+    endif
+    if !bubbleOn:
+        return
+    endif
+
+    # Mass-suppression bubble field lines
+    bubblePulse = 1 + 0.03 * mathSin(time * 3)
+    radiusX = 8.4 * bubblePulse
+    radius = 3.8 * bubblePulse
+    rings = [[], [], [], []]
+    segment = 0
+    while segment < 32:
+        angle = segment * 11.25 * shbDeg
+        cosAngle = mathCos(angle)
+        sinAngle = mathSin(angle)
+        for ring, ixRing in arraySlice(rings, 0, 3):
+            meridian = ixRing * 60 * shbDeg
+            arrayPush(ring, shbVecAdd(shbMatApply(matrix, \
+                [radiusX * cosAngle, radius * sinAngle * mathCos(meridian), radius * sinAngle * mathSin(meridian)]), position))
+        endfor
+        arrayPush(arrayGet(rings, 3), shbVecAdd(shbMatApply(matrix, [0, radius * cosAngle, radius * sinAngle]), position))
+        segment = segment + 1
+    endwhile
+    dashOffset = numberToFixed((time * 24) % 14, 1)
+    for ring in rings:
+        shbSceneAddPath(scene, ring, 'rgba(120,220,255,0.4)', 1, '4 3', false, null, dashOffset)
+    endfor
+
+    # Higgs bosons streaming along the bubble's meridians
+    particleCount = objectGet(quality, 'particles')
+    particle = 0
+    while particle < particleCount:
+        meridian = (particle % 3) * 60 * shbDeg
+        angle = 2 * shbPi * ((time * 0.15 + particle / particleCount) % 1)
+        point = [radiusX * mathCos(angle), radius * mathSin(angle) * mathCos(meridian), radius * mathSin(angle) * mathSin(meridian)]
+        shbSceneAddGlow(scene, shbVecAdd(shbMatApply(matrix, point), position), 0.22, 'url(#shbParticle)', 0)
+        particle = particle + 1
+    endwhile
+endfunction
+
+
+# The Earth's land map - 2-degree cells, rows from 90N to 90S, columns eastward from 0 longitude ("#" is land),
+# rasterized from the public domain Natural Earth 1:110m land polygons
+shbLandMap = [ \
+    '....................................................................................................................................................................................', \
+    '....................................................................................................................................................................................', \
+    '....................................................................................................................................................................................', \
+    '...........................................................................................................................................########...........##########............', \
+    '...............................................#.....................................................................................#.###########..#########################.......', \
+    '......#####.....................................####...........................................................................##....###.#####....########################..........', \
+    '........#..........................................##...................................................................##..........#..#####....###########################.........', \
+    '............................##.............#############.............###.##.................................................###...#.#.######...........###################..........', \
+    '..........................##............#####################.##......................................................###.#...#...#.##.####.##..........#################...........', \
+    '............##.............#.....###.############################.##########..#..........##..........##...............#..#######....##..########..........#############.#...........', \
+    '.........#########............###.##.###############################################.#####........#############.#########..###..#..#.###.##...####........#############.............', \
+    '.......##############.#.############.########################################################.....#########################################....#####.....##########.................', \
+    '......#####..####.#.######################################################################..##...#######################################.#...######.......######.........####.......', \
+    '....#####..###############################################################################........#####################################.........##.#.......####.....................', \
+    '...######..###################################################################..#.####...........#######.############################........####...........###.....................', \
+    '...######...###########################################################.....#...#..................####........######################........####..#................................', \
+    '....#.##...##########################################################.........####...................#...........######################.......#######............................##.', \
+    '....#.....##########################################################..........###.................#................########################..##########.........................###.', \
+    '..######################################################################......#....................................########################..###########.......................##.##', \
+    '.#####################################################################.#............................................####################################..........................##', \
+    '######################################################################.#.............................................#.###########################.#...##..........................#', \
+    '#####################################################################..#..............................................##############################.....#.........................#', \
+    '######.########..#.#####..##########################################..................................................############################.##..............................#', \
+    '##...##..#####......####..#########################################...##..............................................###########################..............................#####', \
+    '....#..##.####.##########..######################################.....#...............................................##########################................................####', \
+    '........#.##.############..################################....#......#...............................................########################.................................#####', \
+    '...###.#......###########..##################################..##...##.................................................#######################...................................##.', \
+    '#####.......#...#.##########################################...#..####..................................................######################...................................###', \
+    '######............##########################################.....##......................................................###################....................................####', \
+    '#########.####.##############################################.............................................................#################....................................#####', \
+    '########################.####################################...............................................................########.......#...................................#####', \
+    '#################.#######..#################################...............................................................#.######........#.................................#######', \
+    '#################..#######.#.....###########################................................................................#.#####..........................................#######', \
+    '##################.###########.....#######################..#..................................................................####.......##................................########', \
+    '###################.#########......#########..########.........................................................................####....##....#.............................#########', \
+    '###################..########.......######.....######.#.........................................................................####..##........#...........................########', \
+    '###################..######..........####......#######......#.....................................................................######....................................########', \
+    '####################.####............###.........#####......#.........................................................................####.................................#########', \
+    '#####################.#..............###.........######.....#...........................................................................##..................................########', \
+    '######################..##............##.........#..##........#..........................................................................#....####..........................########', \
+    '#########################.............#.#........#..#.....................................................................................#.#.########.......................#######', \
+    '#########################...............#.....................#..............................................................................##########.......................######', \
+    '...#####################........................#.##.....##..................................................................................#############.....................##.#.', \
+    '.....##################..........................#.#....###..................................................................................##############.........................', \
+    '.....#################...........................##....####.#...............................................................................###############.........................', \
+    '....#################.............................##...####......##.........................................................................#################.......................', \
+    '.....###############...............................##..###.##...#.#.###.....................................................................####################....................', \
+    '......##############................................#........#.......####..................................................................#######################..................', \
+    '......##############.................................###.............#####....#.............................................................#######################.................', \
+    '......##############......................................#...#.......##.#......#............................................................#####################..................', \
+    '.......#############.........................................................................................................................####################...................', \
+    '......##############....#........................................###...#......................................................................###################...................', \
+    '......##############....#.....................................######...##..........#..........................................................###################...................', \
+    '......#############...###....................................########..##.......................................................................################....................', \
+    '......############....###....................................############........................................................................###############....................', \
+    '.......###########....##..................................#################.......#..............................................................###############....................', \
+    '.......###########....##.................................##################......................................................................#############......................', \
+    '.......##########.....#..................................###################.....................................................................###########........................', \
+    '........########.........................................####################....................................................................###########........................', \
+    '........########.........................................####################...................................................................###########.........................', \
+    '.........######...........................................###################...................................................................###########.........................', \
+    '.........#####............................................####.....#########....................................................................##########..........................', \
+    '..........................................................#..........######...........#.........................................................#######.............................', \
+    '......................................................................#####............#.......................................................#########............................', \
+    '.......................................................................................##......................................................######...............................', \
+    '........................................................................##............##.......................................................####.#...............................', \
+    '.........................................................................#...........##.........................................................####................................', \
+    '....................................................................................##.........................................................####.................................', \
+    '...............................................................................................................................................####.................................', \
+    '..................................#...........................................................................................................####..................................', \
+    '..............................................................................................................................................###...................................', \
+    '...............................................................................................................................................###..................................', \
+    '................................................................................................................................................##..................................', \
+    '....................................................................................................................................................................................', \
+    '....................................................................................................................................................................................', \
+    '....................................................................................................................................................................................', \
+    '....................................................................................................................................................................................', \
+    '....................................................................................................................................................#...............................', \
+    '.........................####...............#.....#########..############.........................................................................##................................', \
+    '.................#..###############....#######################################....................................................................##................................', \
+    '.#################################..################################################............................................................#####...............................', \
+    '#####################################################################################...........................................###....#..........####.......................#######', \
+    '###################################################################################...........................################.#..##################.......................#########', \
+    '##################################################################################.......................####################################........................###############', \
+    '##################################################################################.................#..#######################################..............###....##################', \
+    '################################################################################..........................#######################################.........#.......##################', \
+    '###################################################################################....................#############################################################################', \
+    '####################################################################################################################################################################################', \
+    '####################################################################################################################################################################################', \
+    '####################################################################################################################################################################################' \
+]
+
+
+# Is the Earth's surface land at a latitude and longitude (degrees)?
+function shbLandAt(lat, lon):
+    row = mathMax(0, mathMin(89, mathFloor((90 - lat) / 2)))
+    column = mathFloor((((lon % 360) + 360) % 360) / 2)
+    return stringCharAt(arrayGet(shbLandMap, row), column) == '#'
+endfunction
+
+
+# The Earth's surface at a face's center latitude and longitude, and size (degrees) - the land fraction of five
+# samples blends the coastlines, with ice, desert, forest, and tundra by region, and city lights on the night side
+function shbEarthSurface(lat, lon, latSize, lonSize):
+    land = 0
+    for offset in [[0, 0], [-0.25, -0.25], [-0.25, 0.25], [0.25, -0.25], [0.25, 0.25]]:
+        if shbLandAt(lat + arrayGet(offset, 0) * latSize, lon + arrayGet(offset, 1) * lonSize):
+            land = land + 0.2
+        endif
+    endfor
+
+    # The land color by region
+    absLat = mathAbs(lat)
+    geoLon = if(lon > 180, lon - 360, lon)
+    texture = 0.92 + 0.16 * shbFract(mathSin(lat * 12.9898 + lon * 78.233) * 43758.5453)
+    greenland = lat > 60 && geoLon > -75 && geoLon < -10
+    desert = (lat > 14 && lat < 33 && geoLon > -18 && geoLon < 60) || \
+        (lat > -32 && lat < -18 && geoLon > 115 && geoLon < 145) || \
+        (lat > 22 && lat < 37 && geoLon > -117 && geoLon < -103) || \
+        (lat > 38 && lat < 47 && geoLon > 88 && geoLon < 115)
+    landColor = if(absLat > 66 || lat < -60 || greenland, [232, 238, 245], \
+        if(desert, [204, 176, 118], if(absLat > 52, [104, 122, 90], if(absLat < 12, [38, 110, 56], [62, 128, 70]))))
+    oceanColor = if(absLat > 76, [222, 230, 240], [20, 60, 142])
+    color = shbVecScale(shbVecAdd(shbVecScale(landColor, land), shbVecScale(oceanColor, 1 - land)), texture)
+
+    # City lights on inhabited land
+    cities = shbFract(mathSin(lat * 7.137 + lon * 31.71) * 24634.6345)
+    night = if(land >= 0.6 && absLat < 60 && lat > -50 && cities > 0.5, shbVecScale([255, 196, 120], (cities - 0.5) * 0.9), null)
+    return {'color': color, 'night': night, 'specular': 0.55 * (1 - land) * if(absLat > 76, 0.3, 1), 'shininess': 28}
+endfunction
+
+
+# The gas giant's procedural surface - banded clouds with a great storm
+function shbGiantSurface(lat, lon):
+    band = mathSin(lat * shbDeg * 9 + 0.6 * mathSin(lon * shbDeg * 2))
+    storm = mathAbs(lat + 22) < 8 && mathAbs((lon + 140) % 360 - 180) < 16
+    return {'color': if(storm, [206, 112, 78], if(band > 0.3, [226, 204, 160], if(band > -0.3, [194, 146, 100], \
+        [152, 108, 80])))}
+endfunction
+
+
+# The Earth's procedural cloud cover, its opacity graded by density - null for clear sky
+function shbCloudSurface(lat, lon):
+    latRad = lat * shbDeg
+    lonRad = lon * shbDeg
+    cover = mathSin(3 * lonRad + 2.2 * latRad) * mathCos(2 * latRad - 0.5) + \
+        0.6 * mathSin(7 * lonRad - 3 * latRad + 1.3) + 0.3 * mathCos(13 * lonRad + 5 * latRad)
+    return if(cover > 0.4, {'alpha': 0.12 + 0.38 * mathMin(1, (cover - 0.4) / 0.8)}, null)
+endfunction
+
+
+# Create the ship's module meshes for a detail level, in assembly order - spine, command module, Higgs factory ring,
+# field modulator spokes, radiators, Higgs decay chamber, and magnetic nozzle (ship coordinates - the ship points
+# along +x)
+function shbShipPartsNew(quality):
+    segments = objectGet(quality, 'segments')
+    specular = if(objectGet(quality, 'specular'), 0.45, 0)
+    hullProps = shbMeshProps([196, 202, 214], 0.2, 1, false, specular)
+    trussProps = shbMeshProps([140, 144, 156], 0.2, 1, false, specular)
+    detail = objectGet(quality, 'shipDetail')
+
+    # Spine
+    spine = []
+    shbMeshBox(spine, [-3.4, -0.22, -0.22], [3, 0.22, 0.22], trussProps)
+
+    # Command module, nose cone, aft bulkhead, and lit windows
+    command = []
+    shbMeshFrustum(command, 3, 5.2, 0.75, 0.75, segments, hullProps)
+    shbMeshFrustum(command, 5.2, 6.8, 0.75, 0, segments, hullProps)
+    shbMeshDisk(command, 3, 0.75, segments, [4, 0, 0], hullProps)
+    if detail:
+        shbMeshFrustum(command, 4.3, 4.6, 0.77, 0.77, segments, shbMeshProps([255, 214, 140], 1, 1, false, 0))
+    endif
+
+    # Higgs factory ring and field modulator spokes
+    ring = []
+    shbMeshTorus(ring, 1.4, 2.7, 0.3, objectGet(quality, 'ringMajor'), objectGet(quality, 'ringMinor'), \
+        shbMeshProps([80, 200, 255], 0.55, 1, false, specular))
+    spokes = []
+    shbMeshBox(spokes, [1.25, 0.22, -0.08], [1.55, 2.45, 0.08], trussProps)
+    shbMeshBox(spokes, [1.25, -2.45, -0.08], [1.55, -0.22, 0.08], trussProps)
+    shbMeshBox(spokes, [1.25, -0.08, 0.22], [1.55, 0.08, 2.45], trussProps)
+    shbMeshBox(spokes, [1.25, -0.08, -2.45], [1.55, 0.08, -0.22], trussProps)
+
+    # Radiators
+    radiators = []
+    radiatorProps = shbMeshProps([205, 96, 52], 0.25, 1, false, specular)
+    shbMeshBox(radiators, [-2, -0.03, 0.22], [0.6, 0.03, 3.3], radiatorProps)
+    shbMeshBox(radiators, [-2, -0.03, -3.3], [0.6, 0.03, -0.22], radiatorProps)
+
+    # Higgs decay chamber
+    chamber = []
+    shbMeshSphere(chamber, [-3.4, 0, 0], 1.05, objectGet(quality, 'sphereBands'), objectGet(quality, 'sphereSegments'), \
+        shbMeshProps([176, 160, 226], 0.35, 1, false, specular), null)
+
+    # Magnetic nozzle and its superconducting coils
+    nozzle = []
+    shbMeshFrustum(nozzle, -4.4, -6.6, 0.45, 1.7, segments, shbMeshProps([120, 120, 140], 0.2, 1, true, specular))
+    if detail:
+        coilProps = shbMeshProps([210, 170, 90], 0.3, 1, false, specular)
+        for coilX in [-4.9, -5.6, -6.3]:
+            coilRadius = 0.45 + 1.25 * (-4.4 - coilX) / 2.2 + 0.06
+            shbMeshTorus(nozzle, coilX, coilRadius, 0.07, segments, 4, coilProps)
+        endfor
+    endif
+    return [spine, command, ring, spokes, radiators, chamber, nozzle]
+endfunction
+
+
+# Create the drive exhaust plume mesh for a detail level
+function shbPlumeMeshNew(quality):
+    mesh = []
+    segments = objectGet(quality, 'segments')
+    filter = if(objectGet(quality, 'glow'), 'url(#shbGlow)', null)
+    outerProps = shbMeshPropsMerge(shbMeshProps([190, 140, 255], 1, 0.28, false, 0), {'filter': filter})
+    innerProps = shbMeshPropsMerge(shbMeshProps([245, 230, 255], 1, 0.5, false, 0), {'filter': filter})
+    shbMeshFrustum(mesh, -6.6, -11.6, 1.55, 0.15, segments, outerProps)
+    shbMeshFrustum(mesh, -6.0, -9.0, 0.6, 0, segments, innerProps)
+    return mesh
+endfunction
+
+
+# Remove the Earth surface detail a detail level doesn't draw - city lights and specular highlights
+function shbMeshEarthDetail(mesh, quality):
+    for face in mesh:
+        if !objectGet(quality, 'cities'):
+            objectDelete(face, 'night')
+        endif
+        if !objectGet(quality, 'specular'):
+            objectSet(face, 'specular', 0)
+        endif
+    endfor
+endfunction
+
+
+# Create the meshes for a detail level
+function shbMeshesNew(quality):
+    earthProps = shbMeshProps(null, 0.06, 1, false, 0)
+    cloudProps = shbMeshPropsMerge(shbMeshProps([250, 250, 255], 0.05, 0.55, false, 0), {'alphaLit': true})
+    earth = []
+    shbMeshSphere(earth, [0, 0, 0], shbEarthDisplayRadius, objectGet(quality, 'earthBands'), \
+        objectGet(quality, 'earthSegments'), earthProps, shbEarthSurface)
+    shbMeshEarthDetail(earth, quality)
+
+    clouds = null
+    if objectGet(quality, 'clouds'):
+        clouds = []
+        shbMeshSphere(clouds, [0, 0, 0], shbEarthDisplayRadius * 1.012, objectGet(quality, 'earthBands'), \
+            objectGet(quality, 'earthSegments'), cloudProps, shbCloudSurface)
+    endif
+
+
+    # The gas giant Alpha Centauri Ab and its rings (unit radius)
+    giant = []
+    shbMeshSphere(giant, [0, 0, 0], 1, objectGet(quality, 'earthBands'), objectGet(quality, 'earthSegments'), \
+        shbMeshProps(null, 0.05, 1, false, 0), shbGiantSurface)
+    giantRings = []
+    shbMeshAnnulus(giantRings, 1.35, 2.1, objectGet(quality, 'earthSegments'), \
+        shbMeshProps([214, 196, 168], 0.15, 0.5, true, 0))
+
+    # The surface bands of the Earth close-up set, in columns of longitude
+    earthBand = shbMeshSphereBand(objectGet(quality, 'bandStep'), earthProps, shbEarthSurface)
+    for column in earthBand:
+        shbMeshEarthDetail(column, quality)
+    endfor
+    cloudBand = if(objectGet(quality, 'clouds'), shbMeshSphereBand(objectGet(quality, 'bandStep'), cloudProps, shbCloudSurface), null)
+
+    shipParts = shbShipPartsNew(quality)
+    return { \
+        'shipParts': shipParts, \
+        'ship': arrayFlat(shipParts), \
+        'plume': shbPlumeMeshNew(quality), \
+        'earth': earth, \
+        'clouds': clouds, \
+        'earthBand': earthBand, \
+        'cloudBand': cloudBand, \
+        'giant': giant, \
+        'giantRings': giantRings \
+    }
+endfunction
+
+
+# Get the meshes for a detail level, building them on first use
+function shbMeshes(level):
+    key = 'level' + level
+    if !objectHas(shbMeshCache, key):
+        objectSet(shbMeshCache, key, shbMeshesNew(arrayGet(shbQualityLevels, level)))
+    endif
+    return objectGet(shbMeshCache, key)
+endfunction
+
+
+shbMeshCache = {}
+
+
+# Create a starfield - a third of the stars concentrate in a Milky Way band (a Park-Miller generator makes a
+# repeatable sky)
+function shbStarField(count, seed):
+    stars = []
+    state = seed
+    while arrayLength(stars) < count:
+        state = (state * 16807) % 2147483647
+        u = state / 2147483647
+        state = (state * 16807) % 2147483647
+        v = state / 2147483647
+        state = (state * 16807) % 2147483647
+        w = state / 2147483647
+        y = 2 * u - 1
+        radius = mathSqrt(1 - y * y)
+        angle = 2 * shbPi * v
+        direction = [radius * mathCos(angle), y, radius * mathSin(angle)]
+        brightness = 0.25 + 0.75 * w * w * w
+        if arrayLength(stars) % 3 == 0:
+            # Flatten toward the galactic plane (tilted 60 degrees about the x-axis) and dim
+            galactic = shbMatApply(shbMatRotX(-60 * shbDeg), direction)
+            arraySet(galactic, 1, arrayGet(galactic, 1) * 0.12)
+            direction = shbVecNormalize(shbMatApply(shbMatRotX(60 * shbDeg), galactic))
+            brightness = brightness * 0.7
+        endif
+        arrayPush(stars, {'direction': direction, 'brightness': brightness})
+    endwhile
+    return stars
+endfunction
+
+
+shbStars = shbStarField(1600, 20251014)
+
+
+# Add the starfield, at a detail level's star count, to a scene - aberrated and Doppler-shifted for a ship velocity
+# (+x) of beta
+function shbSceneAddStarfield(scene, quality, beta):
+    shbSceneAddStars(scene, arraySlice(shbStars, 0, objectGet(quality, 'stars')), beta)
+endfunction
