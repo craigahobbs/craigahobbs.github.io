@@ -151,6 +151,36 @@ class TestDownloads(unittest.TestCase):
         self.assertEqual(sleep.call_count, 4)
 
 
+    def test_main_npm_not_found(self):
+        # A newly-published npm package has no download data yet - npm returns 404, the package gets no rows (kept rows stay)
+        not_found = urllib.error.HTTPError(NPM_URL, 404, 'Not Found', {}, None)
+        package_data = [{'Package': 'alpha', 'Language': 'JavaScript', 'Date': '2024-01-01', 'Downloads': 1}]
+        responses = {NPM_URL: not_found, PYPI_URL: {'data': []}}
+        data, stdout, urls = self.run_main([], package_data, responses)
+        self.assertListEqual(data, package_data)
+        self.assertIn('  No download data yet (HTTP Error 404: Not Found)', stdout)
+        self.assertListEqual(urls, [NPM_URL, PYPI_URL])
+
+
+    def test_main_npm_error(self):
+        # Other HTTP errors fail the update
+        error = urllib.error.HTTPError(NPM_URL, 500, 'Server Error', {}, None)
+        with unittest.mock.patch('time.sleep'):
+            with self.assertRaises(urllib.error.HTTPError):
+                self.run_main([], [], {NPM_URL: error, PYPI_URL: {'data': []}})
+
+
+    def test_urlopen_json_not_found(self):
+        # Not found is final - no retries
+        not_found = urllib.error.HTTPError('url', 404, 'Not Found', {}, None)
+        with unittest.mock.patch('urllib.request.urlopen', side_effect=not_found) as urlopen, \
+             unittest.mock.patch('time.sleep') as sleep:
+            with self.assertRaises(urllib.error.HTTPError):
+                downloads.urlopen_json('url')
+        self.assertEqual(urlopen.call_count, 1)
+        self.assertEqual(sleep.call_count, 0)
+
+
     def test_urlopen_json_failure(self):
         with unittest.mock.patch('urllib.request.urlopen', side_effect=urllib.error.URLError('error')) as urlopen, \
              unittest.mock.patch('time.sleep') as sleep, \

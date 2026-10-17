@@ -9,6 +9,8 @@
 
 [Ollama Chat](https://github.com/craigahobbs/ollama-chat#readme)
 
+[PicoShelf](https://craigahobbs.github.io/picoshelf/)
+
 
 ## JavaScript Packages
 
@@ -17,6 +19,8 @@
 [element-model](https://github.com/craigahobbs/element-model#readme)
 
 [markdown-model](https://github.com/craigahobbs/markdown-model#readme)
+
+[picovox](https://github.com/craigahobbs/picovox#readme)
 
 [schema-markdown-js](https://github.com/craigahobbs/schema-markdown-js#readme)
 

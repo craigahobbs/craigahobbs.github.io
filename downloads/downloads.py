@@ -19,6 +19,7 @@ PACKAGES = [
     {'Package': 'element-model', 'Language': 'JavaScript'},
     {'Package': 'markdown-model', 'Language': 'JavaScript'},
     {'Package': 'markdown-up', 'Language': 'JavaScript'},
+    {'Package': 'picovox', 'Language': 'JavaScript'},
     {'Package': 'schema-markdown', 'Language': 'JavaScript'},
 
     # Python packages
@@ -71,7 +72,14 @@ def main():
         else: # package_language == 'JavaScript'
             year_ago = today - datetime.timedelta(days=365)
             package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
-            package_updated_raw = urlopen_json(package_url)
+            try:
+                package_updated_raw = urlopen_json(package_url)
+            except urllib.error.HTTPError as exc:
+                # A newly-published package has no download data for a day or two (npm returns 404 "package not found")
+                if exc.code != 404:
+                    raise
+                print(f'  No download data yet ({exc})')
+                package_updated_raw = {'downloads': []}
             package_updated = [
                 {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
                 for row in package_updated_raw['downloads']
@@ -100,6 +108,9 @@ def urlopen_json(url):
             with urllib.request.urlopen(url) as response:
                 return json.load(response)
         except (urllib.error.URLError, TimeoutError) as exc:
+            # (not found is final - no retries)
+            if getattr(exc, 'code', None) == 404:
+                raise
             print(f'  Request failed ({exc}), retrying in {retry_delay_s}s')
             time.sleep(retry_delay_s)
 
