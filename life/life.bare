@@ -2,8 +2,10 @@
 # https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
 
 include <args.bare>
+include <base64.bare>
 include <draw.bare>
 include <forms.bare>
+include <gzip.bare>
 include <schema.bare>
 include <schemaParser.bare>
 
@@ -15,10 +17,10 @@ function lifeMain():
 
     # Parse arguments
     args = argsParse(lifeArguments)
-    objectSet(args, 'background', objectGet(args, 'background') % arrayLength(lifeColors))
+    objectSet(args, 'background', mathMax(0, objectGet(args, 'background')) % arrayLength(lifeColors))
     objectSet(args, 'border', mathMax(0, objectGet(args, 'border')))
     objectSet(args, 'borderRatio', mathMax(0, mathMin(0.4, objectGet(args, 'borderRatio'))))
-    objectSet(args, 'color', objectGet(args, 'color') % arrayLength(lifeColors))
+    objectSet(args, 'color', mathMax(0, objectGet(args, 'color')) % arrayLength(lifeColors))
     objectSet(args, 'gap', mathMax(1, objectGet(args, 'gap')))
     objectSet(args, 'initRatio', mathMax(0, mathMin(1, objectGet(args, 'initRatio'))))
     objectSet(args, 'rate', mathMax(0, mathMin(arrayLength(lifeRates) - 1, objectGet(args, 'rate'))))
@@ -26,16 +28,14 @@ function lifeMain():
     # Load the life state
     life = lifeLoad(args)
 
-    # Load argument provided?
+    # Load argument provided (and not already loaded)?
     load = objectGet(args, 'load')
-    if load != null:
-        # Decode the load argument
+    if load != null && load != objectGet(life, 'initial'):
+        # Decode the load argument - save the loaded life, if valid
         loadedLife = lifeDecode(load)
-
-        # Save the loaded life (unless its already loaded)
-        if load != objectGet(life, 'initial'):
+        if loadedLife != null:
             life = loadedLife
-            lifeSave(loadedLife)
+            lifeSave(life)
         endif
     endif
 
@@ -86,10 +86,9 @@ function lifeRender(life, args):
 endfunction
 
 
-# Helper to set the timeout handler
-function lifeSetTimeout(life, args, startTime, endTime):
-    ellapsedMs = if(startTime != null && endTime != null, endTime - startTime, 0)
-    periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - ellapsedMs)
+# Helper to set the timeout handler - elapsedMs is the time already spent this period
+function lifeSetTimeout(life, args, elapsedMs):
+    periodMs = mathMax(0, 1000 / arrayGet(lifeRates, objectGet(args, 'rate')) - if(elapsedMs != null, elapsedMs, 0))
     if objectGet(args, 'play'):
         windowSetTimeout(systemPartial(lifeTimeout, life, args), periodMs)
     endif
@@ -99,23 +98,35 @@ endfunction
 # Life application timeout handler
 function lifeTimeout(life, args):
     startTime = datetimeNow()
-
-    # Compute the next life state
     lifeJSON = jsonStringify(objectGet(life, 'cells'))
-    life = lifeNext(life)
 
-    # Is there a cycle?
+    # Compute the next generations, through the cycle-detection depth. If this is the (unchanged) life the
+    # previous timeout returned (its first generation), reuse the generations it computed - only the last
+    # generation is new.
     depth = objectGet(args, 'depth')
-    lifeCycle = life
-    iCycle = 0
-    while iCycle < depth:
-        if lifeJSON == jsonStringify(objectGet(lifeCycle, 'cells')):
-            life = lifeNew(args, objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
-            break
-        endif
-        lifeCycle = lifeNext(lifeCycle)
-        iCycle = iCycle + 1
+    generations = objectGet(lifeLookahead, 'generations')
+    generationsJSON = objectGet(lifeLookahead, 'generationsJSON')
+    if generations != null && systemIs(life, arrayGet(generations, 0)) && lifeJSON == arrayGet(generationsJSON, 0):
+        arrayShift(generations)
+        arrayShift(generationsJSON)
+    else:
+        generations = []
+        generationsJSON = []
+    endif
+    while arrayLength(generations) < mathMax(1, depth):
+        generation = lifeNext(if(arrayLength(generations), arrayGet(generations, arrayLength(generations) - 1), life))
+        arrayPush(generations, generation)
+        arrayPush(generationsJSON, jsonStringify(objectGet(generation, 'cells')))
     endwhile
+
+    # Is there a cycle (does the current generation recur)?
+    if arrayIndexOf(arraySlice(generationsJSON, 0, depth), lifeJSON) != -1:
+        life = lifeNew(args, objectGet(life, 'width'), objectGet(life, 'height'), objectGet(life, 'initial'))
+        systemGlobalSet('lifeLookahead', {})
+    else:
+        life = arrayGet(generations, 0)
+        systemGlobalSet('lifeLookahead', {'generations': generations, 'generationsJSON': generationsJSON})
+    endif
 
     # Update the life state
     lifeSave(life)
@@ -125,8 +136,7 @@ function lifeTimeout(life, args):
     lifeDraw(life, args)
 
     # Set the timeout handler
-    endTime = datetimeNow()
-    lifeSetTimeout(life, args, startTime, endTime)
+    lifeSetTimeout(life, args, datetimeNow() - startTime)
 endfunction
 
 
@@ -172,30 +182,30 @@ function lifeMenuElements(life, args):
             {'text': 'Save: '}, \
             formsLinkElements('Load', argsURL(lifeArguments, {'load': lifeEncode(life)})) \
         ]
-    else:
-        # Pause menu
-        return [ \
-            formsLinkElements('Play', argsURL(lifeArguments, {'play': 1})), \
-            linkSection, \
-            formsLinkButtonElements('Step', systemPartial(lifeClickStep, life, args)), \
-            linkSeparator, \
-            formsLinkButtonElements('Random', systemPartial(lifeClickRandom, life, args)), \
-            linkSeparator, \
-            formsLinkButtonElements('Reset', systemPartial(lifeClickReset, args)), \
-            linkSeparator, \
-            formsLinkElements('Save', argsURL(lifeArguments, {'play': 0, 'save': 1})), \
-            linkSection, \
-            colorElements, \
-            linkSection, \
-            formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, -5, 0)), \
-            [{'text': nbsp + 'Width' + nbsp}], \
-            formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 5, 0)), \
-            linkSection, \
-            formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, 0, -5)), \
-            [{'text': nbsp + 'Height' + nbsp}], \
-            formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 0, 5)) \
-        ]
     endif
+
+    # Pause menu
+    return [ \
+        formsLinkElements('Play', argsURL(lifeArguments, {'play': 1})), \
+        linkSection, \
+        formsLinkButtonElements('Step', systemPartial(lifeClickStep, life, args)), \
+        linkSeparator, \
+        formsLinkButtonElements('Random', systemPartial(lifeClickRandom, life, args)), \
+        linkSeparator, \
+        formsLinkButtonElements('Reset', systemPartial(lifeClickReset, args)), \
+        linkSeparator, \
+        formsLinkElements('Save', argsURL(lifeArguments, {'play': 0, 'save': 1})), \
+        linkSection, \
+        colorElements, \
+        linkSection, \
+        formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, -5, 0)), \
+        [{'text': nbsp + 'Width' + nbsp}], \
+        formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 5, 0)), \
+        linkSection, \
+        formsLinkButtonElements('<<', systemPartial(lifeClickWidthHeight, life, args, 0, -5)), \
+        [{'text': nbsp + 'Height' + nbsp}], \
+        formsLinkButtonElements('>>', systemPartial(lifeClickWidthHeight, life, args, 0, 5)) \
+    ]
 endfunction
 
 
@@ -207,6 +217,9 @@ lifeColors = ['forestgreen', 'white' , 'lightgray', 'greenyellow', 'gold', 'mage
 
 # The Life application menu/board document reset ID
 lifeDocumentResetID = 'lifeReset'
+
+# The cycle-detection generations computed by the previous timeout handler call (empty if none)
+lifeLookahead = {}
 
 
 # Life application step click handler
@@ -254,14 +267,16 @@ endfunction
 
 # Life application cell click handler
 function lifeClickCell(life, args, px, py):
+    width = objectGet(life, 'width')
+    height = objectGet(life, 'height')
     size = lifeSize(life, args)
     gap = objectGet(args, 'gap')
     border = objectGet(args, 'border')
 
     # Compute the cell index to toggle
-    x = mathMax(0, mathMin(objectGet(life, 'width') - 1, mathFloor((px - border) / (size + gap))))
-    y = mathMax(0, mathMin(objectGet(life, 'height') - 1, mathFloor((py - border) / (size + gap))))
-    iCell = y * objectGet(life, 'width') + x
+    x = mathMax(0, mathMin(width - 1, mathFloor((px - border) / (size + gap))))
+    y = mathMax(0, mathMin(height - 1, mathFloor((py - border) / (size + gap))))
+    iCell = y * width + x
 
     # Toggle the cell
     cells = objectGet(life, 'cells')
@@ -310,16 +325,8 @@ endfunction
 function lifeLoad(args):
     # Parse and validate the session storage
     lifeJSON = sessionStorageGet('life')
-    life = null
-    if lifeJSON != null:
-        life = jsonParse(lifeJSON)
-        if life != null:
-            life = schemaValidate(lifeSession, 'Life', life)
-            if life != null && objectGet(life, 'width') * objectGet(life, 'height') != arrayLength(objectGet(life, 'cells')):
-                life = null
-            endif
-        endif
-    endif
+    life = if(lifeJSON != null, jsonParse(lifeJSON))
+    life = if(life != null, lifeValidate(life))
 
     # If there is no session, create a default session
     if life == null:
@@ -327,6 +334,16 @@ function lifeLoad(args):
         lifeSave(life)
     endif
 
+    return life
+endfunction
+
+
+# Validate a Life object - returns null if invalid
+function lifeValidate(life):
+    life = schemaValidate(lifeSession, 'Life', life)
+    if life == null || objectGet(life, 'width') * objectGet(life, 'height') != arrayLength(objectGet(life, 'cells')):
+        return null
+    endif
     return life
 endfunction
 
@@ -356,19 +373,15 @@ function lifeDraw(life, args):
     drawStyle('#606060', border, arrayGet(lifeColors, objectGet(args, 'background')))
     drawRect(0.5 * border, 0.5 * border, drawWidth() - border, drawHeight() - border)
 
-    # Draw the cells
+    # Draw the alive cells (the native arrayIndexOf skips the dead cells)
     drawStyle('none', 0, arrayGet(lifeColors, objectGet(args, 'color')))
     cells = objectGet(life, 'cells')
-    y = 0
-    while y < height:
-        x = 0
-        while x < width:
-            if arrayGet(cells, y * width + x):
-                drawPathRect(border + gap + x * (size + gap), border + gap + y * (size + gap), size, size)
-            endif
-            x = x + 1
-        endwhile
-        y = y + 1
+    iCell = arrayIndexOf(cells, 1)
+    while iCell != -1:
+        x = iCell % width
+        y = mathFloor(iCell / width)
+        drawPathRect(border + gap + x * (size + gap), border + gap + y * (size + gap), size, size)
+        iCell = arrayIndexOf(cells, 1, iCell + 1)
     endwhile
     drawRender()
 endfunction
@@ -378,12 +391,12 @@ endfunction
 function lifeSize(life, args):
     totalWidth = windowWidth() - 3 * documentFontSize()
     totalHeight = windowHeight() - if(objectGet(args, 'fullScreen'), 3, 6) * documentFontSize()
-    lifeWidth = objectGet(life, 'width')
-    lifeHeight = objectGet(life, 'height')
+    width = objectGet(life, 'width')
+    height = objectGet(life, 'height')
     gap = objectGet(args, 'gap')
     border = objectGet(args, 'border')
-    sizeWidth = (totalWidth - gap * (lifeWidth + 1) - 2 * border) / lifeWidth
-    sizeHeight = (totalHeight - gap * (lifeHeight + 1) - 2 * border) / lifeHeight
+    sizeWidth = (totalWidth - gap * (width + 1) - 2 * border) / width
+    sizeHeight = (totalHeight - gap * (height + 1) - 2 * border) / height
     return mathMax(1, mathMin(sizeWidth, sizeHeight))
 endfunction
 
@@ -395,99 +408,76 @@ function lifeNext(life):
     cells = objectGet(life, 'cells')
 
     # Compute the next life generation
-    lifeNext = lifeNew(null, width, height, objectGet(life, 'initial'))
-    nextCells = objectGet(lifeNext, 'cells')
+    nextLife = lifeNew(null, width, height, objectGet(life, 'initial'))
+    nextCells = objectGet(nextLife, 'cells')
+
+    # The above, current, and below rows, each padded with a trailing dead cell - the rows beyond the top and
+    # bottom edges are dead
+    rowDead = arrayNewSize(width + 1, 0)
+    rowAbove = rowDead
+    rowCurrent = arraySlice(cells, 0, width)
+    arrayPush(rowCurrent, 0)
     y = 0
     while y < height:
+        iRow = y * width
+        if y < height - 1:
+            rowBelow = arraySlice(cells, iRow + width, iRow + 2 * width)
+            arrayPush(rowBelow, 0)
+        else:
+            rowBelow = rowDead
+        endif
+
+        # Slide a window of three column sums along the row - the window total includes the cell itself. A cell is
+        # alive next generation if the total is 3 (a birth, or survival with two neighbors), or if the total is 4
+        # and the cell is alive (survival with three neighbors).
+        sumLeft = 0
+        sumCenter = arrayGet(rowAbove, 0) + arrayGet(rowCurrent, 0) + arrayGet(rowBelow, 0)
         x = 0
         while x < width:
-            neighbor = if(x > 0 && y > 0, arrayGet(cells, (y - 1) * width + x - 1), 0) + \
-                if(y > 0, arrayGet(cells, (y - 1) * width + x), 0) + \
-                if(x < width - 1 && y > 0, arrayGet(cells, (y - 1) * width + x + 1), 0) + \
-                if(x > 0, arrayGet(cells, y * width + x - 1), 0) + \
-                if(x < width - 1, arrayGet(cells, y * width + x + 1), 0) + \
-                if(x > 0 && y < height - 1, arrayGet(cells, (y + 1) * width + x - 1), 0) + \
-                if(y < height - 1, arrayGet(cells, (y + 1) * width + x), 0) + \
-                if(x < width - 1 && y < height - 1, arrayGet(cells, (y + 1) * width + x + 1), 0)
-            arraySet(nextCells, y * width + x, \
-                if(arrayGet(cells, y * width + x), if(neighbor < 2, 0, if(neighbor > 3, 0, 1)), if(neighbor == 3, 1, 0)))
-            x = x + 1
+            xRight = x + 1
+            sumRight = arrayGet(rowAbove, xRight) + arrayGet(rowCurrent, xRight) + arrayGet(rowBelow, xRight)
+            total = sumLeft + sumCenter + sumRight
+            arraySet(nextCells, iRow + x, if(total == 3 || (total == 4 && arrayGet(rowCurrent, x)), 1, 0))
+            sumLeft = sumCenter
+            sumCenter = sumRight
+            x = xRight
         endwhile
+
+        rowAbove = rowCurrent
+        rowCurrent = rowBelow
         y = y + 1
     endwhile
 
-    return lifeNext
+    return nextLife
 endfunction
 
 
-# Encode the Life object
+# Encode the Life object - the base64-encoded, gzip-compressed JSON of its size and cells
 function lifeEncode(life):
-    width = objectGet(life, 'width')
-    height = objectGet(life, 'height')
-    cells = objectGet(life, 'cells')
-    lifeChars = []
+    lifeJSON = jsonStringify({ \
+        'width': objectGet(life, 'width'), \
+        'height': objectGet(life, 'height'), \
+        'cells': objectGet(life, 'cells') \
+    })
+    return base64Encode(gzipCompress(stringEncode(lifeJSON)))
+endfunction
 
-    # Compute runs of alive/not-alive cells
-    alive = 0
-    count = 0
-    maxCount = stringLength(lifeEncodeChars) - 1
-    for curAlive, iCell in cells:
-        if curAlive == alive:
-            count = count + 1
-            if count == maxCount:
-                arrayPush(lifeChars, stringSlice(lifeEncodeChars, count, count + 1))
-                alive = if(alive, 0, 1)
-                count = 0
-            endif
-        else:
-            arrayPush(lifeChars, stringSlice(lifeEncodeChars, count, count + 1))
-            alive = if(alive, 0, 1)
-            count = 1
-        endif
-    endfor
 
-    # Add the final run
-    if count:
-        arrayPush(lifeChars, stringSlice(lifeEncodeChars, count, count + 1))
+# Decode an encoded Life object - returns null if invalid
+function lifeDecode(lifeStr):
+    # Decode, uncompress, and parse the Life object's JSON
+    lifeBytes = base64Decode(lifeStr)
+    lifeBytes = if(lifeBytes != null, gzipUncompress(lifeBytes))
+    lifeJSON = if(lifeBytes != null, stringDecode(lifeBytes))
+    life = if(lifeJSON != null, jsonParse(lifeJSON))
+    if systemType(life) != 'object':
+        return null
     endif
 
-    return width + '-' + height + '-' + arrayJoin(lifeChars, '')
+    # Validate the Life object
+    objectSet(life, 'initial', lifeStr)
+    return lifeValidate(life)
 endfunction
-
-
-# Decode the Life object
-function lifeDecode(lifeStr):
-    # Split the encoded life string into width, height, and cell string
-    parts = stringSplit(lifeStr, '-')
-    width = numberParseInt(arrayGet(parts, 0))
-    height = numberParseInt(arrayGet(parts, 1))
-    cellsStr = arrayGet(parts, 2)
-
-    # Decode the cell string
-    life = lifeNew(null, width, height, lifeStr)
-    cells = objectGet(life, 'cells')
-    iCell = 0
-    iChar = 0
-    cellsStrLength = stringLength(cellsStr)
-    while iChar < cellsStrLength:
-        char = stringSlice(cellsStr, iChar, iChar + 1)
-        count = stringIndexOf(lifeEncodeChars, char)
-        iCount = 0
-        while iCount < count:
-            arraySet(cells, iCell, iChar % 2)
-            iCount = iCount + 1
-            iCell = iCell + 1
-        endwhile
-        iChar = iChar + 1
-    endwhile
-
-    return life
-endfunction
-
-
-# Life encoding characters
-lifeEncodeAlpha = 'abcdefghijklmnopqrstuvwxyz'
-lifeEncodeChars = '0123456789' + lifeEncodeAlpha + stringUpper(lifeEncodeAlpha)
 
 
 # Life session state object schema

@@ -1,0 +1,871 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <args.bare>
+include <base64.bare>
+include <forms.bare>
+include <gzip.bare>
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../life.bare'
+include 'testLifeHelpers.bare'
+
+
+# The expected menu renders for the default arguments
+testLifeMenuRenderPlay = testLifeMenuRender(testLifeMenuPlay( \
+    testLifeMenuColor('#var.vBackground=2', '#var.vColor=2', '#var.vBorder=5'), \
+    '2', '#var.vRate=1', '#var.vRate=3' \
+))
+testLifeMenuRenderPause = testLifeMenuRender(testLifeMenuPause( \
+    testLifeMenuColor('#var.vBackground=2', '#var.vColor=2', '#var.vBorder=5') \
+))
+
+# The encoding of a 10x10 Life board with cell (1, 1) alive
+testLifeEncoded = 'H4sIAAAAAAAA/6tWSk7NySlWsoo20MEGDbGKDmIYq6OUkZqZnlGiZGVooKNUnplSkgFi1gIAEstg3eoAAAA='
+
+
+#
+# lifeMain tests
+#
+
+
+function testLifeMain():
+    life = testLifeCells(10, 10, [[1, 1]])
+    testLifeMockAll()
+    sessionStorageSet('life', jsonStringify(life))
+    lifeMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]], \
+        ['documentSetTitle', ["Conway's Game of Life"]], \
+        testLifeMenuRenderPlay, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[22, 22, 20]], false), \
+        ['windowSetTimeout', ['<function>', 500]], \
+        ['windowSetResize', ['<function>']] \
+    ])
+endfunction
+unittestRunTest('testLifeMain')
+
+
+function testLifeMainResizeBinding():
+    life = testLifeCells(10, 10, [[1, 1]])
+    lifeJSON = jsonStringify(life)
+    testLifeMockAll()
+    sessionStorageSet('life', lifeJSON)
+    lifeMain()
+    calls = unittestMockEnd()
+    resizeCall = arrayGet(calls, arrayLength(calls) - 1)
+    unittestEqual(arrayGet(resizeCall, 0), 'windowSetResize')
+    testSameEffect(arrayGet(arrayGet(resizeCall, 1), 0), systemPartial(lifeRender, jsonParse(lifeJSON), testLifeArgs()))
+endfunction
+unittestRunTest('testLifeMainResizeBinding')
+
+
+function testLifeMainLoad():
+    systemGlobalSet('vLoad', testLifeEncoded)
+    testLifeMockAll()
+    sessionStorageSet('life', jsonStringify(testLifeCells(10, 10, [])))
+    lifeMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCells(10, 10, []))]], \
+        ['documentSetTitle', ["Conway's Game of Life"]], \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCells(10, 10, [[1, 1]], testLifeEncoded))]], \
+        testLifeMenuRenderPlay, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[22, 22, 20]], false), \
+        ['windowSetTimeout', ['<function>', 500]], \
+        ['windowSetResize', ['<function>']] \
+    ])
+    systemGlobalSet('vLoad', null)
+endfunction
+unittestRunTest('testLifeMainLoad')
+
+
+function testLifeMainLoadAlreadyLoaded():
+    # The session life was loaded from vLoad and has since changed - it is not reloaded
+    life = testLifeCells(10, 10, [[2, 2]], testLifeEncoded)
+    systemGlobalSet('vLoad', testLifeEncoded)
+    testLifeMockAll()
+    sessionStorageSet('life', jsonStringify(life))
+    lifeMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]], \
+        ['documentSetTitle', ["Conway's Game of Life"]], \
+        testLifeMenuRenderPlay, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[43, 43, 20]], false), \
+        ['windowSetTimeout', ['<function>', 500]], \
+        ['windowSetResize', ['<function>']] \
+    ])
+    systemGlobalSet('vLoad', null)
+endfunction
+unittestRunTest('testLifeMainLoadAlreadyLoaded')
+
+
+function testLifeMainLoadInvalid():
+    # An invalid load argument is ignored
+    life = testLifeCells(10, 10, [[2, 2]])
+    systemGlobalSet('vLoad', 'invalid')
+    testLifeMockAll()
+    sessionStorageSet('life', jsonStringify(life))
+    lifeMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]], \
+        ['documentSetTitle', ["Conway's Game of Life"]], \
+        ['systemLogDebug', ['base64.bare: base64Decode - Invalid encoded data']], \
+        testLifeMenuRenderPlay, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[43, 43, 20]], false), \
+        ['windowSetTimeout', ['<function>', 500]], \
+        ['windowSetResize', ['<function>']] \
+    ])
+    systemGlobalSet('vLoad', null)
+endfunction
+unittestRunTest('testLifeMainLoadInvalid')
+
+
+function testLifeMainArgumentLimits():
+    # Out-of-range arguments are limited - borderRatio to 0.4 (a 10x10 interior) and initRatio to 1 (all alive)
+    systemGlobalSet('vBackground', 8)
+    systemGlobalSet('vBorder', -3)
+    systemGlobalSet('vBorderRatio', 0.9)
+    systemGlobalSet('vColor', 9)
+    systemGlobalSet('vGap', 0)
+    systemGlobalSet('vInitRatio', 2)
+    systemGlobalSet('vRate', 20)
+    testLifeMockAll()
+    lifeMain()
+
+    # The expected new life and its cells
+    points = []
+    cellRects = []
+    y = 20
+    while y < 30:
+        x = 20
+        while x < 30:
+            arrayPush(points, [x, y])
+            arrayPush(cellRects, [1 + x * 4.2, 1 + y * 4.2, 3.2])
+            x = x + 1
+        endwhile
+        y = y + 1
+    endwhile
+    life = testLifeCellsEncoded(50, 50, points)
+
+    # The menu links keep the URL's (unlimited) arguments
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ["Conway's Game of Life"]], \
+        ['sessionStorageSet', ['life', jsonStringify(life)]], \
+        testLifeMenuRender(testLifeMenuPlay( \
+            testLifeMenuColor( \
+                '#var.vBackground=3&var.vBorder=-3&var.vBorderRatio=0.9&var.vColor=9&var.vGap=0&var.vInitRatio=2&var.vRate=20', \
+                '#var.vBackground=8&var.vBorder=-3&var.vBorderRatio=0.9&var.vColor=3&var.vGap=0&var.vInitRatio=2&var.vRate=20', \
+                '#var.vBackground=8&var.vBorder=5&var.vBorderRatio=0.9&var.vColor=9&var.vGap=0&var.vInitRatio=2&var.vRate=20', \
+                '#var.vBackground=8&var.vBorder=-3&var.vBorderRatio=0.9&var.vColor=9&var.vFullScreen=true&var.vGap=0' + \
+                    '&var.vInitRatio=2&var.vRate=20' \
+            ), \
+            '30', \
+            '#var.vBackground=8&var.vBorder=-3&var.vBorderRatio=0.9&var.vColor=9&var.vGap=0&var.vInitRatio=2&var.vRate=7', \
+            null, \
+            '#var.vBackground=8&var.vBorder=-3&var.vBorderRatio=0.9&var.vColor=9&var.vGap=0&var.vInitRatio=2&var.vPlay=false' + \
+                '&var.vRate=20' \
+        )), \
+        testLifeBoardRender(50 * 4.2 + 1, 50 * 4.2 + 1, 0, 'white', 'lightgray', cellRects, false), \
+        ['windowSetTimeout', ['<function>', 1000 / 30]], \
+        ['windowSetResize', ['<function>']] \
+    ])
+
+    systemGlobalSet('vBackground', null)
+    systemGlobalSet('vBorder', null)
+    systemGlobalSet('vBorderRatio', null)
+    systemGlobalSet('vColor', null)
+    systemGlobalSet('vGap', null)
+    systemGlobalSet('vInitRatio', null)
+    systemGlobalSet('vRate', null)
+endfunction
+unittestRunTest('testLifeMainArgumentLimits')
+
+
+function testLifeMainArgumentLimitsNegativeColors():
+    # Negative colors are limited to 0
+    life = testLifeCells(10, 10, [[1, 1]])
+    systemGlobalSet('vBackground', -1)
+    systemGlobalSet('vColor', -3)
+    testLifeMockAll()
+    sessionStorageSet('life', jsonStringify(life))
+    lifeMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]], \
+        ['documentSetTitle', ["Conway's Game of Life"]], \
+        testLifeMenuRender(testLifeMenuPlay( \
+            testLifeMenuColor( \
+                '#var.vColor=-3', \
+                '#var.vBackground=-1&var.vColor=1', \
+                '#var.vBackground=-1&var.vBorder=5&var.vColor=-3', \
+                '#var.vBackground=-1&var.vColor=-3&var.vFullScreen=true' \
+            ), \
+            '2', \
+            '#var.vBackground=-1&var.vColor=-3&var.vRate=1', \
+            '#var.vBackground=-1&var.vColor=-3&var.vRate=3', \
+            '#var.vBackground=-1&var.vColor=-3&var.vPlay=false' \
+        )), \
+        testLifeBoardRender(211, 211, 0, 'forestgreen', 'forestgreen', [[22, 22, 20]], false), \
+        ['windowSetTimeout', ['<function>', 500]], \
+        ['windowSetResize', ['<function>']] \
+    ])
+    systemGlobalSet('vBackground', null)
+    systemGlobalSet('vColor', null)
+endfunction
+unittestRunTest('testLifeMainArgumentLimitsNegativeColors')
+
+
+#
+# lifeRender tests
+#
+
+
+function testLifeRenderPause():
+    life = testLifeCells(10, 10, [[0, 0], [9, 9]])
+    testLifeMockAll()
+    lifeRender(life, testLifeArgs({'play': false}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[1, 1, 20], [190, 190, 20]], true) \
+    ])
+endfunction
+unittestRunTest('testLifeRenderPause')
+
+
+function testLifeRenderSave():
+    life = testLifeCells(10, 10, [[1, 1]])
+    testLifeMockAll()
+    lifeRender(life, testLifeArgs({'play': false, 'save': true}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testLifeMenuRender([ \
+            {'text': 'Save: '}, \
+            formsLinkElements('Load', "#var.vLoad='H4sIAAAAAAAA%2F6tWSk7NySlWsoo20MEGDbGKDmIYq6OUkZqZnlGiZGVooKNUnplSkgFi1gIAEstg3eoAAAA%3D'") \
+        ]), \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[22, 22, 20]], true) \
+    ])
+endfunction
+unittestRunTest('testLifeRenderSave')
+
+
+function testLifeRenderFullScreen():
+    life = testLifeCells(10, 10, [[1, 1]])
+    testLifeMockAll()
+    lifeRender(life, testLifeArgs({'fullScreen': true}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testLifeMenuRender(null), \
+        testLifeBoardRender(259, 259, 0, 'white', 'forestgreen', [[26.8, 26.8, 24.8]], false), \
+        ['windowSetTimeout', ['<function>', 500]] \
+    ])
+endfunction
+unittestRunTest('testLifeRenderFullScreen')
+
+
+function testLifeRenderSlowest():
+    life = testLifeCells(10, 10, [])
+    testLifeMockAll()
+    lifeRender(life, testLifeArgs({'rate': 0}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testLifeMenuRender(testLifeMenuPlay( \
+            testLifeMenuColor('#var.vBackground=2', '#var.vColor=2', '#var.vBorder=5'), \
+            '0.5', null, '#var.vRate=1' \
+        )), \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [], false), \
+        ['windowSetTimeout', ['<function>', 2000]] \
+    ])
+endfunction
+unittestRunTest('testLifeRenderSlowest')
+
+
+#
+# lifeMenuElements tests
+#
+
+
+function testLifeMenuElementsColors():
+    # The next cell color skips the background color, and the next background color skips the cell color
+    unittestDeepEqual( \
+        lifeMenuElements(null, testLifeArgs({'background': 0, 'border': 5, 'color': 6})), \
+        testLifeMenuPlay( \
+            testLifeMenuColor('#var=', '#var.vColor=1', '#var='), \
+            '2', '#var.vRate=1', '#var.vRate=3' \
+        ) \
+    )
+    unittestDeepEqual( \
+        lifeMenuElements(null, testLifeArgs({'background': 3, 'color': 2})), \
+        testLifeMenuPlay( \
+            testLifeMenuColor('#var.vBackground=4', '#var.vColor=4', '#var.vBorder=5'), \
+            '2', '#var.vRate=1', '#var.vRate=3' \
+        ) \
+    )
+endfunction
+unittestRunTest('testLifeMenuElementsColors')
+
+
+function testLifeMenuElementsPauseBindings():
+    life = testLifeCells(20, 20, [[4, 3], [4, 4], [4, 5]])
+    lifeJSON = jsonStringify(life)
+    args = testLifeArgs({'play': false, 'borderRatio': 0.4})
+    render = systemPartial(lifeRender, life, args)
+
+    testVerifyClickN(render, 'Step', 0, systemPartial(lifeClickStep, jsonParse(lifeJSON), args))
+    testVerifyClickN(render, 'Random', 0, systemPartial(lifeClickRandom, jsonParse(lifeJSON), args))
+    testVerifyClickN(render, 'Reset', 0, systemPartial(lifeClickReset, args))
+    testVerifyClickN(render, '<<', 0, systemPartial(lifeClickWidthHeight, jsonParse(lifeJSON), args, -5, 0))
+    testVerifyClickN(render, '>>', 0, systemPartial(lifeClickWidthHeight, jsonParse(lifeJSON), args, 5, 0))
+    testVerifyClickN(render, '<<', 1, systemPartial(lifeClickWidthHeight, jsonParse(lifeJSON), args, 0, -5))
+    testVerifyClickN(render, '>>', 1, systemPartial(lifeClickWidthHeight, jsonParse(lifeJSON), args, 0, 5))
+endfunction
+unittestRunTest('testLifeMenuElementsPauseBindings')
+
+
+#
+# lifeSetTimeout tests
+#
+
+
+function testLifeSetTimeout():
+    life = testLifeCells(10, 10, [])
+    args = testLifeArgs()
+    testLifeMockAll()
+    lifeSetTimeout(life, args)
+    lifeSetTimeout(life, args, 100)
+    lifeSetTimeout(life, args, 2000)
+    lifeSetTimeout(life, testLifeArgs({'rate': 8}))
+    lifeSetTimeout(life, testLifeArgs({'play': false}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['windowSetTimeout', ['<function>', 500]], \
+        ['windowSetTimeout', ['<function>', 400]], \
+        ['windowSetTimeout', ['<function>', 0]], \
+        ['windowSetTimeout', ['<function>', 1000 / 30]] \
+    ])
+endfunction
+unittestRunTest('testLifeSetTimeout')
+
+
+function testLifeSetTimeoutBinding():
+    life = testLifeCells(10, 10, [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]])
+    lifeJSON = jsonStringify(life)
+    args = testLifeArgs()
+    testLifeMockAll()
+    lifeSetTimeout(life, args)
+    timeoutCall = arrayGet(unittestMockEnd(), 0)
+    testSameEffect(arrayGet(arrayGet(timeoutCall, 1), 0), systemPartial(lifeTimeout, jsonParse(lifeJSON), args))
+endfunction
+unittestRunTest('testLifeSetTimeoutBinding')
+
+
+#
+# lifeTimeout tests
+#
+
+
+function testLifeTimeout():
+    # A glider - no cycle
+    life = testLifeCells(10, 10, [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]])
+    nextLife = testLifeCells(10, 10, [[0, 1], [2, 1], [1, 2], [2, 2], [1, 3]])
+    testLifeMockAll()
+    lifeTimeout(life, testLifeArgs())
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(nextLife)]], \
+        ['documentSetReset', ['lifeReset']], \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', \
+            [[1, 22, 20], [43, 22, 20], [22, 43, 20], [43, 43, 20], [22, 64, 20]], false), \
+        ['windowSetTimeout', ['<function>', 400]] \
+    ])
+endfunction
+unittestRunTest('testLifeTimeout')
+
+
+function testLifeTimeoutCycle():
+    # A blinker - a period-2 cycle, so a new random life is created (keeping the initial state)
+    life = testLifeCells(10, 10, [[4, 3], [4, 4], [4, 5]])
+    newLife = testLifeCells(10, 10, [[4, 4], [4, 5]])
+    testLifeMockAll()
+    lifeTimeout(life, testLifeArgs({'borderRatio': 0.4}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(newLife)]], \
+        ['documentSetReset', ['lifeReset']], \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[85, 85, 20], [85, 106, 20]], false), \
+        ['windowSetTimeout', ['<function>', 400]] \
+    ])
+endfunction
+unittestRunTest('testLifeTimeoutCycle')
+
+
+function testLifeTimeoutStill():
+    # A block - a still life, so a new random life is created
+    life = testLifeCells(10, 10, [[1, 1], [2, 1], [1, 2], [2, 2]])
+    newLife = testLifeCells(10, 10, [[4, 4], [4, 5]])
+    testLifeMockAll()
+    lifeTimeout(life, testLifeArgs({'borderRatio': 0.4, 'play': false}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(newLife)]], \
+        ['documentSetReset', ['lifeReset']], \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[85, 85, 20], [85, 106, 20]], true) \
+    ])
+endfunction
+unittestRunTest('testLifeTimeoutStill')
+
+
+function testLifeTimeoutDepthZero():
+    # Cycle detection is disabled - the blinker continues
+    life = testLifeCells(10, 10, [[4, 3], [4, 4], [4, 5]])
+    nextLife = testLifeCells(10, 10, [[3, 4], [4, 4], [5, 4]])
+    testLifeMockAll()
+    lifeTimeout(life, testLifeArgs({'depth': 0}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(nextLife)]], \
+        ['documentSetReset', ['lifeReset']], \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[64, 85, 20], [85, 85, 20], [106, 85, 20]], false), \
+        ['windowSetTimeout', ['<function>', 400]] \
+    ])
+endfunction
+unittestRunTest('testLifeTimeoutDepthZero')
+
+
+function testLifeTimeoutLookahead():
+    # The second timeout reuses the generations computed by the first
+    life = testLifeCells(10, 10, [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]])
+    args = testLifeArgs()
+    testLifeMockAll()
+    lifeTimeout(life, args)
+    lookahead = lifeLookahead
+    calls = unittestMockEnd()
+    timeoutFn = arrayGet(arrayGet(arrayGet(calls, 3), 1), 0)
+    generations = arrayCopy(objectGet(lookahead, 'generations'))
+    unittestDeepEqual(testLifePoints(arrayGet(generations, 0)), [[0, 1], [2, 1], [1, 2], [2, 2], [1, 3]])
+    unittestEqual(arrayLength(generations), 6)
+    unittestEqual(arrayLength(objectGet(lookahead, 'generationsJSON')), 6)
+
+    # Call the timeout function - the next life is the first timeout's second generation
+    testLifeMockAll()
+    timeoutFn()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCells(10, 10, [[2, 1], [0, 2], [2, 2], [1, 3], [2, 3]]))]], \
+        ['documentSetReset', ['lifeReset']], \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', \
+            [[43, 22, 20], [1, 43, 20], [43, 43, 20], [22, 64, 20], [43, 64, 20]], false), \
+        ['windowSetTimeout', ['<function>', 400]] \
+    ])
+    unittestEqual(systemIs(arrayGet(objectGet(lifeLookahead, 'generations'), 0), arrayGet(generations, 1)), true)
+
+    systemGlobalSet('lifeLookahead', {})
+endfunction
+unittestRunTest('testLifeTimeoutLookahead')
+
+
+function testLifeTimeoutLookaheadChanged():
+    # The life returned by the first timeout is changed - its generations are recomputed
+    life = testLifeCells(10, 10, [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]])
+    args = testLifeArgs()
+    testLifeMockAll()
+    lifeTimeout(life, args)
+    generations = arrayCopy(objectGet(lifeLookahead, 'generations'))
+    nextLife = arrayGet(generations, 0)
+    arraySet(objectGet(nextLife, 'cells'), 99, 1)
+    lifeTimeout(nextLife, args)
+    unittestMockEnd()
+    nextGenerations = objectGet(lifeLookahead, 'generations')
+    unittestDeepEqual(testLifePoints(arrayGet(nextGenerations, 0)), [[2, 1], [0, 2], [2, 2], [1, 3], [2, 3]])
+    unittestEqual(systemIs(arrayGet(nextGenerations, 0), arrayGet(generations, 1)), false)
+
+    systemGlobalSet('lifeLookahead', {})
+endfunction
+unittestRunTest('testLifeTimeoutLookaheadChanged')
+
+
+#
+# Click handler tests
+#
+
+
+function testLifeClickStep():
+    life = testLifeCells(10, 10, [[4, 3], [4, 4], [4, 5]])
+    nextLife = testLifeCells(10, 10, [[3, 4], [4, 4], [5, 4]])
+    testLifeMockAll()
+    lifeClickStep(life, testLifeArgs({'play': false}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(nextLife)]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[64, 85, 20], [85, 85, 20], [106, 85, 20]], true) \
+    ])
+endfunction
+unittestRunTest('testLifeClickStep')
+
+
+function testLifeClickRandom():
+    life = testLifeCells(10, 10, [[1, 1]])
+    newLife = testLifeCellsEncoded(10, 10, [[4, 4], [4, 5]])
+    testLifeMockAll()
+    lifeClickRandom(life, testLifeArgs({'play': false, 'borderRatio': 0.4}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(newLife)]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[85, 85, 20], [85, 106, 20]], true) \
+    ])
+endfunction
+unittestRunTest('testLifeClickRandom')
+
+
+function testLifeClickReset():
+    testLifeMockAll()
+    lifeClickReset(testLifeArgs({'play': false, 'initRatio': 0}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCellsEncoded(50, 50, []))]], \
+        ['windowSetLocation', ['#var.vPlay=false']] \
+    ])
+endfunction
+unittestRunTest('testLifeClickReset')
+
+
+function testLifeClickResetAtLocation():
+    # Already at the reset location - render in place
+    systemGlobalSet('vPlay', false)
+    testLifeMockAll()
+    lifeClickReset(testLifeArgs({'initRatio': 0}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCellsEncoded(50, 50, []))]], \
+        testLifeMenuRender(testLifeMenuPause( \
+            testLifeMenuColor('#var.vBackground=2&var.vPlay=false', '#var.vColor=2&var.vPlay=false', \
+                '#var.vBorder=5&var.vPlay=false', '#var.vFullScreen=true&var.vPlay=false') \
+        )), \
+        testLifeBoardRender(50 * 4.2 + 1, 50 * 4.2 + 1, 0, 'white', 'forestgreen', [], true) \
+    ])
+    systemGlobalSet('vPlay', null)
+endfunction
+unittestRunTest('testLifeClickResetAtLocation')
+
+
+function testLifeClickWidthHeight():
+    life = testLifeCells(10, 10, [[1, 1]])
+    args = testLifeArgs({'play': false, 'initRatio': 0})
+    testLifeMockAll()
+    lifeClickWidthHeight(life, args, 5, 0)
+    lifeClickWidthHeight(life, args, -5, 0)
+    lifeClickWidthHeight(life, args, 0, 5)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCellsEncoded(15, 10, []))]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(316, 211, 0, 'white', 'forestgreen', [], true), \
+        # The width is at least 10
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCellsEncoded(10, 10, []))]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [], true), \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCellsEncoded(10, 15, []))]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(141, 211, 0, 'white', 'forestgreen', [], true) \
+    ])
+endfunction
+unittestRunTest('testLifeClickWidthHeight')
+
+
+function testLifeClickCell():
+    life = testLifeCells(10, 10, [])
+    args = testLifeArgs({'play': false})
+    testLifeMockAll()
+
+    # Toggle on (2, 1)
+    lifeClickCell(life, args, 50, 30)
+    unittestDeepEqual(testLifePoints(life), [[2, 1]])
+
+    # Toggle off (2, 1)
+    lifeClickCell(life, args, 50, 30)
+    unittestDeepEqual(testLifePoints(life), [])
+
+    # Clicks outside the board toggle the nearest edge cell
+    lifeClickCell(life, args, -10, 1000)
+    unittestDeepEqual(testLifePoints(life), [[0, 9]])
+
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCells(10, 10, [[2, 1]]))]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[43, 22, 20]], true), \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCells(10, 10, []))]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [], true), \
+        ['sessionStorageSet', ['life', jsonStringify(testLifeCells(10, 10, [[0, 9]]))]], \
+        testLifeMenuRenderPause, \
+        testLifeBoardRender(211, 211, 0, 'white', 'forestgreen', [[1, 190, 20]], true) \
+    ])
+endfunction
+unittestRunTest('testLifeClickCell')
+
+
+function testLifeClickCellBorder():
+    # With a 5-pixel border, the cells are 19 pixels with a 20-pixel pitch starting at 6 - without the border
+    # offset, this click would toggle (4, 2)
+    life = testLifeCells(10, 10, [])
+    testLifeMockAll()
+    lifeClickCell(life, testLifeArgs({'play': false, 'border': 5}), 82, 42)
+    unittestMockEnd()
+    unittestDeepEqual(testLifePoints(life), [[3, 1]])
+endfunction
+unittestRunTest('testLifeClickCellBorder')
+
+
+function testLifeClickCellBinding():
+    life = testLifeCells(10, 10, [[1, 1]])
+    lifeJSON = jsonStringify(life)
+    args = testLifeArgs({'play': false})
+    testLifeMockAll()
+    lifeRender(life, args)
+    boardCall = arrayGet(unittestMockEnd(), 1)
+    svg = objectGet(arrayGet(arrayGet(boardCall, 1), 0), 'elem')
+    clickFn = objectGet(objectGet(svg, 'callback'), 'click')
+
+    # MarkdownUp appends the click point and the SVG size
+    testSameEffect(systemPartial(clickFn, 50, 30, 211, 211), systemPartial(lifeClickCell, jsonParse(lifeJSON), args, 50, 30))
+endfunction
+unittestRunTest('testLifeClickCellBinding')
+
+
+#
+# lifeNew tests
+#
+
+
+function testLifeNew():
+    life = lifeNew()
+    unittestDeepEqual(life, testLifeCellsEncoded(50, 50, []))
+endfunction
+unittestRunTest('testLifeNew')
+
+
+function testLifeNewSizeInitial():
+    unittestDeepEqual(lifeNew(null, 12, 10, 'abc'), testLifeCells(12, 10, [], 'abc'))
+endfunction
+unittestRunTest('testLifeNewSizeInitial')
+
+
+function testLifeNewRandom():
+    # Only the cells inside the border are randomized - the mocked random alternates alive and dead
+    testLifeMockAll()
+    life = lifeNew(testLifeArgs({'borderRatio': 0.3}), 10, 10)
+    unittestDeepEqual(unittestMockEnd(), [])
+    unittestDeepEqual(testLifePoints(life), [ \
+        [3, 3], [5, 3], \
+        [3, 4], [5, 4], \
+        [3, 5], [5, 5], \
+        [3, 6], [5, 6] \
+    ])
+    unittestEqual(objectGet(life, 'initial'), lifeEncode(life))
+endfunction
+unittestRunTest('testLifeNewRandom')
+
+
+#
+# lifeLoad/lifeSave tests
+#
+
+
+function testLifeLoad():
+    life = testLifeCells(10, 10, [[1, 1]])
+    testLifeMockAll()
+    sessionStorageSet('life', jsonStringify(life))
+    unittestDeepEqual(lifeLoad(testLifeArgs()), life)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]] \
+    ])
+endfunction
+unittestRunTest('testLifeLoad')
+
+
+function testLifeLoadNone():
+    life = testLifeCellsEncoded(50, 50, [])
+    testLifeMockAll()
+    unittestDeepEqual(lifeLoad(null), life)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]] \
+    ])
+endfunction
+unittestRunTest('testLifeLoadNone')
+
+
+function testLifeLoadInvalidJSON():
+    life = testLifeCellsEncoded(50, 50, [])
+    systemLogDebug('NOTICE: The following "jsonParse" error is expected:')
+    testLifeMockAll()
+    sessionStorageSet('life', 'not JSON')
+    unittestDeepEqual(lifeLoad(null), life)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', 'not JSON']], \
+        ['sessionStorageSet', ['life', jsonStringify(life)]] \
+    ])
+endfunction
+unittestRunTest('testLifeLoadInvalidJSON')
+
+
+function testLifeLoadInvalidSchema():
+    life = testLifeCellsEncoded(50, 50, [])
+    invalidJSON = jsonStringify({'width': 5, 'height': 10, 'cells': arrayNewSize(50, 0), 'initial': 'test'})
+    testLifeMockAll()
+    sessionStorageSet('life', invalidJSON)
+    unittestDeepEqual(lifeLoad(null), life)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', invalidJSON]], \
+        ['systemLogDebug', ['schema.bare: Invalid value 5 (type "number") for member "width", expected type "int" [>= 10]']], \
+        ['sessionStorageSet', ['life', jsonStringify(life)]] \
+    ])
+endfunction
+unittestRunTest('testLifeLoadInvalidSchema')
+
+
+function testLifeLoadInvalidSize():
+    life = testLifeCellsEncoded(50, 50, [])
+    invalidJSON = jsonStringify({'width': 10, 'height': 10, 'cells': arrayNewSize(50, 0), 'initial': 'test'})
+    testLifeMockAll()
+    sessionStorageSet('life', invalidJSON)
+    unittestDeepEqual(lifeLoad(null), life)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', invalidJSON]], \
+        ['sessionStorageSet', ['life', jsonStringify(life)]] \
+    ])
+endfunction
+unittestRunTest('testLifeLoadInvalidSize')
+
+
+function testLifeSave():
+    life = testLifeCells(10, 10, [[1, 1]])
+    testLifeMockAll()
+    lifeSave(life)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['sessionStorageSet', ['life', jsonStringify(life)]] \
+    ])
+endfunction
+unittestRunTest('testLifeSave')
+
+
+#
+# lifeDraw tests
+#
+
+
+function testLifeDrawBorderColors():
+    life = testLifeCells(10, 10, [[1, 1]])
+    testLifeMockAll()
+    lifeDraw(life, testLifeArgs({'background': 6, 'border': 5, 'color': 4}))
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testLifeBoardRender(211, 211, 5, 'cornflowerblue', 'gold', [[26, 26, 19]], false) \
+    ])
+endfunction
+unittestRunTest('testLifeDrawBorderColors')
+
+
+#
+# lifeSize tests
+#
+
+
+function testLifeSize():
+    life = testLifeCells(10, 10, [])
+    testLifeMockAll()
+
+    # Height-limited
+    unittestEqual(lifeSize(life, testLifeArgs()), 20)
+    unittestEqual(lifeSize(life, testLifeArgs({'fullScreen': true})), 24.8)
+    unittestEqual(lifeSize(life, testLifeArgs({'border': 5})), 19)
+    unittestEqual(lifeSize(life, testLifeArgs({'gap': 3})), 17.8)
+
+    # Width-limited
+    unittestEqual(lifeSize(testLifeCells(20, 10, []), testLifeArgs()), 16.55)
+
+    # At least one pixel
+    unittestEqual(lifeSize(testLifeCells(1000, 1000, []), testLifeArgs()), 1)
+
+    unittestDeepEqual(unittestMockEnd(), [])
+endfunction
+unittestRunTest('testLifeSize')
+
+
+#
+# lifeNext tests
+#
+
+
+function testLifeNext():
+    # Blinker - oscillates
+    life = lifeNext(testLifeCells(10, 10, [[4, 3], [4, 4], [4, 5]]))
+    unittestDeepEqual(testLifePoints(life), [[3, 4], [4, 4], [5, 4]])
+    unittestEqual(objectGet(life, 'initial'), 'test')
+    unittestDeepEqual(testLifePoints(lifeNext(life)), [[4, 3], [4, 4], [4, 5]])
+
+    # Block - still
+    unittestDeepEqual(testLifePoints(lifeNext(testLifeCells(10, 10, [[1, 1], [2, 1], [1, 2], [2, 2]]))), \
+        [[1, 1], [2, 1], [1, 2], [2, 2]])
+
+    # Top-left and bottom-right corners - births complete the blocks (cells beyond the edges are dead)
+    unittestDeepEqual(testLifePoints(lifeNext(testLifeCells(10, 10, [[0, 0], [1, 0], [0, 1], [9, 8], [8, 9], [9, 9]]))), \
+        [[0, 0], [1, 0], [0, 1], [1, 1], [8, 8], [9, 8], [8, 9], [9, 9]])
+
+    # Plus sign - the center dies of overcrowding, the arms survive, the corners are born
+    unittestDeepEqual(testLifePoints(lifeNext(testLifeCells(10, 10, [[4, 3], [3, 4], [4, 4], [5, 4], [4, 5]]))), \
+        [[3, 3], [4, 3], [5, 3], [3, 4], [5, 4], [3, 5], [4, 5], [5, 5]])
+
+    # Lone cell - dies of loneliness
+    unittestDeepEqual(testLifePoints(lifeNext(testLifeCells(10, 10, [[5, 5]]))), [])
+endfunction
+unittestRunTest('testLifeNext')
+
+
+#
+# lifeEncode/lifeDecode tests
+#
+
+
+# Encode a string as base64-encoded gzip
+function testLifeGzipBase64(text):
+    return base64Encode(gzipCompress(stringEncode(text)))
+endfunction
+
+
+function testLifeEncode():
+    life = testLifeCells(10, 10, [[1, 1]])
+    unittestEqual(lifeEncode(life), testLifeEncoded)
+
+    # The encoding is the base64-encoded, gzip-compressed JSON of the size and cells (not the initial state)
+    unittestEqual( \
+        stringDecode(gzipUncompress(base64Decode(testLifeEncoded))), \
+        '{"cells":[0,0,0,0,0,0,0,0,0,0,0,1' + stringRepeat(',0', 88) + '],"height":10,"width":10}' \
+    )
+endfunction
+unittestRunTest('testLifeEncode')
+
+
+function testLifeDecode():
+    unittestDeepEqual(lifeDecode(testLifeEncoded), testLifeCells(10, 10, [[1, 1]], testLifeEncoded))
+endfunction
+unittestRunTest('testLifeDecode')
+
+
+function testLifeDecodeInvalid():
+    notObject = testLifeGzipBase64('[1, 2, 3]')
+    invalidSchema = testLifeGzipBase64('{"width": 5, "height": 10, "cells": [0, 1]}')
+    invalidSize = testLifeGzipBase64('{"width": 10, "height": 10, "cells": [0, 1]}')
+    testLifeMockAll()
+    unittestEqual(lifeDecode('invalid'), null)
+    unittestEqual(lifeDecode(base64Encode(stringEncode('not compressed'))), null)
+    unittestEqual(lifeDecode(notObject), null)
+    unittestEqual(lifeDecode(invalidSchema), null)
+    unittestEqual(lifeDecode(invalidSize), null)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['systemLogDebug', ['base64.bare: base64Decode - Invalid encoded data']], \
+        ['systemLogDebug', ['gzip.bare: gzipUncompress - Invalid compressed data']], \
+        ['systemLogDebug', ['schema.bare: Invalid value 5 (type "number") for member "width", expected type "int" [>= 10]']] \
+    ])
+endfunction
+unittestRunTest('testLifeDecodeInvalid')
+
+
+function testLifeDecodeInvalidJSON():
+    invalidJSON = testLifeGzipBase64('not JSON')
+    systemLogDebug('NOTICE: The following "jsonParse" error is expected:')
+    unittestEqual(lifeDecode(invalidJSON), null)
+endfunction
+unittestRunTest('testLifeDecodeInvalidJSON')
+
+
+function testLifeEncodeDecode():
+    life = testLifeCells(12, 11, [[0, 0], [11, 0], [3, 4], [4, 4], [5, 4], [6, 7], [0, 10], [11, 10]])
+    unittestDeepEqual(lifeDecode(lifeEncode(life)), objectAssign(life, {'initial': lifeEncode(life)}))
+endfunction
+unittestRunTest('testLifeEncodeDecode')

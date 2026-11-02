@@ -11,6 +11,7 @@ help:
 clean:
 	$(MAKE) -C color-ramp clean
 	$(MAKE) -C downloads clean
+	$(MAKE) -C life clean
 	$(MAKE) -C money clean
 
 
@@ -18,6 +19,7 @@ clean:
 commit:
 	$(MAKE) -C color-ramp commit
 	$(MAKE) -C downloads commit
+	$(MAKE) -C life commit
 	$(MAKE) -C money commit
 
 
@@ -30,4 +32,5 @@ gh-pages:
 superclean:
 	$(MAKE) -C color-ramp clean
 	$(MAKE) -C downloads superclean
+	$(MAKE) -C life clean
 	$(MAKE) -C money clean

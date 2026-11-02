@@ -1,0 +1,237 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <draw.bare>
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../life.bare'
+
+
+#
+# Mocking helpers
+#
+# testLifeMockAll mocks everything with unittestMockAll, then makes the remaining
+# non-deterministic functions deterministic (unittestMockOne mocks are not recorded):
+#
+# - windowWidth/windowHeight - a 400x307 window, so a 10x10 board (gap 1, no border) has
+#   20-pixel cells and a 211x211 drawing
+# - mathRandom - alternates 0.1, 0.9, 0.1, ... (alive, dead, alive, ... for initRatio 0.2)
+# - datetimeNow - advances 100 milliseconds per call
+#
+
+
+function testLifeMockAll(data):
+    unittestMockAll(data)
+    systemGlobalSet('testLifeRandomCount', 0)
+    systemGlobalSet('testLifeNowCount', 0)
+    unittestMockOne('windowWidth', testLifeWindowWidth)
+    unittestMockOne('windowHeight', testLifeWindowHeight)
+    unittestMockOne('mathRandom', testLifeRandom)
+    unittestMockOne('datetimeNow', testLifeNow)
+endfunction
+
+
+function testLifeWindowWidth():
+    return 400
+endfunction
+
+
+function testLifeWindowHeight():
+    return 307
+endfunction
+
+
+function testLifeRandom():
+    count = systemGlobalGet('testLifeRandomCount')
+    systemGlobalSet('testLifeRandomCount', count + 1)
+    return if(count % 2, 0.9, 0.1)
+endfunction
+
+
+function testLifeNow():
+    count = systemGlobalGet('testLifeNowCount')
+    systemGlobalSet('testLifeNowCount', count + 1)
+    return datetimeNew(2026, 11, 2) + 100 * count
+endfunction
+
+
+#
+# Life object helpers
+#
+
+
+# Create the default Life arguments, with overrides
+function testLifeArgs(overrides):
+    args = argsParse(lifeArguments)
+    if overrides != null:
+        objectAssign(args, overrides)
+    endif
+    return args
+endfunction
+
+
+# Create a Life object with the given alive cell points ([x, y] pairs)
+function testLifeCells(width, height, points, initial):
+    cells = arrayNewSize(width * height, 0)
+    for point in points:
+        arraySet(cells, arrayGet(point, 1) * width + arrayGet(point, 0), 1)
+    endfor
+    return {'width': width, 'height': height, 'initial': if(initial != null, initial, 'test'), 'cells': cells}
+endfunction
+
+
+# Create a Life object with the given alive cell points ([x, y] pairs), whose initial state is its encoding
+function testLifeCellsEncoded(width, height, points):
+    life = testLifeCells(width, height, points)
+    objectSet(life, 'initial', lifeEncode(life))
+    return life
+endfunction
+
+
+# Get a Life object's alive cell points ([x, y] pairs), in row-major order
+function testLifePoints(life):
+    width = objectGet(life, 'width')
+    points = []
+    for alive, iCell in objectGet(life, 'cells'):
+        if alive:
+            arrayPush(points, [iCell % width, mathFloor(iCell / width)])
+        endif
+    endfor
+    return points
+endfunction
+
+
+#
+# Expected value helpers
+#
+
+
+# The expected menu elementModelRender call (menu is null for full-screen)
+function testLifeMenuRender(menu):
+    return ['elementModelRender', [[ \
+        if(menu != null, {'html': 'p', 'elem': [ \
+            {'html': 'b', 'elem': {'text': "Conway's Game of Life"}}, \
+            {'html': 'br'}, \
+            menu \
+        ]}), \
+        {'html': 'div', 'attr': {'id': 'lifeReset', 'style': 'display: none;'}} \
+    ]]]
+endfunction
+
+
+# The expected color menu elements
+function testLifeMenuColor(groundURL, cellURL, borderURL, fullURL):
+    return [ \
+        formsLinkElements('Ground', groundURL), \
+        {'text': ' '}, \
+        formsLinkElements('Cell', cellURL), \
+        {'text': ' '}, \
+        formsLinkElements('Border', borderURL), \
+        {'text': stringFromCharCode(160) + '| '}, \
+        formsLinkElements('Full', if(fullURL != null, fullURL, '#var.vFullScreen=true')) \
+    ]
+endfunction
+
+
+# The expected play menu elements
+function testLifeMenuPlay(colorMenu, rateText, slowerURL, fasterURL, pauseURL):
+    nbsp = stringFromCharCode(160)
+    return [ \
+        formsLinkElements('Pause', if(pauseURL != null, pauseURL, '#var.vPlay=false')), \
+        {'text': nbsp + '| '}, \
+        colorMenu, \
+        {'text': nbsp + '| '}, \
+        formsLinkElements('<<', slowerURL), \
+        [{'text': nbsp + rateText + nbsp + 'Hz' + nbsp}], \
+        formsLinkElements('>>', fasterURL) \
+    ]
+endfunction
+
+
+# The expected pause menu elements
+function testLifeMenuPause(colorMenu):
+    nbsp = stringFromCharCode(160)
+    return [ \
+        formsLinkElements('Play', '#var='), \
+        {'text': nbsp + '| '}, \
+        formsLinkButtonElements('Step', '<function>'), \
+        {'text': ' '}, \
+        formsLinkButtonElements('Random', '<function>'), \
+        {'text': ' '}, \
+        formsLinkButtonElements('Reset', '<function>'), \
+        {'text': ' '}, \
+        formsLinkElements('Save', '#var.vPlay=false&var.vSave=true'), \
+        {'text': nbsp + '| '}, \
+        colorMenu, \
+        {'text': nbsp + '| '}, \
+        formsLinkButtonElements('<<', '<function>'), \
+        [{'text': nbsp + 'Width' + nbsp}], \
+        formsLinkButtonElements('>>', '<function>'), \
+        {'text': nbsp + '| '}, \
+        formsLinkButtonElements('<<', '<function>'), \
+        [{'text': nbsp + 'Height' + nbsp}], \
+        formsLinkButtonElements('>>', '<function>') \
+    ]
+endfunction
+
+
+# The expected board elementModelRender call - cellRects is an array of [x, y, size] cell squares
+function testLifeBoardRender(drawWidth, drawHeight, border, background, color, cellRects, clickable):
+    drawNew(drawWidth, drawHeight)
+    if clickable:
+        drawOnClick(testLifeBoardRender)
+    endif
+    drawStyle('#606060', border, background)
+    drawRect(0.5 * border, 0.5 * border, drawWidth - border, drawHeight - border)
+    drawStyle('none', 0, color)
+    for cellRect in cellRects:
+        drawPathRect(arrayGet(cellRect, 0), arrayGet(cellRect, 1), arrayGet(cellRect, 2), arrayGet(cellRect, 2))
+    endfor
+    return ['elementModelRender', [{'html': 'p', 'elem': drawElements()}]]
+endfunction
+
+
+#
+# Callback binding helpers
+#
+
+
+# Find all click callbacks of the element model with the given link text
+function testFindClicks(model, text, clicks):
+    clicks = if(clicks != null, clicks, [])
+    type = systemType(model)
+    if type == 'array':
+        for item in model:
+            testFindClicks(item, text, clicks)
+        endfor
+    elif type == 'object':
+        elem = objectGet(model, 'elem')
+        callback = objectGet(model, 'callback')
+        if callback != null && systemType(elem) == 'object' && objectGet(elem, 'text') == text:
+            arrayPush(clicks, objectGet(callback, 'click'))
+        endif
+        testFindClicks(elem, text, clicks)
+    endif
+    return clicks
+endfunction
+
+
+# Assert that two functions have the same mocked side effects
+function testSameEffect(actualFn, expectedFn, data):
+    testLifeMockAll(data)
+    expectedFn()
+    expected = unittestMockEnd()
+    testLifeMockAll(data)
+    actualFn()
+    unittestDeepEqual(unittestMockEnd(), expected)
+endfunction
+
+
+# Assert that the Nth link button with the given text has the same effect as expectedFn
+function testVerifyClickN(renderFn, text, index, expectedFn, data):
+    testLifeMockAll(data)
+    renderFn()
+    clicks = testFindClicks(unittestMockEnd(), text)
+    testSameEffect(arrayGet(clicks, index), expectedFn, data)
+endfunction

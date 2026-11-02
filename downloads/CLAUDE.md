@@ -22,7 +22,7 @@ that checkout exists) and creates a venv in `build/env` with `bare-script`, `cov
 - `make clean` / `make superclean` — remove `build/` and the downloaded python-build files
 
 The parent repo's Makefile (`../Makefile`) runs `commit`/`clean` across the subprojects (`color-ramp`,
-`downloads`, `money`).
+`downloads`, `life`, `money`).
 
 ## Architecture
 
