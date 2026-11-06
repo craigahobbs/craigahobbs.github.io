@@ -74127,25 +74127,25 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-09-03",
-        "Downloads": 0
+        "Downloads": 21
     },
     {
         "Package": "element-model",
         "Language": "JavaScript",
         "Date": "2026-09-03",
-        "Downloads": 0
+        "Downloads": 3
     },
     {
         "Package": "markdown-model",
         "Language": "JavaScript",
         "Date": "2026-09-03",
-        "Downloads": 0
+        "Downloads": 6
     },
     {
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2026-09-03",
-        "Downloads": 0
+        "Downloads": 2
     },
     {
         "Package": "picovox",
@@ -79504,5 +79504,77 @@
         "Language": "Python",
         "Date": "2026-11-04",
         "Downloads": 5270
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-11-05",
+        "Downloads": 2
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-11-05",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-11-05",
+        "Downloads": 4
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-11-05",
+        "Downloads": 2
+    },
+    {
+        "Package": "picovox",
+        "Language": "JavaScript",
+        "Date": "2026-11-05",
+        "Downloads": 153
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-11-05",
+        "Downloads": 5
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-11-05",
+        "Downloads": 2
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-11-05",
+        "Downloads": 34
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-11-05",
+        "Downloads": 58
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-11-05",
+        "Downloads": 15
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-11-05",
+        "Downloads": 587
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-11-05",
+        "Downloads": 5712
     }
 ]
