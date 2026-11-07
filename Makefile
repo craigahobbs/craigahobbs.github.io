@@ -32,8 +32,8 @@ gh-pages:
 
 .PHONY: superclean
 superclean:
-	$(MAKE) -C color-ramp clean
+	$(MAKE) -C color-ramp superclean
 	$(MAKE) -C downloads superclean
-	$(MAKE) -C fruit-fly-trap clean
-	$(MAKE) -C life clean
-	$(MAKE) -C money clean
+	$(MAKE) -C fruit-fly-trap superclean
+	$(MAKE) -C life superclean
+	$(MAKE) -C money superclean
