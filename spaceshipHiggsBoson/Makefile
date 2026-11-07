@@ -1,5 +1,5 @@
 # Download python-build
-PYTHON_BUILD_DIR ?= ../python-build
+PYTHON_BUILD_DIR ?= ../../python-build
 define WGET
 ifeq '$$(wildcard $(notdir $(1)))' ''
 $$(info Downloading $(notdir $(1)))
