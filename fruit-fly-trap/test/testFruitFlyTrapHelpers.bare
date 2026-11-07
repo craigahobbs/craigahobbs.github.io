@@ -1,0 +1,132 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../fruit-fly-trap.bare'
+
+
+#
+# Expected SVG element helpers - literal draw.bare element models
+#
+
+
+# The expected SVG rect element
+function testFruitFlyTrapRect(x, y, width, height, fill):
+    return { \
+        'svg': 'rect', \
+        'attr': { \
+            'fill': fill, \
+            'height': height, \
+            'rx': null, \
+            'ry': null, \
+            'stroke': 'none', \
+            'stroke-dasharray': 'none', \
+            'stroke-width': '0.00000000', \
+            'width': width, \
+            'x': x, \
+            'y': y \
+        } \
+    }
+endfunction
+
+
+# The expected SVG path element
+function testFruitFlyTrapPath(path, stroke, strokeWidth, strokeDashArray):
+    return { \
+        'svg': 'path', \
+        'attr': { \
+            'd': path, \
+            'fill': 'none', \
+            'stroke': stroke, \
+            'stroke-dasharray': if(strokeDashArray != null, strokeDashArray, 'none'), \
+            'stroke-width': strokeWidth \
+        } \
+    }
+endfunction
+
+
+# The expected SVG annotation text element
+function testFruitFlyTrapText(text, x, y):
+    return { \
+        'svg': 'text', \
+        'attr': { \
+            'dominant-baseline': 'middle', \
+            'fill': 'black', \
+            'font-family': 'Arial, Helvetica, sans-serif', \
+            'font-size': '16.00000000', \
+            'font-style': 'normal', \
+            'font-weight': 'normal', \
+            'text-anchor': 'middle', \
+            'transform': null, \
+            'x': x, \
+            'y': y \
+        }, \
+        'elem': {'text': text} \
+    }
+endfunction
+
+
+# The expected drawing elementModelRender call
+function testFruitFlyTrapDrawingRender(width, height, elements):
+    return ['elementModelRender', [ \
+        {'html': 'p', 'elem': {'svg': 'svg', 'attr': {'width': width, 'height': height}, 'elem': elements}} \
+    ]]
+endfunction
+
+
+# The expected fruit fly trap diagram elementModelRender call (documentFontSize is mocked as 16)
+function testFruitFlyTrapDiagramRender():
+    return testFruitFlyTrapDrawingRender(256, 224, [ \
+        # Background
+        testFruitFlyTrapRect(0, 0, 256, 224, 'white'), \
+        # Liquid
+        testFruitFlyTrapRect(34.5, 179.5, 187, 30, '#cc99ff80'), \
+        # Glass
+        testFruitFlyTrapPath('M 34.50000000 44.80000000 V 209.50000000 H 221.50000000 V 44.80000000', 'black', 5), \
+        # Cone and the "h" annotation
+        testFruitFlyTrapPath( \
+            'M 16.24420677 12.00000000 L 108.00000000 157.00000000 H 148.00000000 L 239.75579323 12.00000000 Z ' + \
+                'M 12.00000000 44.80000000 H 22.00000000 M 17.00000000 44.80000000 V 115.15000000 ' + \
+                'M 17.00000000 209.50000000 V 139.15000000 M 12.00000000 209.50000000 H 22.00000000', \
+            'black', \
+            1 \
+        ), \
+        testFruitFlyTrapText('h', 17, 127.15), \
+        # The "o" annotation
+        testFruitFlyTrapPath( \
+            'M 234.00000000 157.00000000 H 244.00000000 M 239.00000000 157.00000000 V 171.25000000 ' + \
+                'M 239.00000000 209.50000000 V 195.25000000 M 234.00000000 209.50000000 H 244.00000000', \
+            'black', \
+            1 \
+        ), \
+        testFruitFlyTrapText('o', 239, 183.25), \
+        # The "d" annotation
+        testFruitFlyTrapPath( \
+            'M 37.00000000 24.80000000 V 34.80000000 M 37.00000000 29.80000000 H 116.00000000 ' + \
+                'M 219.00000000 29.80000000 H 140.00000000 M 219.00000000 24.80000000 V 34.80000000', \
+            'black', \
+            1 \
+        ), \
+        testFruitFlyTrapText('d', 128, 29.800000000000004), \
+        # The "b" annotation
+        testFruitFlyTrapPath( \
+            'M 108.00000000 137.00000000 V 147.00000000 M 108.00000000 142.00000000 H 116.00000000 ' + \
+                'M 148.00000000 142.00000000 H 140.00000000 M 148.00000000 137.00000000 V 147.00000000', \
+            'black', \
+            1 \
+        ), \
+        testFruitFlyTrapText('b', 128, 142) \
+    ])
+endfunction
+
+
+# The expected cone form elementModelRender call (line width 1)
+function testFruitFlyTrapConeFormRender(width, height, formPath, guidePath):
+    return testFruitFlyTrapDrawingRender(width, height, [ \
+        testFruitFlyTrapRect(0, 0, width, height, 'white'), \
+        testFruitFlyTrapPath(formPath, 'black', 1, '3 3'), \
+        testFruitFlyTrapPath(guidePath, 'lightgray', 1) \
+    ])
+endfunction

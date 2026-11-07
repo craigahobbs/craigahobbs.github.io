@@ -1,0 +1,342 @@
+# Licensed under the MIT License
+# https://github.com/craigahobbs/craigahobbs.github.io/blob/main/LICENSE
+
+include <unittest.bare>
+include <unittestMock.bare>
+
+include '../fruit-fly-trap.bare'
+include 'testFruitFlyTrapHelpers.bare'
+
+
+# The expected introduction markdownPrint call
+testFruitFlyTrapIntro = ['markdownPrint', [ \
+    '# The Fruit Fly Trap Maker', \
+    '', \
+    '**The Fruit Fly Trap Maker** rids your home of annoying fruit flies using only a drinking glass,', \
+    'your computer printer, and a small amount of apple cider vinegar (or similar).', \
+    '', \
+    'The trap is made by placing a custom-fitted cone (based on your measurements) into a drinking glass', \
+    'containing a small amount of apple cider vinegar (see below). The fruit flies fly in through the', \
+    'cone opening and become trapped between the cone and the liquid.' \
+]]
+
+
+# The expected instructions markdownPrint call
+function testFruitFlyTrapInstructions(unitsLinks, diameter, height, offset, bottom, printLink, liquidLevel):
+    return ['markdownPrint', [ \
+        '## Instructions', \
+        '', \
+        arrayGet(unitsLinks, 0), \
+        ' | ', \
+        arrayGet(unitsLinks, 1), \
+        '', \
+        '1. Take the following measurements from a drinking glass (see diagram above).', \
+        '', \
+        '    **Top diameter (d)** (' + diameter, \
+        '', \
+        '    **Height (h)** (' + height, \
+        '', \
+        '    **Bottom offset (o)** (' + offset, \
+        '', \
+        '    **Bottom diameter (b)** (' + bottom, \
+        '', \
+        '2. Print the cone form using the link below.', \
+        '', \
+        '   [Print Cone Form](' + printLink + ')', \
+        '', \
+        "3. Cut out the cone form carefully using scissors and tape the cone together along the cone form's flap line.", \
+        '', \
+        '4. Pour a small amount of fruit-fly-attracting liquid (e.g., apple cider vinegar) into the glass. Be', \
+        '   sure the liquid level is at least ' + liquidLevel + ' below the cone-bottom.', \
+        '', \
+        '5. Place the cone form in the glass. It may help to rub some water around the top rim of the glass', \
+        '   to form a seal.', \
+        '', \
+        '6. Set the trap near where you have fruit flies.' \
+    ]]
+endfunction
+
+
+#
+# fruitFlyTrapMain tests
+#
+
+
+function testFruitFlyTrapMain():
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        testFruitFlyTrapIntro, \
+        testFruitFlyTrapDiagramRender(), \
+        testFruitFlyTrapInstructions( \
+            ['[Reset](#var=)', '[Metric](#var.vMetric=true)'], \
+            '[Less](#var.vDiameter=2.875) | [More](#var.vDiameter=3.125)): 3 in', \
+            '[Less](#var.vHeight=4.375) | [More](#var.vHeight=4.625)): 4.5 in', \
+            '[Less](#var.vOffset=0.875) | [More](#var.vOffset=1.125)): 1 in', \
+            '[Less](#var.vBottom=0.625) | [More](#var.vBottom=0.875)): 0.75 in', \
+            '#var.vPrint=true&_top', \
+            '1/4 in.' \
+        ) \
+    ])
+endfunction
+unittestRunTest('testFruitFlyTrapMain')
+
+
+function testFruitFlyTrapMainMetric():
+    systemGlobalSet('vMetric', true)
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        testFruitFlyTrapIntro, \
+        testFruitFlyTrapDiagramRender(), \
+        testFruitFlyTrapInstructions( \
+            ['[Reset](#var.vMetric=true)', '[Imperial](#var=)'], \
+            '[Less](#var.vDiameter=7.4&var.vMetric=true) | [More](#var.vDiameter=7.6&var.vMetric=true)): 7.5 cm', \
+            '[Less](#var.vHeight=11.4&var.vMetric=true) | [More](#var.vHeight=11.6&var.vMetric=true)): 11.5 cm', \
+            '[Less](#var.vMetric=true&var.vOffset=2.4) | [More](#var.vMetric=true&var.vOffset=2.6)): 2.5 cm', \
+            '[Less](#var.vBottom=1.9&var.vMetric=true) | [More](#var.vBottom=2.1&var.vMetric=true)): 2 cm', \
+            '#var.vMetric=true&var.vPrint=true&_top', \
+            '1/2 cm.' \
+        ) \
+    ])
+    systemGlobalSet('vMetric', null)
+endfunction
+unittestRunTest('testFruitFlyTrapMainMetric')
+
+
+function testFruitFlyTrapMainArguments():
+    # The measurement links keep the other measurements, and Reset/Metric drop them
+    systemGlobalSet('vBottom', 1)
+    systemGlobalSet('vDiameter', 3.5)
+    systemGlobalSet('vHeight', 5)
+    systemGlobalSet('vOffset', 1.5)
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        testFruitFlyTrapIntro, \
+        testFruitFlyTrapDiagramRender(), \
+        testFruitFlyTrapInstructions( \
+            ['[Reset](#var=)', '[Metric](#var.vMetric=true)'], \
+            '[Less](#var.vBottom=1&var.vDiameter=3.375&var.vHeight=5&var.vOffset=1.5) | ' + \
+                '[More](#var.vBottom=1&var.vDiameter=3.625&var.vHeight=5&var.vOffset=1.5)): 3.5 in', \
+            '[Less](#var.vBottom=1&var.vDiameter=3.5&var.vHeight=4.875&var.vOffset=1.5) | ' + \
+                '[More](#var.vBottom=1&var.vDiameter=3.5&var.vHeight=5.125&var.vOffset=1.5)): 5 in', \
+            '[Less](#var.vBottom=1&var.vDiameter=3.5&var.vHeight=5&var.vOffset=1.375) | ' + \
+                '[More](#var.vBottom=1&var.vDiameter=3.5&var.vHeight=5&var.vOffset=1.625)): 1.5 in', \
+            '[Less](#var.vBottom=0.875&var.vDiameter=3.5&var.vHeight=5&var.vOffset=1.5) | ' + \
+                '[More](#var.vBottom=1.125&var.vDiameter=3.5&var.vHeight=5&var.vOffset=1.5)): 1 in', \
+            '#var.vBottom=1&var.vDiameter=3.5&var.vHeight=5&var.vOffset=1.5&var.vPrint=true&_top', \
+            '1/4 in.' \
+        ) \
+    ])
+    systemGlobalSet('vBottom', null)
+    systemGlobalSet('vDiameter', null)
+    systemGlobalSet('vHeight', null)
+    systemGlobalSet('vOffset', null)
+endfunction
+unittestRunTest('testFruitFlyTrapMainArguments')
+
+
+function testFruitFlyTrapMainLimitBottom():
+    # A bottom diameter near the top diameter - Less diameter and More bottom would be invalid cone forms
+    systemGlobalSet('vBottom', 2.6)
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        testFruitFlyTrapIntro, \
+        testFruitFlyTrapDiagramRender(), \
+        testFruitFlyTrapInstructions( \
+            ['[Reset](#var=)', '[Metric](#var.vMetric=true)'], \
+            'Less | [More](#var.vBottom=2.6&var.vDiameter=3.125)): 3 in', \
+            '[Less](#var.vBottom=2.6&var.vHeight=4.375) | [More](#var.vBottom=2.6&var.vHeight=4.625)): 4.5 in', \
+            '[Less](#var.vBottom=2.6&var.vOffset=0.875) | [More](#var.vBottom=2.6&var.vOffset=1.125)): 1 in', \
+            '[Less](#var.vBottom=2.475) | More): 2.6 in', \
+            '#var.vBottom=2.6&var.vPrint=true&_top', \
+            '1/4 in.' \
+        ) \
+    ])
+    systemGlobalSet('vBottom', null)
+endfunction
+unittestRunTest('testFruitFlyTrapMainLimitBottom')
+
+
+function testFruitFlyTrapMainLimitHeight():
+    # A short cone - More diameter, Less height, More offset, and Less bottom would be invalid cone forms (the flap
+    # angle is too large)
+    systemGlobalSet('vHeight', 2.4)
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        testFruitFlyTrapIntro, \
+        testFruitFlyTrapDiagramRender(), \
+        testFruitFlyTrapInstructions( \
+            ['[Reset](#var=)', '[Metric](#var.vMetric=true)'], \
+            '[Less](#var.vDiameter=2.875&var.vHeight=2.4) | More): 3 in', \
+            'Less | [More](#var.vHeight=2.525)): 2.4 in', \
+            '[Less](#var.vHeight=2.4&var.vOffset=0.875) | More): 1 in', \
+            'Less | [More](#var.vBottom=0.875&var.vHeight=2.4)): 0.75 in', \
+            '#var.vHeight=2.4&var.vPrint=true&_top', \
+            '1/4 in.' \
+        ) \
+    ])
+    systemGlobalSet('vHeight', null)
+endfunction
+unittestRunTest('testFruitFlyTrapMainLimitHeight')
+
+
+function testFruitFlyTrapMainPrint():
+    systemGlobalSet('vPrint', true)
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        ['elementModelRender', [{ \
+            'html': 'p', \
+            'attr': {'class': 'barescript-no-print'}, \
+            'elem': {'html': 'a', 'attr': {'href': '#var='}, 'elem': {'text': 'Close'}} \
+        }]], \
+        testFruitFlyTrapConeFormRender( \
+            508, \
+            796.2852790688016, \
+            'M 6.00000000 5.00000000 A 496.00000000 496.00000000 0.00000000 0 1 409.61813373 790.28527907 ' + \
+                'L 97.13957858 567.09667592 A 112.00000000 112.00000000 0.00000000 0 0 6.00000000 389.00000000 Z', \
+            'M 106.90851321 550.59497878 L 452.88055848 717.20633460' \
+        ) \
+    ])
+    systemGlobalSet('vPrint', null)
+endfunction
+unittestRunTest('testFruitFlyTrapMainPrint')
+
+
+function testFruitFlyTrapMainPrintMetric():
+    systemGlobalSet('vMetric', true)
+    systemGlobalSet('vPrint', true)
+    unittestMockAll()
+    fruitFlyTrapMain()
+    unittestDeepEqual(unittestMockEnd(), [ \
+        ['documentSetTitle', ['The Fruit Fly Trap Maker']], \
+        ['elementModelRender', [{ \
+            'html': 'p', \
+            'attr': {'class': 'barescript-no-print'}, \
+            'elem': {'html': 'a', 'attr': {'href': '#var.vMetric=true'}, 'elem': {'text': 'Close'}} \
+        }]], \
+        testFruitFlyTrapConeFormRender( \
+            523.0952041363635, \
+            768.9538000601335, \
+            'M 6.00000000 5.00000000 A 511.09520414 511.09520414 0.00000000 0 1 454.07572853 762.95380006 ' + \
+                'L 114.44185699 576.59711643 A 123.69362924 123.69362924 0.00000000 0 0 6.00000000 392.40157490 Z', \
+            'M 122.23399063 559.40091694 L 486.27239185 691.90005911' \
+        ) \
+    ])
+    systemGlobalSet('vMetric', null)
+    systemGlobalSet('vPrint', null)
+endfunction
+unittestRunTest('testFruitFlyTrapMainPrintMetric')
+
+
+#
+# fruitFlyTrapIsValidConeForm tests
+#
+
+
+function testFruitFlyTrapIsValidConeForm():
+    # The default imperial cone form
+    unittestEqual(fruitFlyTrapIsValidConeForm(3, 0.75, 3.5, 0.2), true)
+
+    # The bottom diameter must be less than 90% of the top diameter
+    unittestEqual(fruitFlyTrapIsValidConeForm(3, 2.6, 3.5, 0.2), true)
+    unittestEqual(fruitFlyTrapIsValidConeForm(3, 2.7, 3.5, 0.2), false)
+
+    # The flap angle must be less than 90% of a full circle
+    unittestEqual(fruitFlyTrapIsValidConeForm(3, 0.75, 1.4, 0.2), true)
+    unittestEqual(fruitFlyTrapIsValidConeForm(3, 0.75, 1.3, 0.2), false)
+    unittestEqual(fruitFlyTrapIsValidConeForm(3, 0.75, 1.4, 1), false)
+endfunction
+unittestRunTest('testFruitFlyTrapIsValidConeForm')
+
+
+#
+# fruitFlyTrapConeForm tests - one per flap angle quadrant (the cone form's bounding box)
+#
+
+
+function testFruitFlyTrapConeFormQuadrant1():
+    unittestMockAll()
+    fruitFlyTrapConeForm(30, 10, 100, 10, 1, 10)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testFruitFlyTrapConeFormRender( \
+            129.887287295062, \
+            138.1942192815845, \
+            'M 6.00000000 5.00000000 A 160.00000000 160.00000000 0.00000000 0 1 123.88728730 57.82150170 ' + \
+                'L 42.83977728 132.19421928 A 50.00000000 50.00000000 0.00000000 0 0 6.00000000 115.00000000 Z', \
+            'M 35.38926261 125.54915028 L 100.04564037 36.55728090' \
+        ) \
+    ])
+endfunction
+unittestRunTest('testFruitFlyTrapConeFormQuadrant1')
+
+
+function testFruitFlyTrapConeFormQuadrant2():
+    unittestMockAll()
+    fruitFlyTrapConeForm(60, 10, 100, 10, 1, 10)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testFruitFlyTrapConeFormRender( \
+            142, \
+            204.3253200185464, \
+            'M 6.00000000 5.00000000 A 130.00000000 130.00000000 0.00000000 0 1 120.08573305 198.32532002 ' + \
+                'L 23.55165124 145.58851077 A 20.00000000 20.00000000 0.00000000 0 0 6.00000000 115.00000000 Z', \
+            'M 26.00000000 136.00000000 L 136.00000000 136.00000000' \
+        ) \
+    ])
+endfunction
+unittestRunTest('testFruitFlyTrapConeFormQuadrant2')
+
+
+function testFruitFlyTrapConeFormQuadrant3():
+    unittestMockAll()
+    fruitFlyTrapConeForm(100, 10, 100, 10, 1, 10)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testFruitFlyTrapConeFormRender( \
+            200.0734587018934, \
+            254.22222222222223, \
+            'M 72.96234759 5.00000000 A 121.11111111 121.11111111 0.00000000 1 1 6.00000000 228.02664629 ' + \
+                'L 66.81901295 136.36941709 A 11.11111111 11.11111111 0.00000000 1 0 72.96234759 115.00000000 Z', \
+            'M 76.39586975 137.67840574 L 110.38773913 242.29462253' \
+        ) \
+    ])
+endfunction
+unittestRunTest('testFruitFlyTrapConeFormQuadrant3')
+
+
+function testFruitFlyTrapConeFormQuadrant4():
+    unittestMockAll()
+    fruitFlyTrapConeForm(140, 10, 100, 10, 1, 10)
+    unittestDeepEqual(unittestMockEnd(), [ \
+        testFruitFlyTrapConeFormRender( \
+            247.38461538461536, \
+            247.38461538461536, \
+            'M 123.69230769 5.00000000 A 117.69230769 117.69230769 0.00000000 1 1 31.56554801 50.45202205 ' + \
+                'L 117.67095085 118.90536092 A 7.69230769 7.69230769 0.00000000 1 0 123.69230769 115.00000000 Z', \
+            'M 117.46910004 128.21373271 L 28.47723066 192.87011046' \
+        ) \
+    ])
+endfunction
+unittestRunTest('testFruitFlyTrapConeFormQuadrant4')
+
+
+#
+# fruitFlyTrapDiagram tests
+#
+
+
+function testFruitFlyTrapDiagram():
+    unittestMockAll()
+    fruitFlyTrapDiagram()
+    unittestDeepEqual(unittestMockEnd(), [testFruitFlyTrapDiagramRender()])
+endfunction
+unittestRunTest('testFruitFlyTrapDiagram')
