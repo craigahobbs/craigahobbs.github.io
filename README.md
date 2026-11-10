@@ -9,6 +9,8 @@
 
 [Ollama Chat](https://github.com/craigahobbs/ollama-chat#readme)
 
+[PicoRead](https://craigahobbs.github.io/picoread/)
+
 [PicoShelf](https://craigahobbs.github.io/picoshelf/)
 
 
@@ -19,6 +21,8 @@
 [element-model](https://github.com/craigahobbs/element-model#readme)
 
 [markdown-model](https://github.com/craigahobbs/markdown-model#readme)
+
+[picoocr](https://github.com/craigahobbs/picoocr#readme)
 
 [picovox](https://github.com/craigahobbs/picovox#readme)
 
