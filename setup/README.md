@@ -96,7 +96,7 @@ sudo journalctl --vacuum-time=2d
 
 ~~~sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install aspell cloc git git-gui grep node python screen tree
+brew install aspell cloc fribidi git git-gui grep node python screen tree
 brew install --cask emacs-app
 ~~~
 
