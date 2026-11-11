@@ -19,6 +19,7 @@ PACKAGES = [
     {'Package': 'element-model', 'Language': 'JavaScript'},
     {'Package': 'markdown-model', 'Language': 'JavaScript'},
     {'Package': 'markdown-up', 'Language': 'JavaScript'},
+    {'Package': 'picoocr', 'Language': 'JavaScript'},
     {'Package': 'picovox', 'Language': 'JavaScript'},
     {'Package': 'schema-markdown', 'Language': 'JavaScript'},
 
