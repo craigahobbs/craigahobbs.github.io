@@ -219,8 +219,7 @@ async function downloadsDashboard(args):
     downloadsDataTrailingAverage(dataFilter(data, filterExpr, filterVars), trailingDays)
 
     # Render the years' data - its rows are the same objects, so they have the trailing average
-    data = dataYears
-    dataMonthly = downloadsDataMonthly(data)
+    dataMonthly = downloadsDataMonthly(dataYears)
 
     # Render the monthly line chart
     fontSize = documentFontSize()
@@ -243,14 +242,14 @@ async function downloadsDashboard(args):
     endif
 
     # Render the daily line chart
-    dataLineChart(data, { \
+    dataLineChart(dataYears, { \
         'title': 'Daily Downloads - ' + name, \
         'width': chartWidth, \
         'height': chartHeight, \
         'x': 'Date', \
         'y': ['Average Downloads', 'Downloads'], \
         'xLines': [ \
-            {'value': downloadsDataAverageMinDate(data, trailingDays), 'label': ''} \
+            {'value': downloadsDataAverageMinDate(dataYears, trailingDays, 'Date'), 'label': ''} \
         ], \
         'yLines': [ \
             {'value': monthlyAverage / 30} \
@@ -294,7 +293,7 @@ async function downloadsDataLoad():
     for row in data:
         name = objectGet(row, 'Package')
         languages = objectGet(nameLanguages, name)
-        if !languages:
+        if languages == null:
             languages = {}
             objectSet(nameLanguages, name, languages)
         endif
@@ -306,7 +305,7 @@ async function downloadsDataLoad():
         languages = objectGet(nameLanguages, name)
         isShared = arrayLength(objectKeys(languages)) > 1
         for language in objectKeys(languages):
-            objectSet(languages, language, if(!isShared, name, name + if(language == 'Python', ' (py)', ' (js)')))
+            objectSet(languages, language, if(isShared, name + if(language == 'Python', ' (py)', ' (js)'), name))
         endfor
     endfor
 
@@ -365,7 +364,7 @@ function downloadsDataMonthly(data):
     dataFiltered = dataFilter(data, 'Date < maxDate', {'maxDate': maxDate})
 
     # Compute the month field
-    dataCalculatedField(dataFiltered, 'Month', 'datetimeISOParse(stringSlice(datetimeISOFormat(Date, true), 0, 7) + "-01")')
+    dataCalculatedField(dataFiltered, 'Month', 'datetimeNew(datetimeYear(Date), datetimeMonth(Date), 1)')
 
     # Aggregate by month
     return dataAggregate(dataFiltered, { \
@@ -383,7 +382,7 @@ endfunction
 function downloadsDataAverage(data, trailingDays, monthly):
     # Sum each package's downloads within the trailing window - every package gets an average, even if zero
     maxDate = downloadsDataMaxDate(data, 'Date')
-    minDate = downloadsDataAverageMinDate(data, trailingDays)
+    minDate = downloadsDataAddDays(maxDate, -trailingDays)
     dataAverage = []
     packageAverages = {}
     packageStarts = {}
@@ -438,7 +437,7 @@ function downloadsDataTrailingAverage(data, trailingDays):
         rows = dataSort(objectGet(packageRows, unique), [['Date']])
         start = objectGet(arrayGet(rows, 0), 'Start')
         firstDate = objectGet(arrayGet(rows, 0), 'Date')
-        minDate = datetimeNew(datetimeYear(firstDate), datetimeMonth(firstDate), datetimeDay(firstDate) + trailingDays - 1)
+        minDate = downloadsDataAddDays(firstDate, trailingDays - 1)
         trailingAverageSum = 0
         ixWindow = 0
         for row in rows:
@@ -472,8 +471,13 @@ endfunction
 
 
 function downloadsDataAverageMinDate(data, trailingDays, field):
-    maxDate = downloadsDataMaxDate(data, if(field, field, 'Date'))
-    return datetimeNew(datetimeYear(maxDate), datetimeMonth(maxDate), datetimeDay(maxDate) - trailingDays)
+    return downloadsDataAddDays(downloadsDataMaxDate(data, field), -trailingDays)
+endfunction
+
+
+# Add a number of days to a date
+function downloadsDataAddDays(date, days):
+    return datetimeNew(datetimeYear(date), datetimeMonth(date), datetimeDay(date) + days)
 endfunction
 
 
