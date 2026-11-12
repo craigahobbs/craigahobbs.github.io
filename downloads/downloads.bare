@@ -310,13 +310,43 @@ async function downloadsDataLoad():
         endfor
     endfor
 
-    # Parse the dates and set the unique package names
+    # Parse the dates, set the unique package names, and compute each language's first date and each package's first
+    # date with downloads
+    languageMinDates = {}
+    packageStarts = {}
     for row in data:
-        objectSet(row, 'Date', datetimeISOParse(objectGet(row, 'Date')))
-        objectSet(row, 'Unique', objectGet(objectGet(nameLanguages, objectGet(row, 'Package')), objectGet(row, 'Language')))
+        date = datetimeISOParse(objectGet(row, 'Date'))
+        language = objectGet(row, 'Language')
+        unique = objectGet(objectGet(nameLanguages, objectGet(row, 'Package')), language)
+        objectSet(row, 'Date', date)
+        objectSet(row, 'Unique', unique)
+        minDate = objectGet(languageMinDates, language)
+        if minDate == null || date < minDate:
+            objectSet(languageMinDates, language, date)
+        endif
+        if objectGet(row, 'Downloads'):
+            start = objectGet(packageStarts, unique)
+            if start == null || date < start:
+                objectSet(packageStarts, unique, date)
+            endif
+        endif
     endfor
 
-    return data
+    # Remove each package's rows before its first downloads (e.g. npm reports zeros before a package is published).
+    # A package whose downloads start after its language's first date (when its data collection began) is new - its
+    # rows get a "Start" field so its averages use only its available data.
+    dataStarted = []
+    for row in data:
+        start = objectGet(packageStarts, objectGet(row, 'Unique'))
+        if start != null && objectGet(row, 'Date') >= start:
+            if start > objectGet(languageMinDates, objectGet(row, 'Language')):
+                objectSet(row, 'Start', start)
+            endif
+            arrayPush(dataStarted, row)
+        endif
+    endfor
+
+    return dataStarted
 endfunction
 
 
@@ -352,9 +382,11 @@ endfunction
 
 function downloadsDataAverage(data, trailingDays, monthly):
     # Sum each package's downloads within the trailing window - every package gets an average, even if zero
+    maxDate = downloadsDataMaxDate(data, 'Date')
     minDate = downloadsDataAverageMinDate(data, trailingDays)
     dataAverage = []
     packageAverages = {}
+    packageStarts = {}
     for row in data:
         unique = objectGet(row, 'Unique')
         average = objectGet(packageAverages, unique)
@@ -366,6 +398,7 @@ function downloadsDataAverage(data, trailingDays, monthly):
                 'Downloads': 0 \
             }
             objectSet(packageAverages, unique, average)
+            objectSet(packageStarts, unique, objectGet(row, 'Start'))
             arrayPush(dataAverage, average)
         endif
         downloads = objectGet(row, 'Downloads')
@@ -374,10 +407,11 @@ function downloadsDataAverage(data, trailingDays, monthly):
         endif
     endfor
 
-    # Compute the average
+    # Compute the average - a new package's average uses only its available data
     for average in dataAverage:
+        days = downloadsDataTrailingDays(trailingDays, objectGet(packageStarts, objectGet(average, 'Unique')), maxDate)
         downloads = objectGet(average, 'Downloads')
-        objectSet(average, 'Downloads', if(monthly, downloads * 30, downloads) / trailingDays)
+        objectSet(average, 'Downloads', if(monthly, downloads * 30, downloads) / days)
     endfor
 
     return dataAverage
@@ -397,10 +431,12 @@ function downloadsDataTrailingAverage(data, trailingDays):
         endif
     endfor
 
-    # Set each package's "Average Downloads" field on the rows with a full trailing window - the rows may be in
-    # any order, so each package's rows are sorted by date first
+    # Set each package's "Average Downloads" field on the rows with a full trailing window - a new package's rows
+    # all get the field, using only its available data. The rows may be in any order, so each package's rows are
+    # sorted by date first.
     for unique in objectKeys(packageRows):
         rows = dataSort(objectGet(packageRows, unique), [['Date']])
+        start = objectGet(arrayGet(rows, 0), 'Start')
         firstDate = objectGet(arrayGet(rows, 0), 'Date')
         minDate = datetimeNew(datetimeYear(firstDate), datetimeMonth(firstDate), datetimeDay(firstDate) + trailingDays - 1)
         trailingAverageSum = 0
@@ -417,11 +453,21 @@ function downloadsDataTrailingAverage(data, trailingDays):
             endwhile
 
             # Add the average downloads field
-            if rowDate >= minDate:
-                objectSet(row, 'Average Downloads', trailingAverageSum / trailingDays)
+            if start != null || rowDate >= minDate:
+                objectSet(row, 'Average Downloads', trailingAverageSum / downloadsDataTrailingDays(trailingDays, start, rowDate))
             endif
         endfor
     endfor
+endfunction
+
+
+# The number of days in a trailing window ending on a date - a new package's window starts no earlier than its
+# start date
+function downloadsDataTrailingDays(trailingDays, start, date):
+    if start == null:
+        return trailingDays
+    endif
+    return mathMin(trailingDays, mathRound((date - start) / 86400000) + 1)
 endfunction
 
 

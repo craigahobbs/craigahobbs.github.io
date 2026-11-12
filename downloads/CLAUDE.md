@@ -45,13 +45,19 @@ Data pipeline and front end are decoupled through a single JSON file:
   trailing `days` average - above a table of monthly averages over trailing `days` (the filters apply
   only to the chart). The `days` argument (default 90) is the window for every average on both views.
   All views share `downloadsDataLoad` (fetches all of `downloads.json` and adds a `Unique` label that
-  disambiguates packages published under the same name in both languages with ` (py)`/` (js)`).
+  disambiguates packages published under the same name in both languages with ` (py)`/` (js)`). It also
+  removes each package's rows before its first non-zero downloads (npm reports zeros for the year before a
+  package is published), and marks a package whose downloads start after its language's first date (when
+  that language's data collection began) as *new* by setting a `Start` date field on its rows.
 
 Trailing averages use the window (maxDate - days, maxDate] — exactly `days` days — and are computed from
 all loaded data *before* the `years` filter (`downloadsDataYears`), so averages don't depend on `years` and
 the daily chart's average line starts at the first displayed date. The daily trailing averages (the
 dashboard's daily chart and the index page's chart) are computed per package by
-`downloadsDataTrailingAverage`. The BareScript tests pin these boundaries with a small fixture in
+`downloadsDataTrailingAverage`. A new package's averages (monthly and daily) use only its available data -
+the divisor is the number of days from `Start` through the window's end, capped at `days`
+(`downloadsDataTrailingDays`) - so its daily average starts at its first row rather than after a full window.
+The BareScript tests pin these boundaries with a small fixture in
 `test/testDownloads.bare`; keep them passing when touching date math.
 
 To add a tracked package, add it to `PACKAGES` in `downloads.py`; the front end picks it up from the data.

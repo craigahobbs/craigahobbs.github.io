@@ -15,7 +15,8 @@ include '../downloads.bare'
 #
 
 
-# The test downloads.json rows - "alpha" is published in both languages, "beta" only in Python
+# The test downloads.json rows - "alpha" is published in both languages, "beta" only in Python. "beta" and
+# "alpha (js)" are new packages - their downloads start after their language's first date.
 testDownloadsRows = [ \
     ['alpha', 'Python', '2023-12-31', 100], \
     ['alpha', 'Python', '2024-01-01', 1], \
@@ -29,10 +30,26 @@ testDownloadsRows = [ \
 ]
 
 
+# The test downloads.json rows before each package's first downloads - downloadsDataLoad removes them ("gamma" has
+# no downloads)
+testDownloadsRowsNoDownloads = [ \
+    ['beta', 'Python', '2024-01-31', null], \
+    ['alpha', 'JavaScript', '2024-02-01', 0], \
+    ['gamma', 'JavaScript', '2024-02-02', 0] \
+]
+
+
+# The new packages' start dates
+testDownloadsStarts = { \
+    'beta': datetimeNew(2024, 2, 1), \
+    'alpha (js)': datetimeNew(2024, 2, 2) \
+}
+
+
 # The test downloads.json text
 function testDownloadsJSON():
     rows = []
-    for row in testDownloadsRows:
+    for row in arrayExtend(arrayCopy(testDownloadsRowsNoDownloads), testDownloadsRows):
         arrayPush(rows, { \
             'Package': arrayGet(row, 0), \
             'Language': arrayGet(row, 1), \
@@ -58,13 +75,18 @@ function testDownloadsData(minDate):
         language = arrayGet(row, 1)
         date = datetimeISOParse(arrayGet(row, 2))
         if minDate == null || date >= minDate:
-            arrayPush(data, { \
+            unique = testDownloadsUnique(package, language)
+            dataRow = { \
                 'Package': package, \
                 'Language': language, \
                 'Date': date, \
                 'Downloads': arrayGet(row, 3), \
-                'Unique': testDownloadsUnique(package, language) \
-            })
+                'Unique': unique \
+            }
+            if objectHas(testDownloadsStarts, unique):
+                objectSet(dataRow, 'Start', objectGet(testDownloadsStarts, unique))
+            endif
+            arrayPush(data, dataRow)
         endif
     endfor
     return data
@@ -147,22 +169,46 @@ endfunction
 unittestRunTest('testDownloadsDataLoadFetchError')
 
 
+async function testDownloadsDataLoadLanguageStart():
+    # A package is new only if its downloads start after its language's first date - "delta" starts on the first
+    # JavaScript date, after the first Python date, so it isn't new
+    rows = [ \
+        {'Package': 'beta', 'Language': 'Python', 'Date': '2024-01-01', 'Downloads': 1}, \
+        {'Package': 'delta', 'Language': 'JavaScript', 'Date': '2024-02-01', 'Downloads': 2}, \
+        {'Package': 'epsilon', 'Language': 'JavaScript', 'Date': '2024-02-01', 'Downloads': 0}, \
+        {'Package': 'epsilon', 'Language': 'JavaScript', 'Date': '2024-02-02', 'Downloads': 3} \
+    ]
+    unittestMockAll({'systemFetch': {'downloads.json': jsonStringify(rows)}})
+    data = downloadsDataLoad()
+    unittestMockEnd()
+    unittestDeepEqual(data, [ \
+        {'Package': 'beta', 'Language': 'Python', 'Date': datetimeNew(2024, 1, 1), 'Downloads': 1, 'Unique': 'beta'}, \
+        {'Package': 'delta', 'Language': 'JavaScript', 'Date': datetimeNew(2024, 2, 1), 'Downloads': 2, 'Unique': 'delta'}, \
+        { \
+            'Package': 'epsilon', 'Language': 'JavaScript', 'Date': datetimeNew(2024, 2, 2), 'Downloads': 3, 'Unique': 'epsilon', \
+            'Start': datetimeNew(2024, 2, 2) \
+        } \
+    ])
+endfunction
+unittestRunTest('testDownloadsDataLoadLanguageStart')
+
+
 #
 # downloadsDataAverage
 #
 
 
 function testDownloadsDataAverage():
-    # The 3-day trailing window is 2024-02-01 through 2024-02-03
+    # The 3-day trailing window is 2024-02-01 through 2024-02-03 - "alpha (js)" is new, with only 2 days of data
     unittestDeepEqual(downloadsDataAverage(testDownloadsData(), 3, true), [ \
         testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12 * 30 / 3), \
         testDownloadsAggregateRow('beta', 'Python', 'beta', 7 * 30 / 3), \
-        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 * 30 / 3) \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 * 30 / 2) \
     ])
     unittestDeepEqual(downloadsDataAverage(testDownloadsData(), 3, false), [ \
         testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12 / 3), \
         testDownloadsAggregateRow('beta', 'Python', 'beta', 7 / 3), \
-        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 / 3) \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 / 2) \
     ])
 endfunction
 unittestRunTest('testDownloadsDataAverage')
@@ -182,12 +228,14 @@ unittestRunTest('testDownloadsDataAverageZero')
 function testDownloadsDataAverageNull():
     # Null and missing downloads are skipped
     data = testDownloadsData()
-    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null})
-    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3)})
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null, \
+        'Start': datetimeNew(2024, 2, 1)})
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3), \
+        'Start': datetimeNew(2024, 2, 1)})
     unittestDeepEqual(downloadsDataAverage(data, 3, false), [ \
         testDownloadsAggregateRow('alpha', 'Python', 'alpha (py)', 12 / 3), \
         testDownloadsAggregateRow('beta', 'Python', 'beta', 7 / 3), \
-        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 / 3) \
+        testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30 / 2) \
     ])
 endfunction
 unittestRunTest('testDownloadsDataAverageNull')
@@ -201,6 +249,23 @@ function testDownloadsDataAverageMinDate():
     )
 endfunction
 unittestRunTest('testDownloadsDataAverageMinDate')
+
+
+function testDownloadsDataTrailingDays():
+    # An established package's window is always the full trailing days
+    unittestEqual(downloadsDataTrailingDays(30, null, datetimeNew(2024, 2, 3)), 30)
+
+    # A new package's window starts no earlier than its start date
+    unittestEqual(downloadsDataTrailingDays(30, datetimeNew(2024, 2, 3), datetimeNew(2024, 2, 3)), 1)
+    unittestEqual(downloadsDataTrailingDays(30, datetimeNew(2024, 1, 5), datetimeNew(2024, 2, 3)), 30)
+    unittestEqual(downloadsDataTrailingDays(30, datetimeNew(2024, 1, 4), datetimeNew(2024, 2, 3)), 30)
+    unittestEqual(downloadsDataTrailingDays(30, datetimeNew(2024, 1, 6), datetimeNew(2024, 2, 3)), 29)
+
+    # Daylight saving time changes don't affect the day count
+    unittestEqual(downloadsDataTrailingDays(30, datetimeNew(2024, 3, 1), datetimeNew(2024, 3, 20)), 20)
+    unittestEqual(downloadsDataTrailingDays(30, datetimeNew(2024, 10, 20), datetimeNew(2024, 11, 10)), 22)
+endfunction
+unittestRunTest('testDownloadsDataTrailingDays')
 
 
 function testDownloadsDataMaxDate():
@@ -222,14 +287,17 @@ unittestRunTest('testDownloadsDataMaxDate')
 
 
 function testDownloadsDataTrailingAverage():
-    # Each package's 2-day trailing average starts at its first full window - the packages' rows
-    # are interleaved by date, but their sums are not mixed
+    # Each established package's 2-day trailing average starts at its first full window - a new package's
+    # starts at its first row, using only its available data. The packages' rows are interleaved by date, but
+    # their sums are not mixed.
     data = testDownloadsData()
     downloadsDataTrailingAverage(data, 2)
     expected = testDownloadsData()
     objectSet(arrayGet(expected, 1), 'Average Downloads', (100 + 1) / 2)
     objectSet(arrayGet(expected, 2), 'Average Downloads', 2 / 2)
     objectSet(arrayGet(expected, 3), 'Average Downloads', (2 + 3) / 2)
+    objectSet(arrayGet(expected, 4), 'Average Downloads', 7 / 1)
+    objectSet(arrayGet(expected, 5), 'Average Downloads', 10 / 1)
     objectSet(arrayGet(expected, 6), 'Average Downloads', (3 + 4) / 2)
     objectSet(arrayGet(expected, 7), 'Average Downloads', (10 + 20) / 2)
     objectSet(arrayGet(expected, 8), 'Average Downloads', (4 + 5) / 2)
@@ -251,17 +319,25 @@ unittestRunTest('testDownloadsDataTrailingAverageUnsorted')
 
 function testDownloadsDataTrailingAverageNull():
     # Null and missing downloads count as zero - "beta" has 7 downloads on 2024-02-01, then null and missing
+    start = datetimeNew(2024, 2, 1)
     data = testDownloadsData()
-    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null})
-    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3)})
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null, \
+        'Start': start})
+    arrayPush(data, {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3), 'Start': start})
     downloadsDataTrailingAverage(data, 2)
     unittestDeepEqual(dataFilter(data, 'Package == "beta"'), [ \
-        {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 1), 'Downloads': 7}, \
+        { \
+            'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 1), 'Downloads': 7, \
+            'Start': start, 'Average Downloads': 7 / 1 \
+        }, \
         { \
             'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 2), 'Downloads': null, \
-            'Average Downloads': 7 / 2 \
+            'Start': start, 'Average Downloads': 7 / 2 \
         }, \
-        {'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3), 'Average Downloads': 0} \
+        { \
+            'Package': 'beta', 'Language': 'Python', 'Unique': 'beta', 'Date': datetimeNew(2024, 2, 3), \
+            'Start': start, 'Average Downloads': 0 \
+        } \
     ])
 endfunction
 unittestRunTest('testDownloadsDataTrailingAverageNull')
@@ -423,9 +499,13 @@ function testDownloadsAverageData(averages):
 endfunction
 
 
-# The test data with the 30-day trailing average - only "alpha (py)" has a full window, the first ending 2024-01-29
+# The test data with the 30-day trailing average - "alpha (py)" has a full window, the first ending 2024-01-29, and
+# the new packages, "beta" and "alpha (js)", average their available data
 function testDownloadsChartData():
-    return testDownloadsAverageData([[2, 2 / 30], [3, (2 + 3) / 30], [6, (2 + 3 + 4) / 30], [8, (2 + 3 + 4 + 5) / 30]])
+    return testDownloadsAverageData([ \
+        [2, 2 / 30], [3, (2 + 3) / 30], [4, 7 / 1], [5, 10 / 1], [6, (2 + 3 + 4) / 30], [7, (10 + 20) / 2], \
+        [8, (2 + 3 + 4 + 5) / 30] \
+    ])
 endfunction
 
 
@@ -472,15 +552,16 @@ function testDownloadsIndexTable(rows, total, linkArgs):
 endfunction
 
 
-# The index page's calls - the table rows and total default to the 30-day monthly averages
+# The index page's calls - the table rows and total default to the 30-day monthly averages ("beta" has 3 days of data
+# and "alpha (js)" has 2)
 function testDownloadsIndexCalls(linkArgs, chartCalls, tableRows, tableTotal):
     if tableRows == null:
         tableRows = [ \
-            ['alpha', 'JavaScript', 30], \
-            ['alpha', 'Python', 2 + 3 + 4 + 5], \
-            ['beta', 'Python', 7] \
+            ['alpha', 'JavaScript', 30 * 30 / 2], \
+            ['beta', 'Python', 7 * 30 / 3], \
+            ['alpha', 'Python', 2 + 3 + 4 + 5] \
         ]
-        tableTotal = 30 + 2 + 3 + 4 + 5 + 7
+        tableTotal = 30 * 30 / 2 + 7 * 30 / 3 + 2 + 3 + 4 + 5
     endif
     return arrayExtend(arrayExtend(testDownloadsIndexHeader(linkArgs), chartCalls), [ \
         testDownloadsIndexTable(tableRows, tableTotal, linkArgs), \
@@ -490,17 +571,21 @@ endfunction
 
 
 async function testDownloadsMainIndex():
-    # The 3-day trailing averages - only "alpha (py)" has a full window, the first ending 2024-01-31
+    # The 3-day trailing averages - "alpha (py)" has a full window, the first ending 2024-01-31, and the new packages
+    # average their available data
     systemGlobalSet('vDays', 3)
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
     calls = unittestMockEnd()
-    chartData = testDownloadsAverageData([[2, 2 / 3], [3, (2 + 3) / 3], [6, (2 + 3 + 4) / 3], [8, (3 + 4 + 5) / 3]])
+    chartData = testDownloadsAverageData([ \
+        [2, 2 / 3], [3, (2 + 3) / 3], [4, 7 / 1], [5, 10 / 1], [6, (2 + 3 + 4) / 3], [7, (10 + 20) / 2], \
+        [8, (3 + 4 + 5) / 3] \
+    ])
     unittestDeepEqual(calls, testDownloadsIndexCalls( \
         {'days': 3}, \
         [testDownloadsChart(chartData, 3)], \
-        [['alpha', 'JavaScript', 300], ['alpha', 'Python', 120], ['beta', 'Python', 70]], \
-        490 \
+        [['alpha', 'JavaScript', 450], ['alpha', 'Python', 120], ['beta', 'Python', 70]], \
+        640 \
     ))
 
     # The resize callback re-renders the index page
@@ -512,14 +597,15 @@ unittestRunTest('testDownloadsMainIndex')
 
 
 async function testDownloadsMainIndexDefaultDays():
-    # The default 90-day trailing average - no package has a full window
+    # The default 90-day trailing average - "alpha (py)" has no full window, so only the new packages are charted
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
+    chartData = testDownloadsAverageData([[4, 7 / 1], [5, 10 / 1], [7, (10 + 20) / 2]])
     unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls( \
         {}, \
-        [['markdownPrint', ['', '**Error:** No matching packages']]], \
-        [['alpha', 'Python', 115 * 30 / 90], ['alpha', 'JavaScript', 30 * 30 / 90], ['beta', 'Python', 7 * 30 / 90]], \
-        115 * 30 / 90 + 7 * 30 / 90 + 30 * 30 / 90 \
+        [testDownloadsChart(chartData, 90)], \
+        [['alpha', 'JavaScript', 30 * 30 / 2], ['beta', 'Python', 7 * 30 / 3], ['alpha', 'Python', 115 * 30 / 90]], \
+        30 * 30 / 2 + 7 * 30 / 3 + 115 * 30 / 90 \
     ))
     testDownloadsResetGlobals()
 endfunction
@@ -570,13 +656,13 @@ unittestRunTest('testDownloadsMainIndexLanguage')
 
 
 async function testDownloadsMainIndexTop():
-    # The 30-day averages are "alpha (js)" 30/30, "alpha (py)" 14/30, and "beta" 7/30 - the top half is two packages
+    # The 30-day averages are "alpha (js)" 30/2, "beta" 7/3, and "alpha (py)" 14/30 - the top half is two packages
     systemGlobalSet('vDays', 30)
     systemGlobalSet('vRank', 'top')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
     unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'rank': 'top'}, [ \
-        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "alpha"'), 30) \
+        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Unique != "alpha (py)"'), 30) \
     ]))
     testDownloadsResetGlobals()
 endfunction
@@ -602,14 +688,14 @@ unittestRunTest('testDownloadsMainIndexBottom')
 
 
 async function testDownloadsMainIndexLanguageTop():
-    # The rank is within the language - "alpha (py)" is the top Python package
+    # The rank is within the language - "beta" is the top Python package
     systemGlobalSet('vDays', 30)
     systemGlobalSet('vLanguage', 'Python')
     systemGlobalSet('vRank', 'top')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
     unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'language': 'Python', 'rank': 'top'}, [ \
-        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "alpha" && Language == "Python"'), 30) \
+        testDownloadsChart(dataFilter(testDownloadsChartData(), 'Package == "beta"'), 30) \
     ]))
     testDownloadsResetGlobals()
 endfunction
@@ -617,14 +703,16 @@ unittestRunTest('testDownloadsMainIndexLanguageTop')
 
 
 async function testDownloadsMainIndexNoAverage():
-    # "beta" has no 30-day trailing average - the table is still rendered
-    systemGlobalSet('vDays', 30)
+    # The bottom package, "alpha (py)", has no 90-day trailing average - the table is still rendered
     systemGlobalSet('vRank', 'bottom')
     unittestMockAll(testDownloadsMockData())
     downloadsMain()
-    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls({'days': 30, 'rank': 'bottom'}, [ \
-        ['markdownPrint', ['', '**Error:** No matching packages']] \
-    ]))
+    unittestDeepEqual(unittestMockEnd(), testDownloadsIndexCalls( \
+        {'rank': 'bottom'}, \
+        [['markdownPrint', ['', '**Error:** No matching packages']]], \
+        [['alpha', 'JavaScript', 30 * 30 / 2], ['beta', 'Python', 7 * 30 / 3], ['alpha', 'Python', 115 * 30 / 90]], \
+        30 * 30 / 2 + 7 * 30 / 3 + 115 * 30 / 90 \
+    ))
     testDownloadsResetGlobals()
 endfunction
 unittestRunTest('testDownloadsMainIndexNoAverage')
@@ -822,6 +910,36 @@ async function testDownloadsMainDashboardZeroAverage():
     testDownloadsResetGlobals()
 endfunction
 unittestRunTest('testDownloadsMainDashboardZeroAverage')
+
+
+async function testDownloadsMainDashboardNew():
+    # The new package's averages use only its 2 days of data
+    systemGlobalSet('vName', 'alpha')
+    systemGlobalSet('vLanguage', 'JavaScript')
+    systemGlobalSet('vDays', 3)
+    unittestMockAll(testDownloadsMockData())
+    downloadsMain()
+    calls = unittestMockEnd()
+
+    data = dataFilter(testDownloadsData(), 'Package == "alpha" && Language == "JavaScript"')
+    dataCalculatedField(data, 'Month', 'datetimeNew(datetimeYear(Date), datetimeMonth(Date), 1)')
+    objectSet(arrayGet(data, 0), 'Average Downloads', 10 / 1)
+    objectSet(arrayGet(data, 1), 'Average Downloads', (10 + 20) / 2)
+
+    unittestDeepEqual(calls, arrayExtend(testDownloadsDashboardHeader('alpha', 'JavaScript', 'var.vDays=3'), \
+        testDownloadsDashboardCharts( \
+            'alpha', \
+            [testDownloadsAggregateRow('alpha', 'JavaScript', 'alpha (js)', 30, datetimeNew(2024, 2, 1))], \
+            30 * 30 / 2, \
+            datetimeNew(2024, 1, 29), \
+            data, \
+            datetimeNew(2024, 1, 31), \
+            [{'Month': datetimeNew(2024, 2, 1), 'Downloads': 30, '% Average': '-93.3%'}] \
+        ) \
+    ))
+    testDownloadsResetGlobals()
+endfunction
+unittestRunTest('testDownloadsMainDashboardNew')
 
 
 async function testDownloadsMainDashboardUnknown():
