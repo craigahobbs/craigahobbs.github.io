@@ -143,5 +143,6 @@ $(eval $(call PROJECT_RULES, other, npm-dependency-explorer, 'git@github.com:cra
 $(eval $(call PROJECT_RULES, other, other-hobbs-family-cookbook, 'git@github.com:craigahobbs/other-hobbs-family-cookbook.git'))
 $(eval $(call PROJECT_RULES, other, picoread, 'git@github.com:craigahobbs/picoread.git'))
 $(eval $(call PROJECT_RULES, other, picoshelf, 'git@github.com:craigahobbs/picoshelf.git'))
+$(eval $(call PROJECT_RULES, other, roadie, 'git@github.com:craigahobbs/roadie.git'))
 $(eval $(call PROJECT_RULES, other, solar, 'git@github.com:craigahobbs/solar.git'))
 $(eval $(call PROJECT_RULES, other, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
