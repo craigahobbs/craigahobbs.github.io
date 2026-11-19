@@ -162,6 +162,25 @@ class TestDownloads(unittest.TestCase):
         self.assertListEqual(urls, [NPM_URL, PYPI_URL])
 
 
+    def test_main_pypi_not_found(self):
+        # A newly-published PyPI package has no download data yet - pypistats returns 404, the package gets no rows (kept rows stay)
+        not_found = urllib.error.HTTPError(PYPI_URL, 404, 'Not Found', {}, None)
+        package_data = [{'Package': 'alpha', 'Language': 'Python', 'Date': '2024-01-01', 'Downloads': 1}]
+        responses = {NPM_URL: {'downloads': []}, PYPI_URL: not_found}
+        data, stdout, urls = self.run_main([], package_data, responses)
+        self.assertListEqual(data, package_data)
+        self.assertIn('  No download data yet (HTTP Error 404: Not Found)', stdout)
+        self.assertListEqual(urls, [NPM_URL, PYPI_URL])
+
+
+    def test_main_pypi_error(self):
+        # Other HTTP errors fail the update
+        error = urllib.error.HTTPError(PYPI_URL, 500, 'Server Error', {}, None)
+        with unittest.mock.patch('time.sleep'):
+            with self.assertRaises(urllib.error.HTTPError):
+                self.run_main([], [], {NPM_URL: {'downloads': []}, PYPI_URL: error})
+
+
     def test_main_npm_error(self):
         # Other HTTP errors fail the update
         error = urllib.error.HTTPError(NPM_URL, 500, 'Server Error', {}, None)

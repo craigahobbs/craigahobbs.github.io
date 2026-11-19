@@ -29,6 +29,7 @@ PACKAGES = [
     {'Package': 'ctxkit', 'Language': 'Python'},
     {'Package': 'markdown-up', 'Language': 'Python'},
     {'Package': 'ollama-chat', 'Language': 'Python'},
+    {'Package': 'sageroad', 'Language': 'Python'},
     {'Package': 'schema-markdown', 'Language': 'Python'},
     {'Package': 'simple-git-changelog', 'Language': 'Python'},
     {'Package': 'template-specialize', 'Language': 'Python'},
@@ -65,7 +66,7 @@ def main():
         # Get the package download data
         if package_language == 'Python':
             package_url = f'https://pypistats.org/api/packages/{package_name}/overall'
-            package_updated_raw = urlopen_json(package_url)
+            package_updated_raw = urlopen_package_json(package_url, {'data': []})
             package_updated = [
                 {'Package': package_name, 'Language': package_language, 'Date': row['date'], 'Downloads': row['downloads']}
                 for row in package_updated_raw['data'] if row['category'] == 'without_mirrors'
@@ -73,14 +74,7 @@ def main():
         else: # package_language == 'JavaScript'
             year_ago = today - datetime.timedelta(days=365)
             package_url = f'https://api.npmjs.org/downloads/range/{year_ago.isoformat()}:{today.isoformat()}/{package_name}'
-            try:
-                package_updated_raw = urlopen_json(package_url)
-            except urllib.error.HTTPError as exc:
-                # A newly-published package has no download data for a day or two (npm returns 404 "package not found")
-                if exc.code != 404:
-                    raise
-                print(f'  No download data yet ({exc})')
-                package_updated_raw = {'downloads': []}
+            package_updated_raw = urlopen_package_json(package_url, {'downloads': []})
             package_updated = [
                 {'Package': package_name, 'Language': package_language, 'Date': row['day'], 'Downloads': row['downloads']}
                 for row in package_updated_raw['downloads']
@@ -98,6 +92,18 @@ def main():
     # Update the data file
     with open(package_file, 'w', encoding='utf-8') as fh:
         json.dump(sorted(package_data, key=lambda row: (row['Date'], row['Language'], row['Package'])), fh, indent=4)
+
+
+# Helper to download a package's download data JSON - a newly-published package has no download data for a day
+# or more (pypistats and npm return 404), so not found returns the empty response
+def urlopen_package_json(url, empty_response):
+    try:
+        return urlopen_json(url)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+        print(f'  No download data yet ({exc})')
+        return empty_response
 
 
 # Helper to download a text resource URL with retries
