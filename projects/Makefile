@@ -146,3 +146,4 @@ $(eval $(call PROJECT_RULES, other, picoread, 'git@github.com:craigahobbs/picore
 $(eval $(call PROJECT_RULES, other, picoshelf, 'git@github.com:craigahobbs/picoshelf.git'))
 $(eval $(call PROJECT_RULES, other, solar, 'git@github.com:craigahobbs/solar.git'))
 $(eval $(call PROJECT_RULES, other, sunrise, 'git@github.com:craigahobbs/sunrise.git'))
+$(eval $(call PROJECT_RULES, other, treadmill-index, 'git@github.com:craigahobbs/treadmill-index.git'))
