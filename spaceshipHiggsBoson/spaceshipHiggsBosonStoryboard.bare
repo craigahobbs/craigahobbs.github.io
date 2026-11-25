@@ -82,7 +82,8 @@ function shbStoryboardPanel(scene, shot, stillWidth, onPlay):
     endif
     for line in objectGet(shot, 'dialogue'):
         arrayPush(notes, {'html': 'div', 'elem': [ \
-            {'html': 'b', 'elem': {'text': stringUpper(objectGet(line, 'speaker')) + ': '}}, \
+            {'html': 'b', 'elem': {'text': stringUpper(objectGet(line, 'speaker')) + \
+                if(objectGet(line, 'emotion') != null, ' (' + objectGet(line, 'emotion') + ')', '') + ': '}}, \
             {'html': 'i', 'elem': {'text': objectGet(line, 'text')}} \
         ]})
     endfor

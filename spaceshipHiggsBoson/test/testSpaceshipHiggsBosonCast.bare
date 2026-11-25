@@ -21,18 +21,18 @@ function testCastRender():
 
     # The voices
     unittestDeepEqual(arraySlice(callLog, 3, 16), [ \
-        ['markdownPrint', ['', '## Voices', '', '| Voice | Role | Lines | Scenes |', '| --- | --- | ---: | --- |']], \
-        ['markdownPrint', ['| Narrator | The narrator | 6 | Title, Construction, Home |']], \
-        ['markdownPrint', ['| Engineer | Construction engineer, Earth orbit | 1 | Construction |']], \
-        ['markdownPrint', ['| Commander | Mission commander, ISV Scalar Dawn | 4 | Construction, α Centauri, Homeward |']], \
-        ['markdownPrint', ['| Flight | Flight director, Mission Control | 4 | Countdown, Outbound, Homeward |']], \
-        ['markdownPrint', ['| Collider | Higgs factory ring controller, Mission Control | 1 | Countdown |']], \
-        ['markdownPrint', ['| Field | Field modulator officer, Mission Control | 1 | Countdown |']], \
-        ['markdownPrint', ['| FIDO | Flight dynamics officer, Mission Control | 5 | Countdown, Outbound, Homeward |']], \
-        ['markdownPrint', ['| Launch | Launch control, Mission Control | 4 | Countdown, Outbound |']], \
-        ['markdownPrint', ['| CAPCOM | Capsule communicator, Mission Control | 5 | Outbound, α Centauri, Homeward, Home |']], \
-        ['markdownPrint', ['| Surgeon | Flight surgeon, Mission Control | 2 | Outbound, Homeward |']], \
-        ['markdownPrint', ['| Science | Science officer, ISV Scalar Dawn | 2 | α Centauri |']], \
+        ['markdownPrint', ['', '## Voices', '', '| Voice | Role | Voice actor | Lines | Scenes |', '| --- | --- | --- | ---: | --- |']], \
+        ['markdownPrint', ['| Narrator | The narrator | John | 6 | Title, Construction, Home |']], \
+        ['markdownPrint', ['| Engineer | Construction engineer, Earth orbit | Robert | 1 | Construction |']], \
+        ['markdownPrint', ['| Commander | Mission commander, ISV Scalar Dawn | Helen | 4 | Construction, α Centauri, Homeward |']], \
+        ['markdownPrint', ['| Flight | Flight director, Mission Control | James | 4 | Countdown, Outbound, Homeward |']], \
+        ['markdownPrint', ['| Collider | Higgs factory ring controller, Mission Control | Kate | 1 | Countdown |']], \
+        ['markdownPrint', ['| Field | Field modulator officer, Mission Control | Thomas | 1 | Countdown |']], \
+        ['markdownPrint', ['| FIDO | Flight dynamics officer, Mission Control | David | 5 | Countdown, Outbound, Homeward |']], \
+        ['markdownPrint', ['| Launch | Launch control, Mission Control | Michael | 4 | Countdown, Outbound |']], \
+        ['markdownPrint', ['| CAPCOM | Capsule communicator, Mission Control | Sarah | 5 | Outbound, α Centauri, Homeward, Home |']], \
+        ['markdownPrint', ['| Surgeon | Flight surgeon, Mission Control | Grace | 2 | Outbound, Homeward |']], \
+        ['markdownPrint', ['| Science | Science officer, ISV Scalar Dawn | Amy | 2 | α Centauri |']], \
         ['markdownPrint', ['', '## Locations']] \
     ])
 
@@ -53,3 +53,11 @@ function testCastRender():
     unittestEqual(arrayLength(callLog), 17)
 endfunction
 unittestRunTest('testCastRender')
+
+
+function testCastVoiceActor():
+    unittestEqual(shbCastVoiceActor('male'), 'John')
+    unittestEqual(shbCastVoiceActor('female'), 'Mary')
+    unittestEqual(shbCastVoiceActor('james'), 'James')
+endfunction
+unittestRunTest('testCastVoiceActor')

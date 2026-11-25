@@ -4,11 +4,13 @@
 # action on a set with a camera move - a static setup, a dolly, an orbit, or a track - eased in and out, and with
 # optional fades in from and out to black. The scene's cast is blocked on each set - on a mark, along a path of
 # marks, or in orbit - and plays beats, named moments of behavior that the film's actor renderers act on. The script
-# is the dialogue (the closed-caption talk track), the on-screen titles, and the sound cues.
+# is the dialogue (the talk track - each speaker is voiced by a voice actor, and a line may have an emotion), the
+# on-screen titles, and the sound cues.
 #
 # cinemaReel validates a film model and lays out its timeline. cinemaFrame describes the frame at a time - the scene,
 # the shot, the camera, the actors, the fade, the titles, and the dialogue - for the film's renderer to draw, and
 # cinemaOverlayElements renders the frame's letterbox, fade, titles, and closed captions as SVG element models.
+# cinemaLines lists the lines of dialogue that begin between two times (for the film's player to say aloud),
 # cinemaSounds lists the sound cues between two times, and cinemaStoryboard lays out the film shot by shot. The library
 # knows nothing about drawing sets and actors - it describes what the camera sees, and the film draws it.
 
@@ -26,6 +28,9 @@ cinemaTypes = schemaParse( \
     '', \
     "    # The film's scenes, in order", \
     '    CinemaScene[len > 0] scenes', \
+    '', \
+    "    # The film's voice casting - each speaker's voice", \
+    '    optional CinemaVoice{} voices', \
     '', \
     '', \
     '# A scene - continuous action at one location, covered by one or more shots', \
@@ -46,7 +51,7 @@ cinemaTypes = schemaParse( \
     "    # The scene's cast and their blocking on each set", \
     '    optional CinemaActor[] cast', \
     '', \
-    "    # The scene's dialogue - the closed-caption talk track", \
+    "    # The scene's dialogue - the talk track", \
     '    optional CinemaLine[] dialogue', \
     '', \
     "    # The scene's on-screen titles", \
@@ -243,7 +248,7 @@ cinemaTypes = schemaParse( \
     '    string name', \
     '', \
     '', \
-    '# A line of dialogue - shown as a closed caption', \
+    "# A line of dialogue - said aloud by its speaker's voice actor, or shown as a closed caption", \
     'struct CinemaLine', \
     '', \
     "    # The line's scene time and duration, in seconds", \
@@ -255,6 +260,53 @@ cinemaTypes = schemaParse( \
     '', \
     "    # The line's text - \"{name}\" placeholders are filled from the film's variables", \
     '    string text', \
+    '', \
+    "    # The emotion the line is said with (the default is the speaker's voice's emotion)", \
+    '    optional CinemaEmotion emotion', \
+    '', \
+    '', \
+    "# A speaker's voice", \
+    'struct CinemaVoice', \
+    '', \
+    '    # The voice actor', \
+    '    CinemaVoiceActor actor', \
+    '', \
+    "    # The emotion the speaker's lines are said with (the default is neutral)", \
+    '    optional CinemaEmotion emotion', \
+    '', \
+    "    # The voice actor's speaking rate (the default is 1)", \
+    '    optional float(>= 0.5, <= 2) rate', \
+    '', \
+    '', \
+    '# A voice actor - a MarkdownUp voice', \
+    'enum CinemaVoiceActor', \
+    '    michael', \
+    '    sarah', \
+    '    male', \
+    '    female', \
+    '    james', \
+    '    helen', \
+    '    robert', \
+    '    amy', \
+    '    david', \
+    '    kate', \
+    '    thomas', \
+    '    grace', \
+    '', \
+    '', \
+    '# An emotion (or a manner of speaking) - a MarkdownUp speaking style', \
+    'enum CinemaEmotion', \
+    '    neutral', \
+    '    angry', \
+    '    happy', \
+    '    sad', \
+    '    fearful', \
+    '    disgusted', \
+    '    whisper', \
+    '    soft', \
+    '    shouting', \
+    '    dialogue', \
+    '    exclaim', \
     '', \
     '', \
     '# An on-screen title', \
@@ -358,6 +410,35 @@ endfunction
 # The start time of a scene, by index
 function cinemaSceneStart(reel, index):
     return objectGet(arrayGet(objectGet(reel, 'scenes'), index), 'start')
+endfunction
+
+
+# The lines of dialogue that begin between two times - after the first, up to and including the second - for the film's
+# player to say aloud. Each line has its "speaker", its "text" (the variables function fills its placeholders, as in
+# cinemaFrame), its voice "actor" (null if the film doesn't cast the speaker's voice), its "emotion", and its
+# speaking "rate".
+function cinemaLines(reel, timeFrom, timeTo, variablesFn):
+    film = objectGet(reel, 'film')
+    voices = objectGet(film, 'voices', {})
+    lines = []
+    for scene, ixScene in objectGet(film, 'scenes'):
+        start = cinemaSceneStart(reel, ixScene)
+        for line in objectGet(scene, 'dialogue', []):
+            lineTime = start + objectGet(line, 'at')
+            if lineTime > timeFrom && lineTime <= timeTo:
+                speaker = objectGet(line, 'speaker')
+                voice = objectGet(voices, speaker, {})
+                arrayPush(lines, { \
+                    'speaker': speaker, \
+                    'text': cinemaFill(objectGet(line, 'text'), cinemaFrame(reel, lineTime, variablesFn), variablesFn), \
+                    'actor': objectGet(voice, 'actor'), \
+                    'emotion': objectGet(line, 'emotion', objectGet(voice, 'emotion', 'neutral')), \
+                    'rate': objectGet(voice, 'rate', 1) \
+                })
+            endif
+        endfor
+    endfor
+    return lines
 endfunction
 
 
@@ -488,14 +569,16 @@ endfunction
 
 
 # The film's cast list, in order of first appearance - the "actors" (each with its "name", the titles of the "scenes"
-# it appears in, and its "beats"), and the "voices", the speaking roles (each with its "speaker", its count of
-# "lines", and the titles of the "scenes" it speaks in)
+# it appears in, and its "beats"), and the "voices", the speaking roles (each with its "speaker", its voice "actor" -
+# null if the film doesn't cast the speaker's voice - its count of "lines", and the titles of the "scenes" it speaks in)
 function cinemaCast(reel):
+    film = objectGet(reel, 'film')
+    filmVoices = objectGet(film, 'voices', {})
     actors = []
     actorsByName = {}
     voices = []
     voicesBySpeaker = {}
-    for scene in objectGet(objectGet(reel, 'film'), 'scenes'):
+    for scene in objectGet(film, 'scenes'):
         title = objectGet(scene, 'title')
         for actor in objectGet(scene, 'cast', []):
             name = objectGet(actor, 'name')
@@ -514,7 +597,7 @@ function cinemaCast(reel):
             speaker = objectGet(line, 'speaker')
             entry = objectGet(voicesBySpeaker, speaker)
             if entry == null:
-                entry = {'speaker': speaker, 'lines': 0, 'scenes': []}
+                entry = {'speaker': speaker, 'actor': objectGet(objectGet(filmVoices, speaker, {}), 'actor'), 'lines': 0, 'scenes': []}
                 objectSet(voicesBySpeaker, speaker, entry)
                 arrayPush(voices, entry)
             endif
@@ -536,8 +619,8 @@ endfunction
 
 # The film's storyboard - each scene ("index", "name", "title", "start", "duration", and "shots") with its shots in
 # order. Each shot has its "index", "start" and "duration" (seconds), "framing", "set", "lighting", camera "move",
-# "ease", and "lens", "fadeIn" and "fadeOut", and the "dialogue" (speaker and text), "sounds", and actor "beats" (actor
-# and beat) that fall within it. The variables function fills the dialogue's placeholders as in cinemaFrame.
+# "ease", and "lens", "fadeIn" and "fadeOut", and the "dialogue" (speaker, text, and the line's emotion, if it has
+# one), "sounds", and actor "beats" (actor and beat) that fall within it. The variables function fills the dialogue's placeholders as in cinemaFrame.
 function cinemaStoryboard(reel, variablesFn):
     storyboard = []
     for scene, ixScene in objectGet(objectGet(reel, 'film'), 'scenes'):
@@ -555,7 +638,11 @@ function cinemaStoryboard(reel, variablesFn):
                 lineStart = objectGet(line, 'at')
                 if lineStart < shotEnd && lineStart + objectGet(line, 'duration') > shotStart:
                     frame = cinemaFrame(reel, sceneStart + mathMax(lineStart, shotStart), variablesFn)
-                    arrayPush(dialogue, {'speaker': objectGet(line, 'speaker'), 'text': cinemaFill(objectGet(line, 'text'), frame, variablesFn)})
+                    arrayPush(dialogue, { \
+                        'speaker': objectGet(line, 'speaker'), \
+                        'text': cinemaFill(objectGet(line, 'text'), frame, variablesFn), \
+                        'emotion': objectGet(line, 'emotion') \
+                    })
                 endif
             endfor
 

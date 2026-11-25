@@ -32,11 +32,12 @@ function shbCastRender(width):
     elementModelRender(shbCastCards(cards))
 
     # The voices
-    markdownPrint('', '## Voices', '', '| Voice | Role | Lines | Scenes |', '| --- | --- | ---: | --- |')
+    markdownPrint('', '## Voices', '', '| Voice | Role | Voice actor | Lines | Scenes |', '| --- | --- | --- | ---: | --- |')
     for voice in objectGet(cast, 'voices'):
         speaker = objectGet(voice, 'speaker')
         markdownPrint('| ' + markdownEscape(speaker) + ' | ' + markdownEscape(objectGet(shbFilmVoices, speaker)) + ' | ' + \
-            objectGet(voice, 'lines') + ' | ' + markdownEscape(arrayJoin(objectGet(voice, 'scenes'), ', ')) + ' |')
+            markdownEscape(shbCastVoiceActor(objectGet(voice, 'actor'))) + ' | ' + objectGet(voice, 'lines') + ' | ' + \
+            markdownEscape(arrayJoin(objectGet(voice, 'scenes'), ', ')) + ' |')
     endfor
 
     # The locations - each set's first shot, and the scenes filmed on it
@@ -86,4 +87,10 @@ endfunction
 # A cast note element model
 function shbCastNote(text):
     return {'html': 'div', 'elem': {'text': text}}
+endfunction
+
+
+# A voice actor's name - MarkdownUp's "male" and "female" voices are John and Mary
+function shbCastVoiceActor(actor):
+    return if(actor == 'male', 'John', if(actor == 'female', 'Mary', stringUpper(stringSlice(actor, 0, 1)) + stringSlice(actor, 1)))
 endfunction

@@ -30,7 +30,7 @@ function testStoryboardRender():
         'Over-the-shoulder shot · Interstellar space', \
         'Dolly, ease in and out', \
         'Action: ignite (ship)', \
-        'LAUNCH: ', 'Ignition! Scalar Dawn is underway.', \
+        'LAUNCH (exclaim): ', 'Ignition! Scalar Dawn is underway.', \
         'CAPCOM: ', 'Bubble stable. Mass at 0.1 percent.', \
         'Sound: explosion, powerup' \
     ])

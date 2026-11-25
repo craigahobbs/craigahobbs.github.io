@@ -11,7 +11,8 @@ The application specification is `SPEC.md`. The application is `spaceshipHiggsBo
 `spaceshipHiggsBosonMain()` is called from `spaceshipHiggsBoson.md`. It includes its parts:
 
 - `spaceshipHiggsBosonCinema.bare` - the cinematography library - a cinema model (Schema Markdown) of films, scenes,
-  shots, camera moves, actor blocking and beats, dialogue, titles, and sound cues, and its executor
+  shots, camera moves, actor blocking and beats, dialogue (each speaker's voice actor, and a line's emotion), titles,
+  and sound cues, and its executor
 - `spaceshipHiggsBosonFilm.bare` - the film of the voyage, in the cinema model, and its sets and cast
 - `spaceshipHiggsBosonStoryboard.bare` - the storyboard page - the film, shot by shot
 - `spaceshipHiggsBosonCast.bare` - the cast page - the film's actors, voices, and locations
@@ -27,6 +28,12 @@ downloaded on first use, which builds a Python virtual environment with the `bar
 
 The project is publishable as-is on GitHub Pages: `index.html` loads MarkdownUp, which fetches `spaceshipHiggsBoson.md`,
 and the empty `.nojekyll` file keeps GitHub Pages from processing the Markdown and `.bare` files with Jekyll.
+
+The video says its dialogue aloud with MarkdownUp's `voiceSay` - the player's tick says the lines `cinemaLines` lists,
+each in its voice actor's voice and with its emotion, and lines may overlap. The video's Mute and CC controls are
+independent settings - the sound (the dialogue and the sound cues) and the dialogue's closed captions. A browser may
+not let audio start until the user interacts with the page, so a video that would play with sound waits (`waiting`,
+showing "Click to play") until MarkdownUp's `voiceReady` is true.
 
 ## Authoring BareScript code
 

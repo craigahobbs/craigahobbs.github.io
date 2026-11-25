@@ -28,6 +28,7 @@ function testMainVideo():
     unittestDeepEqual(callLog, [ \
         ['documentSetTitle', ['Spaceship Higgs-Boson']], \
         ['elementModelRender', [shbHeaderElements('video')]], \
+        ['voiceLoad', []], \
         ['elementModelRender', [shbOverlayElements('video')]], \
         ['elementModelRender', [testAnchor]], \
         ['windowSetResize', ['<function>']], \
@@ -73,11 +74,12 @@ unittestRunTest('testMainSettings')
 
 function testSettingsLoad():
     testMockAll()
-    unittestDeepEqual(shbSettingsLoad(), {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true})
+    unittestDeepEqual(shbSettingsLoad(), {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true, 'captions': false})
     localStorageSet('spaceshipHiggsBoson', '[1, 2]')
-    unittestDeepEqual(shbSettingsLoad(), {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true})
-    localStorageSet('spaceshipHiggsBoson', '{"autoRotate": false, "quality": "ultra"}')
-    unittestDeepEqual(shbSettingsLoad(), {'quality': 'ultra', 'autoRotate': false, 'drive': true, 'labels': true, 'sound': true})
+    unittestDeepEqual(shbSettingsLoad(), {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true, 'captions': false})
+    localStorageSet('spaceshipHiggsBoson', '{"autoRotate": false, "quality": "ultra", "captions": true}')
+    unittestDeepEqual(shbSettingsLoad(), {'quality': 'ultra', 'autoRotate': false, 'drive': true, 'labels': true, 'sound': true, \
+        'captions': true})
     unittestMockEnd()
 endfunction
 unittestRunTest('testSettingsLoad')
@@ -210,7 +212,7 @@ unittestRunTest('testHeaderElements')
 
 function testOverlayElements():
     unittestDeepEqual(testTexts(shbOverlayElements('video')), \
-        ['Play / Pause', 'Restart', 'Previous chapter', 'Next chapter', 'Sound', 'Detail'])
+        ['Play / Pause', 'Restart', 'Previous chapter', 'Next chapter', 'Mute', 'CC', 'Detail'])
     unittestDeepEqual(testTexts(shbOverlayElements('viewer')), [ \
         'Rotate left', 'Rotate right', 'Tilt up', 'Tilt down', 'Zoom in', 'Zoom out', 'Auto-rotate', 'Drive', 'Labels', \
         'Reset view', 'Detail' \
@@ -242,6 +244,90 @@ endfunction
 unittestRunTest('testRenderVideoShots')
 
 
+function testMainVideoWaiting():
+    # The browser hasn't let audio start - the video waits to start, and prompts
+    testMockAll({'voiceReady': false})
+    spaceshipHiggsBosonMain()
+    callLog = unittestMockEnd()
+    state = testStateSet('video', {'quality': 'auto', 'level': 3, 'waiting': true})
+    unittestDeepEqual(arraySlice(callLog, 7), [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+    texts = testTexts(testFilmFrame(state))
+    unittestEqual(arrayGet(texts, arrayLength(texts) - 1), 'Click to play')
+    unittestEqual(arrayIndexOf(testTexts(testFilmFrame(testStateSet('video', null))), 'Click to play'), -1)
+
+    # A paused or muted video doesn't wait
+    for settings in [['spaceshipHiggsBoson-video', '{"time": 5, "playing": false}'], ['spaceshipHiggsBoson', '{"sound": false}']]:
+        testMockAll({'voiceReady': false})
+        if arrayGet(settings, 0) == 'spaceshipHiggsBoson':
+            localStorageSet(arrayGet(settings, 0), arrayGet(settings, 1))
+        else:
+            sessionStorageSet(arrayGet(settings, 0), arrayGet(settings, 1))
+        endif
+        spaceshipHiggsBosonMain()
+        unittestMockEnd()
+        unittestEqual(objectGet(shbState, 'waiting'), false)
+    endfor
+endfunction
+unittestRunTest('testMainVideoWaiting')
+
+
+function testTickVideoWaiting():
+    # A waiting video doesn't play - the tick just waits
+    state = testStateSet('video', {'waiting': true})
+    testMockAll({'voiceReady': false})
+    shbTick()
+    unittestDeepEqual(unittestMockEnd(), [['windowSetTimeout', ['<function>', 40]]])
+    unittestEqual(objectGet(state, 'waiting'), true)
+    unittestEqual(objectGet(state, 'time'), 0)
+    unittestEqual(objectGet(state, 'lastTick'), null)
+
+    # The user interacts with the page, so the dialogue can be heard - the video starts
+    testMockAll()
+    shbTick()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'waiting'), false)
+    unittestEqual(objectGet(state, 'time'), 0.04)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+
+    # A waiting video also starts when its sound is turned off
+    state = testStateSet('video', {'waiting': true, 'sound': false})
+    testMockAll({'voiceReady': false})
+    shbTick()
+    unittestMockEnd()
+    unittestEqual(objectGet(state, 'waiting'), false)
+    unittestEqual(objectGet(state, 'time'), 0.04)
+endfunction
+unittestRunTest('testTickVideoWaiting')
+
+
+function testOnPlayWaiting():
+    # Play starts a waiting video (rather than pausing it)
+    state = testStateSet('video', {'waiting': true})
+    testMockAll({'voiceReady': false})
+    shbOnPlay()
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'waiting'), false)
+    unittestEqual(objectGet(state, 'playing'), true)
+    unittestDeepEqual(callLog, [ \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+endfunction
+unittestRunTest('testOnPlayWaiting')
+
+
 function testRenderVideoNarrow():
     state = testStateSet('video', {'time': 58, 'level': 2})
     testMockAll()
@@ -251,11 +337,22 @@ function testRenderVideoNarrow():
     unittestDeepEqual(callLog, [ \
         testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
-        ['elementModelRender', [shbFilmFrame(58, 2, 400, testHeight, 22 + 38 * shbControlRows('video', 400), 'Detail: High')]], \
+        ['elementModelRender', [shbFilmFrame(58, 2, 400, testHeight, 22 + 38 * shbControlRows('video', 400), 'Detail: High', false)]], \
         ['windowSetTimeout', ['<function>', 40]] \
     ])
 
-    # Narrow screens have no telemetry and wrap the captions shorter
+    # Narrow screens have no telemetry - and the closed captions are off
+    texts = testTexts(arrayGet(arrayGet(arrayGet(callLog, 2), 1), 0))
+    unittestDeepEqual(arraySlice(texts, arrayLength(texts) - 2), ['4 / 8 · Outbound', 'Detail: High'])
+    unittestEqual(arrayIndexOf(texts, 'CC'), -1)
+
+    # With the closed captions on, the dialogue is captioned (and still said aloud) - narrow screens wrap the captions
+    # shorter
+    objectSet(state, 'captions', true)
+    testMockAll()
+    unittestMockOne('windowWidth', systemPartial(testReturn, 448))
+    shbRender()
+    callLog = unittestMockEnd()
     texts = testTexts(arrayGet(arrayGet(arrayGet(callLog, 2), 1), 0))
     unittestDeepEqual(arraySlice(texts, arrayLength(texts) - 5), [ \
         '>> CAPCOM: BUBBLE STABLE.', 'MASS AT 0.1 PERCENT.', 'CC', '4 / 8 · Outbound', 'Detail: High' \
@@ -372,9 +469,48 @@ function testTickVideoSounds():
     shbTick()
     unittestMockEnd()
     unittestDeepEqual(sounds, [])
-    unittestEqual(shbStatusText(state), 'Detail: Low · Sound off')
+    unittestEqual(shbStatusText(state), 'Detail: Low · Muted')
 endfunction
 unittestRunTest('testTickVideoSounds')
+
+
+function testTickVideoLines():
+    # The tick says the lines of dialogue that begin in it - the launch controller's, as the outbound scene opens
+    state = testStateSet('video', {'time': 51.98, 'lastTick': testClock()})
+    testMockAll()
+    shbTick()
+    callLog = unittestMockEnd()
+    unittestDeepEqual(callLog, [ \
+        ['voiceSay', ['Ignition! Scalar Dawn is underway.', 'michael', 'exclaim', 1]], \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]], \
+        ['windowSetTimeout', ['<function>', 40]] \
+    ])
+
+    # A line's variables are filled
+    testStateSet('video', {'time': 60.98, 'lastTick': testClock()})
+    testMockAll()
+    shbTick()
+    unittestDeepEqual(arrayGet(unittestMockEnd(), 0), ['voiceSay', ['Velocity 0.73 c and climbing.', 'david', 'neutral', 1]])
+
+    # The first tick after the video starts or moves also says the line that begins at its time
+    testStateSet('video', {'time': 52})
+    testMockAll()
+    shbTick()
+    unittestDeepEqual(arrayGet(unittestMockEnd(), 0), ['voiceSay', ['Ignition! Scalar Dawn is underway.', 'michael', 'exclaim', 1]])
+    state = testStateSet('video', {'time': 52, 'lastTick': testClock()})
+    testMockAll()
+    shbTick()
+    unittestDeepEqual(arrayGet(unittestMockEnd(), 0), testPlaybackCall(state))
+
+    # The lines aren't said with the sound off
+    state = testStateSet('video', {'time': 51.98, 'sound': false})
+    testMockAll()
+    shbTick()
+    unittestDeepEqual(arrayGet(unittestMockEnd(), 0), testPlaybackCall(state))
+endfunction
+unittestRunTest('testTickVideoLines')
 
 
 function testTickViewer():
@@ -409,6 +545,7 @@ function testOnPlay():
     unittestEqual(objectGet(state, 'lastTick'), null)
     unittestEqual(objectGet(state, 'time'), 50)
     unittestDeepEqual(callLog, [ \
+        ['voiceClose', []], \
         testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
         ['elementModelRender', [testFilmFrame(state)]] \
@@ -432,6 +569,7 @@ function testOnPlayReplay():
     unittestEqual(objectGet(state, 'playing'), true)
     unittestEqual(objectGet(state, 'time'), 0)
     unittestDeepEqual(callLog, [ \
+        ['voiceClose', []], \
         testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
         ['elementModelRender', [testFilmFrame(state)]], \
@@ -450,6 +588,7 @@ function testOnRestart():
     unittestEqual(objectGet(state, 'playing'), true)
     unittestEqual(objectGet(state, 'lastTick'), null)
     unittestDeepEqual(callLog, [ \
+        ['voiceClose', []], \
         testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
         ['elementModelRender', [testFilmFrame(state)]], \
@@ -467,6 +606,7 @@ function testOnChapter():
     unittestEqual(objectGet(state, 'time'), 52)
     unittestEqual(objectGet(state, 'lastTick'), null)
     unittestDeepEqual(callLog, [ \
+        ['voiceClose', []], \
         testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
         ['elementModelRender', [testFilmFrame(state)]] \
@@ -553,7 +693,7 @@ function testOnToggle():
         unittestEqual(objectGet(state, name), false)
         unittestDeepEqual(callLog, [ \
             ['localStorageSet', ['spaceshipHiggsBoson', jsonStringify({'quality': 'low', 'autoRotate': objectGet(state, 'autoRotate'), \
-                'drive': objectGet(state, 'drive'), 'labels': objectGet(state, 'labels'), 'sound': true})]], \
+                'drive': objectGet(state, 'drive'), 'labels': objectGet(state, 'labels'), 'sound': true, 'captions': false})]], \
             testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
             ['elementModelRender', [shbViewerFrame(state, testWidth, testHeight)]], \
@@ -562,6 +702,59 @@ function testOnToggle():
     endfor
 endfunction
 unittestRunTest('testOnToggle')
+
+
+function testOnToggleSound():
+    # Turning the sound off stops the dialogue that's being said
+    state = testStateSet('video', {'playing': false})
+    testMockAll()
+    shbOnToggle('sound')
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'sound'), false)
+    unittestDeepEqual(callLog, [ \
+        ['voiceClose', []], \
+        ['localStorageSet', ['spaceshipHiggsBoson', jsonStringify({'quality': 'low', 'autoRotate': true, 'drive': true, 'labels': true, \
+            'sound': false, 'captions': false})]], \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]] \
+    ])
+
+    # Turning the sound on
+    testMockAll()
+    shbOnToggle('sound')
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'sound'), true)
+    unittestEqual(arrayGet(arrayGet(callLog, 0), 0), 'localStorageSet')
+endfunction
+unittestRunTest('testOnToggleSound')
+
+
+function testOnToggleCaptions():
+    # Turning the closed captions on captions the dialogue - it's still said aloud
+    state = testStateSet('video', {'time': 58, 'playing': false})
+    testMockAll()
+    shbOnToggle('captions')
+    callLog = unittestMockEnd()
+    unittestEqual(objectGet(state, 'captions'), true)
+    unittestEqual(objectGet(state, 'sound'), true)
+    unittestDeepEqual(callLog, [ \
+        ['localStorageSet', ['spaceshipHiggsBoson', jsonStringify({'quality': 'low', 'autoRotate': true, 'drive': true, 'labels': true, \
+            'sound': true, 'captions': true})]], \
+        testPlaybackCall(state), \
+        ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
+        ['elementModelRender', [testFilmFrame(state)]] \
+    ])
+    unittestEqual(arrayIndexOf(testTexts(testFilmFrame(state)), 'CC') >= 0, true)
+
+    # Turning the closed captions off
+    testMockAll()
+    shbOnToggle('captions')
+    unittestMockEnd()
+    unittestEqual(objectGet(state, 'captions'), false)
+    unittestEqual(arrayIndexOf(testTexts(testFilmFrame(state)), 'CC'), -1)
+endfunction
+unittestRunTest('testOnToggleCaptions')
 
 
 function testOnQuality():
@@ -578,7 +771,7 @@ function testOnQuality():
         unittestDeepEqual(objectGet(state, 'perf'), shbPerfNew())
         unittestDeepEqual(callLog, [ \
             ['localStorageSet', ['spaceshipHiggsBoson', jsonStringify({'quality': arrayGet(setting, 0), 'autoRotate': true, \
-                'drive': true, 'labels': true, 'sound': true})]], \
+                'drive': true, 'labels': true, 'sound': true, 'captions': false})]], \
             testPlaybackCall(state), \
         ['documentSetReset', ['spaceshipHiggsBoson-anchor']], \
             ['elementModelRender', [testFilmFrame(state)]] \
@@ -595,6 +788,7 @@ function testOnKeyDownVideo():
     testSameEffect(systemPartial(shbOnKeyDown, {'key': 'ArrowRight'}), systemPartial(shbOnChapter, 1), setup)
     testSameEffect(systemPartial(shbOnKeyDown, {'key': 'R'}), shbOnRestart, setup)
     testSameEffect(systemPartial(shbOnKeyDown, {'key': 'M'}), systemPartial(shbOnToggle, 'sound'), setup)
+    testSameEffect(systemPartial(shbOnKeyDown, {'key': 'c'}), systemPartial(shbOnToggle, 'captions'), setup)
     testSameEffect(systemPartial(shbOnKeyDown, {'key': 'q'}), shbOnQuality, setup)
 endfunction
 unittestRunTest('testOnKeyDownVideo')
@@ -649,7 +843,8 @@ function testVideoBindings():
     testVerifyClick(render, 'Restart', shbOnRestart, setup)
     testVerifyClick(render, 'Previous chapter', systemPartial(shbOnChapter, -1), setup)
     testVerifyClick(render, 'Next chapter', systemPartial(shbOnChapter, 1), setup)
-    testVerifyClick(render, 'Sound', systemPartial(shbOnToggle, 'sound'), setup)
+    testVerifyClick(render, 'Mute', systemPartial(shbOnToggle, 'sound'), setup)
+    testVerifyClick(render, 'CC', systemPartial(shbOnToggle, 'captions'), setup)
     testVerifyClick(render, 'Detail', shbOnQuality, setup)
 endfunction
 unittestRunTest('testVideoBindings')

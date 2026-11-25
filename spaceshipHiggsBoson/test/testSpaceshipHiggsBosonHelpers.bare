@@ -39,7 +39,9 @@ function testStateSet(page, overrides):
         'autoRotate': true, \
         'drive': true, \
         'labels': true, \
-        'sound': true \
+        'sound': true, \
+        'captions': false, \
+        'waiting': false \
     }
     if overrides != null:
         objectAssign(state, overrides)
@@ -96,7 +98,7 @@ endfunction
 # The film frame the player renders for a video state (the mocked canvas size)
 function testFilmFrame(state):
     return shbFilmFrame(objectGet(state, 'time'), objectGet(state, 'level'), 976, 684, 22 + 38 * shbControlRows('video', 976), \
-        shbStatusText(state))
+        shbStatusText(state), objectGet(state, 'captions'), if(objectGet(state, 'waiting'), 'Click to play'))
 endfunction
 
 

@@ -64,6 +64,19 @@ shbVoyageCast = [{'name': 'ship', 'blocking': shbShipOnMark, 'beats': [{'at': 0,
 # The film
 shbFilmModel = { \
     'title': 'Spaceship Higgs-Boson', \
+    'voices': { \
+        'Narrator': {'actor': 'male'}, \
+        'Engineer': {'actor': 'robert'}, \
+        'Commander': {'actor': 'helen'}, \
+        'Flight': {'actor': 'james'}, \
+        'Collider': {'actor': 'kate'}, \
+        'Field': {'actor': 'thomas'}, \
+        'FIDO': {'actor': 'david'}, \
+        'Launch': {'actor': 'michael'}, \
+        'CAPCOM': {'actor': 'sarah'}, \
+        'Surgeon': {'actor': 'grace'}, \
+        'Science': {'actor': 'amy'} \
+    }, \
     'scenes': [ \
         { \
             'name': 'title', \
@@ -151,7 +164,7 @@ shbFilmModel = { \
             ], \
             'cast': shbVoyageCast, \
             'dialogue': [ \
-                {'at': 0, 'duration': 4, 'speaker': 'Launch', 'text': 'Ignition! Scalar Dawn is underway.'}, \
+                {'at': 0, 'duration': 4, 'speaker': 'Launch', 'emotion': 'exclaim', 'text': 'Ignition! Scalar Dawn is underway.'}, \
                 {'at': 4, 'duration': 5, 'speaker': 'CAPCOM', 'text': 'Bubble stable. Mass at 0.1 percent.'}, \
                 {'at': 9, 'duration': 5, 'speaker': 'FIDO', 'text': 'Velocity {velocity} c and climbing.'}, \
                 {'at': 14, 'duration': 4, 'speaker': 'Surgeon', 'text': 'Crew time runs {gamma} times slower.'}, \
@@ -218,7 +231,8 @@ shbFilmModel = { \
                 {'name': 'ship', 'set': 'earthClose', 'blocking': shbShipOnMark} \
             ], \
             'dialogue': [ \
-                {'at': 0, 'duration': 7, 'speaker': 'CAPCOM', 'text': 'Welcome home - {roundEarth} years for us, {roundCrew} for you.'}, \
+                {'at': 0, 'duration': 7, 'speaker': 'CAPCOM', 'emotion': 'happy', \
+                    'text': 'Welcome home - {roundEarth} years for us, {roundCrew} for you.'}, \
                 {'at': 7, 'duration': 7, 'speaker': 'Narrator', 'text': 'The first voyage to another star is complete.'} \
             ], \
             'sounds': [{'at': 0.5, 'sound': 'success'}] \
@@ -258,7 +272,7 @@ shbFilmSetNames = { \
 }
 
 
-# The film's speaking roles
+# The film's speaking roles (the film model's "voices" casts their voice actors)
 shbFilmVoices = { \
     'Narrator': 'The narrator', \
     'Engineer': 'Construction engineer, Earth orbit', \
@@ -275,10 +289,16 @@ shbFilmVoices = { \
 
 
 # The film frame's SVG element model at a time - the letterbox bottom is the height of the bottom bar (with the
-# player's controls), and the status is the player's status text
-function shbFilmFrame(time, level, width, height, letterboxBottom, status):
+# player's controls), the status is the player's status text, the dialogue is captioned with the captions on, and
+# the prompt, if any, is shown over the frame
+function shbFilmFrame(time, level, width, height, letterboxBottom, status, captions, prompt):
     quality = arrayGet(shbQualityLevels, level)
     frame = cinemaFrame(shbReel, time, shbFilmVariables)
+
+    # The dialogue is captioned only with the closed captions on
+    if !captions:
+        objectSet(frame, 'dialogue', null)
+    endif
     scene = shbFilmScene(frame, quality, shbMeshes(level), width, height)
 
     # The cinematic overlay and the player's heads-up display
@@ -291,7 +311,18 @@ function shbFilmFrame(time, level, width, height, letterboxBottom, status):
         'dimColor': shbTextDim \
     })
     return shbSvg(scene, quality, width, height, 'Film - ' + objectGet(frame, 'sceneTitle'), \
-        [overlay, shbFilmHud(frame, width, height, letterboxBottom, status)])
+        [overlay, shbFilmHud(frame, width, height, letterboxBottom, status), if(prompt != null, shbFilmPrompt(prompt, width, height))])
+endfunction
+
+
+# A film frame's prompt element model - the text in a box, in the middle of the frame
+function shbFilmPrompt(prompt, width, height):
+    boxWidth = 14 * stringLength(prompt) + 56
+    return {'svg': 'g', 'elem': [ \
+        {'svg': 'rect', 'attr': {'x': shbRound((width - boxWidth) / 2), 'y': shbRound(height / 2 - 30), 'width': boxWidth, \
+            'height': 60, 'rx': 10, 'fill': 'rgba(8,14,34,0.85)', 'stroke': shbAccentColor, 'stroke-width': 1.5}}, \
+        shbSvgText(prompt, width / 2, height / 2 + 8, 24, shbTextColor, 'middle', true) \
+    ]}
 endfunction
 
 

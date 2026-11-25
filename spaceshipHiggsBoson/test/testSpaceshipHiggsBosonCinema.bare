@@ -7,6 +7,7 @@ include 'testSpaceshipHiggsBosonHelpers.bare'
 # A test film - two scenes on two sets, with every camera move, blocking type, and script element
 testCinemaFilm = { \
     'title': 'Test', \
+    'voices': {'Hero': {'actor': 'james', 'emotion': 'happy', 'rate': 1.2}}, \
     'scenes': [ \
         { \
             'name': 'one', \
@@ -27,7 +28,7 @@ testCinemaFilm = { \
             ], \
             'dialogue': [ \
                 {'at': 1, 'duration': 2, 'speaker': 'Hero', 'text': 'Hello, {name}.'}, \
-                {'at': 5, 'duration': 2, 'speaker': 'Hero', 'text': 'A plain line'} \
+                {'at': 5, 'duration': 2, 'speaker': 'Hero', 'emotion': 'angry', 'text': 'A plain line'} \
             ], \
             'titles': [{'at': 0.5, 'duration': 2, 'style': 'main', 'text': 'Test'}], \
             'sounds': [{'at': 1, 'sound': 'beep'}, {'at': 5, 'sound': 'click'}] \
@@ -77,8 +78,39 @@ function testCinemaReelLayout():
     # An invalid film model has no reel
     systemLogDebug('NOTICE: The following schema validation error is expected:')
     unittestEqual(cinemaReel({'title': 'No scenes', 'scenes': []}), null)
+
+    # An unknown voice actor is invalid
+    film = objectCopy(testCinemaFilm)
+    objectSet(film, 'voices', {'Hero': {'actor': 'nobody'}})
+    systemLogDebug('NOTICE: The following schema validation error is expected:')
+    unittestEqual(cinemaReel(film), null)
 endfunction
 unittestRunTest('testCinemaReelLayout')
+
+
+function testCinemaLines():
+    # The lines that begin between two times - after the first, up to and including the second
+    helloLine = {'speaker': 'Hero', 'text': 'Hello, scene one.', 'actor': 'james', 'emotion': 'happy', 'rate': 1.2}
+    plainLine = {'speaker': 'Hero', 'text': 'A plain line', 'actor': 'james', 'emotion': 'angry', 'rate': 1.2}
+    unittestDeepEqual(cinemaLines(testCinemaReel, 0, 1, testCinemaVariables), [helloLine])
+    unittestDeepEqual(cinemaLines(testCinemaReel, 1, 4.9, testCinemaVariables), [])
+    unittestDeepEqual(cinemaLines(testCinemaReel, 0, 22, testCinemaVariables), [helloLine, plainLine])
+
+    # No variables
+    unittestDeepEqual(cinemaLines(testCinemaReel, 0, 1, null), [ \
+        {'speaker': 'Hero', 'text': 'Hello, {name}.', 'actor': 'james', 'emotion': 'happy', 'rate': 1.2} \
+    ])
+
+    # A film that doesn't cast its speakers' voices
+    film = objectCopy(testCinemaFilm)
+    objectDelete(film, 'voices')
+    unittestDeepEqual(cinemaLines(cinemaReel(film), 0, 22, null), [ \
+        {'speaker': 'Hero', 'text': 'Hello, {name}.', 'actor': null, 'emotion': 'neutral', 'rate': 1}, \
+        {'speaker': 'Hero', 'text': 'A plain line', 'actor': null, 'emotion': 'angry', 'rate': 1} \
+    ])
+    unittestDeepEqual(objectGet(cinemaCast(cinemaReel(film)), 'voices'), [{'speaker': 'Hero', 'actor': null, 'lines': 2, 'scenes': ['One']}])
+endfunction
+unittestRunTest('testCinemaLines')
 
 
 function testCinemaSounds():
@@ -274,12 +306,13 @@ function testCinemaStoryboard():
         { \
             'index': 0, 'start': 0, 'duration': 4, 'framing': 'wide', 'set': 'stage', 'lighting': null, 'move': 'static', \
             'ease': 'easeInOut', 'lens': 1, 'fadeIn': 1, 'fadeOut': null, \
-            'dialogue': [{'speaker': 'Hero', 'text': 'Hello, scene one.'}], 'sounds': ['beep'], 'beats': [{'actor': 'hero', 'beat': 'wave'}] \
+            'dialogue': [{'speaker': 'Hero', 'text': 'Hello, scene one.', 'emotion': null}], 'sounds': ['beep'], \
+            'beats': [{'actor': 'hero', 'beat': 'wave'}] \
         }, \
         { \
             'index': 1, 'start': 4, 'duration': 6, 'framing': 'closeUp', 'set': 'street', 'lighting': 'night', 'move': 'dolly', \
             'ease': 'linear', 'lens': 1.5, 'fadeIn': null, 'fadeOut': 2, \
-            'dialogue': [{'speaker': 'Hero', 'text': 'A plain line'}], 'sounds': ['click'], 'beats': [] \
+            'dialogue': [{'speaker': 'Hero', 'text': 'A plain line', 'emotion': 'angry'}], 'sounds': ['click'], 'beats': [] \
         } \
     ])
     sceneTwo = arrayGet(storyboard, 1)
@@ -296,7 +329,7 @@ function testCinemaCast():
             {'name': 'hero', 'scenes': ['One', 'Two'], 'beats': ['wave']}, \
             {'name': 'moon', 'scenes': ['One'], 'beats': []} \
         ], \
-        'voices': [{'speaker': 'Hero', 'lines': 2, 'scenes': ['One']}] \
+        'voices': [{'speaker': 'Hero', 'actor': 'james', 'lines': 2, 'scenes': ['One']}] \
     })
     values = ['a']
     cinemaAddUnique(values, 'a')

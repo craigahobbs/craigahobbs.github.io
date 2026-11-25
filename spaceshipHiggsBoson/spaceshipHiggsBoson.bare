@@ -116,10 +116,19 @@ function spaceshipHiggsBosonMain():
         'autoRotate': objectGet(settings, 'autoRotate'), \
         'drive': objectGet(settings, 'drive'), \
         'labels': objectGet(settings, 'labels'), \
-        'sound': objectGet(settings, 'sound') \
+        'sound': objectGet(settings, 'sound'), \
+        'captions': objectGet(settings, 'captions'), \
+        'waiting': false \
     }
     objectAssign(state, shbPlaybackLoad(page))
     systemGlobalSet('shbState', state)
+
+    # Load the voices that say the video's dialogue. A browser may not let audio start until the user interacts with
+    # the page - if the dialogue can't be heard, the video waits to start until it can be.
+    if page == 'video':
+        voiceLoad()
+        objectSet(state, 'waiting', objectGet(state, 'sound') && objectGet(state, 'playing') && !voiceReady())
+    endif
 
     # Render the controls overlay, then the page below the reset anchor
     elementModelRender(shbOverlayElements(page))
@@ -131,7 +140,7 @@ endfunction
 
 
 # The default user settings
-shbSettingsDefault = {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true}
+shbSettingsDefault = {'quality': 'auto', 'autoRotate': true, 'drive': true, 'labels': true, 'sound': true, 'captions': false}
 
 
 # The default playback state of each page - the video's position and play state, and the viewer's camera
@@ -243,7 +252,8 @@ function shbRender():
     if objectGet(shbState, 'page') == 'video':
         letterboxBottom = 22 + 38 * shbControlRows('video', width)
         elementModelRender(shbFilmFrame(objectGet(shbState, 'time'), objectGet(shbState, 'level'), width, height, \
-            letterboxBottom, shbStatusText(shbState)))
+            letterboxBottom, shbStatusText(shbState), objectGet(shbState, 'captions'), \
+            if(objectGet(shbState, 'waiting'), shbWaitingPrompt)))
     else:
         elementModelRender(shbViewerFrame(shbState, width, height))
     endif
@@ -261,8 +271,22 @@ function shbScheduleTick():
 endfunction
 
 
+# The prompt of a video that's waiting to start
+shbWaitingPrompt = 'Click to play'
+
+
 # The animation tick - adapt the detail level, advance the clocks, and re-render
 function shbTick():
+    # A waiting video starts when its dialogue can be heard (the user has interacted with the page), or when its
+    # sound is turned off
+    if objectGet(shbState, 'waiting'):
+        if objectGet(shbState, 'sound') && !voiceReady():
+            shbScheduleTick()
+            return
+        endif
+        objectSet(shbState, 'waiting', false)
+    endif
+
     now = datetimeNow()
     lastTick = objectGet(shbState, 'lastTick')
     objectSet(shbState, 'lastTick', now)
@@ -270,7 +294,8 @@ function shbTick():
         shbQualityAdapt(shbState, now - lastTick - shbTickMs)
     endif
 
-    # The video plays its sound cues and stops at its end; the viewer turns the ship when auto-rotating
+    # The video says its dialogue, plays its sound cues, and stops at its end; the viewer turns the ship when
+    # auto-rotating
     page = objectGet(shbState, 'page')
     timePrevious = objectGet(shbState, 'time')
     time = timePrevious + shbTickMs / 1000
@@ -281,6 +306,11 @@ function shbTick():
             objectSet(shbState, 'playing', false)
         endif
         if objectGet(shbState, 'sound'):
+            # The first tick after the video starts or moves also says the line that begins at its time
+            linesFrom = if(lastTick == null, timePrevious - shbTickMs / 1000, timePrevious)
+            for line in cinemaLines(shbReel, linesFrom, time, shbFilmVariables):
+                voiceSay(objectGet(line, 'text'), objectGet(line, 'actor'), objectGet(line, 'emotion'), objectGet(line, 'rate'))
+            endfor
             for sound in cinemaSounds(shbReel, timePrevious, time):
                 windowPlaySound(sound)
             endfor
@@ -294,11 +324,17 @@ function shbTick():
 endfunction
 
 
-# Video play/pause click handler - playing the finished video restarts it
+# Video play/pause click handler - playing the finished video restarts it, and a waiting video starts
 function shbOnPlay():
+    if objectGet(shbState, 'waiting'):
+        objectSet(shbState, 'waiting', false)
+        shbRender()
+        return
+    endif
     playing = !objectGet(shbState, 'playing')
     objectSet(shbState, 'playing', playing)
     objectSet(shbState, 'lastTick', null)
+    voiceClose()
     if playing && objectGet(shbState, 'time') >= cinemaDuration(shbReel):
         objectSet(shbState, 'time', 0)
     endif
@@ -318,6 +354,7 @@ function shbOnRestart():
     objectSet(shbState, 'time', 0)
     objectSet(shbState, 'playing', true)
     objectSet(shbState, 'lastTick', null)
+    voiceClose()
     shbRender()
 endfunction
 
@@ -335,6 +372,7 @@ function shbOnChapter(direction):
     endif
     objectSet(shbState, 'time', time)
     objectSet(shbState, 'lastTick', null)
+    voiceClose()
     shbRender()
 endfunction
 
@@ -361,9 +399,13 @@ function shbOnReset():
 endfunction
 
 
-# Toggle click handler - the video's "sound", and the viewer's "autoRotate", "drive", or "labels"
+# Toggle click handler - the video's "sound" and "captions", and the viewer's "autoRotate", "drive", or "labels".
+# Turning the sound off (mute) stops the dialogue that's being said.
 function shbOnToggle(name):
     objectSet(shbState, name, !objectGet(shbState, name))
+    if name == 'sound' && !objectGet(shbState, name):
+        voiceClose()
+    endif
     shbSettingsSave()
     shbRender()
 endfunction
@@ -401,6 +443,7 @@ shbKeys = { \
         'arrowright': systemPartial(shbOnChapter, 1), \
         'r': shbOnRestart, \
         'm': systemPartial(shbOnToggle, 'sound'), \
+        'c': systemPartial(shbOnToggle, 'captions'), \
         'q': shbOnQuality \
     }, \
     'viewer': { \
@@ -518,11 +561,11 @@ function shbViewerFrame(state, width, height):
 endfunction
 
 
-# The status text - the detail level, the frame rate or paused, and the video's sound off
+# The status text - the detail level, the frame rate or paused, and the video's sound muted
 function shbStatusText(state):
     frameRate = shbFrameRateText(state)
     return shbQualityText(state) + if(!objectGet(state, 'playing'), ' · Paused', if(frameRate != '', ' · ' + frameRate, '')) + \
-        if(objectGet(state, 'page') == 'video' && !objectGet(state, 'sound'), ' · Sound off', '')
+        if(objectGet(state, 'page') == 'video' && !objectGet(state, 'sound'), ' · Muted', '')
 endfunction
 
 
@@ -571,7 +614,8 @@ function shbControls(page):
             ['Restart', shbOnRestart], \
             ['Previous chapter', systemPartial(shbOnChapter, -1)], \
             ['Next chapter', systemPartial(shbOnChapter, 1)], \
-            ['Sound', systemPartial(shbOnToggle, 'sound')], \
+            ['Mute', systemPartial(shbOnToggle, 'sound')], \
+            ['CC', systemPartial(shbOnToggle, 'captions')], \
             ['Detail', shbOnQuality] \
         ]
     endif

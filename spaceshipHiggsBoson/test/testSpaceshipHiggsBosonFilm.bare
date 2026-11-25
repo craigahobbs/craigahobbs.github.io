@@ -6,7 +6,7 @@ include 'testSpaceshipHiggsBosonHelpers.bare'
 
 # The film frame's overlay and heads-up display text at a time
 function testFilmTexts(time):
-    svg = shbFilmFrame(time, 0, 976, 684, 60, 'Status')
+    svg = shbFilmFrame(time, 0, 976, 684, 60, 'Status', true)
     return testTexts(arrayGet(objectGet(objectGet(svg, 'elem'), 'elem'), 3))
 endfunction
 
@@ -79,7 +79,7 @@ function testFilmEveryShot():
     # Every shot renders at every detail level
     for level in [0, 3]:
         for shotStart in testShotStarts():
-            svg = shbFilmFrame(shotStart + 3, level, 976, 684, 60, 'Status')
+            svg = shbFilmFrame(shotStart + 3, level, 976, 684, 60, 'Status', true)
             unittestEqual(objectGet(objectGet(svg, 'elem'), 'svg'), 'svg')
         endfor
     endfor
@@ -155,14 +155,18 @@ unittestRunTest('testFilmStill')
 
 
 function testFilmCredits():
-    # Every actor is billed, every voice has a role, and every set has a name
+    # Every actor is billed, every voice has a role and its own voice actor, and every set has a name
     cast = cinemaCast(shbReel)
     for actor in objectGet(cast, 'actors'):
         unittestEqual(objectHas(shbFilmBilling, objectGet(actor, 'name')), true)
     endfor
+    voiceActors = []
     for voice in objectGet(cast, 'voices'):
         unittestEqual(objectHas(shbFilmVoices, objectGet(voice, 'speaker')), true)
+        unittestEqual(objectGet(voice, 'actor') != null && arrayIndexOf(voiceActors, objectGet(voice, 'actor')) < 0, true)
+        arrayPush(voiceActors, objectGet(voice, 'actor'))
     endfor
+    unittestEqual(arrayLength(voiceActors), 11)
     for scene in cinemaStoryboard(shbReel, null):
         for shot in objectGet(scene, 'shots'):
             unittestEqual(objectHas(shbFilmSetNames, objectGet(shot, 'set')), true)
@@ -172,6 +176,31 @@ function testFilmCredits():
     unittestEqual(objectGet(objectGet(objectGet(portrait, 'elem'), 'attr'), 'aria-label'), 'ISV Scalar Dawn')
 endfunction
 unittestRunTest('testFilmCredits')
+
+
+function testFilmLines():
+    # The film's lines of dialogue, as they're said - each by its voice actor, with its variables filled
+    lines = cinemaLines(shbReel, -1, cinemaDuration(shbReel), shbFilmVariables)
+    unittestEqual(arrayLength(lines), 35)
+    unittestDeepEqual(arrayGet(lines, 0), {'speaker': 'Narrator', 'text': 'Every human who has ever lived has lived under one sun.', \
+        'actor': 'male', 'emotion': 'neutral', 'rate': 1})
+    emotions = {}
+    for line in lines:
+        unittestEqual(stringIndexOf(objectGet(line, 'text'), '{'), -1)
+        if objectGet(line, 'emotion') != 'neutral':
+            objectSet(emotions, objectGet(line, 'text'), objectGet(line, 'emotion'))
+        endif
+    endfor
+    unittestDeepEqual(emotions, { \
+        'Ignition! Scalar Dawn is underway.': 'exclaim', \
+        'Welcome home - 12.5 years for us, 7.7 for you.': 'happy' \
+    })
+
+    # A frame's dialogue is captioned only with the closed captions on
+    unittestEqual(arrayIndexOf(testFilmTexts(46), 'CC') >= 0, true)
+    unittestEqual(arrayIndexOf(testTexts(shbFilmFrame(46, 0, 976, 684, 60, 'Status', false)), 'CC'), -1)
+endfunction
+unittestRunTest('testFilmLines')
 
 
 function testFilmTime():
