@@ -79701,7 +79701,7 @@
         "Package": "bare-script",
         "Language": "JavaScript",
         "Date": "2026-10-15",
-        "Downloads": 0
+        "Downloads": 8
     },
     {
         "Package": "element-model",
@@ -79719,7 +79719,7 @@
         "Package": "markdown-up",
         "Language": "JavaScript",
         "Date": "2026-10-15",
-        "Downloads": 0
+        "Downloads": 3
     },
     {
         "Package": "picoocr",
@@ -79737,7 +79737,7 @@
         "Package": "schema-markdown",
         "Language": "JavaScript",
         "Date": "2026-10-15",
-        "Downloads": 0
+        "Downloads": 1
     },
     {
         "Package": "bare-script",
@@ -83620,5 +83620,101 @@
         "Language": "Python",
         "Date": "2026-11-25",
         "Downloads": 3925
+    },
+    {
+        "Package": "bare-script",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 12
+    },
+    {
+        "Package": "element-model",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 1
+    },
+    {
+        "Package": "markdown-model",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 0
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 30
+    },
+    {
+        "Package": "picoocr",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 5
+    },
+    {
+        "Package": "picovox",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 44
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "JavaScript",
+        "Date": "2026-11-26",
+        "Downloads": 3
+    },
+    {
+        "Package": "bare-script",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 10
+    },
+    {
+        "Package": "chisel",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 24
+    },
+    {
+        "Package": "ctxkit",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 3
+    },
+    {
+        "Package": "markdown-up",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 10
+    },
+    {
+        "Package": "ollama-chat",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 111
+    },
+    {
+        "Package": "sageroad",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 4
+    },
+    {
+        "Package": "schema-markdown",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 23
+    },
+    {
+        "Package": "template-specialize",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 490
+    },
+    {
+        "Package": "unittest-parallel",
+        "Language": "Python",
+        "Date": "2026-11-26",
+        "Downloads": 3543
     }
 ]
